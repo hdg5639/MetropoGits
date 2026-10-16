@@ -1,0 +1,35 @@
+{
+  "diagnostics": [],
+  "edges": [
+    {
+      "confidence": "RESOLVED",
+      "evidenceIds": [
+        "missing-evidence"
+      ],
+      "from": "demo:file:src/App.java",
+      "id": "e1",
+      "to": "demo:file:src/Missing.java",
+      "type": "REFERENCES"
+    }
+  ],
+  "entities": [
+    {
+      "id": "demo:file:src/App.java",
+      "kind": "FILE",
+      "language": "java",
+      "path": "src/App.java"
+    }
+  ],
+  "evidence": [],
+  "generator": {
+    "catalogVersion": "0.1.0",
+    "name": "metropogits",
+    "version": "0.1.0"
+  },
+  "repository": {
+    "id": "demo",
+    "revision": null,
+    "sourceUrl": null
+  },
+  "schemaVersion": "ucg/0.1"
+}

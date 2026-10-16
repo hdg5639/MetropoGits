@@ -1,0 +1,326 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metropogits.dev/schemas/ucg-0.1.schema.json",
+  "title": "MetropoGits Universal Code Graph v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generator",
+    "repository",
+    "entities",
+    "edges",
+    "evidence",
+    "diagnostics"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "ucg/0.1"
+    },
+    "generator": {
+      "$ref": "#/$defs/generator"
+    },
+    "repository": {
+      "$ref": "#/$defs/repository"
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entity"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "minProperties": 1
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:/)(?!.*\\\\).+$"
+    },
+    "confidence": {
+      "enum": [
+        "DIRECT",
+        "RESOLVED",
+        "INFERRED",
+        "UNKNOWN"
+      ]
+    },
+    "evidenceIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "uniqueItems": true
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "confidence",
+        "evidenceIds"
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidenceIds": {
+          "$ref": "#/$defs/evidenceIds"
+        }
+      }
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "catalogVersion"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "catalogVersion": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "sourceUrl"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "kind": {
+          "enum": [
+            "REPOSITORY",
+            "MODULE",
+            "DIRECTORY",
+            "FILE",
+            "SYMBOL",
+            "EXTERNAL_PACKAGE",
+            "EXTERNAL_SYSTEM"
+          ]
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "language": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "technologies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/claim"
+          },
+          "uniqueItems": true
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/claim"
+          },
+          "uniqueItems": true
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/claim"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "from",
+        "to",
+        "confidence",
+        "evidenceIds"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "type": {
+          "enum": [
+            "CONTAINS",
+            "IMPORTS",
+            "DECLARES",
+            "EXTENDS",
+            "IMPLEMENTS",
+            "REFERENCES",
+            "CALLS",
+            "DEPENDS_ON",
+            "HTTP_CALL",
+            "PUBLISHES",
+            "SUBSCRIBES",
+            "READS",
+            "WRITES"
+          ]
+        },
+        "from": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "to": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidenceIds": {
+          "$ref": "#/$defs/evidenceIds"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "not": {
+                  "const": "CONTAINS"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evidenceIds": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidenceId",
+        "sourcePath",
+        "extractor",
+        "kind",
+        "summary"
+      ],
+      "properties": {
+        "evidenceId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourcePath": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "extractor": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "ruleId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "kind": {
+          "enum": [
+            "ANNOTATION",
+            "IMPORT",
+            "INHERITANCE",
+            "CALL",
+            "CONFIG",
+            "MANIFEST",
+            "PATH",
+            "AST"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "sourceDigest": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "dependentRequired": {
+        "startLine": [
+          "endLine"
+        ],
+        "endLine": [
+          "startLine"
+        ]
+      }
+    }
+  }
+}

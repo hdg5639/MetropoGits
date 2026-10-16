@@ -1,0 +1,89 @@
+{
+  "diagnostics": [],
+  "edges": [
+    {
+      "confidence": "RESOLVED",
+      "evidenceIds": [
+        "ev3"
+      ],
+      "from": "demo:file:src/UserService.java",
+      "id": "e1",
+      "to": "demo:file:src/UserRepository.java",
+      "type": "REFERENCES"
+    }
+  ],
+  "entities": [
+    {
+      "id": "demo:file:src/UserRepository.java",
+      "kind": "FILE",
+      "language": "java",
+      "path": "src/UserRepository.java",
+      "roles": [
+        {
+          "confidence": "RESOLVED",
+          "evidenceIds": [
+            "ev2"
+          ],
+          "value": "PERSISTENCE_ADAPTER"
+        }
+      ]
+    },
+    {
+      "id": "demo:file:src/UserService.java",
+      "kind": "FILE",
+      "language": "java",
+      "path": "src/UserService.java",
+      "roles": [
+        {
+          "confidence": "DIRECT",
+          "evidenceIds": [
+            "ev1"
+          ],
+          "value": "SERVICE"
+        }
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "endLine": 1,
+      "evidenceId": "ev1",
+      "extractor": "spring-rules",
+      "kind": "ANNOTATION",
+      "ruleId": "spring.service",
+      "sourcePath": "src/UserService.java",
+      "startLine": 1,
+      "summary": "Spring Service annotation"
+    },
+    {
+      "endLine": 1,
+      "evidenceId": "ev2",
+      "extractor": "spring-rules",
+      "kind": "INHERITANCE",
+      "ruleId": "spring.repository",
+      "sourcePath": "src/UserRepository.java",
+      "startLine": 1,
+      "summary": "Spring Data repository inheritance"
+    },
+    {
+      "endLine": 3,
+      "evidenceId": "ev3",
+      "extractor": "java-resolver",
+      "kind": "AST",
+      "sourcePath": "src/UserService.java",
+      "startLine": 3,
+      "summary": "Resolved field type reference"
+    }
+  ],
+  "generator": {
+    "catalogVersion": "0.1.0",
+    "name": "metropogits",
+    "version": "0.1.0"
+  },
+  "repository": {
+    "id": "demo",
+    "revision": "0123456789abcdef",
+    "sourceUrl": null
+  },
+  "schemaVersion": "ucg/0.1"
+}
