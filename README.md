@@ -45,3 +45,9 @@ Generate a bounded structural UCG without executing repository code:
 ```powershell
 python -m metropogits.scanner --repo path/to/repository --repo-id owner/project --out graph.ucg.json
 ```
+
+Generate a deterministic City Scene from a UCG:
+
+```powershell
+python -m metropogits.layout --graph graph.ucg.json --out city.json --theme minimal
+```
