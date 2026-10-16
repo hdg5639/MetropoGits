@@ -4,6 +4,20 @@ MetropoGits turns source repositories into explorable, architecture-driven
 cities. The project is currently establishing its versioned implementation
 contracts.
 
+## Structural preview quick start
+
+Install the local CLI and build a deterministic structural city:
+
+```powershell
+python -m pip install -e .
+metropogits build --repo . --out dist --theme minimal
+```
+
+The current milestone writes `graph.ucg.json`, `city.json`, `preview.svg`,
+`manifest.json`, and `README_SNIPPET.md`. The interactive viewer and semantic
+language analyzers are later milestones; unsupported source languages still
+produce generic buildings.
+
 ## Contract validation
 
 Install the pinned development dependency and run the contract tests:

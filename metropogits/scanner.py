@@ -10,6 +10,7 @@ import sys
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+from collections.abc import Iterable
 from typing import Any
 
 from metropogits import __version__
@@ -193,7 +194,11 @@ def _diagnostic(
     return result
 
 
-def scan_repository(root: str | Path, limits: ScanLimits | None = None) -> ScanResult:
+def scan_repository(
+    root: str | Path,
+    limits: ScanLimits | None = None,
+    excluded_paths: Iterable[str | Path] = (),
+) -> ScanResult:
     limits = limits or ScanLimits()
     root_path = Path(root)
     try:
@@ -202,6 +207,20 @@ def scan_repository(root: str | Path, limits: ScanLimits | None = None) -> ScanR
         raise ScannerError(f"repository root is not accessible: {error}") from error
     if not resolved_root.is_dir():
         raise ScannerError("repository root must be a directory")
+
+    excluded_absolute = {
+        os.path.normcase(os.path.abspath(Path(path))) for path in excluded_paths
+    }
+
+    def is_explicitly_excluded(path: str | Path) -> bool:
+        candidate = os.path.normcase(os.path.abspath(path))
+        for excluded_path in excluded_absolute:
+            try:
+                if os.path.commonpath([candidate, excluded_path]) == excluded_path:
+                    return True
+            except ValueError:
+                continue
+        return False
 
     files: list[ScannedFile] = []
     diagnostics: list[dict[str, Any]] = []
@@ -231,6 +250,8 @@ def scan_repository(root: str | Path, limits: ScanLimits | None = None) -> ScanR
         for entry in entries:
             if halted:
                 break
+            if is_explicitly_excluded(entry.path):
+                continue
             entry_count += 1
             if entry_count > limits.max_entries:
                 diagnostics.append(
