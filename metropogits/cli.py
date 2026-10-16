@@ -31,6 +31,7 @@ from scripts.stable_ids import (
     normalize_repository_id,
     repository_id_from_root,
 )
+from scripts.validate_catalog import validate_document as validate_catalog_document
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
@@ -315,7 +316,9 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--width", type=int, default=1200)
     build.add_argument("--height", type=int, default=675)
 
-    validate = commands.add_parser("validate", help="validate UCG or City JSON")
+    validate = commands.add_parser(
+        "validate", help="validate UCG, City, or catalog JSON"
+    )
     _add_json_option(validate, suppress_default=True)
     validate.add_argument("--input", type=Path, required=True)
     validate.add_argument("--ucg", type=Path)
@@ -398,6 +401,8 @@ def _run(args: argparse.Namespace) -> CommandResult:
             raise CliError("--ucg is required when validating a City Scene")
         graph = _load_json(args.ucg, "UCG")
         errors = validate_city_document(document, graph)
+    elif schema_version == "catalog/0.1":
+        errors = validate_catalog_document(document, args.input.parent / "fixtures")
     else:
         raise CliError(f"unsupported schemaVersion: {schema_version!r}")
     if errors:

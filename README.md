@@ -73,6 +73,15 @@ python scripts/stable_ids.py entity --repo-id openai/metropogits --kind FILE --p
 python scripts/stable_ids.py edge --from-id source --type REFERENCES --to-id target
 ```
 
+Validate a versioned technology catalog and its positive/negative fixtures:
+
+```powershell
+python -m metropogits validate --input catalog/0.1.0/catalog.json
+```
+
+See [technology catalog contributions](docs/CATALOG_CONTRIBUTING.md) for the
+rule safety levels and contribution checklist.
+
 Generate a bounded structural UCG without executing repository code:
 
 ```powershell

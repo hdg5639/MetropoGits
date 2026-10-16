@@ -1,0 +1,63 @@
+{
+  "catalogVersion": "0.1.0",
+  "rules": [
+    {
+      "changeSummary": "Classify verified Spring Service annotations without accepting lookalikes.",
+      "ecosystem": "maven",
+      "fixtures": {
+        "negative": [
+          "spring/service-lookalike"
+        ],
+        "positive": [
+          "spring/service"
+        ]
+      },
+      "id": "spring.service",
+      "match": {
+        "codeSignatures": [
+          {
+            "kind": "ANNOTATION",
+            "value": "org.springframework.stereotype.Service"
+          },
+          {
+            "kind": "IMPORT",
+            "value": "org.springframework.stereotype.Service"
+          }
+        ],
+        "configSignatures": [],
+        "packageCoordinates": [
+          "org.springframework:spring-context"
+        ]
+      },
+      "negativePredicates": [
+        {
+          "kind": "ANNOTATION",
+          "value": "com.example.Service"
+        }
+      ],
+      "produces": {
+        "archetypeFamily": "SERVICE_OFFICE",
+        "capabilities": [],
+        "roles": [
+          "SERVICE"
+        ],
+        "technology": "SPRING_FRAMEWORK",
+        "usage": "DIRECT"
+      },
+      "references": [
+        {
+          "license": "Apache-2.0",
+          "title": "Spring Framework classpath scanning documentation",
+          "url": "https://docs.spring.io/spring-framework/reference/core/beans/classpath-scanning.html"
+        }
+      ],
+      "requiredEvidence": [
+        "ANNOTATION",
+        "IMPORT",
+        "MANIFEST"
+      ],
+      "version": "1.0.0"
+    }
+  ],
+  "schemaVersion": "catalog/0.1"
+}
