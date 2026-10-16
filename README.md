@@ -51,3 +51,9 @@ Generate a deterministic City Scene from a UCG:
 ```powershell
 python -m metropogits.layout --graph graph.ucg.json --out city.json --theme minimal
 ```
+
+Render a deterministic CPU-only SVG preview:
+
+```powershell
+python -m metropogits.preview --scene city.json --ucg graph.ucg.json --out preview.svg
+```
