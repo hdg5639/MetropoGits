@@ -20,6 +20,14 @@ city. The bundled Java analyzer recognizes evidence-backed local imports,
 inheritance, declarations, and core Spring stereotypes. Unsupported source
 languages still produce generic buildings without guessed semantics.
 
+## GitHub Action
+
+The repository includes a least-privilege composite Action and a pinned Pages
+workflow template. Pull requests produce a private artifact without deployment;
+push and manual runs may publish only through the separately permissioned Pages
+job. See [GitHub Action and Pages publishing](docs/GITHUB_ACTION.md) before
+publishing generated repository metadata.
+
 ## Contract validation
 
 Install the pinned development dependency and run the contract tests:

@@ -1,0 +1,96 @@
+name: MetropoGits static city
+description: Build an evidence-backed repository city without executing target code
+author: MetropoGits
+
+inputs:
+  repository:
+    description: Repository path relative to GITHUB_WORKSPACE
+    required: false
+    default: .
+  output:
+    description: Output path relative to GITHUB_WORKSPACE
+    required: false
+    default: metropogits-dist
+  repo-id:
+    description: Stable repository ID; defaults to github.repository
+    required: false
+    default: ""
+  revision:
+    description: Source revision; defaults to github.sha
+    required: false
+    default: ""
+  source-url:
+    description: Public source URL; defaults to github.server_url/github.repository
+    required: false
+    default: ""
+  theme:
+    description: Viewer theme
+    required: false
+    default: minimal
+  max-entries:
+    description: Maximum filesystem entries to inspect
+    required: false
+    default: "100000"
+  max-files:
+    description: Maximum eligible source files
+    required: false
+    default: "50000"
+  max-file-bytes:
+    description: Maximum bytes per source file
+    required: false
+    default: "2097152"
+  max-total-bytes:
+    description: Maximum aggregate eligible source bytes
+    required: false
+    default: "536870912"
+  max-depth:
+    description: Maximum directory traversal depth
+    required: false
+    default: "64"
+
+outputs:
+  artifact-path:
+    description: Absolute path containing static city artifacts
+    value: ${{ steps.build.outputs.artifact-path }}
+  manifest-path:
+    description: Absolute path to the deterministic artifact manifest
+    value: ${{ steps.build.outputs.manifest-path }}
+  status:
+    description: COMPLETE or PARTIAL analysis status
+    value: ${{ steps.build.outputs.status }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install isolated MetropoGits runtime
+      id: install
+      shell: bash
+      run: |
+        set -euo pipefail
+        runtime="${RUNNER_TEMP}/metropogits-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+        python3 -m venv "$runtime"
+        "$runtime/bin/python" -m pip install --disable-pip-version-check "$GITHUB_ACTION_PATH"
+        echo "python=$runtime/bin/python" >> "$GITHUB_OUTPUT"
+
+    - name: Build static city artifacts
+      id: build
+      shell: bash
+      env:
+        METROPOGITS_PYTHON: ${{ steps.install.outputs.python }}
+        INPUT_REPOSITORY: ${{ inputs.repository }}
+        INPUT_OUTPUT: ${{ inputs.output }}
+        INPUT_REPO_ID: ${{ inputs.repo-id }}
+        INPUT_REVISION: ${{ inputs.revision }}
+        INPUT_SOURCE_URL: ${{ inputs.source-url }}
+        INPUT_THEME: ${{ inputs.theme }}
+        INPUT_MAX_ENTRIES: ${{ inputs.max-entries }}
+        INPUT_MAX_FILES: ${{ inputs.max-files }}
+        INPUT_MAX_FILE_BYTES: ${{ inputs.max-file-bytes }}
+        INPUT_MAX_TOTAL_BYTES: ${{ inputs.max-total-bytes }}
+        INPUT_MAX_DEPTH: ${{ inputs.max-depth }}
+      run: |
+        "$METROPOGITS_PYTHON" -m metropogits.github_action
+
+branding:
+  icon: map
+  color: blue
