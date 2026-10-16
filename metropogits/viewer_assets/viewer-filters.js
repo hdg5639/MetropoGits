@@ -1,0 +1,128 @@
+(() => {
+  "use strict";
+
+  const confidenceOrder = ["UNKNOWN", "DECLARED", "HEURISTIC", "DIRECT", "RESOLVED"];
+
+  function sorted(values, preferredOrder = []) {
+    const order = new Map(preferredOrder.map((value, index) => [value, index]));
+    return [...values].sort((left, right) => {
+      const leftOrder = order.get(left) ?? Number.MAX_SAFE_INTEGER;
+      const rightOrder = order.get(right) ?? Number.MAX_SAFE_INTEGER;
+      return leftOrder - rightOrder || left.localeCompare(right);
+    });
+  }
+
+  function claims(entity) {
+    return [...(entity?.roles || []), ...(entity?.technologies || [])];
+  }
+
+  function entityMatches(entity, filters, relatedConfidences = []) {
+    if (!entity) return false;
+    if (filters.language && entity.language !== filters.language) return false;
+    if (
+      filters.role &&
+      !(entity.roles || []).some((claim) => claim.value === filters.role)
+    ) {
+      return false;
+    }
+    if (
+      filters.technology &&
+      !(entity.technologies || []).some((claim) => claim.value === filters.technology)
+    ) {
+      return false;
+    }
+    if (
+      filters.confidence &&
+      !claims(entity).some((claim) => claim.confidence === filters.confidence) &&
+      !relatedConfidences.includes(filters.confidence)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  function createIndex(scene, ucg) {
+    const entities = new Map(ucg.entities.map((entity) => [entity.id, entity]));
+    const fileEntitiesByPath = new Map(
+      ucg.entities
+        .filter((entity) => entity.kind === "FILE" && entity.path)
+        .map((entity) => [entity.path, entity]),
+    );
+    const edges = new Map(ucg.edges.map((edge) => [edge.id, edge]));
+    const networkEdgeIds = new Set(scene.networks.flatMap((network) => network.edgeIds));
+    function fileEntity(entityId) {
+      const entity = entities.get(entityId);
+      if (entity?.kind === "FILE") return entity;
+      return entity?.path ? fileEntitiesByPath.get(entity.path) || entity : entity;
+    }
+
+    const relatedConfidences = new Map();
+    for (const edge of ucg.edges.filter((item) => networkEdgeIds.has(item.id))) {
+      for (const endpoint of [fileEntity(edge.from), fileEntity(edge.to)]) {
+        if (!endpoint) continue;
+        if (!relatedConfidences.has(endpoint.id)) relatedConfidences.set(endpoint.id, []);
+        relatedConfidences.get(endpoint.id).push(edge.confidence);
+      }
+    }
+    const buildingRecords = scene.buildings.map((building) => ({
+      confidences: relatedConfidences.get(building.entityId) || [],
+      entity: entities.get(building.entityId),
+      id: building.entityId,
+    }));
+
+    const networkRecords = scene.networks.map((network) => ({
+      edges: network.edgeIds.map((edgeId) => edges.get(edgeId)).filter(Boolean),
+      id: network.id,
+    }));
+    const roles = new Set();
+    const languages = new Set();
+    const technologies = new Set();
+    const confidences = new Set();
+
+    for (const record of buildingRecords) {
+      if (record.entity?.language) languages.add(record.entity.language);
+      for (const claim of record.entity?.roles || []) {
+        roles.add(claim.value);
+        confidences.add(claim.confidence);
+      }
+      for (const claim of record.entity?.technologies || []) {
+        technologies.add(claim.value);
+        confidences.add(claim.confidence);
+      }
+    }
+    for (const edge of ucg.edges) {
+      if (networkEdgeIds.has(edge.id)) confidences.add(edge.confidence);
+    }
+
+    function edgeMatches(edge, filters) {
+      if (filters.confidence && edge.confidence !== filters.confidence) return false;
+      if (!filters.role && !filters.language && !filters.technology) return true;
+      return [fileEntity(edge.from), fileEntity(edge.to)].some((entity) =>
+        entityMatches(entity, { ...filters, confidence: "" }),
+      );
+    }
+
+    return Object.freeze({
+      options: Object.freeze({
+        confidences: sorted(confidences, confidenceOrder),
+        languages: sorted(languages),
+        roles: sorted(roles),
+        technologies: sorted(technologies),
+      }),
+      filter(filters) {
+        return {
+          buildingIds: buildingRecords
+            .filter((record) =>
+              entityMatches(record.entity, filters, record.confidences),
+            )
+            .map((record) => record.id),
+          networkIds: networkRecords
+            .filter((record) => record.edges.some((edge) => edgeMatches(edge, filters)))
+            .map((record) => record.id),
+        };
+      },
+    });
+  }
+
+  globalThis.METROPOGITS_FILTERS = Object.freeze({ createIndex });
+})();

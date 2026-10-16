@@ -1,4 +1,5 @@
 import copy
+import json
 import shutil
 import subprocess
 import tempfile
@@ -34,6 +35,7 @@ class ViewerTests(unittest.TestCase):
             {
                 "assets/viewer-data.js",
                 "assets/viewer.css",
+                "assets/viewer-filters.js",
                 "assets/viewer.js",
                 "index.html",
             },
@@ -41,15 +43,15 @@ class ViewerTests(unittest.TestCase):
         )
         html = first["index.html"].decode("utf-8")
         self.assertIn("Content-Security-Policy", html)
+        self.assertIn('data-filter="role"', html)
+        self.assertIn('data-filter="confidence"', html)
         self.assertNotIn("http://", html)
         self.assertNotIn("https://", html)
         self.assertNotIn("fetch(", first["assets/viewer.js"].decode("utf-8"))
 
     def test_untrusted_graph_text_is_encoded_as_javascript_data(self):
         graph = copy.deepcopy(load_fixture())
-        graph["repository"]["sourceUrl"] = (
-            "</script><img src=x onerror=alert(1)>"
-        )
+        graph["repository"]["sourceUrl"] = "</script><img src=x onerror=alert(1)>"
         scene = generate_city(graph)
 
         artifacts = render_viewer(scene, graph)
@@ -82,16 +84,86 @@ class ViewerTests(unittest.TestCase):
         graph = load_fixture()
         artifacts = render_viewer(generate_city(graph), graph)
         with tempfile.TemporaryDirectory() as temporary:
-            script = Path(temporary) / "viewer.js"
-            script.write_bytes(artifacts["assets/viewer.js"])
-            completed = subprocess.run(
-                ["node", "--check", str(script)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+            for name in ("viewer-filters.js", "viewer.js"):
+                script = Path(temporary) / name
+                script.write_bytes(artifacts[f"assets/{name}"])
+                completed = subprocess.run(
+                    ["node", "--check", str(script)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(0, completed.returncode, completed.stderr)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_category_filters_cover_buildings_and_networks(self):
+        graph = load_fixture()
+        graph["entities"][0]["technologies"] = [
+            {
+                "confidence": "DECLARED",
+                "evidenceIds": ["ev2"],
+                "value": "SPRING_DATA",
+            }
+        ]
+        scene = generate_city(load_fixture())
+        script = """
+const fs = require("fs");
+require(process.argv[1]);
+const input = JSON.parse(fs.readFileSync(0, "utf8"));
+const index = globalThis.METROPOGITS_FILTERS.createIndex(input.scene, input.ucg);
+const apply = (filters) => index.filter({
+  confidence: "", language: "", role: "", technology: "", ...filters,
+});
+process.stdout.write(JSON.stringify({
+  all: apply({}),
+  confidence: apply({ confidence: "DIRECT" }),
+  language: apply({ language: "java" }),
+  options: index.options,
+  role: apply({ role: "SERVICE" }),
+  technology: apply({ technology: "SPRING_DATA" }),
+}));
+"""
+
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-filters.js"
+                ),
+            ],
+            input=json.dumps({"scene": scene, "ucg": graph}),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        result = json.loads(completed.stdout)
 
         self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual(2, len(result["all"]["buildingIds"]))
+        self.assertEqual(1, len(result["all"]["networkIds"]))
+        self.assertEqual(
+            ["demo:file:src/UserService.java"], result["role"]["buildingIds"]
+        )
+        self.assertEqual(1, len(result["role"]["networkIds"]))
+        self.assertEqual(
+            ["demo:file:src/UserRepository.java"],
+            result["technology"]["buildingIds"],
+        )
+        self.assertEqual(1, len(result["technology"]["networkIds"]))
+        self.assertEqual(2, len(result["language"]["buildingIds"]))
+        self.assertEqual(
+            ["demo:file:src/UserService.java"],
+            result["confidence"]["buildingIds"],
+        )
+        self.assertEqual([], result["confidence"]["networkIds"])
+        self.assertEqual(["java"], result["options"]["languages"])
+        self.assertEqual(["PERSISTENCE_ADAPTER", "SERVICE"], result["options"]["roles"])
+        self.assertEqual(["SPRING_DATA"], result["options"]["technologies"])
 
 
 if __name__ == "__main__":

@@ -16,9 +16,11 @@ metropogits build --repo . --out dist --theme minimal
 The command writes the graph and scene contracts, a deterministic SVG preview,
 an interactive static viewer, a diagnostic manifest, and a linked README
 snippet. Open `dist/index.html` directly to pan, zoom, rotate, and inspect the
-city. The bundled Java analyzer recognizes evidence-backed local imports,
-inheritance, declarations, and core Spring stereotypes. Unsupported source
-languages still produce generic buildings without guessed semantics.
+city. Buildings and links can be filtered by verified role, language,
+technology, and evidence level. The bundled Java analyzer recognizes
+evidence-backed local imports, inheritance, declarations, and core Spring
+stereotypes. Unsupported source languages still produce generic buildings
+without guessed semantics.
 
 For automation, add `--json` before or after a command. Complete, partial,
 invalid-input, resource-limit, and internal-error outcomes have stable exit

@@ -17,7 +17,7 @@ html, body { height: 100%; }
 body {
   margin: 0;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   overflow: hidden;
   background:
     radial-gradient(circle at 20% 10%, rgba(14, 165, 233, 0.11), transparent 30rem),
@@ -81,6 +81,33 @@ button {
 
 button:hover, button:focus-visible { border-color: var(--accent); outline: none; }
 .toolbar-help { margin-left: auto; color: var(--muted); font-size: 0.75rem; }
+
+.filterbar {
+  z-index: 2;
+  display: flex;
+  align-items: end;
+  gap: 0.65rem;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.96);
+}
+
+.filterbar label { display: grid; gap: 0.22rem; color: var(--muted); font-size: 0.66rem; }
+.filterbar select {
+  min-width: 8rem;
+  max-width: 12rem;
+  border: 1px solid #334155;
+  border-radius: 0.4rem;
+  padding: 0.38rem 1.7rem 0.38rem 0.5rem;
+  background: #111827;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+}
+.filterbar select:focus-visible { border-color: var(--accent); outline: none; }
+.filterbar select:disabled { cursor: not-allowed; opacity: 0.55; }
+.filterbar button:disabled { cursor: not-allowed; opacity: 0.5; }
+.filter-summary { margin-left: auto; align-self: center; color: #cbd5e1; font-size: 0.72rem; }
 
 .workspace {
   min-height: 0;
@@ -165,9 +192,12 @@ footer {
 footer a { color: #7dd3fc; }
 
 @media (max-width: 760px) {
-  body { overflow: auto; grid-template-rows: auto auto minmax(650px, 1fr) auto; }
+  body { overflow: auto; grid-template-rows: auto auto auto minmax(650px, 1fr) auto; }
   .topbar { align-items: flex-start; }
   .toolbar-help { display: none; }
+  .filterbar { align-items: end; overflow-x: auto; }
+  .filterbar label { flex: 0 0 auto; }
+  .filter-summary { min-width: 9rem; }
   .workspace { grid-template-columns: 1fr; grid-template-rows: minmax(420px, 60vh) auto; }
   .inspector { border-left: 0; border-top: 1px solid var(--border); }
   .legend { gap: 0.45rem; }

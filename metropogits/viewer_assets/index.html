@@ -28,6 +28,27 @@
       <span class="toolbar-help">Drag to pan · Alt/secondary drag to rotate · Wheel to zoom</span>
     </nav>
 
+    <section class="filterbar" aria-label="City filters">
+      <label>
+        <span>Role</span>
+        <select id="filter-role" data-filter="role"></select>
+      </label>
+      <label>
+        <span>Language</span>
+        <select id="filter-language" data-filter="language"></select>
+      </label>
+      <label>
+        <span>Technology</span>
+        <select id="filter-technology" data-filter="technology"></select>
+      </label>
+      <label>
+        <span>Evidence level</span>
+        <select id="filter-confidence" data-filter="confidence"></select>
+      </label>
+      <button type="button" id="clear-filters" disabled>Clear filters</button>
+      <span id="filter-summary" class="filter-summary" aria-live="polite"></span>
+    </section>
+
     <main class="workspace">
       <section class="viewport" aria-label="Interactive city map">
         <canvas id="city-canvas" tabindex="0" aria-label="Interactive isometric repository city"></canvas>
@@ -56,6 +77,7 @@
     </footer>
     <noscript><p>This viewer requires local JavaScript. <a href="preview.svg">Open the SVG preview instead.</a></p></noscript>
     <script src="assets/viewer-data.js" defer></script>
+    <script src="assets/viewer-filters.js" defer></script>
     <script src="assets/viewer.js" defer></script>
   </body>
 </html>

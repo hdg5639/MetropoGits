@@ -188,6 +188,7 @@ def build_repository(
     media_types = {
         "assets/viewer-data.js": "text/javascript",
         "assets/viewer.css": "text/css",
+        "assets/viewer-filters.js": "text/javascript",
         "assets/viewer.js": "text/javascript",
         "index.html": "text/html",
     }

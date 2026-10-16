@@ -28,9 +28,7 @@ def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any]) -> bytes:
     return f"globalThis.METROPOGITS_DATA={safe_payload};\n".encode("utf-8")
 
 
-def render_viewer(
-    scene: dict[str, Any], ucg: dict[str, Any]
-) -> dict[str, bytes]:
+def render_viewer(scene: dict[str, Any], ucg: dict[str, Any]) -> dict[str, bytes]:
     """Return deterministic, file://-compatible viewer artifacts."""
 
     errors = validate_city_document(scene, ucg)
@@ -41,6 +39,9 @@ def render_viewer(
     result = {
         "index.html": resources.joinpath("index.html").read_bytes(),
         "assets/viewer.css": resources.joinpath("viewer.css").read_bytes(),
+        "assets/viewer-filters.js": resources.joinpath(
+            "viewer-filters.js"
+        ).read_bytes(),
         "assets/viewer.js": resources.joinpath("viewer.js").read_bytes(),
         "assets/viewer-data.js": _javascript_data(scene, ucg),
     }

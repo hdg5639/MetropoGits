@@ -2,14 +2,23 @@
   "use strict";
 
   const data = globalThis.METROPOGITS_DATA;
+  const filterEngine = globalThis.METROPOGITS_FILTERS;
   const canvas = document.getElementById("city-canvas");
   const context = canvas.getContext("2d");
   const inspector = document.getElementById("inspector-content");
   const hoverLabel = document.getElementById("hover-label");
   const repositoryName = document.getElementById("repository-name");
   const cityStats = document.getElementById("city-stats");
+  const clearFilters = document.getElementById("clear-filters");
+  const filterSummary = document.getElementById("filter-summary");
+  const filterControls = new Map(
+    [...document.querySelectorAll("[data-filter]")].map((control) => [
+      control.dataset.filter,
+      control,
+    ]),
+  );
 
-  if (!data || !data.scene || !data.ucg || !context) {
+  if (!data || !data.scene || !data.ucg || !context || !filterEngine) {
     repositoryName.textContent = "Viewer data unavailable";
     return;
   }
@@ -20,6 +29,7 @@
   const edges = new Map(ucg.edges.map((edge) => [edge.id, edge]));
   const evidence = new Map(ucg.evidence.map((item) => [item.evidenceId, item]));
   const districts = new Map(scene.districts.map((district) => [district.id, district]));
+  const filterIndex = filterEngine.createIndex(scene, ucg);
 
   const colors = {
     CONTROL_CENTER: ["#a78bfa", "#6d28d9", "#4c1d95"],
@@ -38,6 +48,12 @@
     angle: -Math.PI / 4,
     dragging: false,
     dragMode: "pan",
+    filters: {
+      confidence: "",
+      language: "",
+      role: "",
+      technology: "",
+    },
     moved: false,
     panX: 0,
     panY: 0,
@@ -48,6 +64,8 @@
   };
   let hitRegions = [];
   let framePending = false;
+  let visibleBuildingIds = new Set(scene.buildings.map((building) => building.entityId));
+  let visibleNetworkIds = new Set(scene.networks.map((network) => network.id));
   let viewportWidth = 1;
   let viewportHeight = 1;
 
@@ -79,11 +97,77 @@
     cityStats.append(element("span", `${value} ${label}`, "stat"));
   }
 
+  function displayValue(value) {
+    return value.replaceAll("_", " ");
+  }
+
+  function populateFilter(name, values) {
+    const control = filterControls.get(name);
+    if (!control) return;
+    const labels = {
+      confidence: "evidence levels",
+      language: "languages",
+      role: "roles",
+      technology: "technologies",
+    };
+    const allOption = element("option", `All ${labels[name]}`);
+    allOption.value = "";
+    control.append(allOption);
+    for (const value of values) {
+      const option = element("option", displayValue(value));
+      option.value = value;
+      control.append(option);
+    }
+    control.disabled = values.length === 0;
+  }
+
+  function activeFilterCount() {
+    return Object.values(state.filters).filter(Boolean).length;
+  }
+
+  function selectionIsVisible() {
+    if (!state.selected || state.selected.kind === "district") return true;
+    if (state.selected.kind === "building") {
+      return visibleBuildingIds.has(state.selected.id);
+    }
+    return visibleNetworkIds.has(state.selected.id);
+  }
+
+  function resetInspector(message = "Choose a building, district, or network to inspect the repository facts behind it.") {
+    inspector.replaceChildren();
+    inspector.append(element("p", "INSPECTOR", "eyebrow"));
+    inspector.append(element("h2", "Select a city element"));
+    inspector.append(element("p", message, "muted"));
+  }
+
+  function applyFilters() {
+    const visible = filterIndex.filter(state.filters);
+    visibleBuildingIds = new Set(visible.buildingIds);
+    visibleNetworkIds = new Set(visible.networkIds);
+    const activeCount = activeFilterCount();
+
+    cityStats.replaceChildren();
+    addStat(scene.districts.length, "districts");
+    addStat(`${visibleBuildingIds.size}/${scene.buildings.length}`, "buildings");
+    addStat(`${visibleNetworkIds.size}/${scene.networks.length}`, "networks");
+    filterSummary.textContent = activeCount
+      ? `${visibleBuildingIds.size} buildings and ${visibleNetworkIds.size} links match ${activeCount} filter${activeCount === 1 ? "" : "s"}`
+      : "Showing the complete city";
+    clearFilters.disabled = activeCount === 0;
+    hoverLabel.hidden = true;
+    if (!selectionIsVisible()) {
+      state.selected = null;
+      resetInspector("The previous selection is hidden by the active filters.");
+    }
+    scheduleRender();
+  }
+
   repositoryName.textContent = ucg.repository.id;
   document.title = `${ucg.repository.id} · MetropoGits`;
-  addStat(scene.districts.length, "districts");
-  addStat(scene.buildings.length, "buildings");
-  addStat(scene.networks.length, "networks");
+  populateFilter("role", filterIndex.options.roles);
+  populateFilter("language", filterIndex.options.languages);
+  populateFilter("technology", filterIndex.options.technologies);
+  populateFilter("confidence", filterIndex.options.confidences);
 
   function baseScale() {
     const corners = [
@@ -278,11 +362,15 @@
     context.clearRect(0, 0, viewportWidth, viewportHeight);
     drawGrid();
     for (const district of scene.districts) drawDistrict(district);
-    for (const network of scene.networks) drawNetwork(network);
+    for (const network of scene.networks) {
+      if (visibleNetworkIds.has(network.id)) drawNetwork(network);
+    }
     const orderedBuildings = [...scene.buildings].sort(
       (left, right) => buildingDepth(left) - buildingDepth(right) || left.entityId.localeCompare(right.entityId),
     );
-    for (const building of orderedBuildings) drawBuilding(building);
+    for (const building of orderedBuildings) {
+      if (visibleBuildingIds.has(building.entityId)) drawBuilding(building);
+    }
   }
 
   function scheduleRender() {
@@ -421,12 +509,15 @@
 
   function showDistrict(districtId) {
     const district = districts.get(districtId);
-    const childCount = scene.buildings.filter((item) => item.districtId === districtId).length;
+    const districtBuildings = scene.buildings.filter((item) => item.districtId === districtId);
+    const visibleChildCount = districtBuildings.filter((item) =>
+      visibleBuildingIds.has(item.entityId),
+    ).length;
     inspector.replaceChildren();
     inspector.append(element("p", "DISTRICT", "eyebrow"));
     inspector.append(element("h2", districtLabel(district)));
     const details = element("dl", undefined, "detail-list");
-    detailRow(details, "Buildings", childCount);
+    detailRow(details, "Buildings", `${visibleChildCount}/${districtBuildings.length} visible`);
     detailRow(details, "Parent", district.parentId ? districtLabel(districts.get(district.parentId)) : "City root");
     detailRow(details, "Size", `${district.width} × ${district.depth}`);
     inspector.append(details);
@@ -563,6 +654,19 @@
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => runAction(button.dataset.action));
   });
+  for (const [name, control] of filterControls) {
+    control.addEventListener("change", () => {
+      state.filters[name] = control.value;
+      applyFilters();
+    });
+  }
+  clearFilters.addEventListener("click", () => {
+    for (const [name, control] of filterControls) {
+      control.value = "";
+      state.filters[name] = "";
+    }
+    applyFilters();
+  });
   document.addEventListener("keydown", (event) => {
     const actions = { q: "rotate-left", e: "rotate-right", "+": "zoom-in", "=": "zoom-in", "-": "zoom-out", r: "reset" };
     const action = actions[event.key.toLowerCase()];
@@ -573,5 +677,6 @@
   });
 
   new ResizeObserver(resize).observe(canvas);
+  applyFilters();
   resize();
 })();
