@@ -31,3 +31,11 @@ Produce canonical contract bytes or inspect their content digest:
 python scripts/canonical_json.py path/to/graph.ucg.json --output canonical.json
 python scripts/canonical_json.py path/to/graph.ucg.json --digest
 ```
+
+Generate stable repository, entity, and edge identifiers:
+
+```powershell
+python scripts/stable_ids.py repository --namespace openai/metropogits
+python scripts/stable_ids.py entity --repo-id openai/metropogits --kind FILE --path src/App.java
+python scripts/stable_ids.py edge --from-id source --type REFERENCES --to-id target
+```

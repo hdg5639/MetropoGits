@@ -7,7 +7,7 @@
         "ev3"
       ],
       "from": "demo:file:src/UserService.java",
-      "id": "e1",
+      "id": "edge:sha256:3574ebcf5ede13bbadb56a572ba6c837bd926b5b02dc7c27cd269d78cf1ff8d8",
       "to": "demo:file:src/UserRepository.java",
       "type": "REFERENCES"
     }
