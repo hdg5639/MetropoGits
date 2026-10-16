@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from pathlib import Path
@@ -13,8 +12,20 @@ from typing import Any, Callable
 from jsonschema import Draft202012Validator
 
 if __package__:
+    from .canonical_json import (
+        CanonicalJsonError,
+        canonical_json_bytes,
+        loads_strict_json,
+        sha256_digest,
+    )
     from .validate_ucg import validate_document as validate_ucg_document
 else:
+    from canonical_json import (
+        CanonicalJsonError,
+        canonical_json_bytes,
+        loads_strict_json,
+        sha256_digest,
+    )
     from validate_ucg import validate_document as validate_ucg_document
 
 
@@ -22,19 +33,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "city-0.1.schema.json"
 
 
-def canonical_json_bytes(document: Any) -> bytes:
-    """Serialize contract JSON with stable keys and no insignificant whitespace."""
-
-    return json.dumps(
-        document,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-
-
 def ucg_digest(document: Any) -> str:
-    return f"sha256:{hashlib.sha256(canonical_json_bytes(document)).hexdigest()}"
+    return sha256_digest(document)
 
 
 def _json_path(parts: list[Any]) -> str:
@@ -201,8 +201,8 @@ def validate_document(scene: Any, ucg: Any) -> list[str]:
 
 def _load_json(path: Path, label: str) -> Any:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        return loads_strict_json(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, CanonicalJsonError) as error:
         raise ValueError(f"Unable to read {label} JSON: {error}") from error
 
 

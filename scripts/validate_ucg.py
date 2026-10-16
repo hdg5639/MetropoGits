@@ -13,6 +13,11 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
+if __package__:
+    from .canonical_json import CanonicalJsonError, loads_strict_json
+else:
+    from canonical_json import CanonicalJsonError, loads_strict_json
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "ucg-0.1.schema.json"
@@ -160,8 +165,8 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        document = json.loads(args.input.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        document = loads_strict_json(args.input.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, CanonicalJsonError) as error:
         print(f"Unable to read UCG JSON: {error}", file=sys.stderr)
         return 2
 
