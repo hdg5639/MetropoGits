@@ -491,11 +491,12 @@ def enrich_java_graph(
     non_java_count = len(scan.files) - len(java_files)
     document["diagnostics"].append(
         _diagnostic(
-            "ANALYZER_COVERAGE",
+            "JAVA_ANALYZER_COVERAGE",
             "INFO",
             (
                 f"Java static analysis processed {len(units)} file(s); "
-                f"{non_java_count} non-Java file(s) remain structural-only"
+                f"{non_java_count} non-Java file(s) were not processed by this adapter; "
+                "capabilities=imports,declarations,inheritance,frameworkRules"
             ),
         )
     )

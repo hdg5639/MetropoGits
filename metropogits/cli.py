@@ -11,7 +11,8 @@ from pathlib import Path
 from typing import Any
 
 from metropogits import __version__
-from metropogits.analyzers.java import JavaAnalysisError, enrich_java_graph
+from metropogits.analyzers import enrich_graph
+from metropogits.analyzers.java import JavaAnalysisError
 from metropogits.layout import LayoutError, generate_city
 from metropogits.preview import PreviewError, render_preview
 from metropogits.scanner import (
@@ -118,7 +119,7 @@ def analyze_repository(
     resolved_id = _repository_id(repo, repository_id)
     scan = scan_repository(repo, resolved_limits, excluded_paths)
     structural_graph = build_structural_ucg(scan, resolved_id, revision, source_url)
-    return enrich_java_graph(repo, scan, structural_graph, resolved_limits)
+    return enrich_graph(repo, scan, structural_graph, resolved_limits)
 
 
 def _artifact_record(path: str, media_type: str, content: bytes) -> dict[str, Any]:

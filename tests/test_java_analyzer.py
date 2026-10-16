@@ -135,7 +135,9 @@ class JavaAnalyzerTests(unittest.TestCase):
             graph = analyze(root)
 
         coverage = [
-            item for item in graph["diagnostics"] if item["code"] == "ANALYZER_COVERAGE"
+            item
+            for item in graph["diagnostics"]
+            if item["code"] == "JAVA_ANALYZER_COVERAGE"
         ]
         self.assertEqual(1, len(coverage))
         self.assertIn("1 non-Java file(s)", coverage[0]["message"])
