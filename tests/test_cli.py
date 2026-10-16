@@ -1,13 +1,23 @@
 import hashlib
+import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
 import xml.etree.ElementTree as element_tree
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
-from metropogits.cli import build_repository
+from metropogits.cli import (
+    EXIT_INTERNAL_ERROR,
+    EXIT_INVALID_INPUT,
+    EXIT_PARTIAL,
+    EXIT_RESOURCE_LIMIT,
+    build_repository,
+    main,
+)
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
@@ -19,7 +29,9 @@ class CliTests(unittest.TestCase):
             repository = workspace / "repository"
             output = repository / "generated-output"
             (repository / "src").mkdir(parents=True)
-            (repository / "src" / "main.py").write_text("print('hello')", encoding="utf-8")
+            (repository / "src" / "main.py").write_text(
+                "print('hello')", encoding="utf-8"
+            )
             (repository / "src" / "worker.ex").write_text(
                 "defmodule Worker do\nend", encoding="utf-8"
             )
@@ -71,6 +83,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual([], validate_city_document(scene, graph))
         element_tree.fromstring(first_bytes["preview.svg"])
         self.assertEqual("manifest/0.1", manifest["schemaVersion"])
+        self.assertIn("codes", manifest["diagnostics"])
         self.assertNotIn(str(repository), first_bytes["manifest.json"].decode("utf-8"))
 
         artifacts = {item["path"]: item for item in manifest["artifacts"]}
@@ -142,6 +155,108 @@ class CliTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "must not be the repository root"):
                 build_repository(repository, repository, "example/project")
+
+    def test_json_build_reports_resource_limited_partial_artifacts(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            repository = workspace / "repository"
+            output = workspace / "artifacts"
+            repository.mkdir()
+            (repository / "a.py").write_text("pass", encoding="utf-8")
+            (repository / "b.py").write_text("pass", encoding="utf-8")
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "metropogits",
+                    "build",
+                    "--repo",
+                    str(repository),
+                    "--repo-id",
+                    "example/limited",
+                    "--out",
+                    str(output),
+                    "--max-files",
+                    "1",
+                    "--json",
+                ],
+                cwd=Path(__file__).parents[1],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            payload = json.loads(completed.stdout)
+            manifest = json.loads(
+                (output / "manifest.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(EXIT_RESOURCE_LIMIT, completed.returncode)
+        self.assertEqual("PARTIAL", payload["status"])
+        self.assertEqual(EXIT_RESOURCE_LIMIT, payload["exitCode"])
+        self.assertEqual(
+            [{"code": "FILE_LIMIT_REACHED", "count": 1}],
+            [
+                item
+                for item in payload["diagnostics"]["codes"]
+                if item["code"] == "FILE_LIMIT_REACHED"
+            ],
+        )
+        self.assertEqual(payload["diagnostics"], manifest["diagnostics"])
+
+    def test_json_build_distinguishes_non_limit_partial_result(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            repository = workspace / "repository"
+            output = workspace / "artifacts"
+            repository.mkdir()
+            (repository / "good.py").write_text("pass", encoding="utf-8")
+            (repository / "binary.py").write_bytes(b"safe-prefix\x00binary")
+            stdout = io.StringIO()
+
+            with redirect_stdout(stdout):
+                exit_code = main(
+                    [
+                        "--json",
+                        "build",
+                        "--repo",
+                        str(repository),
+                        "--repo-id",
+                        "example/partial",
+                        "--out",
+                        str(output),
+                    ]
+                )
+            payload = json.loads(stdout.getvalue())
+            city_written = (output / "city.json").is_file()
+
+        self.assertEqual(EXIT_PARTIAL, exit_code)
+        self.assertEqual("PARTIAL", payload["status"])
+        self.assertTrue(city_written)
+
+    def test_json_usage_failure_is_structured(self):
+        stdout = io.StringIO()
+
+        with redirect_stdout(stdout):
+            exit_code = main(["build", "--json"])
+        payload = json.loads(stdout.getvalue())
+
+        self.assertEqual(EXIT_INVALID_INPUT, exit_code)
+        self.assertEqual("FAILED", payload["status"])
+        self.assertEqual("INVALID_INPUT", payload["error"]["category"])
+        self.assertEqual(EXIT_INVALID_INPUT, payload["exitCode"])
+
+    def test_json_internal_failure_hides_exception_message(self):
+        stdout = io.StringIO()
+
+        with patch("metropogits.cli._run", side_effect=RuntimeError("source secret")):
+            with redirect_stdout(stdout):
+                exit_code = main(["build", "--repo", ".", "--out", "dist", "--json"])
+        payload = json.loads(stdout.getvalue())
+
+        self.assertEqual(EXIT_INTERNAL_ERROR, exit_code)
+        self.assertEqual("INTERNAL_ERROR", payload["error"]["category"])
+        self.assertNotIn("source secret", stdout.getvalue())
 
 
 if __name__ == "__main__":

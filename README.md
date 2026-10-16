@@ -20,6 +20,10 @@ city. The bundled Java analyzer recognizes evidence-backed local imports,
 inheritance, declarations, and core Spring stereotypes. Unsupported source
 languages still produce generic buildings without guessed semantics.
 
+For automation, add `--json` before or after a command. Complete, partial,
+invalid-input, resource-limit, and internal-error outcomes have stable exit
+codes documented in [the CLI result contract](docs/CLI_RESULTS.md).
+
 ## GitHub Action
 
 The repository includes a least-privilege composite Action and a pinned Pages

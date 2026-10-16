@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import sys
+from collections import Counter
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -33,8 +35,20 @@ from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
 EXIT_SUCCESS = 0
+EXIT_PARTIAL = 1
 EXIT_INVALID_INPUT = 2
+EXIT_RESOURCE_LIMIT = 3
+EXIT_INTERNAL_ERROR = 4
 DEFAULT_LIMITS = ScanLimits()
+RESOURCE_LIMIT_DIAGNOSTICS = frozenset(
+    {
+        "DEPTH_LIMIT_REACHED",
+        "ENTRY_LIMIT_REACHED",
+        "FILE_LIMIT_REACHED",
+        "FILE_SIZE_LIMIT",
+        "TOTAL_SIZE_LIMIT_REACHED",
+    }
+)
 PRIVACY_WARNING = (
     "Generated metadata can reveal repository filenames and architecture; "
     "publish it only after review."
@@ -43,6 +57,26 @@ PRIVACY_WARNING = (
 
 class CliError(ValueError):
     """Raised for an actionable command-line workflow failure."""
+
+
+class CliUsageError(CliError):
+    """Raised when command-line arguments do not satisfy the CLI contract."""
+
+
+class CliArgumentParser(argparse.ArgumentParser):
+    """Argument parser that lets the CLI format usage failures consistently."""
+
+    def error(self, message: str) -> None:
+        raise CliUsageError(message)
+
+
+@dataclass(frozen=True)
+class CommandResult:
+    message: str
+    output: str
+    status: str = "COMPLETE"
+    exit_code: int = EXIT_SUCCESS
+    diagnostics: dict[str, Any] | None = None
 
 
 def _sha256_bytes(content: bytes) -> str:
@@ -83,9 +117,7 @@ def analyze_repository(
     resolved_limits = limits or ScanLimits()
     resolved_id = _repository_id(repo, repository_id)
     scan = scan_repository(repo, resolved_limits, excluded_paths)
-    structural_graph = build_structural_ucg(
-        scan, resolved_id, revision, source_url
-    )
+    structural_graph = build_structural_ucg(scan, resolved_id, revision, source_url)
     return enrich_java_graph(repo, scan, structural_graph, resolved_limits)
 
 
@@ -96,6 +128,29 @@ def _artifact_record(path: str, media_type: str, content: bytes) -> dict[str, An
         "path": path,
         "sha256": _sha256_bytes(content),
     }
+
+
+def _diagnostic_summary(diagnostics: list[dict[str, Any]]) -> dict[str, Any]:
+    codes = Counter(str(item.get("code", "UNKNOWN")) for item in diagnostics)
+    return {
+        "codes": [
+            {"code": code, "count": count} for code, count in sorted(codes.items())
+        ],
+        "count": len(diagnostics),
+        "errorCount": sum(1 for item in diagnostics if item.get("severity") == "ERROR"),
+        "infoCount": sum(1 for item in diagnostics if item.get("severity") == "INFO"),
+        "warningCount": sum(
+            1 for item in diagnostics if item.get("severity") == "WARNING"
+        ),
+    }
+
+
+def _diagnostic_exit_code(diagnostics: list[dict[str, Any]]) -> int:
+    if any(item.get("code") in RESOURCE_LIMIT_DIAGNOSTICS for item in diagnostics):
+        return EXIT_RESOURCE_LIMIT
+    if any(item.get("severity") in {"WARNING", "ERROR"} for item in diagnostics):
+        return EXIT_PARTIAL
+    return EXIT_SUCCESS
 
 
 def build_repository(
@@ -127,9 +182,9 @@ def build_repository(
 
     graph_bytes = canonical_json_bytes(graph)
     scene_bytes = canonical_json_bytes(scene)
-    snippet_bytes = (
-        "[![MetropoGits city preview](preview.svg)](index.html)\n"
-    ).encode("utf-8")
+    snippet_bytes = ("[![MetropoGits city preview](preview.svg)](index.html)\n").encode(
+        "utf-8"
+    )
     media_types = {
         "assets/viewer-data.js": "text/javascript",
         "assets/viewer.css": "text/css",
@@ -150,19 +205,10 @@ def build_repository(
         key=lambda item: item["path"],
     )
     diagnostics = graph["diagnostics"]
-    warning_count = sum(
-        1 for diagnostic in diagnostics if diagnostic.get("severity") == "WARNING"
-    )
-    error_count = sum(
-        1 for diagnostic in diagnostics if diagnostic.get("severity") == "ERROR"
-    )
+    diagnostic_summary = _diagnostic_summary(diagnostics)
     manifest: dict[str, Any] = {
         "artifacts": artifacts,
-        "diagnostics": {
-            "count": len(diagnostics),
-            "errorCount": error_count,
-            "warningCount": warning_count,
-        },
+        "diagnostics": diagnostic_summary,
         "generator": {
             "catalogVersion": graph["generator"]["catalogVersion"],
             "name": "metropogits",
@@ -177,7 +223,11 @@ def build_repository(
         "privacyWarnings": [PRIVACY_WARNING],
         "repository": graph["repository"],
         "schemaVersion": "manifest/0.1",
-        "status": "PARTIAL" if warning_count or error_count else "COMPLETE",
+        "status": (
+            "PARTIAL"
+            if diagnostic_summary["warningCount"] or diagnostic_summary["errorCount"]
+            else "COMPLETE"
+        ),
     }
     manifest_bytes = canonical_json_bytes(manifest)
 
@@ -208,6 +258,18 @@ def _add_scan_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--max-depth", type=int, default=DEFAULT_LIMITS.max_depth)
 
 
+def _add_json_option(
+    parser: argparse.ArgumentParser, *, suppress_default: bool = False
+) -> None:
+    default = argparse.SUPPRESS if suppress_default else False
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        default=default,
+        help="emit one structured JSON result for CI",
+    )
+
+
 def _limits_from_args(args: argparse.Namespace) -> ScanLimits:
     return ScanLimits(
         max_entries=args.max_entries,
@@ -219,20 +281,24 @@ def _limits_from_args(args: argparse.Namespace) -> ScanLimits:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="metropogits", description=__doc__)
+    parser = CliArgumentParser(prog="metropogits", description=__doc__)
     parser.add_argument("--version", action="version", version=__version__)
+    _add_json_option(parser)
     commands = parser.add_subparsers(dest="command", required=True)
 
     analyze = commands.add_parser("analyze", help="scan a repository into UCG")
+    _add_json_option(analyze, suppress_default=True)
     _add_scan_options(analyze)
     analyze.add_argument("--out", type=Path, required=True)
 
     generate = commands.add_parser("generate", help="generate a City Scene")
+    _add_json_option(generate, suppress_default=True)
     generate.add_argument("--graph", type=Path, required=True)
     generate.add_argument("--out", type=Path, required=True)
     generate.add_argument("--theme", default="minimal")
 
     render = commands.add_parser("render", help="render an SVG preview")
+    _add_json_option(render, suppress_default=True)
     render.add_argument("--scene", type=Path, required=True)
     render.add_argument("--graph", type=Path, required=True)
     render.add_argument("--out", type=Path, required=True)
@@ -240,6 +306,7 @@ def _build_parser() -> argparse.ArgumentParser:
     render.add_argument("--height", type=int, default=675)
 
     build = commands.add_parser("build", help="run the structural preview pipeline")
+    _add_json_option(build, suppress_default=True)
     _add_scan_options(build)
     build.add_argument("--out", type=Path, required=True)
     build.add_argument("--theme", default="minimal")
@@ -247,12 +314,13 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--height", type=int, default=675)
 
     validate = commands.add_parser("validate", help="validate UCG or City JSON")
+    _add_json_option(validate, suppress_default=True)
     validate.add_argument("--input", type=Path, required=True)
     validate.add_argument("--ucg", type=Path)
     return parser
 
 
-def _run(args: argparse.Namespace) -> str:
+def _run(args: argparse.Namespace) -> CommandResult:
     if args.command == "analyze":
         graph = analyze_repository(
             args.repo,
@@ -262,20 +330,31 @@ def _run(args: argparse.Namespace) -> str:
             _limits_from_args(args),
         )
         _write_bytes(args.out, canonical_json_bytes(graph))
-        return f"Wrote UCG with {len(graph['entities'])} entities: {args.out}"
+        diagnostics = _diagnostic_summary(graph["diagnostics"])
+        exit_code = _diagnostic_exit_code(graph["diagnostics"])
+        return CommandResult(
+            f"Wrote UCG with {len(graph['entities'])} entities: {args.out}",
+            str(args.out),
+            "PARTIAL" if exit_code else "COMPLETE",
+            exit_code,
+            diagnostics,
+        )
 
     if args.command == "generate":
         graph = _load_json(args.graph, "UCG")
         scene = generate_city(graph, args.theme)
         _write_bytes(args.out, canonical_json_bytes(scene))
-        return f"Wrote City Scene with {len(scene['buildings'])} buildings: {args.out}"
+        return CommandResult(
+            f"Wrote City Scene with {len(scene['buildings'])} buildings: {args.out}",
+            str(args.out),
+        )
 
     if args.command == "render":
         graph = _load_json(args.graph, "UCG")
         scene = _load_json(args.scene, "City Scene")
         preview = render_preview(scene, graph, args.width, args.height)
         _write_bytes(args.out, preview)
-        return f"Wrote SVG preview: {args.out}"
+        return CommandResult(f"Wrote SVG preview: {args.out}", str(args.out))
 
     if args.command == "build":
         manifest = build_repository(
@@ -289,9 +368,23 @@ def _run(args: argparse.Namespace) -> str:
             args.height,
             _limits_from_args(args),
         )
-        return (
-            f"Built {len(manifest['artifacts'])} artifacts with "
-            f"status {manifest['status']}: {args.out}"
+        diagnostic_codes = {item["code"] for item in manifest["diagnostics"]["codes"]}
+        exit_code = (
+            EXIT_RESOURCE_LIMIT
+            if diagnostic_codes & RESOURCE_LIMIT_DIAGNOSTICS
+            else EXIT_PARTIAL
+            if manifest["status"] == "PARTIAL"
+            else EXIT_SUCCESS
+        )
+        return CommandResult(
+            (
+                f"Built {len(manifest['artifacts'])} artifacts with "
+                f"status {manifest['status']}: {args.out}"
+            ),
+            str(args.out),
+            manifest["status"],
+            exit_code,
+            manifest["diagnostics"],
         )
 
     document = _load_json(args.input, "contract document")
@@ -307,13 +400,58 @@ def _run(args: argparse.Namespace) -> str:
         raise CliError(f"unsupported schemaVersion: {schema_version!r}")
     if errors:
         raise CliError("contract validation failed: " + "; ".join(errors))
-    return f"Valid {schema_version} document: {args.input}"
+    return CommandResult(
+        f"Valid {schema_version} document: {args.input}", str(args.input)
+    )
+
+
+def _json_line(document: dict[str, Any]) -> str:
+    return canonical_json_bytes(document).decode("utf-8")
+
+
+def _command_from_arguments(arguments: list[str]) -> str | None:
+    commands = {"analyze", "build", "generate", "render", "validate"}
+    return next((item for item in arguments if item in commands), None)
+
+
+def _print_failure(
+    json_output: bool,
+    command: str | None,
+    category: str,
+    message: str,
+    exit_code: int,
+) -> None:
+    if json_output:
+        print(
+            _json_line(
+                {
+                    "command": command,
+                    "error": {"category": category, "message": message},
+                    "exitCode": exit_code,
+                    "status": "FAILED",
+                }
+            )
+        )
+        return
+    print(f"MetropoGits failed [{category}]: {message}", file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _build_parser().parse_args(argv)
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    json_requested = "--json" in arguments
     try:
-        message = _run(args)
+        args = _build_parser().parse_args(arguments)
+    except CliUsageError as error:
+        _print_failure(
+            json_requested,
+            _command_from_arguments(arguments),
+            "INVALID_INPUT",
+            str(error),
+            EXIT_INVALID_INPUT,
+        )
+        return EXIT_INVALID_INPUT
+    try:
+        result = _run(args)
     except (
         OSError,
         CliError,
@@ -324,10 +462,38 @@ def main(argv: list[str] | None = None) -> int:
         ViewerError,
         ValueError,
     ) as error:
-        print(f"MetropoGits failed: {error}", file=sys.stderr)
+        _print_failure(
+            args.json,
+            args.command,
+            "INVALID_INPUT",
+            str(error),
+            EXIT_INVALID_INPUT,
+        )
         return EXIT_INVALID_INPUT
-    print(message)
-    return EXIT_SUCCESS
+    except Exception as error:
+        message = f"Unexpected internal error ({error.__class__.__name__})"
+        _print_failure(
+            args.json,
+            args.command,
+            "INTERNAL_ERROR",
+            message,
+            EXIT_INTERNAL_ERROR,
+        )
+        return EXIT_INTERNAL_ERROR
+    if args.json:
+        payload: dict[str, Any] = {
+            "command": args.command,
+            "exitCode": result.exit_code,
+            "message": result.message,
+            "output": result.output,
+            "status": result.status,
+        }
+        if result.diagnostics is not None:
+            payload["diagnostics"] = result.diagnostics
+        print(_json_line(payload))
+    else:
+        print(result.message)
+    return result.exit_code
 
 
 if __name__ == "__main__":
