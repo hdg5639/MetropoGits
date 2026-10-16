@@ -108,3 +108,14 @@ python -m metropogits history --snapshot dist/rev-a --snapshot dist/rev-b --out 
 
 See [history replay](docs/HISTORY_REPLAY.md) for identity rules and output
 details.
+
+Combine distinct repository cities through explicitly evidenced service links:
+
+```powershell
+python -m metropogits metropolis --member dist/api --member dist/worker --links metropolis-links.json --out dist/metropolis
+```
+
+Only verified links become graph edges and visible city networks. Unknown
+targets remain explicit unresolved outcomes instead of guessed connections. See
+[multi-repository metropolis](docs/MULTI_REPO_METROPOLIS.md) for the manifest
+contract and build workflow.

@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metropogits.dev/schemas/metropolis-0.1.schema.json",
+  "title": "MetropoGits Multi-Repository Metropolis v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "repositories",
+    "links",
+    "mergedUcgDigest",
+    "mergedCityDigest"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "metropolis/0.1"
+    },
+    "repositories": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/repository"
+      }
+    },
+    "links": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/link"
+      }
+    },
+    "mergedUcgDigest": {
+      "$ref": "#/$defs/digest"
+    },
+    "mergedCityDigest": {
+      "$ref": "#/$defs/digest"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "nullableString": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "sourceUrl",
+        "ucgDigest",
+        "cityDigest",
+        "buildingCount",
+        "rootDistrictId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "revision": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "sourceUrl": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "ucgDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "cityDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "buildingCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rootDistrictId": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repositoryId",
+        "entityId",
+        "label"
+      ],
+      "properties": {
+        "repositoryId": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "entityId": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "label": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repositoryId",
+        "evidenceId"
+      ],
+      "properties": {
+        "repositoryId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidenceId": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "status",
+        "from",
+        "to",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "type": {
+          "enum": [
+            "HTTP_CALL",
+            "PUBLISHES",
+            "SUBSCRIBES"
+          ]
+        },
+        "status": {
+          "enum": [
+            "UNRESOLVED",
+            "VERIFIED"
+          ]
+        },
+        "from": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "to": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/evidenceRef"
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

@@ -8,6 +8,9 @@ from typing import Any
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
+from scripts.validate_metropolis import (
+    validate_document as validate_metropolis_document,
+)
 
 
 ASSET_PACKAGE = "metropogits.viewer_assets"
@@ -117,5 +120,64 @@ def render_history_viewer(
         "assets/viewer-data.js": _javascript_assignment(
             "METROPOGITS_HISTORY", payload
         ),
+    }
+    return dict(sorted(result.items()))
+
+
+def render_metropolis_viewer(
+    document: dict[str, Any], scene: dict[str, Any], ucg: dict[str, Any]
+) -> dict[str, bytes]:
+    """Return a static viewer for a validated multi-repository metropolis."""
+
+    metropolis_errors = validate_metropolis_document(document)
+    if metropolis_errors:
+        raise ViewerError(
+            "invalid metropolis document: " + "; ".join(metropolis_errors)
+        )
+    scene_errors = validate_city_document(scene, ucg)
+    if scene_errors:
+        raise ViewerError("invalid merged City Scene: " + "; ".join(scene_errors))
+    if (
+        sha256_digest(ucg) != document["mergedUcgDigest"]
+        or sha256_digest(scene) != document["mergedCityDigest"]
+    ):
+        raise ViewerError("metropolis digests do not match merged artifacts")
+
+    resources = files(ASSET_PACKAGE)
+    html = resources.joinpath("index.html").read_text(encoding="utf-8")
+    metropolis_bar = """    <section class="metropolisbar" aria-label="Repository federation">
+      <strong id="metropolis-repositories"></strong>
+      <label for="metropolis-link">Cross-repository link</label>
+      <select id="metropolis-link"></select>
+      <span id="metropolis-link-summary" aria-live="polite"></span>
+    </section>
+
+"""
+    html = html.replace("<body>", '<body class="metropolis-mode">', 1)
+    html = html.replace(
+        '    <section class="filterbar"',
+        metropolis_bar + '    <section class="filterbar"',
+        1,
+    )
+    html = html.replace(
+        '    <script src="assets/viewer-filters.js" defer></script>',
+        '    <script src="assets/viewer-metropolis.js" defer></script>\n'
+        '    <script src="assets/viewer-filters.js" defer></script>',
+        1,
+    )
+    data = _javascript_data(scene, ucg) + _javascript_assignment(
+        "METROPOGITS_METROPOLIS", document
+    )
+    result = {
+        "index.html": html.encode("utf-8"),
+        "assets/viewer.css": resources.joinpath("viewer.css").read_bytes(),
+        "assets/viewer-filters.js": resources.joinpath(
+            "viewer-filters.js"
+        ).read_bytes(),
+        "assets/viewer-metropolis.js": resources.joinpath(
+            "viewer-metropolis.js"
+        ).read_bytes(),
+        "assets/viewer.js": resources.joinpath("viewer.js").read_bytes(),
+        "assets/viewer-data.js": data,
     }
     return dict(sorted(result.items()))

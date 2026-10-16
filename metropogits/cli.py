@@ -15,6 +15,7 @@ from metropogits.analyzers import enrich_graph
 from metropogits.analyzers.java import JavaAnalysisError
 from metropogits.history import HistorySnapshot, build_history
 from metropogits.layout import LayoutError, generate_city
+from metropogits.metropolis import MetropolisMember, build_metropolis
 from metropogits.preview import PreviewError, render_preview
 from metropogits.scanner import (
     ScanLimits,
@@ -22,7 +23,12 @@ from metropogits.scanner import (
     build_structural_ucg,
     scan_repository,
 )
-from metropogits.viewer import ViewerError, render_history_viewer, render_viewer
+from metropogits.viewer import (
+    ViewerError,
+    render_history_viewer,
+    render_metropolis_viewer,
+    render_viewer,
+)
 from scripts.canonical_json import (
     CanonicalJsonError,
     canonical_json_bytes,
@@ -35,6 +41,9 @@ from scripts.stable_ids import (
 from scripts.validate_catalog import validate_document as validate_catalog_document
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
+from scripts.validate_metropolis import (
+    validate_document as validate_metropolis_document,
+)
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
@@ -331,6 +340,20 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     history.add_argument("--out", type=Path, required=True)
 
+    metropolis = commands.add_parser(
+        "metropolis", help="federate repository cities using explicit links"
+    )
+    _add_json_option(metropolis, suppress_default=True)
+    metropolis.add_argument(
+        "--member",
+        type=Path,
+        action="append",
+        required=True,
+        help="build directory containing graph.ucg.json and city.json; repeat",
+    )
+    metropolis.add_argument("--links", type=Path, required=True)
+    metropolis.add_argument("--out", type=Path, required=True)
+
     validate = commands.add_parser(
         "validate", help="validate UCG, City, or catalog JSON"
     )
@@ -441,6 +464,39 @@ def _run(args: argparse.Namespace) -> CommandResult:
             str(args.out),
         )
 
+    if args.command == "metropolis":
+        members: list[MetropolisMember] = []
+        resolved_output = args.out.resolve(strict=False)
+        for member_path in args.member:
+            resolved_member = member_path.resolve(strict=False)
+            if (
+                resolved_output == resolved_member
+                or resolved_output in resolved_member.parents
+                or resolved_member in resolved_output.parents
+            ):
+                raise CliError("metropolis output must not overlap a member directory")
+            graph = _load_json(member_path / "graph.ucg.json", "member UCG")
+            scene = _load_json(member_path / "city.json", "member City Scene")
+            members.append(MetropolisMember(graph, scene))
+        links = _load_json(args.links, "metropolis links")
+        artifacts = build_metropolis(members, links)
+        viewer_artifacts = render_metropolis_viewer(
+            artifacts.document, artifacts.scene, artifacts.ucg
+        )
+        _write_bytes(
+            args.out / "metropolis.json", canonical_json_bytes(artifacts.document)
+        )
+        _write_bytes(
+            args.out / "graph.ucg.json", canonical_json_bytes(artifacts.ucg)
+        )
+        _write_bytes(args.out / "city.json", canonical_json_bytes(artifacts.scene))
+        for path, content in viewer_artifacts.items():
+            _write_bytes(args.out / path, content)
+        return CommandResult(
+            f"Built metropolis with {len(members)} repositories: {args.out}",
+            str(args.out),
+        )
+
     document = _load_json(args.input, "contract document")
     schema_version = document.get("schemaVersion")
     if schema_version == "ucg/0.1":
@@ -454,6 +510,8 @@ def _run(args: argparse.Namespace) -> CommandResult:
         errors = validate_catalog_document(document, args.input.parent / "fixtures")
     elif schema_version == "history/0.1":
         errors = validate_history_document(document)
+    elif schema_version in {"metropolis-links/0.1", "metropolis/0.1"}:
+        errors = validate_metropolis_document(document)
     else:
         raise CliError(f"unsupported schemaVersion: {schema_version!r}")
     if errors:
@@ -468,7 +526,15 @@ def _json_line(document: dict[str, Any]) -> str:
 
 
 def _command_from_arguments(arguments: list[str]) -> str | None:
-    commands = {"analyze", "build", "generate", "history", "render", "validate"}
+    commands = {
+        "analyze",
+        "build",
+        "generate",
+        "history",
+        "metropolis",
+        "render",
+        "validate",
+    }
     return next((item for item in arguments if item in commands), None)
 
 

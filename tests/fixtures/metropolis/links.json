@@ -1,0 +1,47 @@
+{
+  "links": [
+    {
+      "evidenceRefs": [
+        {
+          "evidenceId": "ev1",
+          "repositoryId": "demo"
+        }
+      ],
+      "from": {
+        "entityId": "demo:file:src/UserService.java",
+        "label": null,
+        "repositoryId": "demo"
+      },
+      "id": "payments.http",
+      "status": "VERIFIED",
+      "to": {
+        "entityId": "other:file:src/UserRepository.java",
+        "label": null,
+        "repositoryId": "other"
+      },
+      "type": "HTTP_CALL"
+    },
+    {
+      "evidenceRefs": [
+        {
+          "evidenceId": "ev1",
+          "repositoryId": "other"
+        }
+      ],
+      "from": {
+        "entityId": "other:file:src/UserService.java",
+        "label": null,
+        "repositoryId": "other"
+      },
+      "id": "search.unresolved",
+      "status": "UNRESOLVED",
+      "to": {
+        "entityId": null,
+        "label": "search-api",
+        "repositoryId": null
+      },
+      "type": "HTTP_CALL"
+    }
+  ],
+  "schemaVersion": "metropolis-links/0.1"
+}

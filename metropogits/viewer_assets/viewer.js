@@ -29,6 +29,10 @@
   const edges = new Map(ucg.edges.map((edge) => [edge.id, edge]));
   const evidence = new Map(ucg.evidence.map((item) => [item.evidenceId, item]));
   const districts = new Map(scene.districts.map((district) => [district.id, district]));
+  const metropolis = globalThis.METROPOGITS_METROPOLIS;
+  const repositoriesByRootDistrict = new Map(
+    (metropolis?.repositories || []).map((repository) => [repository.rootDistrictId, repository]),
+  );
   const filterIndex = filterEngine.createIndex(scene, ucg);
 
   const colors = {
@@ -277,7 +281,8 @@
 
   function districtLabel(district) {
     const entity = entities.get(district.id);
-    return entity?.path || (district.parentId === null ? ucg.repository.id : district.id);
+    const member = repositoriesByRootDistrict.get(district.id);
+    return entity?.path || member?.id || (district.parentId === null ? ucg.repository.id : district.id);
   }
 
   function drawDistrict(district) {
@@ -438,8 +443,11 @@
   }
 
   function sourceLink(entity) {
-    const sourceUrl = ucg.repository.sourceUrl;
-    const revision = ucg.repository.revision;
+    const member = (metropolis?.repositories || []).find((repository) =>
+      entity?.id?.startsWith(`${repository.id}:`),
+    );
+    const sourceUrl = member?.sourceUrl || ucg.repository.sourceUrl;
+    const revision = member?.revision || ucg.repository.revision;
     if (!sourceUrl || !revision || !entity?.path) return null;
     try {
       const url = new URL(sourceUrl);
