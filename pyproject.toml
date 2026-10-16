@@ -17,3 +17,6 @@ metropogits = "metropogits.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["metropogits*", "scripts*"]
+
+[tool.setuptools.package-data]
+metropogits = ["viewer_assets/*.css", "viewer_assets/*.html", "viewer_assets/*.js"]

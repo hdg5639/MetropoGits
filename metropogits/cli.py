@@ -17,6 +17,7 @@ from metropogits.scanner import (
     build_structural_ucg,
     scan_repository,
 )
+from metropogits.viewer import ViewerError, render_viewer
 from scripts.canonical_json import (
     CanonicalJsonError,
     canonical_json_bytes,
@@ -117,18 +118,29 @@ def build_repository(
     )
     scene = generate_city(graph, theme)
     preview = render_preview(scene, graph, width, height)
+    viewer_artifacts = render_viewer(scene, graph)
 
     graph_bytes = canonical_json_bytes(graph)
     scene_bytes = canonical_json_bytes(scene)
     snippet_bytes = (
-        "[![MetropoGits city preview](preview.svg)](preview.svg)\n"
+        "[![MetropoGits city preview](preview.svg)](index.html)\n"
     ).encode("utf-8")
+    media_types = {
+        "assets/viewer-data.js": "text/javascript",
+        "assets/viewer.css": "text/css",
+        "assets/viewer.js": "text/javascript",
+        "index.html": "text/html",
+    }
     artifacts = sorted(
         [
             _artifact_record("README_SNIPPET.md", "text/markdown", snippet_bytes),
             _artifact_record("city.json", "application/json", scene_bytes),
             _artifact_record("graph.ucg.json", "application/json", graph_bytes),
             _artifact_record("preview.svg", "image/svg+xml", preview),
+        ]
+        + [
+            _artifact_record(path, media_types[path], content)
+            for path, content in viewer_artifacts.items()
         ],
         key=lambda item: item["path"],
     )
@@ -169,6 +181,8 @@ def build_repository(
     _write_bytes(output / "city.json", scene_bytes)
     _write_bytes(output / "preview.svg", preview)
     _write_bytes(output / "README_SNIPPET.md", snippet_bytes)
+    for relative_path, content in viewer_artifacts.items():
+        _write_bytes(output / relative_path, content)
     _write_bytes(output / "manifest.json", manifest_bytes)
     return manifest
 
@@ -295,7 +309,15 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
         message = _run(args)
-    except (OSError, CliError, LayoutError, PreviewError, ScannerError, ValueError) as error:
+    except (
+        OSError,
+        CliError,
+        LayoutError,
+        PreviewError,
+        ScannerError,
+        ViewerError,
+        ValueError,
+    ) as error:
         print(f"MetropoGits failed: {error}", file=sys.stderr)
         return EXIT_INVALID_INPUT
     print(message)

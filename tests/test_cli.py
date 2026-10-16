@@ -33,13 +33,17 @@ class CliTests(unittest.TestCase):
                 repository, output, "example/project", theme="minimal"
             )
             first_bytes = {
-                path.name: path.read_bytes() for path in sorted(output.iterdir())
+                path.relative_to(output).as_posix(): path.read_bytes()
+                for path in sorted(output.rglob("*"))
+                if path.is_file()
             }
             second_manifest = build_repository(
                 repository, output, "example/project", theme="minimal"
             )
             second_bytes = {
-                path.name: path.read_bytes() for path in sorted(output.iterdir())
+                path.relative_to(output).as_posix(): path.read_bytes()
+                for path in sorted(output.rglob("*"))
+                if path.is_file()
             }
 
             self.assertFalse(marker.exists())
@@ -49,8 +53,12 @@ class CliTests(unittest.TestCase):
         self.assertEqual(
             {
                 "README_SNIPPET.md",
+                "assets/viewer-data.js",
+                "assets/viewer.css",
+                "assets/viewer.js",
                 "city.json",
                 "graph.ucg.json",
+                "index.html",
                 "manifest.json",
                 "preview.svg",
             },
@@ -102,7 +110,7 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual(0, completed.returncode, completed.stderr)
             self.assertTrue((output / "preview.svg").is_file())
-            self.assertIn("Built 4 artifacts", completed.stdout)
+            self.assertIn("Built 8 artifacts", completed.stdout)
 
     def test_module_cli_rejects_unknown_contract(self):
         with tempfile.TemporaryDirectory() as temporary:

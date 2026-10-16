@@ -13,10 +13,11 @@ python -m pip install -e .
 metropogits build --repo . --out dist --theme minimal
 ```
 
-The current milestone writes `graph.ucg.json`, `city.json`, `preview.svg`,
-`manifest.json`, and `README_SNIPPET.md`. The interactive viewer and semantic
-language analyzers are later milestones; unsupported source languages still
-produce generic buildings.
+The command writes the graph and scene contracts, a deterministic SVG preview,
+an interactive static viewer, a diagnostic manifest, and a linked README
+snippet. Open `dist/index.html` directly to pan, zoom, rotate, and inspect the
+city. Semantic language analyzers are a later milestone; unsupported source
+languages still produce generic buildings.
 
 ## Contract validation
 

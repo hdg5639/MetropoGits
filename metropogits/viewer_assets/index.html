@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'"
+    >
+    <title>MetropoGits city viewer</title>
+    <link rel="stylesheet" href="assets/viewer.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">METROPOGITS / STATIC CITY</p>
+        <h1 id="repository-name">Loading city…</h1>
+      </div>
+      <div class="stats" id="city-stats" aria-live="polite"></div>
+    </header>
+
+    <nav class="toolbar" aria-label="City camera controls">
+      <button type="button" data-action="rotate-left" title="Rotate left (Q)">↶ Rotate</button>
+      <button type="button" data-action="rotate-right" title="Rotate right (E)">Rotate ↷</button>
+      <button type="button" data-action="zoom-in" title="Zoom in (+)">＋</button>
+      <button type="button" data-action="zoom-out" title="Zoom out (-)">－</button>
+      <button type="button" data-action="reset" title="Reset camera (R)">Reset</button>
+      <span class="toolbar-help">Drag to pan · Alt/secondary drag to rotate · Wheel to zoom</span>
+    </nav>
+
+    <main class="workspace">
+      <section class="viewport" aria-label="Interactive city map">
+        <canvas id="city-canvas" tabindex="0" aria-label="Interactive isometric repository city"></canvas>
+        <div id="hover-label" class="hover-label" hidden></div>
+        <div class="legend" aria-label="Map legend">
+          <span><i class="swatch generic"></i>Generic</span>
+          <span><i class="swatch service"></i>Service</span>
+          <span><i class="swatch entry"></i>Entrypoint</span>
+          <span><i class="swatch persistence"></i>Persistence</span>
+          <span><i class="line road"></i>Dependency</span>
+        </div>
+      </section>
+
+      <aside class="inspector" aria-label="Selection inspector">
+        <div id="inspector-content">
+          <p class="eyebrow">INSPECTOR</p>
+          <h2>Select a city element</h2>
+          <p class="muted">Choose a building, district, or network to inspect the repository facts behind it.</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      Static local artifact · No repository code is executed ·
+      <a href="preview.svg">Open accessible SVG preview</a>
+    </footer>
+    <noscript><p>This viewer requires local JavaScript. <a href="preview.svg">Open the SVG preview instead.</a></p></noscript>
+    <script src="assets/viewer-data.js" defer></script>
+    <script src="assets/viewer.js" defer></script>
+  </body>
+</html>
