@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from metropogits import __version__
+from metropogits.analyzers.java import JavaAnalysisError, enrich_java_graph
 from metropogits.layout import LayoutError, generate_city
 from metropogits.preview import PreviewError, render_preview
 from metropogits.scanner import (
@@ -79,9 +80,13 @@ def analyze_repository(
     limits: ScanLimits | None = None,
     excluded_paths: tuple[Path, ...] = (),
 ) -> dict[str, Any]:
+    resolved_limits = limits or ScanLimits()
     resolved_id = _repository_id(repo, repository_id)
-    scan = scan_repository(repo, limits, excluded_paths)
-    return build_structural_ucg(scan, resolved_id, revision, source_url)
+    scan = scan_repository(repo, resolved_limits, excluded_paths)
+    structural_graph = build_structural_ucg(
+        scan, resolved_id, revision, source_url
+    )
+    return enrich_java_graph(repo, scan, structural_graph, resolved_limits)
 
 
 def _artifact_record(path: str, media_type: str, content: bytes) -> dict[str, Any]:
@@ -312,6 +317,7 @@ def main(argv: list[str] | None = None) -> int:
     except (
         OSError,
         CliError,
+        JavaAnalysisError,
         LayoutError,
         PreviewError,
         ScannerError,

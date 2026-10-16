@@ -336,6 +336,15 @@
     parent.append(list);
   }
 
+  function evidenceLabel(evidenceId) {
+    const item = evidence.get(evidenceId);
+    if (!item) return evidenceId;
+    const range = item.startLine
+      ? `${item.sourcePath}:${item.startLine}${item.endLine !== item.startLine ? `-${item.endLine}` : ""}`
+      : item.sourcePath;
+    return `${item.summary} · ${item.kind} · ${range}`;
+  }
+
   function sourceLink(entity) {
     const sourceUrl = ucg.repository.sourceUrl;
     const revision = ucg.repository.revision;
@@ -397,7 +406,7 @@
     factSection(
       inspector,
       "EVIDENCE",
-      [...evidenceIds].map((id) => evidence.get(id)?.summary || id),
+      [...evidenceIds].map(evidenceLabel),
     );
     const link = sourceLink(entity);
     if (link) inspector.append(link);
@@ -449,7 +458,7 @@
     );
     const evidenceSummaries = network.edgeIds.flatMap((id) => {
       const edge = edges.get(id);
-      return (edge?.evidenceIds || []).map((evidenceId) => evidence.get(evidenceId)?.summary || evidenceId);
+      return (edge?.evidenceIds || []).map(evidenceLabel);
     });
     factSection(inspector, "EVIDENCE", evidenceSummaries);
     const middle = network.path[Math.floor(network.path.length / 2)];
