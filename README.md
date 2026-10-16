@@ -99,3 +99,12 @@ Render a deterministic CPU-only SVG preview:
 ```powershell
 python -m metropogits.preview --scene city.json --ucg graph.ucg.json --out preview.svg
 ```
+
+Combine ordered build directories into an inspectable revision timeline:
+
+```powershell
+python -m metropogits history --snapshot dist/rev-a --snapshot dist/rev-b --out dist/history
+```
+
+See [history replay](docs/HISTORY_REPLAY.md) for identity rules and output
+details.

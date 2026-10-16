@@ -13,6 +13,7 @@ from typing import Any
 from metropogits import __version__
 from metropogits.analyzers import enrich_graph
 from metropogits.analyzers.java import JavaAnalysisError
+from metropogits.history import HistorySnapshot, build_history
 from metropogits.layout import LayoutError, generate_city
 from metropogits.preview import PreviewError, render_preview
 from metropogits.scanner import (
@@ -21,7 +22,7 @@ from metropogits.scanner import (
     build_structural_ucg,
     scan_repository,
 )
-from metropogits.viewer import ViewerError, render_viewer
+from metropogits.viewer import ViewerError, render_history_viewer, render_viewer
 from scripts.canonical_json import (
     CanonicalJsonError,
     canonical_json_bytes,
@@ -33,6 +34,7 @@ from scripts.stable_ids import (
 )
 from scripts.validate_catalog import validate_document as validate_catalog_document
 from scripts.validate_city import validate_document as validate_city_document
+from scripts.validate_history import validate_document as validate_history_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
@@ -316,6 +318,19 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--width", type=int, default=1200)
     build.add_argument("--height", type=int, default=675)
 
+    history = commands.add_parser(
+        "history", help="build a timeline from ordered build directories"
+    )
+    _add_json_option(history, suppress_default=True)
+    history.add_argument(
+        "--snapshot",
+        type=Path,
+        action="append",
+        required=True,
+        help="build directory containing graph.ucg.json and city.json; repeat in order",
+    )
+    history.add_argument("--out", type=Path, required=True)
+
     validate = commands.add_parser(
         "validate", help="validate UCG, City, or catalog JSON"
     )
@@ -392,6 +407,40 @@ def _run(args: argparse.Namespace) -> CommandResult:
             manifest["diagnostics"],
         )
 
+    if args.command == "history":
+        snapshots: list[HistorySnapshot] = []
+        viewer_snapshots: list[dict[str, dict[str, Any]]] = []
+        resolved_output = args.out.resolve(strict=False)
+        for snapshot_path in args.snapshot:
+            resolved_snapshot = snapshot_path.resolve(strict=False)
+            if (
+                resolved_output == resolved_snapshot
+                or resolved_output in resolved_snapshot.parents
+                or resolved_snapshot in resolved_output.parents
+            ):
+                raise CliError("history output must not overlap a snapshot directory")
+            graph = _load_json(snapshot_path / "graph.ucg.json", "history UCG")
+            scene = _load_json(snapshot_path / "city.json", "history City Scene")
+            snapshots.append(HistorySnapshot(graph, scene))
+            viewer_snapshots.append({"scene": scene, "ucg": graph})
+        timeline = build_history(snapshots)
+        artifacts = render_history_viewer(timeline, viewer_snapshots)
+        _write_bytes(args.out / "history.json", canonical_json_bytes(timeline))
+        for path, content in artifacts.items():
+            _write_bytes(args.out / path, content)
+        for index, snapshot in enumerate(snapshots):
+            revision_root = args.out / "revisions" / f"{index:03d}"
+            _write_bytes(
+                revision_root / "graph.ucg.json", canonical_json_bytes(snapshot.ucg)
+            )
+            _write_bytes(
+                revision_root / "city.json", canonical_json_bytes(snapshot.scene)
+            )
+        return CommandResult(
+            f"Built history with {len(snapshots)} revisions: {args.out}",
+            str(args.out),
+        )
+
     document = _load_json(args.input, "contract document")
     schema_version = document.get("schemaVersion")
     if schema_version == "ucg/0.1":
@@ -403,6 +452,8 @@ def _run(args: argparse.Namespace) -> CommandResult:
         errors = validate_city_document(document, graph)
     elif schema_version == "catalog/0.1":
         errors = validate_catalog_document(document, args.input.parent / "fixtures")
+    elif schema_version == "history/0.1":
+        errors = validate_history_document(document)
     else:
         raise CliError(f"unsupported schemaVersion: {schema_version!r}")
     if errors:
@@ -417,7 +468,7 @@ def _json_line(document: dict[str, Any]) -> str:
 
 
 def _command_from_arguments(arguments: list[str]) -> str | None:
-    commands = {"analyze", "build", "generate", "render", "validate"}
+    commands = {"analyze", "build", "generate", "history", "render", "validate"}
     return next((item for item in arguments if item in commands), None)
 
 
