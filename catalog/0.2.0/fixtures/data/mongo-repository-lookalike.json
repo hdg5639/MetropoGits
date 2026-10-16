@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "com.example.mongodb.MongoRepository"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

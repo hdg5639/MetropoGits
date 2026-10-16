@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "org.springframework.web.client.RestClient"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

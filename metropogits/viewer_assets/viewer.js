@@ -32,9 +32,13 @@
   const filterIndex = filterEngine.createIndex(scene, ucg);
 
   const colors = {
+    CACHE_TOWER: ["#facc15", "#ca8a04", "#713f12"],
     CONTROL_CENTER: ["#a78bfa", "#6d28d9", "#4c1d95"],
+    DOCUMENT_DEPOT: ["#fb923c", "#c2410c", "#7c2d12"],
+    EXCHANGE: ["#2dd4bf", "#0f766e", "#134e4a"],
     GATE: ["#f472b6", "#be185d", "#831843"],
     GENERIC_BUILDING: ["#94a3b8", "#475569", "#334155"],
+    PORT: ["#38bdf8", "#0369a1", "#0c4a6e"],
     SERVICE_OFFICE: ["#60a5fa", "#1d4ed8", "#1e3a8a"],
     STRUCTURED_WAREHOUSE: ["#34d399", "#047857", "#064e3b"],
   };
@@ -484,12 +488,17 @@
     const technologies = (entity.technologies || []).map(
       (claim) => `${claim.value} · ${claim.confidence}`,
     );
+    const capabilities = (entity.capabilities || []).map(
+      (claim) => `${claim.value} · ${claim.confidence}`,
+    );
     factSection(inspector, "VERIFIED ROLES", roles);
     factSection(inspector, "TECHNOLOGIES", technologies);
+    factSection(inspector, "CAPABILITIES", capabilities);
     const evidenceIds = new Set([
       ...(building.evidenceIds || []),
       ...(entity.roles || []).flatMap((claim) => claim.evidenceIds),
       ...(entity.technologies || []).flatMap((claim) => claim.evidenceIds),
+      ...(entity.capabilities || []).flatMap((claim) => claim.evidenceIds),
     ]);
     factSection(
       inspector,

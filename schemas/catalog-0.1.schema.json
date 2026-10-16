@@ -218,6 +218,7 @@
         },
         "archetypeFamily": {
           "enum": [
+            "CACHE_TOWER",
             "CONTROL_CENTER",
             "DOCUMENT_DEPOT",
             "EXCHANGE",

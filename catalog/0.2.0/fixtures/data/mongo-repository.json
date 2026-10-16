@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "org.springframework.data.mongodb.repository.MongoRepository"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

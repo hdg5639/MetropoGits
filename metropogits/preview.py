@@ -19,6 +19,7 @@ HEADER_HEIGHT = 64
 PADDING = 28
 
 ARCHETYPE_COLORS = {
+    "CACHE_TOWER": ("#facc15", "#ca8a04", "#713f12"),
     "CONTROL_CENTER": ("#a78bfa", "#6d28d9", "#4c1d95"),
     "DOCUMENT_DEPOT": ("#fb923c", "#c2410c", "#7c2d12"),
     "EXCHANGE": ("#2dd4bf", "#0f766e", "#134e4a"),

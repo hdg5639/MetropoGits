@@ -5,7 +5,9 @@ rule may classify only exact manifest, code, or configuration facts and must
 ship with both a matching fixture and a confusing non-matching fixture.
 
 The current contract is [`catalog/0.1`](../schemas/catalog-0.1.schema.json), and
-the bundled release is [`0.1.0`](../catalog/0.1.0/catalog.json).
+the bundled release is [`0.2.0`](../catalog/0.2.0/catalog.json). Previous
+release directories remain unchanged so generated artifact provenance stays
+auditable.
 
 ## Validate a contribution
 
@@ -13,7 +15,7 @@ Place fixture files under a `fixtures` directory beside `catalog.json`, using
 the IDs declared by the rule, and run:
 
 ```powershell
-python -m metropogits validate --input catalog/0.1.0/catalog.json
+python -m metropogits validate --input catalog/0.2.0/catalog.json
 ```
 
 The standalone validator accepts an explicit fixture root when needed:
@@ -51,3 +53,12 @@ dependency facts until a reviewed rule has stronger evidence.
 Fixture documents use `catalog-fixture/0.1` and contain sorted, unique facts.
 Configuration facts use the literal `key=value` form so fixtures never need to
 contain raw configuration files or secret values.
+
+## Bundled direct-use mappings
+
+Catalog `0.2.0` recognizes exact Java imports for Spring `RestClient`, Kafka
+`KafkaTemplate`, MongoDB `MongoRepository`, RabbitMQ `RabbitTemplate`, and
+Redis `RedisTemplate`. These produce `PORT`, `EXCHANGE`, `DOCUMENT_DEPOT`, and
+`CACHE_TOWER` city archetypes. Similar class names from other packages remain
+unclassified, and imports never create HTTP or messaging edges without a
+verified target or channel.

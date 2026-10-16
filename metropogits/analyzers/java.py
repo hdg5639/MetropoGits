@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from metropogits.catalog import CatalogFact, resolve_catalog_claims
 from metropogits.scanner import ScanLimits, ScanResult, ScannedFile
 from scripts.canonical_json import canonical_json_bytes
 from scripts.stable_ids import make_edge_id, make_entity_id
@@ -521,6 +522,7 @@ def enrich_java_graph(
 
     for unit in units:
         file_entity = entities_by_path[unit.path]
+        catalog_facts: list[CatalogFact] = []
         exact_imports = {
             item.name.rsplit(".", 1)[-1]: item.name
             for item in unit.imports
@@ -544,6 +546,7 @@ def enrich_java_graph(
                 "java.import",
             )
             evidence_id = remember_evidence(import_evidence)
+            catalog_facts.append(CatalogFact("IMPORT", imported.name, evidence_id))
             local_targets = qualified_files.get(imported.name, [])
             if len(local_targets) > 1:
                 document["diagnostics"].append(
@@ -726,6 +729,11 @@ def enrich_java_graph(
                     "capabilities",
                     _claim(capability, evidence_id),
                 )
+
+        catalog_claims = resolve_catalog_claims(catalog_facts)
+        for field, claims in catalog_claims.items():
+            for claim in claims:
+                _add_claim(file_entity, field, claim)
 
     document["entities"].extend(new_entities.values())
     document["edges"].extend(new_edges.values())

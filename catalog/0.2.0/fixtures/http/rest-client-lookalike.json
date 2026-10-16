@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "com.example.web.client.RestClient"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

@@ -89,6 +89,74 @@ class JavaAnalyzerTests(unittest.TestCase):
                 )
             )
 
+    def test_catalog_rules_create_evidence_backed_technology_archetypes(self):
+        graph = analyze(FIXTURES / "technology-positive")
+        files = files_by_name(graph)
+        expected = {
+            "HttpGateway.java": (
+                "SPRING_REST_CLIENT",
+                "API",
+                "HTTP_CLIENT",
+                "PORT",
+            ),
+            "KafkaPublisher.java": (
+                "APACHE_KAFKA",
+                "STREAM",
+                "MESSAGE_PRODUCER",
+                "EXCHANGE",
+            ),
+            "MongoStore.java": (
+                "MONGODB",
+                "DOCUMENT_DB",
+                "DOCUMENT_PERSISTENCE_ADAPTER",
+                "DOCUMENT_DEPOT",
+            ),
+            "RabbitGateway.java": (
+                "RABBITMQ",
+                "QUEUE",
+                "MESSAGE_ADAPTER",
+                "EXCHANGE",
+            ),
+            "RedisStore.java": (
+                "REDIS",
+                "CACHE",
+                "CACHE_ADAPTER",
+                "CACHE_TOWER",
+            ),
+        }
+        evidence = {item["evidenceId"]: item for item in graph["evidence"]}
+        scene = generate_city(graph)
+        archetypes = {
+            Path(entity["path"]).name: building["archetype"]
+            for entity in graph["entities"]
+            if entity["kind"] == "FILE"
+            for building in scene["buildings"]
+            if building["entityId"] == entity["id"]
+        }
+
+        self.assertEqual("0.2.0", graph["generator"]["catalogVersion"])
+        for name, (technology, capability, role, archetype) in expected.items():
+            entity = files[name]
+            self.assertEqual([technology], [item["value"] for item in entity["technologies"]])
+            self.assertEqual([capability], [item["value"] for item in entity["capabilities"]])
+            self.assertEqual([role], [item["value"] for item in entity["roles"]])
+            self.assertEqual(archetype, archetypes[name])
+            for field in ("technologies", "capabilities", "roles"):
+                claim = entity[field][0]
+                self.assertEqual("DIRECT", claim["confidence"])
+                self.assertTrue(claim["evidenceIds"])
+                self.assertTrue(
+                    all(evidence[item]["kind"] == "IMPORT" for item in claim["evidenceIds"])
+                )
+
+    def test_catalog_near_match_imports_remain_unclassified(self):
+        graph = analyze(FIXTURES / "technology-negative")
+
+        for entity in files_by_name(graph).values():
+            self.assertEqual([], entity["roles"])
+            self.assertEqual([], entity.get("capabilities", []))
+            self.assertEqual([], entity.get("technologies", []))
+
     def test_local_imports_create_evidenced_file_edges_and_city_networks(self):
         graph = analyze(FIXTURES / "spring-positive")
         local_imports = [

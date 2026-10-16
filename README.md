@@ -76,7 +76,7 @@ python scripts/stable_ids.py edge --from-id source --type REFERENCES --to-id tar
 Validate a versioned technology catalog and its positive/negative fixtures:
 
 ```powershell
-python -m metropogits validate --input catalog/0.1.0/catalog.json
+python -m metropogits validate --input catalog/0.2.0/catalog.json
 ```
 
 See [technology catalog contributions](docs/CATALOG_CONTRIBUTING.md) for the

@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "org.springframework.kafka.core.KafkaTemplate"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

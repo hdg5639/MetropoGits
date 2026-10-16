@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "org.springframework.data.redis.core.RedisTemplate"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

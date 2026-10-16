@@ -14,6 +14,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from metropogits import __version__
+from metropogits.catalog import CATALOG_VERSION
 from scripts.canonical_json import canonical_json_bytes
 from scripts.stable_ids import (
     make_edge_id,
@@ -505,7 +506,7 @@ def build_structural_ucg(
         "entities": sorted(entities, key=lambda item: item["id"]),
         "evidence": [],
         "generator": {
-            "catalogVersion": "0.1.0",
+            "catalogVersion": CATALOG_VERSION,
             "name": "metropogits",
             "version": __version__,
         },
