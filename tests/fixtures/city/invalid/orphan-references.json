@@ -1,0 +1,52 @@
+{
+  "buildings": [
+    {
+      "archetype": "GENERIC_BUILDING",
+      "depth": 4,
+      "districtId": "demo:directory:missing",
+      "entityId": "demo:file:src/Missing.java",
+      "evidenceIds": [
+        "missing-evidence"
+      ],
+      "height": 8,
+      "styleVariant": "default",
+      "width": 4,
+      "x": 6,
+      "z": 8
+    }
+  ],
+  "decorations": [],
+  "districts": [
+    {
+      "depth": 30,
+      "id": "demo:directory:src",
+      "parentId": null,
+      "width": 40,
+      "x": 0,
+      "z": 0
+    }
+  ],
+  "layoutAlgorithm": "anchored-directory/0.1",
+  "networks": [
+    {
+      "edgeIds": [
+        "missing-edge"
+      ],
+      "id": "n1",
+      "kind": "DEPENDENCY_ROAD",
+      "path": [
+        [
+          6,
+          8
+        ],
+        [
+          18,
+          13
+        ]
+      ]
+    }
+  ],
+  "schemaVersion": "city/0.1",
+  "theme": "minimal",
+  "ucgDigest": "sha256:b1b5f8fdc6f8e51ff2c3565f7e2adecf1a775cdb9f9c2240c79f3b15c9bfd04c"
+}
