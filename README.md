@@ -39,3 +39,9 @@ python scripts/stable_ids.py repository --namespace openai/metropogits
 python scripts/stable_ids.py entity --repo-id openai/metropogits --kind FILE --path src/App.java
 python scripts/stable_ids.py edge --from-id source --type REFERENCES --to-id target
 ```
+
+Generate a bounded structural UCG without executing repository code:
+
+```powershell
+python -m metropogits.scanner --repo path/to/repository --repo-id owner/project --out graph.ucg.json
+```
