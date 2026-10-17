@@ -1497,3 +1497,73 @@
   remain visually circuit-like, and portal's 466 files remain generic.
 - Commits created / pushed (and branch): `56d11c1` and `221f729` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - polygon-aware district allocation (`53f88d1`, `6b862ac`)
+
+- Implemented: City Scene `city/0.2` adds canonical orthogonal district
+  footprints while retaining exact AABBs for camera and indexing work. Layout
+  `hierarchical-paged/1.11` packs complete child-subtree shapes instead of
+  reserving their rectangular envelopes, fills enclosed internal voids while
+  preserving exterior concavity, and lets sibling bounds interlock only when
+  their owned footprint rectangles remain disjoint. The v0.1 validator remains
+  available, and the CLI, static renderers, history, and metropolis path accept
+  the versioned contract.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`; the maintained Spring
+  UCG fixture; and synthetic interlocking, dense modular, hierarchy, hint, and
+  metropolis cases.
+- Commands run: one complete iterative GJ-Cloud build, one corrected complete
+  build after visual inspection, parallel cold and previous-scene rebuilds,
+  City and release-readiness validation, Chrome SwiftShader WebGL and CPU SVG
+  captures, `pip check`, Ruff, `compileall`, JavaScript syntax checks, the full
+  automated suite, and whitespace checks.
+- Artifacts inspected: `viewer-webgl.png`, `preview.png`, and the complete
+  output under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-polygon-allocation`;
+  deterministic comparison builds under
+  `D:\Code\MetroPoGits\artifacts\verification\polygon-allocation-repeat` and
+  `polygon-allocation-hinted`.
+- Visual findings: PASS for physical compaction and PARTIAL for the broader
+  living-city target. Auth, Ops, User, VM, and Portal now occupy adjoining
+  concave land instead of isolated rectangular reservations, and the 3/4 view
+  fills the frame without the former central rectangular fields. The first
+  render exposed excessive maze-like internal holes; filling only enclosed
+  voids produced broader readable land masses without making the exterior
+  rectangular. Overview still reduces 1,324 files to seven aggregate
+  facilities, and detailed dependency roads remain visually dense; those are
+  explicit follow-up visual tasks rather than hidden by this allocator change.
+- Geometry findings: the GJ-Cloud root AABB changes from `967 x 1367`
+  (`1,321,889` square units) in layout 1.10 to `707 x 714` (`504,798` square
+  units), a 61.8 percent reduction. The scene contains 175 sibling AABB
+  intersection pairs backed by zero sibling footprint intersections, proving
+  that formerly reserved corners are physically reused. Major footprint
+  coverage is 71.6 percent for Auth, 45.3 percent for Ops, 76.5 percent for
+  User, 68.4 percent for VM, and 60.7 percent for Portal.
+- Spec alignment: PASS under ADR-009. The migration is explicit and versioned;
+  UCG entity, evidence, edge, building, district, and network counts remain
+  `2,919`, `11,531`, `13,332`, `1,324`, `506`, and `135`, with role data
+  unchanged. No repository code, dependency, AI service, or external analyzer
+  was executed.
+- Tests / determinism / stability: 210 tests passed with one expected Windows
+  symlink skip. Ruff, compilation, JavaScript syntax, dependency health,
+  release-readiness, City validation, and whitespace checks passed. All 12
+  non-image artifacts matched byte-for-byte across cold builds. A v1.11 hinted
+  rebuild reproduced byte-identical graph, City, viewer, and preview artifacts;
+  only `manifest.json` changed to record the applied hint diagnostic. The City
+  SHA-256 is `f70f675672cdaa5b2c1f09c9d5650e9f35c49e58562a3806a2e9297bb3d5ba72`
+  and the SVG preview SHA-256 is
+  `ca66e252083da122c3c34bd64304aa8ee8cb640ffeae409f32ba9b05dcbc5542`.
+- Fixes applied and reverified: balanced longest-side scoring replaced
+  area-first placement after synthetic siblings formed a strip; previous-scene
+  children are placed at eligible hinted anchors before new siblings; and
+  enclosed footprint holes are filled after the first real render exposed an
+  unreadable jigsaw surface. All affected tests and the complete GJ-Cloud
+  pipeline were rerun after the corrections.
+- Open risks / next actions: increase overview aggregate richness without
+  fabricating buildings, then separate arterial roads from fine dependency
+  traces. Ops remains the most concave major service because its real child
+  structure is substantially larger than its peers; future shaping should use
+  explicit visual LOD over the same canonical footprint rather than restoring
+  empty rectangular allocation.
+- Commits created / pushed (and branch): `53f88d1` and `6b862ac` on local
+  `main`; push is scheduled after this checkpoint log commit.
