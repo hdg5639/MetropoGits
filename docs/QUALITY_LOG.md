@@ -477,3 +477,48 @@
   DEC-009, hosted runner evidence, and the project license remain open.
 - Commits created / pushed (and branch): `445a254` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — declared dependency inspector (`5a435f2`)
+
+- Implemented: nearest-module dependency lookup for file buildings and a
+  dedicated `DECLARED DEPENDENCIES (NOT USAGE)` inspector section. Maven paths
+  are restored to `group:artifact`, npm package names remain intact, duplicate
+  package declarations merge evidence, and sibling or outer module declarations
+  are not borrowed when a closer module exists.
+- Fixture(s) / revision(s):
+  `tests/fixtures/repositories/postgresql-config` at synthetic revision
+  `inspector-check`, plus a Node fixture with root and nested Maven modules.
+- Commands run: two identical end-to-end CLI builds; viewer-focused and full
+  176-test suites; a Node nearest-module assertion; release-readiness and
+  dependency validation; JavaScript syntax, Ruff, and Git whitespace checks;
+  and an Edge headless inspector capture. For that capture only, the generated
+  artifact copy called its existing `showBuilding` function after startup so
+  the first building was selected without changing repository code.
+- Artifacts inspected: the original generated `graph.ucg.json`, `city.json`,
+  `preview.svg`, `index.html`, and the selected-state `inspector.png` under
+  `C:\WINDOWS\TEMP\metropogits-inspector-42e3b35f09634bdbb80637c51119ebfa`.
+- Visual findings: the selected repository building clearly separates verified
+  PostgreSQL/JPA facts from `org.postgresql:postgresql · MAVEN · DECLARED`.
+  The evidence list includes the manifest source, safe config line, and Java
+  inheritance line, and the section fits the inspector without obscuring the
+  city canvas.
+- Spec alignment: PASS. A manifest dependency remains declaration evidence and
+  does not create a runtime road or claim on its own; displayed repository text
+  still uses DOM `textContent`, and exact evidence IDs remain available.
+- Tests / determinism / stability: 176 tests passed with one unavailable
+  symlink skip. Repeated builds produced identical SHA-256
+  `6588f87cd6dd0efe6a9b5bc07c5d35a6e6c744eabdb44a69cd2dad4c2bd94f8f`
+  for `graph.ucg.json`,
+  `4ba251cddf615ac267ac91bad20f855086dd30340663f4627c7a1f02691405c2`
+  for `city.json`, and
+  `97ad5966fba936c547086ad6f9e07499b67e59cd479dfe7176e6f7a74fc14910`
+  for `preview.svg`.
+- Fixes applied and reverified: no post-commit implementation correction was
+  required; the nearest-scope negative case, syntax gates, selected-state
+  screenshot, and complete suite all passed.
+- Open risks / next actions: improve network endpoints so roads visibly attach
+  to their source and target buildings, then re-audit release blockers. Dense
+  SVG labels, DEC-009, hosted runner evidence, and the project license remain
+  open.
+- Commits created / pushed (and branch): `5a435f2` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
