@@ -545,6 +545,27 @@ const spreadFacility = {
 const spreadParts = globalThis.METROPOGITS_FILTERS.aggregateParts(spreadFacility);
 const spreadCentersX = spreadParts.map((part) => part.x + part.width / 2);
 const spreadCentersZ = spreadParts.map((part) => part.z + part.depth / 2);
+const balancedFacility = {
+  archetypeCounts: [{ archetype: "GENERIC_BUILDING", count: 36 }],
+  depth: 100,
+  height: 32,
+  id: "visual:block:balanced",
+  memberEntityIds: Array.from({ length: 36 }, (_, index) => `balanced-${index}`),
+  plots: [0, 45, 90].flatMap((z) => [0, 45, 90].map((x) => ({
+    depth: 10,
+    width: 10,
+    x,
+    z,
+  }))),
+  width: 100,
+  x: 0,
+  z: 0,
+};
+const balancedParts = globalThis.METROPOGITS_FILTERS.aggregateParts(balancedFacility);
+const balancedCenter = balancedParts.reduce((center, part) => ({
+  x: center.x + part.x + part.width / 2,
+  z: center.z + part.z + part.depth / 2,
+}), { x: 0, z: 0 });
 process.stdout.write(JSON.stringify({
   deterministic: JSON.stringify(overview) === JSON.stringify(
     policy.visibility("overview", buildingIds, networkIds),
@@ -605,6 +626,11 @@ process.stdout.write(JSON.stringify({
     x: Math.max(...spreadCentersX) - Math.min(...spreadCentersX),
     z: Math.max(...spreadCentersZ) - Math.min(...spreadCentersZ),
   },
+  representativeBalance: {
+    count: balancedParts.length,
+    x: balancedCenter.x / balancedParts.length,
+    z: balancedCenter.z / balancedParts.length,
+  },
   selectedAggregate: policy.visibility(
     "district",
     buildingIds,
@@ -655,7 +681,14 @@ process.stdout.write(JSON.stringify({
             sum(item["representedCount"] for item in result["aggregate"]["parts"]),
         )
         self.assertEqual(0, result["overlapCount"])
-        self.assertEqual({"count": 4, "x": 90, "z": 90}, result["representativeSpread"])
+        self.assertEqual(8, result["representativeSpread"]["count"])
+        self.assertGreaterEqual(result["representativeSpread"]["x"], 90)
+        self.assertGreaterEqual(result["representativeSpread"]["z"], 90)
+        self.assertEqual(6, result["representativeBalance"]["count"])
+        self.assertGreaterEqual(result["representativeBalance"]["x"], 40)
+        self.assertLessEqual(result["representativeBalance"]["x"], 60)
+        self.assertGreaterEqual(result["representativeBalance"]["z"], 40)
+        self.assertLessEqual(result["representativeBalance"]["z"], 60)
         self.assertTrue(result["filteredAggregatesMatch"])
         self.assertEqual(1, len(result["selectedAggregate"]))
         self.assertEqual(

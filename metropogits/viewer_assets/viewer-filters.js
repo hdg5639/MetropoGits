@@ -335,10 +335,10 @@
 
   function aggregateParts(facility) {
     const targetCount = Math.min(
-      12,
+      16,
       Math.max(
         facility.archetypeCounts.length,
-        Math.ceil(Math.sqrt(facility.memberEntityIds.length) / 2),
+        Math.ceil(Math.sqrt(facility.memberEntityIds.length)),
       ),
     );
     const allocations = new Map(
@@ -387,8 +387,6 @@
         centerZ: plot.z + plot.depth / 2,
       }));
     const targetPlotCount = Math.min(parts.length, candidates.length);
-    const facilityCenterX = facility.x + facility.width / 2;
-    const facilityCenterZ = facility.z + facility.depth / 2;
     const spanX = Math.max(1, facility.width);
     const spanZ = Math.max(1, facility.depth);
     const largestArea = Math.max(...candidates.map((plot) => plot.area));
@@ -398,20 +396,35 @@
       remaining.sort((left, right) => {
         function score(plot) {
           const areaBonus = Math.sqrt(plot.area / largestArea) * 0.08;
+          const normalizedX = (plot.centerX - facility.x) / spanX;
+          const normalizedZ = (plot.centerZ - facility.z) / spanZ;
           if (!selectedPlots.length) {
-            const centerDistance = Math.hypot(
-              (plot.centerX - facilityCenterX) / spanX,
-              (plot.centerZ - facilityCenterZ) / spanZ,
-            );
+            const centerDistance = Math.hypot(normalizedX - 0.5, normalizedZ - 0.5);
             return -centerDistance + areaBonus;
           }
           const separation = Math.min(...selectedPlots.map((selected) => Math.hypot(
             (plot.centerX - selected.centerX) / spanX,
             (plot.centerZ - selected.centerZ) / spanZ,
           )));
-          return separation + areaBonus;
+          const selectedCenterX = selectedPlots.reduce(
+            (sum, selected) => sum + (selected.centerX - facility.x) / spanX,
+            normalizedX,
+          ) / (selectedPlots.length + 1);
+          const selectedCenterZ = selectedPlots.reduce(
+            (sum, selected) => sum + (selected.centerZ - facility.z) / spanZ,
+            normalizedZ,
+          ) / (selectedPlots.length + 1);
+          const centerDrift = Math.hypot(selectedCenterX - 0.5, selectedCenterZ - 0.5);
+          return separation + areaBonus - centerDrift * 0.85;
         }
         return score(right) - score(left) || right.area - left.area
+          || stableBucket(
+            `${facility.id}:${left.x}:${left.z}`,
+            2_147_483_647,
+          ) - stableBucket(
+            `${facility.id}:${right.x}:${right.z}`,
+            2_147_483_647,
+          )
           || left.z - right.z || left.x - right.x;
       });
       selectedPlots.push(remaining[0]);
@@ -440,12 +453,19 @@
       const gapZ = plot.depth * 0.035;
       const width = (plot.width - marginX * 2 - gapX * Math.max(0, columns - 1)) / columns;
       const depth = (plot.depth - marginZ * 2 - gapZ * Math.max(0, rows - 1)) / rows;
-      return Array.from({ length: count }, (_, index) => ({
-        depth,
-        width,
-        x: plot.x + marginX + (index % columns) * (width + gapX),
-        z: plot.z + marginZ + Math.floor(index / columns) * (depth + gapZ),
-      }));
+      return Array.from({ length: count }, (_, index) => {
+        const row = Math.floor(index / columns);
+        const column = index % columns;
+        const itemsInRow = Math.min(columns, count - row * columns);
+        const occupiedWidth = itemsInRow * width + Math.max(0, itemsInRow - 1) * gapX;
+        const rowOffset = (plot.width - occupiedWidth) / 2;
+        return {
+          depth,
+          width,
+          x: plot.x + rowOffset + column * (width + gapX),
+          z: plot.z + marginZ + row * (depth + gapZ),
+        };
+      });
     });
     const largest = Math.max(...parts.map((part) => part.representedCount));
     return parts.map((part, index) => ({
