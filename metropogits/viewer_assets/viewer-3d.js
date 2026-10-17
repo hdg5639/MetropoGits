@@ -76,12 +76,123 @@
     };
   }
 
+  function stableVariant(value, count) {
+    let hash = 2166136261;
+    for (const character of String(value)) {
+      hash ^= character.codePointAt(0);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0) % count;
+  }
+
+  function buildingParts(building) {
+    const x = building.x;
+    const z = building.z;
+    const width = building.width;
+    const depth = building.depth;
+    const height = building.height;
+    const part = (offsetX, offsetY, offsetZ, partWidth, partHeight, partDepth, shade = 0) => ({
+      depth: partDepth,
+      height: partHeight,
+      shade,
+      width: partWidth,
+      x: x + offsetX,
+      y: offsetY,
+      z: z + offsetZ,
+    });
+    switch (building.archetype) {
+      case "GATE": {
+        const pillarWidth = width * 0.24;
+        return [
+          part(0, 0, depth * 0.12, pillarWidth, height * 0.82, depth * 0.76),
+          part(width - pillarWidth, 0, depth * 0.12, pillarWidth, height * 0.82, depth * 0.76, 0.08),
+          part(0, height * 0.68, depth * 0.12, width, height * 0.18, depth * 0.76, 0.2),
+          part(width * 0.42, height * 0.86, depth * 0.34, width * 0.16, height * 0.14, depth * 0.32, 0.35),
+        ];
+      }
+      case "SERVICE_OFFICE":
+        return [
+          part(0, 0, 0, width, height * 0.16, depth),
+          part(width * 0.08, height * 0.16, depth * 0.08, width * 0.84, height * 0.62, depth * 0.84, 0.08),
+          part(width * 0.2, height * 0.78, depth * 0.2, width * 0.6, height * 0.22, depth * 0.6, 0.26),
+        ];
+      case "STRUCTURED_WAREHOUSE":
+        return [
+          part(0, 0, 0, width, height * 0.56, depth),
+          part(width * 0.08, height * 0.56, depth * 0.08, width * 0.2, height * 0.1, depth * 0.84, 0.2),
+          part(width * 0.4, height * 0.56, depth * 0.08, width * 0.2, height * 0.1, depth * 0.84, 0.2),
+          part(width * 0.72, height * 0.56, depth * 0.08, width * 0.2, height * 0.1, depth * 0.84, 0.2),
+        ];
+      case "DOCUMENT_DEPOT":
+        return [
+          part(0, 0, 0, width, height * 0.28, depth),
+          part(width * 0.06, height * 0.3, depth * 0.06, width * 0.88, height * 0.2, depth * 0.88, 0.1),
+          part(width * 0.12, height * 0.52, depth * 0.12, width * 0.76, height * 0.18, depth * 0.76, 0.22),
+        ];
+      case "CACHE_TOWER":
+        return [
+          part(0, 0, 0, width, height * 0.12, depth),
+          part(width * 0.16, height * 0.14, depth * 0.16, width * 0.68, height * 0.24, depth * 0.68, 0.04),
+          part(width * 0.12, height * 0.4, depth * 0.12, width * 0.76, height * 0.24, depth * 0.76, 0.14),
+          part(width * 0.2, height * 0.66, depth * 0.2, width * 0.6, height * 0.34, depth * 0.6, 0.28),
+        ];
+      case "EXCHANGE":
+        return [
+          part(0, 0, 0, width, height * 0.12, depth),
+          part(width * 0.08, height * 0.12, depth * 0.12, width * 0.3, height * 0.68, depth * 0.76, 0.05),
+          part(width * 0.62, height * 0.12, depth * 0.12, width * 0.3, height * 0.88, depth * 0.76, 0.18),
+          part(width * 0.36, height * 0.48, depth * 0.34, width * 0.28, height * 0.12, depth * 0.32, 0.32),
+        ];
+      case "PORT":
+        return [
+          part(0, 0, depth * 0.52, width, height * 0.22, depth * 0.48),
+          part(0, 0, 0, width * 0.24, height * 0.3, depth * 0.86, 0.08),
+          part(width * 0.58, height * 0.2, depth * 0.08, width * 0.3, height * 0.8, depth * 0.34, 0.24),
+        ];
+      case "CONTROL_CENTER":
+        return [
+          part(0, 0, 0, width, height * 0.26, depth),
+          part(width * 0.2, height * 0.26, depth * 0.2, width * 0.6, height * 0.5, depth * 0.6, 0.12),
+          part(width * 0.44, height * 0.76, depth * 0.44, width * 0.12, height * 0.24, depth * 0.12, 0.36),
+        ];
+      default: {
+        const variant = stableVariant(building.entityId, 4);
+        if (variant === 1) {
+          return [
+            part(0, 0, depth * 0.08, width * 0.42, height * 0.78, depth * 0.84),
+            part(width * 0.58, 0, depth * 0.08, width * 0.42, height, depth * 0.84, 0.12),
+          ];
+        }
+        if (variant === 2) {
+          return [
+            part(0, 0, 0, width, height * 0.44, depth),
+            part(width * 0.14, height * 0.44, depth * 0.14, width * 0.72, height * 0.32, depth * 0.72, 0.1),
+            part(width * 0.3, height * 0.76, depth * 0.3, width * 0.4, height * 0.24, depth * 0.4, 0.22),
+          ];
+        }
+        if (variant === 3) {
+          return [
+            part(0, 0, 0, width, height * 0.48, depth),
+            part(width * 0.58, height * 0.48, depth * 0.08, width * 0.34, height * 0.52, depth * 0.44, 0.18),
+          ];
+        }
+        return [
+          part(width * 0.05, 0, depth * 0.05, width * 0.9, height * 0.82, depth * 0.9),
+          part(width * 0.3, height * 0.82, depth * 0.3, width * 0.4, height * 0.18, depth * 0.4, 0.18),
+        ];
+      }
+    }
+  }
+
   globalThis.METROPOGITS_WEBGL_MATH = Object.freeze({
     lookAt,
     multiply,
     perspective,
     projectPoint,
     transformPoint,
+  });
+  globalThis.METROPOGITS_BUILDING_FORMS = Object.freeze({
+    partsFor: buildingParts,
   });
 
   if (typeof document === "undefined") return;
@@ -473,16 +584,21 @@
     for (const building of scene.buildings) {
       if (!visibleBuildingIds.has(building.entityId)) continue;
       const baseColor = color(colors[building.archetype] || colors.GENERIC_BUILDING);
-      box(
-        triangles,
-        building.x,
-        0.2,
-        building.z,
-        building.width,
-        building.height,
-        building.depth,
-        selected("building", building.entityId) ? lighten(baseColor, 0.62) : baseColor,
-      );
+      const selectedColor = selected("building", building.entityId)
+        ? lighten(baseColor, 0.62)
+        : baseColor;
+      for (const part of buildingParts(building)) {
+        box(
+          triangles,
+          part.x,
+          0.2 + part.y,
+          part.z,
+          part.width,
+          part.height,
+          part.depth,
+          part.shade ? lighten(selectedColor, part.shade) : selectedColor,
+        );
+      }
     }
 
     if (state.syntheticActivity && activityEngine) {

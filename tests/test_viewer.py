@@ -151,6 +151,53 @@ process.stdout.write(JSON.stringify({ center, behind: math.projectPoint(matrix, 
         self.assertAlmostEqual(450, result["center"]["y"], places=6)
         self.assertIsNone(result["behind"])
 
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_semantic_archetypes_have_distinct_bounded_3d_forms(self):
+        script = """
+require(process.argv[1]);
+const forms = globalThis.METROPOGITS_BUILDING_FORMS;
+const archetypes = [
+  "GATE", "SERVICE_OFFICE", "STRUCTURED_WAREHOUSE", "DOCUMENT_DEPOT",
+  "CACHE_TOWER", "EXCHANGE", "PORT", "CONTROL_CENTER",
+];
+const result = Object.fromEntries(archetypes.map((archetype) => {
+  const building = { archetype, depth: 6, entityId: `demo:${archetype}`, height: 18, width: 6, x: 10, z: 20 };
+  return [archetype, forms.partsFor(building)];
+}));
+process.stdout.write(JSON.stringify(result));
+"""
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-3d.js"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        forms = json.loads(completed.stdout)
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual(8, len({json.dumps(parts, sort_keys=True) for parts in forms.values()}))
+        for parts in forms.values():
+            self.assertGreaterEqual(len(parts), 3)
+            for part in parts:
+                self.assertGreater(part["width"], 0)
+                self.assertGreater(part["height"], 0)
+                self.assertGreater(part["depth"], 0)
+                self.assertGreaterEqual(part["x"], 10)
+                self.assertGreaterEqual(part["z"], 20)
+                self.assertLessEqual(part["x"] + part["width"], 16)
+                self.assertLessEqual(part["z"] + part["depth"], 26)
+                self.assertLessEqual(part["y"] + part["height"], 18.000001)
+
     def test_webgl_renderer_has_explicit_2d_fallback_boundary(self):
         artifacts = render_viewer(generate_city(load_fixture()), load_fixture())
         webgl = artifacts["assets/viewer-3d.js"].decode("utf-8")

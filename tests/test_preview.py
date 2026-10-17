@@ -34,7 +34,7 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            "8996b3ce85079e6366c71e54873b8fe6e42a12d3056bf09c0a0b13feb9d5c5aa",
+            "29151bd0ca748140aea626dd173e9b4d9820ccbe7b1e9ef2d4d4730f9840f20f",
             hashlib.sha256(first).hexdigest(),
         )
 
@@ -44,6 +44,15 @@ class PreviewTests(unittest.TestCase):
         self.assertIn('id="districts"', preview)
         self.assertIn('id="buildings"', preview)
         self.assertIn('id="networks"', preview)
+
+    def test_preview_marks_each_building_with_an_archetype_roof_form(self):
+        preview = render_preview(self.scene, self.ucg).decode("utf-8")
+
+        self.assertEqual(
+            len(self.scene["buildings"]), preview.count("data-roof-form=")
+        )
+        self.assertIn('data-roof-form="SERVICE_OFFICE"', preview)
+        self.assertIn('data-roof-form="STRUCTURED_WAREHOUSE"', preview)
         self.assertIn("SERVICE_OFFICE", preview)
         self.assertIn("STRUCTURED_WAREHOUSE", preview)
         self.assertIn(self.ucg["edges"][0]["id"], preview)

@@ -63,6 +63,82 @@ def _fmt(value: float) -> str:
     return f"{value:.3f}".rstrip("0").rstrip(".")
 
 
+def _roof_signature(
+    archetype: str,
+    entity_id: str,
+    x: float,
+    y: float,
+    width: float,
+    depth: float,
+) -> list[str]:
+    """Return decorative roof marks that distinguish existing semantic forms."""
+
+    stroke = '#f8fafc" stroke-opacity="0.68" stroke-width="0.8'
+    lines = [f'      <g data-roof-form="{_escape(archetype)}" fill="none">']
+    if archetype == "GATE":
+        cap_width = width * 0.22
+        lines.extend(
+            [
+                f'        <rect x="{_fmt(x + width * 0.08)}" y="{_fmt(y + depth * 0.16)}" width="{_fmt(cap_width)}" height="{_fmt(depth * 0.68)}" stroke="{stroke}"/>',
+                f'        <rect x="{_fmt(x + width * 0.7)}" y="{_fmt(y + depth * 0.16)}" width="{_fmt(cap_width)}" height="{_fmt(depth * 0.68)}" stroke="{stroke}"/>',
+                f'        <path d="M {_fmt(x + width * 0.3)} {_fmt(y + depth * 0.5)} H {_fmt(x + width * 0.7)}" stroke="{stroke}"/>',
+            ]
+        )
+    elif archetype == "SERVICE_OFFICE":
+        lines.extend(
+            [
+                f'        <rect x="{_fmt(x + width * 0.18)}" y="{_fmt(y + depth * 0.18)}" width="{_fmt(width * 0.64)}" height="{_fmt(depth * 0.64)}" stroke="{stroke}"/>',
+                f'        <path d="M {_fmt(x + width * 0.5)} {_fmt(y + depth * 0.18)} V {_fmt(y + depth * 0.82)}" stroke="{stroke}"/>',
+            ]
+        )
+    elif archetype == "STRUCTURED_WAREHOUSE":
+        for fraction in (0.25, 0.5, 0.75):
+            lines.append(
+                f'        <path d="M {_fmt(x + width * fraction)} {_fmt(y + depth * 0.1)} V {_fmt(y + depth * 0.9)}" stroke="{stroke}"/>'
+            )
+    elif archetype == "DOCUMENT_DEPOT":
+        for inset in (0.12, 0.24, 0.36):
+            lines.append(
+                f'        <rect x="{_fmt(x + width * inset)}" y="{_fmt(y + depth * inset)}" width="{_fmt(width * (1 - inset * 2))}" height="{_fmt(depth * (1 - inset * 2))}" stroke="{stroke}"/>'
+            )
+    elif archetype == "CACHE_TOWER":
+        for fraction in (0.3, 0.5, 0.7):
+            lines.append(
+                f'        <path d="M {_fmt(x + width * 0.18)} {_fmt(y + depth * fraction)} H {_fmt(x + width * 0.82)}" stroke="{stroke}"/>'
+            )
+    elif archetype == "EXCHANGE":
+        lines.extend(
+            [
+                f'        <rect x="{_fmt(x + width * 0.1)}" y="{_fmt(y + depth * 0.2)}" width="{_fmt(width * 0.28)}" height="{_fmt(depth * 0.6)}" stroke="{stroke}"/>',
+                f'        <rect x="{_fmt(x + width * 0.62)}" y="{_fmt(y + depth * 0.2)}" width="{_fmt(width * 0.28)}" height="{_fmt(depth * 0.6)}" stroke="{stroke}"/>',
+                f'        <path d="M {_fmt(x + width * 0.38)} {_fmt(y + depth * 0.5)} H {_fmt(x + width * 0.62)}" stroke="{stroke}"/>',
+            ]
+        )
+    elif archetype == "PORT":
+        lines.append(
+            f'        <path d="M {_fmt(x + width * 0.2)} {_fmt(y + depth * 0.15)} V {_fmt(y + depth * 0.75)} H {_fmt(x + width * 0.82)}" stroke="{stroke}"/>'
+        )
+    elif archetype == "CONTROL_CENTER":
+        lines.extend(
+            [
+                f'        <path d="M {_fmt(x + width * 0.5)} {_fmt(y + depth * 0.16)} L {_fmt(x + width * 0.84)} {_fmt(y + depth * 0.5)} L {_fmt(x + width * 0.5)} {_fmt(y + depth * 0.84)} L {_fmt(x + width * 0.16)} {_fmt(y + depth * 0.5)} Z" stroke="{stroke}"/>',
+                f'        <circle cx="{_fmt(x + width * 0.5)}" cy="{_fmt(y + depth * 0.5)}" r="{_fmt(min(width, depth) * 0.09)}" stroke="{stroke}"/>',
+            ]
+        )
+    else:
+        variant = sum(ord(character) for character in entity_id) % 4
+        if variant % 2:
+            lines.append(
+                f'        <path d="M {_fmt(x + width * 0.18)} {_fmt(y + depth * 0.5)} H {_fmt(x + width * 0.82)}" stroke="{stroke}"/>'
+            )
+        else:
+            lines.append(
+                f'        <rect x="{_fmt(x + width * 0.3)}" y="{_fmt(y + depth * 0.3)}" width="{_fmt(width * 0.4)}" height="{_fmt(depth * 0.4)}" stroke="{stroke}"/>'
+            )
+    lines.append("      </g>")
+    return lines
+
+
 def _bounds(scene: dict[str, Any]) -> tuple[float, float, float, float]:
     points: list[tuple[float, float]] = []
     for district in scene["districts"]:
@@ -409,9 +485,19 @@ def render_preview(
                     f"rx=\"1\" fill=\"{top_color}\" stroke=\"#0f172a\" "
                     'stroke-width="0.75"/>'
                 ),
-                "    </g>",
             ]
         )
+        lines.extend(
+            _roof_signature(
+                building["archetype"],
+                building["entityId"],
+                top_x,
+                top_y,
+                building_width,
+                building_depth,
+            )
+        )
+        lines.append("    </g>")
     lines.extend(["  </g>", "</svg>"])
     return ("\n".join(lines) + "\n").encode("utf-8")
 
