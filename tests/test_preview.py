@@ -7,6 +7,7 @@ from pathlib import Path
 
 from metropogits.layout import generate_city
 from metropogits.preview import PreviewError, render_preview
+from metropogits.scanner import ScanResult, ScannedFile, build_structural_ucg
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -42,6 +43,26 @@ class PreviewTests(unittest.TestCase):
         self.assertIn("SERVICE_OFFICE", preview)
         self.assertIn("STRUCTURED_WAREHOUSE", preview)
         self.assertIn(self.ucg["edges"][0]["id"], preview)
+
+    def test_preview_omits_redundant_empty_directory_boundaries(self):
+        scan = ScanResult(
+            files=(
+                ScannedFile(
+                    path="src/main/java/com/example/service/App.py",
+                    language="python",
+                    size_bytes=4,
+                ),
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/compact-preview")
+        scene = generate_city(ucg)
+
+        preview = render_preview(scene, ucg).decode("utf-8")
+
+        self.assertEqual(1, preview.count("data-district-id="))
+        self.assertIn(">service</text>", preview)
+        self.assertIn("src/main/java/com/example/service", preview)
 
     def test_untrusted_labels_are_xml_escaped(self):
         ucg = copy.deepcopy(self.ucg)

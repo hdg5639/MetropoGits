@@ -83,6 +83,28 @@ def _bounds(scene: dict[str, Any]) -> tuple[float, float, float, float]:
     return min(xs), min(zs), max(xs), max(zs)
 
 
+def _drawable_district_ids(scene: dict[str, Any]) -> set[str]:
+    districts = {item["id"]: item for item in scene["districts"]}
+    children: dict[str, list[str]] = {}
+    for district in scene["districts"]:
+        parent_id = district["parentId"]
+        if parent_id is not None:
+            children.setdefault(parent_id, []).append(district["id"])
+    with_buildings = {item["districtId"] for item in scene["buildings"]}
+    result: set[str] = set()
+    for district in scene["districts"]:
+        child_ids = children.get(district["id"], [])
+        if district["id"] in with_buildings or len(child_ids) != 1:
+            result.add(district["id"])
+            continue
+        child = districts[child_ids[0]]
+        geometry = tuple(district[key] for key in ("x", "z", "width", "depth"))
+        child_geometry = tuple(child[key] for key in ("x", "z", "width", "depth"))
+        if geometry != child_geometry:
+            result.add(district["id"])
+    return result
+
+
 def _palette(theme: str) -> dict[str, str]:
     if theme == "cyberpunk":
         return {
@@ -140,6 +162,7 @@ def render_preview(
         district["id"] for district in scene["districts"] if district["parentId"] is None
     }
     repository_id = ucg["repository"]["id"]
+    drawable_district_ids = _drawable_district_ids(scene)
 
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -183,6 +206,8 @@ def render_preview(
     ]
 
     for district in scene["districts"]:
+        if district["id"] not in drawable_district_ids:
+            continue
         x, y = project(district["x"], district["z"])
         district_width = max(float(district["width"]) * scale, 1.0)
         district_depth = max(float(district["depth"]) * scale, 1.0)
@@ -191,6 +216,7 @@ def render_preview(
             if district["id"] in root_ids
             else district_labels.get(district["id"], district["id"])
         )
+        canvas_label = label.rsplit("/", 1)[-1] or label
         lines.extend(
             [
                 f"    <g data-district-id=\"{_escape(district['id'])}\">",
@@ -204,7 +230,7 @@ def render_preview(
                 (
                     f"      <text x=\"{_fmt(x + 6)}\" y=\"{_fmt(y + 15)}\" "
                     f"fill=\"{palette['muted']}\" font-family=\"system-ui, sans-serif\" "
-                    f"font-size=\"10\">{_escape(label)}</text>"
+                    f"font-size=\"10\">{_escape(canvas_label)}</text>"
                 ),
                 "    </g>",
             ]

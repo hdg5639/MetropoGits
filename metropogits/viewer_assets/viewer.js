@@ -32,6 +32,30 @@
   const edges = new Map(ucg.edges.map((edge) => [edge.id, edge]));
   const evidence = new Map(ucg.evidence.map((item) => [item.evidenceId, item]));
   const districts = new Map(scene.districts.map((district) => [district.id, district]));
+  const districtChildren = new Map();
+  const districtsWithBuildings = new Set(
+    scene.buildings.map((building) => building.districtId),
+  );
+  for (const district of scene.districts) {
+    if (district.parentId === null) continue;
+    const children = districtChildren.get(district.parentId) || [];
+    children.push(district.id);
+    districtChildren.set(district.parentId, children);
+  }
+  const drawableDistrictIds = new Set(
+    scene.districts
+      .filter((district) => {
+        const children = districtChildren.get(district.id) || [];
+        if (districtsWithBuildings.has(district.id) || children.length !== 1) return true;
+        const child = districts.get(children[0]);
+        return !child
+          || district.x !== child.x
+          || district.z !== child.z
+          || district.width !== child.width
+          || district.depth !== child.depth;
+      })
+      .map((district) => district.id),
+  );
   const metropolis = globalThis.METROPOGITS_METROPOLIS;
   const repositoriesByRootDistrict = new Map(
     (metropolis?.repositories || []).map((repository) => [repository.rootDistrictId, repository]),
@@ -291,6 +315,12 @@
     return entity?.path || member?.id || (district.parentId === null ? ucg.repository.id : district.id);
   }
 
+  function districtCanvasLabel(district) {
+    const label = districtLabel(district);
+    const segments = label.split("/").filter(Boolean);
+    return segments.at(-1) || label;
+  }
+
   function drawDistrict(district) {
     const points = [
       project(district.x, district.z),
@@ -310,7 +340,7 @@
     const labelPoint = project(district.x + 3, district.z + 3);
     context.fillStyle = "#8292aa";
     context.font = "600 10px ui-sans-serif, system-ui, sans-serif";
-    context.fillText(districtLabel(district), labelPoint.x, labelPoint.y - 5);
+    context.fillText(districtCanvasLabel(district), labelPoint.x, labelPoint.y - 5);
     hitRegions.push({ kind: "district", id: district.id, points });
   }
 
@@ -395,7 +425,9 @@
     hitRegions = [];
     context.clearRect(0, 0, viewportWidth, viewportHeight);
     drawGrid();
-    for (const district of scene.districts) drawDistrict(district);
+    for (const district of scene.districts) {
+      if (drawableDistrictIds.has(district.id)) drawDistrict(district);
+    }
     for (const network of scene.networks) {
       if (visibleNetworkIds.has(network.id)) drawNetwork(network);
     }

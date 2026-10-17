@@ -233,6 +233,22 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual("LAYOUT_HINT_IGNORED", diagnostics[-1]["code"])
         self.assertEqual("WARNING", diagnostics[-1]["severity"])
 
+    def test_previous_layout_version_is_not_reused_as_a_hint(self):
+        ucg = load_json(FIXTURES / "ucg" / "valid" / "spring-minimal.json")
+        cold = generate_city(ucg)
+        previous = {**cold, "layoutAlgorithm": "hierarchical-paged/1.0"}
+        diagnostics: list[dict] = []
+
+        hinted = generate_city(
+            ucg,
+            previous_scene=previous,
+            diagnostics=diagnostics,
+        )
+
+        self.assertEqual(canonical_json_bytes(cold), canonical_json_bytes(hinted))
+        self.assertEqual("LAYOUT_HINT_IGNORED", diagnostics[-1]["code"])
+        self.assertIn("algorithm family", diagnostics[-1]["message"])
+
     def test_edges_between_districts_are_aggregated_without_losing_ids(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -313,7 +329,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.0", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.1", scene["layoutAlgorithm"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
         siblings: dict[str, list[dict]] = {}
@@ -344,6 +360,55 @@ class LayoutTests(unittest.TestCase):
                         and second["z"] < first["z"] + first["depth"]
                     )
                     self.assertFalse(overlaps)
+
+    def test_empty_directory_chains_share_a_compact_footprint(self):
+        scan = ScanResult(
+            files=(
+                ScannedFile(
+                    path="src/main/java/com/example/service/App.py",
+                    language="python",
+                    size_bytes=4,
+                ),
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/compact-chain")
+
+        scene = generate_city(ucg)
+        footprints = {
+            (item["x"], item["z"], item["width"], item["depth"])
+            for item in scene["districts"]
+        }
+
+        self.assertEqual({(0, 0, 64, 64)}, footprints)
+        self.assertEqual([], validate_document(scene, ucg))
+
+    def test_sibling_districts_are_packed_into_a_bounded_grid(self):
+        scan = ScanResult(
+            files=tuple(
+                ScannedFile(
+                    path=f"package-{index:02}/App.py",
+                    language="python",
+                    size_bytes=4,
+                )
+                for index in range(16)
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/compact-siblings")
+
+        scene = generate_city(ucg)
+        root = next(
+            item for item in scene["districts"] if item["parentId"] is None
+        )
+
+        self.assertLessEqual(max(root["width"], root["depth"]), 400)
+        self.assertLessEqual(
+            max(root["width"], root["depth"])
+            / min(root["width"], root["depth"]),
+            1.5,
+        )
+        self.assertEqual([], validate_document(scene, ucg))
 
     def test_large_directories_expand_in_bounded_non_overlapping_pages(self):
         for file_count in (65, 100, 1_000):

@@ -114,6 +114,8 @@ class GovernanceTests(unittest.TestCase):
         for required_text in (
             "Status: Accepted",
             "hierarchical-paged/1.0",
+            "hierarchical-paged/1.1",
+            "empty directory with exactly one child shares that child's footprint",
             "previous scene as a hint, never authority",
             "child district outside its parent district",
             "65, 100, and at least 1,000 files",

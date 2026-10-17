@@ -20,7 +20,7 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.0"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.1"
 DISTRICT_WIDTH = 64
 DISTRICT_DEPTH = 64
 DISTRICT_PADDING = 16
@@ -281,10 +281,7 @@ def _ordered_children(
 
 
 def _building_page_count(file_count: int) -> int:
-    return max(
-        1,
-        (file_count + BUILDING_PAGE_CAPACITY - 1) // BUILDING_PAGE_CAPACITY,
-    )
+    return (file_count + BUILDING_PAGE_CAPACITY - 1) // BUILDING_PAGE_CAPACITY
 
 
 def _local_rectangles_overlap(
@@ -326,7 +323,19 @@ def _measure_districts(
         _building_page_count(len(files_by_district.get(district_id, []))),
         highest_locked_slot // BUILDING_PAGE_CAPACITY + 1,
     )
+    if direct_pages == 0 and not children:
+        direct_pages = 1
     direct_depth = DISTRICT_DEPTH * direct_pages
+
+    # Empty directory chains carry hierarchy but need no dedicated city block.
+    # Sharing the child's footprint keeps the full parent graph without turning
+    # paths such as src/main/java/com/example into a diagonal runway.
+    if direct_pages == 0 and len(children) == 1:
+        child_id = children[0]
+        child_offsets[district_id] = {child_id: (0, 0)}
+        dimensions[district_id] = dimensions[child_id]
+        return dimensions[district_id]
+
     hint = district_hints.get(district_id)
     width = max(DISTRICT_WIDTH, hint["width"] if hint is not None else 0)
     depth = direct_depth
@@ -361,16 +370,47 @@ def _measure_districts(
 
     child_z = max(
         direct_depth + DISTRICT_PADDING,
-        max((z + child_depth + DISTRICT_PADDING for _, z, _, child_depth in occupied), default=0),
+        max(
+            (
+                z + child_depth + DISTRICT_PADDING
+                for _, z, _, child_depth in occupied
+            ),
+            default=0,
+        ),
     )
+    unplaced = [child_id for child_id in children if child_id not in offsets]
+    packed_width = max(
+        (
+            max(dimensions[child_id][0] for child_id in unplaced)
+            if unplaced
+            else DISTRICT_WIDTH
+        ),
+        math.sqrt(
+            sum(
+                (dimensions[child_id][0] + DISTRICT_PADDING)
+                * (dimensions[child_id][1] + DISTRICT_PADDING)
+                for child_id in unplaced
+            )
+        ),
+    )
+    child_x = DISTRICT_PADDING
+    row_depth = 0.0
     for child_id in children:
         if child_id in offsets:
             continue
         child_width, child_depth, _ = dimensions[child_id]
-        offset = (DISTRICT_PADDING, child_z)
+        if (
+            child_x > DISTRICT_PADDING
+            and child_x + child_width > DISTRICT_PADDING + packed_width
+        ):
+            child_x = DISTRICT_PADDING
+            child_z += row_depth + DISTRICT_PADDING
+            row_depth = 0
+        offset = (child_x, child_z)
         offsets[child_id] = offset
         occupied.append((offset[0], offset[1], child_width, child_depth))
-        child_z += child_depth + DISTRICT_PADDING
+        child_x += child_width + DISTRICT_PADDING
+        row_depth = max(row_depth, child_depth)
 
     for child_id, (offset_x, offset_z) in offsets.items():
         child_width, child_depth, _ = dimensions[child_id]
