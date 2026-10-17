@@ -1055,3 +1055,50 @@
   remain explicitly deferred by ADR-007 until maintainer approval.
 - Commits created / pushed (and branch): `5526854` on local `main`; push is
   scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - GJ-Cloud baseline and JSX recovery (`000769c`)
+
+- Implemented: the JavaScript/TypeScript tokenizer now distinguishes JSX
+  closing tags and JSX path text from regular-expression literals. A focused
+  fixture keeps a real comparison regex beside nested JSX so the two cases
+  cannot regress into one heuristic.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at exact revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`, plus the
+  maintained JS/TS analyzer fixtures.
+- Commands run: two complete pre-fix CLI builds; an analyzer-only post-fix run;
+  direct post-fix tokenization of all 468 eligible JavaScript/TypeScript files;
+  Edge SwiftShader WebGL, forced 2D fallback, and CPU SVG captures; `pip check`;
+  Ruff; `compileall`; JavaScript syntax; release-readiness validation; the full
+  automated suite; and whitespace checks.
+- Artifacts inspected: `viewer-webgl.png`, `viewer-fallback.png`, `preview.png`,
+  both deterministic baseline builds, and `tsx-fixed.ucg.json` under
+  `D:\Code\MetroPoGits\.visual-gj-cloud-3d9b53f`.
+- Visual findings: DEVIATION. The baseline scene contains 1,324 buildings, 506
+  districts, and 1,053 evidence networks. At overview scale WebGL shows labels
+  but almost no city mass, the 2D fallback appears empty, and the SVG is
+  overwhelmed by overlapping roads. This large-repository result is not an
+  acceptable visual baseline and remains the next correction target.
+- Spec alignment: PASS for the analyzer correction. The initial build reported
+  143 `JSTS_ANALYSIS_SKIPPED` warnings caused by valid TSX. The post-fix analyzer
+  run reduced that to one exposed JSX path-text case, and the final direct audit
+  tokenized all 468 JS/TS files without a failure. No repository code or build
+  script was executed.
+- Tests / determinism / stability: 195 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. The two pre-fix complete
+  builds produced identical SHA-256
+  `77411db297c6095b627100ea242c872ac5a4a6fcb7d53fa4250de0906ce0af2f`
+  for `graph.ucg.json`,
+  `38f88298259915fea5698f33fda1ed6943add0c1e0bdc2db1a12a8c4201e4b14`
+  for `city.json`, and
+  `f1f963cd7266c737d1bdc857093f15d92f56c555285f12673aeac910c3c0165a`
+  for `preview.svg`.
+- Fixes applied and reverified: valid JSX closing tags no longer start a regex,
+  and a slash followed by a JSX expression remains ordinary path text. The
+  malformed-source fixture continues to be rejected instead of silently
+  manufacturing imports.
+- Open risks / next actions: reduce analysis time from the observed 188-second
+  analyzer-only run, then add large-city overview treatment and road
+  decluttering while preserving all exact scene edge IDs. Public repository and
+  Pages activation remain deferred by ADR-007.
+- Commits created / pushed (and branch): `000769c` on local `main`; push is
+  scheduled after this checkpoint log commit.
