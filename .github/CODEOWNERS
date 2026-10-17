@@ -1,0 +1,10 @@
+* @hdg5639
+
+# Contracts, analyzers, catalogs, automation, and security-sensitive surfaces.
+/.github/ @hdg5639
+/action.yml @hdg5639
+/catalog/ @hdg5639
+/metropogits/analyzers/ @hdg5639
+/metropogits/github_action.py @hdg5639
+/schemas/ @hdg5639
+/scripts/ @hdg5639

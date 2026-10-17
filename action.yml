@@ -69,7 +69,7 @@ runs:
         set -euo pipefail
         runtime="${RUNNER_TEMP}/metropogits-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
         python3 -m venv "$runtime"
-        "$runtime/bin/python" -m pip install --disable-pip-version-check "$GITHUB_ACTION_PATH"
+        "$runtime/bin/python" -m pip install --disable-pip-version-check --constraint "$GITHUB_ACTION_PATH/requirements-lock.txt" "$GITHUB_ACTION_PATH"
         echo "python=$runtime/bin/python" >> "$GITHUB_OUTPUT"
 
     - name: Build static city artifacts

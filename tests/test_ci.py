@@ -62,6 +62,12 @@ class ContinuousIntegrationTests(unittest.TestCase):
                 r"^[A-Za-z0-9_.-]+==[A-Za-z0-9_.+-]+$",
             )
 
+    def test_ci_uses_the_transitive_lock(self):
+        source = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("-r requirements-lock.txt", source)
+        self.assertNotIn("-r requirements-dev.txt", source)
+
 
 if __name__ == "__main__":
     unittest.main()

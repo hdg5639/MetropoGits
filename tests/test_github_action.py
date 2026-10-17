@@ -120,6 +120,13 @@ class GithubActionTests(unittest.TestCase):
         self.assertNotIn("pull_request_target", workflow)
         self.assertIn("persist-credentials: false", workflow)
 
+    def test_action_install_uses_the_runtime_constraint_lock(self):
+        action = (ROOT / "action.yml").read_text(encoding="utf-8")
+
+        self.assertIn(
+            '--constraint "$GITHUB_ACTION_PATH/requirements-lock.txt"', action
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

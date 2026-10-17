@@ -44,16 +44,23 @@ publishing generated repository metadata.
 
 ## Contract validation
 
-Install the pinned development dependency and run the contract tests:
+Install the pinned Python 3.11 development environment and run the contract
+tests:
 
 ```powershell
-python -m pip install -r requirements-dev.txt
+python -m pip install -r requirements-lock.txt
 python -m unittest discover -s tests -v
 ```
 
 The same lint, compile, JavaScript parse, dependency consistency, and full test
 gates run automatically on pull requests and pushes to `main` through the
 least-privilege [quality workflow](.github/workflows/ci.yml).
+
+Security reporting, contribution gates, and the reviewed direct/transitive
+dependency list are documented in [SECURITY.md](SECURITY.md),
+[CONTRIBUTING.md](CONTRIBUTING.md), and the
+[dependency inventory](docs/DEPENDENCY_INVENTORY.md). A project license has not
+yet been selected, so public release and external contributions remain blocked.
 
 Validate an individual Universal Code Graph document:
 
