@@ -1,8 +1,8 @@
 # v1 candidate status
 
 MetropoGits has reached a locally verified **v1 candidate** milestone. This is
-a product-maturity statement, not a `1.0.0` package release, public deployment,
-or license grant. The machine-readable source of truth remains
+a product-maturity statement, not a `1.0.0` package release or public
+deployment. The machine-readable source of truth remains
 [`release/readiness.json`](../release/readiness.json).
 
 ## Verified candidate boundary
@@ -31,11 +31,9 @@ The following promotion conditions remain intentionally unresolved:
 1. **DEC-009 renderer implementation:** [`ADR-005`](adr/ADR-005.md) requires a
    genuine interactive 3D viewer for stable v1. The current isometric renderer
    remains the deterministic preview and non-WebGL fallback.
-2. **Project license:** select and add an explicit project license before a
-   public release or external contributions are invited.
-3. **Pages publication:** explicitly opt into GitHub Pages publication and
+2. **Pages publication:** explicitly opt into GitHub Pages publication and
    verify the generated viewer at its repository-subpath URL.
 
-Until all three conditions are resolved, the project stays a v1 candidate,
+Until both conditions are resolved, the project stays a v1 candidate,
 `release/readiness.json` stays `BLOCKED`, and no `v1.0.0` tag or package-version
 promotion should be created.

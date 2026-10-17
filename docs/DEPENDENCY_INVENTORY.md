@@ -24,8 +24,13 @@ closure. `pyproject.toml` pins the build backend and runtime dependency. The
 GitHub Action applies the lock file as a constraint when installing its isolated
 runtime.
 
-This is an inventory, not legal advice. Before a public release, regenerate the
-environment from the lock, inspect every installed distribution's license
-files, review bundled or vendored components, and record the review revision.
-The repository itself currently has no `LICENSE`; public release and external
-code contributions remain blocked until the owner chooses one.
+This is an inventory, not legal advice. The repository uses the
+[Apache License 2.0](../LICENSE) under [`ADR-006`](adr/ADR-006.md). At that
+decision revision, the viewer contains no third-party framework, font, image,
+model, or texture asset; catalog data consists of project-authored rules and
+synthetic fixtures. No bundled attribution currently requires a root `NOTICE`.
+
+Before a public release, regenerate the environment from the lock, inspect
+every installed distribution's license files, review bundled or vendored
+components, and record the review revision. Repeat the compatibility and
+NOTICE review whenever a dependency or visual asset is added.

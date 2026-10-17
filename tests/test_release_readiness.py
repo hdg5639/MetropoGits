@@ -92,7 +92,6 @@ class ReleaseReadinessTests(unittest.TestCase):
                 "ACCEPTANCE_EVIDENCE",
                 "DECISION_COMPLIANCE",
                 "FRESH_REPOSITORY_PUBLISHING",
-                "PROJECT_LICENSE",
             ],
             [item["id"] for item in blocked],
         )

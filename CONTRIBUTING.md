@@ -5,11 +5,11 @@ semantics, deterministic artifacts, and the no-execution security boundary.
 
 ## License status
 
-The project owner has not selected a project license yet. Until a root
-`LICENSE` file is published, do not submit external code or documentation
-contributions. This explicit gate avoids implying rights or contribution terms
-that have not been chosen. Security reports may still be submitted privately
-using [SECURITY.md](SECURITY.md).
+The project is licensed under the [Apache License 2.0](LICENSE). Unless you
+explicitly state otherwise, an intentional contribution submitted for
+inclusion is provided under those same terms. Do not submit material that you
+do not have the right to license. Security reports should be submitted
+privately using [SECURITY.md](SECURITY.md).
 
 ## Development setup
 

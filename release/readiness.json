@@ -223,14 +223,17 @@
       "summary": "Every P0 requirement is mapped to automated repository evidence."
     },
     {
-      "blocker": "The project owner must select and publish a project license.",
+      "blocker": null,
       "evidence": [
         "CONTRIBUTING.md",
-        "docs/DEPENDENCY_INVENTORY.md"
+        "LICENSE",
+        "docs/DEPENDENCY_INVENTORY.md",
+        "docs/adr/ADR-006.md",
+        "tests/test_governance.py::GovernanceTests::test_project_uses_apache_2_license"
       ],
       "id": "PROJECT_LICENSE",
-      "status": "BLOCKED",
-      "summary": "Public release and external contributions require explicit project licensing."
+      "status": "AUTOMATED",
+      "summary": "The Apache License 2.0 text, package metadata, contribution terms, and dependency compatibility review are present."
     },
     {
       "blocker": null,

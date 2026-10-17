@@ -89,22 +89,20 @@ class GovernanceTests(unittest.TestCase):
                 rf"\| \[{re.escape(name)}\]\([^\n]+\) \| {re.escape(version)} \|",
             )
 
-    def test_missing_project_license_is_an_explicit_release_blocker(self):
+    def test_project_uses_apache_2_license(self):
         contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
         inventory = (ROOT / "docs" / "DEPENDENCY_INVENTORY.md").read_text(
             encoding="utf-8"
         )
-        license_exists = any(
-            (ROOT / name).is_file()
-            for name in ("LICENSE", "LICENSE.md", "LICENSE.txt")
-        )
+        license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+        project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
-        if license_exists:
-            self.assertNotIn("has not selected a project license", contributing)
-            self.assertNotIn("currently has no `LICENSE`", inventory)
-        else:
-            self.assertIn("has not selected a project license", contributing)
-            self.assertIn("currently has no `LICENSE`", inventory)
+        self.assertIn("Apache License", license_text)
+        self.assertIn("Version 2.0, January 2004", license_text)
+        self.assertIn("END OF TERMS AND CONDITIONS", license_text)
+        self.assertEqual({"file": "LICENSE"}, project["project"]["license"])
+        self.assertIn("Apache License 2.0", contributing)
+        self.assertIn("No bundled attribution currently requires", inventory)
 
     def test_stable_spatial_allocator_decision_is_recorded(self):
         adr = (ROOT / "docs" / "adr" / "ADR-004.md").read_text(

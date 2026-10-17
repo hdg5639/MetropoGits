@@ -95,8 +95,9 @@ requirement coverage alone never declares a release ready.
 Security reporting, contribution gates, and the reviewed direct/transitive
 dependency list are documented in [SECURITY.md](SECURITY.md),
 [CONTRIBUTING.md](CONTRIBUTING.md), and the
-[dependency inventory](docs/DEPENDENCY_INVENTORY.md). A project license has not
-yet been selected, so public release and external contributions remain blocked.
+[dependency inventory](docs/DEPENDENCY_INVENTORY.md). MetropoGits is licensed
+under the [Apache License 2.0](LICENSE). Public repository conversion and Pages
+publication remain intentionally deferred.
 
 Validate an individual Universal Code Graph document:
 
