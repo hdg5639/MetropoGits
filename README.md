@@ -3,7 +3,9 @@
 MetropoGits turns source repositories into explorable, architecture-driven
 cities. The implementation is at a v1 candidate milestone: every P0 functional
 requirement has automated evidence, while public release remains blocked on the
-owner decisions and opt-in deployment listed in `release/readiness.json`.
+owner decisions and opt-in deployment listed in `release/readiness.json`. See
+[v1 candidate status](docs/V1_CANDIDATE.md) for the verified boundary and the
+three promotion conditions.
 
 ## Structural preview quick start
 
