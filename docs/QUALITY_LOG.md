@@ -1152,3 +1152,55 @@
   explicitly deferred by ADR-007 until maintainer approval.
 - Commits created / pushed (and branch): `b800094`, `eac434f`, and `8c96e22`
   on local `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - major structural districts (`9feedc5`)
+
+- Implemented: the viewer and README SVG now identify major structural
+  districts from the real directory hierarchy and subtree building counts.
+  Deterministic colored ground plates, stronger borders, and priority labels
+  expose large module boundaries without adding scene entities or claiming
+  that directory names prove runtime services.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at exact revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`, plus synthetic
+  large-branch and small two-district renderer fixtures.
+- Commands run: two complete matching CLI builds; UCG-to-archetype count audit;
+  Chrome SwiftShader WebGL, forced 2D fallback, and CPU SVG captures; `pip
+  check`; Ruff; `compileall`; JavaScript syntax; release-readiness validation;
+  the full automated suite; whitespace checks; and SHA-256 comparisons across
+  graph, scene, preview, HTML, and viewer assets.
+- Artifacts inspected: `viewer-webgl.png`, `viewer-fallback.png`, `preview.png`,
+  and the generated static artifacts under
+  `D:\Code\MetroPoGits\.visual-gj-cloud-major-districts-2`.
+- Visual findings: PASS. The overview now names and separates `Auth`, `Ops`,
+  `User`, `Vm`, and `portal`. WebGL presents five distinct ground zones, the
+  2D fallback makes their boundaries immediately legible, and the SVG keeps
+  all five labels above buildings and roads. The one-building `api-docs-ui`
+  and `gamjabox-landing` branches remain in the city but are not promoted as
+  major overview districts.
+- Spec alignment: PASS. Selection uses only observed directory containment and
+  building membership. It is labeled `Major district (structural)` and does
+  not infer service semantics, modify the UCG, add semantic decorations, or
+  execute repository code. Graph and City Scene hashes remain unchanged.
+- Tests / determinism / stability: 201 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. Matching builds produced
+  identical SHA-256
+  `265744be3ab128404eee37cbb9a8b8f048ce0babc44fb239a36792189df50859`
+  for `graph.ucg.json`,
+  `d8ea9667648f818abe84ac4c31d14486bc6903a56db2a344fc6717ea3a0dcb5c`
+  for `city.json`, and
+  `ce7b780f2ff2aadb9ba1cfe92c9fc94189a458b5ca8e808eb5a122575b010f84`
+  for `preview.svg`; HTML and all changed viewer assets also matched exactly.
+- Fixes applied and reverified: initial WebGL labels clipped short names and
+  initial SVG labels were overdrawn by buildings. Major-label widths were
+  expanded and SVG labels were moved to the final paint layer, then all three
+  renderers were captured again. A blank fallback capture was traced to a
+  browser-process race and repeated with an isolated, waited Chrome process.
+- Open risks / next actions: the mapping audit found no role-to-archetype loss:
+  all 254 file role claims are represented. The 140 specialized buildings map
+  from 49 entrypoints, 43 services, 26 persistence adapters, and 22
+  configurations; 114 general components intentionally remain generic. The
+  remaining generic majority therefore requires new evidence-backed semantic
+  coverage, especially for JS/TS, rather than cosmetic reclassification. LOD
+  and a distinct README showcase composition remain the next visual priorities.
+- Commits created / pushed (and branch): `9feedc5` on local `main`; push is
+  scheduled after this checkpoint log commit.
