@@ -792,7 +792,12 @@
     );
   }
 
+  function corridorVisible(rectangle, renderedNetworkIds) {
+    return !rectangle.networkIds || rectangle.networkIds.some(id => renderedNetworkIds.has(id));
+  }
+
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    corridorVisible,
     aggregateParts,
     createLodPolicy,
     createIndex,

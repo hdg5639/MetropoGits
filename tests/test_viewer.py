@@ -63,8 +63,10 @@ class ViewerTests(unittest.TestCase):
         self.assertNotIn("https://", html)
         self.assertNotIn("fetch(", first["assets/viewer.js"].decode("utf-8"))
         self.assertIn('"territories":{"cellSize":7,"districts":[', viewer_data)
-        self.assertIn('"streets":{"cellSize":7,"rectangles":[', viewer_data)
-        self.assertIn("Street grid (visual)", html)
+        payload = json.loads(viewer_data.removeprefix("globalThis.METROPOGITS_DATA=").strip().removesuffix(";"))
+        self.assertEqual("network.path", payload["streets"]["basis"])
+        self.assertTrue(payload["streets"]["segments"])
+        self.assertIn("Route corridor (derived)", html)
 
     def test_viewer_assets_are_subpath_safe(self):
         graph = load_fixture()

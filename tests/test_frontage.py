@@ -110,7 +110,7 @@ class FrontageTests(unittest.TestCase):
         self.assertLess(popular.neighbors[files[0]["id"]][files[1]["id"]],
                         first.neighbors[files[0]["id"]][files[1]["id"]])
 
-    def test_real_scene_has_internal_streets_without_invented_networks(self):
+    def test_real_scene_reserves_circulation_without_paving_unrelated_empty_land(self):
         graph, _ = fixture()
         original = copy.deepcopy(graph)
         scene = generate_city(graph)
@@ -119,7 +119,8 @@ class FrontageTests(unittest.TestCase):
         self.assertEqual(original, graph)
         streets = derive_street_grid(scene)
         self.assertFalse(streets["semantic"])
-        self.assertGreater(len(streets["rectangles"]), 0)
+        self.assertEqual([], streets["rectangles"])
+        self.assertGreater(BUILDING_AXIS[3] - BUILDING_AXIS[2], 7)
         for road in streets["rectangles"]:
             for building in scene["buildings"]:
                 self.assertFalse(road["x"] < building["x"] + building["width"]

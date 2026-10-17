@@ -38,6 +38,13 @@ Internal circulation is reserved before buildings are placed; visual street
 surfaces are not communication claims. Layout 1.13 hints are intentionally
 incompatible with 1.14; all source identities and UCG facts remain unchanged.
 
+ADR-014's review amendment replaces vacant-cell paving with a presentation-only
+segment graph derived from canonical `network.path`. Overlaps share provenance,
+crossings define visual junctions, and lane paint/animation use those same paths.
+LOD/filter-hidden routes also hide their corridor surfaces. Unknown/no-relation
+inputs produce no paved streets. This does not change canonical layout/paths
+or schema versions; aggregate route anchors are not per-file doorways.
+
 ## Functional scope and open work
 
 P0 FR-001 through FR-016 are mapped to automated evidence in

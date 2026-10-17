@@ -2254,3 +2254,53 @@
   expansion; this repairs an existing regression under TECH 8 / FR-023.
 - Delivery: independent fix(viewer) commit to owner-authorized main. Next is
   route-derived road geometry, not further decoration of empty land.
+
+## Checkpoint 2026-10-18 — route-derived pavement, not empty-space infill
+
+- Implemented: ADR-014 review amendment, authorized by maintainer. Pavement is
+  derived from canonical network.path, split at orthogonal crossings and
+  collinear overlap boundaries; each segment exposes exact contributing network
+  IDs and their edge IDs. Lane paint follows those centerlines. Shared sections
+  are drawn once, and pavement visibility follows route LOD/filter visibility.
+  Surfaces use flat WebGL quads instead of full 3D boxes. No new graph facts.
+- Correction to the preceding frontage assessment: zero building intersections
+  did not prove that streets were meaningful. The rejected rule paved vacant
+  land; 70.14%/81.12% of GJ/OJ road cells carried no canonical route. This design
+  is removed, not hidden by extra decoration. Reserved layout space remains.
+- Fixtures: GJ-Cloud 3d9b53f (1324 buildings), GamjaOJ b163acd (681), maintained
+  spring-positive and structural-showcase. No input application executed.
+- Commands/artifacts: full `build` for all four into workspace
+  `artifacts/visual/route-corridors/<case>`; final asset/metadata repack of the
+  unchanged GJ/OJ scenes into `route-corridors-r2`, fresh small-fixture builds
+  there. `node scripts/viewer_audit.mjs <chrome>
+  ../artifacts/visual/route-corridors-audit <gj-r2> <oj-r2>` includes synthetic-on
+  checks at three LODs. GJ Detail/Overview and OJ Detail PNGs inspected, GJ
+  showcase, Spring detailed SVG and unknown-framework showcase rendered/opened.
+- Measurements: GJ 857 derived segments / 286 junctions / 2631 surface pieces;
+  OJ 187 / 46 / 594. Previous surface boxes: 5838/2072. New WebGL surface pieces
+  are two-triangle quads, not twelve-triangle boxes. Every network's path length
+  is exactly covered by its attributed derived segments on both repositories;
+  no ungrounded road segments and zero pavement/building intersections. Both
+  canonical City and UCG files are byte-identical to frontage-streets-r4, hence
+  zero layout churn, unchanged evidence/memberships and hint compatibility.
+- Tests: 243 run, 242 pass, one expected Windows symlink skip; eight Node audit
+  tests. Added crossing/overlap provenance, input permutation, non-grid path
+  coordinates, actual paint direction, no-relation/no-paving and conservative
+  diagonal legacy fallback tests. Projection fixture now has an evidenced edge
+  so street clipping and Python/JS parity checks cannot pass vacuously. SVG
+  golden updated for reviewed route surfaces, not for canonical scene changes.
+  Ruff, compile, pip dependency, readiness, and whitespace checks pass.
+- Performance: GJ/OJ synthetic Detail CPU p95 1.5/0.5 ms; zero static city builds
+  in every sampled animation frame. Marker movement and upload sizes verified.
+  No FPS/GPU-completion claim. Actual screenshots have fewer disconnected road
+  patches; unsupported/no-edge fixture retains buildings without invented roads.
+- Spec alignment: TECH 7/8, AC-006 and DEC-005/011; no schema, stable ID, layout,
+  source-execution, backend, dependency or publishing changes. Static showcases
+  record selected road provenance in metadata. Old diagonal paths retain their
+  original relation overlay without fabricated orthogonal pavement.
+- Open limits: existing routes still use aggregate geometric anchors, not
+  individual building entrance spurs. Visual intersections do not assert new
+  logical relations or runtime transfer. Generalized access-point routing,
+  contextual labels and semantic aggregate placement remain follow-up work.
+- Delivery: independent fix(renderer) unit after 1d5d63d, committed/pushed to
+  owner-authorized main with human attribution only. Pages remains deferred.

@@ -700,14 +700,13 @@
       STREET: "#172437",
     };
     for (const rectangle of streetRectangles) {
-      box(
+      if (!filterEngine.corridorVisible(rectangle, renderedNetworkIds)) continue;
+      roadSegment(
         triangles,
-        rectangle.x,
-        rectangle.elevation ?? 0.08,
-        rectangle.z,
-        rectangle.width,
-        0.008,
+        [rectangle.x, rectangle.z + rectangle.depth / 2],
+        [rectangle.x + rectangle.width, rectangle.z + rectangle.depth / 2],
         rectangle.depth,
+        rectangle.elevation ?? 0.08,
         color(rectangle.color || streetColors[rectangle.tier] || streetColors.STREET),
       );
     }

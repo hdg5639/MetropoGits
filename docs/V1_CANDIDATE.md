@@ -22,7 +22,7 @@ deployment. The machine-readable source of truth remains
 - The primary viewer renders genuine perspective WebGL geometry with orbit,
   zoom, selection, evidence inspection, and filters. WebGL failure starts the
   isometric 2D fallback from the same static artifact.
-- The 2026-10-18 frontage regression run executed 240 tests: 239 passed and one
+- The 2026-10-18 corridor regression run executed 243 tests: 242 passed and one
   Windows symlink test was skipped. The preceding visual checkpoint includes
   repeated deterministic builds and inspection of both render targets on
   GJ-Cloud and GamjaOJ. Exact evidence is recorded in

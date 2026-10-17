@@ -10,6 +10,7 @@ from metropogits.projection import aggregate_parts, derive_blocks
 from metropogits.scanner import ScanResult, ScannedFile, build_structural_ucg
 from metropogits.territory import derive_district_territories
 from metropogits.streets import derive_street_grid
+from scripts.stable_ids import make_edge_id
 
 
 def projection_fixture():
@@ -29,6 +30,17 @@ def projection_fixture():
         ),
         "fixture/projection",
     )
+    # Exercise corridor clipping/parity with a real, evidenced fixture edge;
+    # an all-structural graph would make the no-street-overlap assertion vacuous.
+    files = {entity["path"]: entity["id"] for entity in graph["entities"] if entity["kind"] == "FILE"}
+    source, target = files["API/service/File000.py"], files["API/service/File034.py"]
+    graph["evidence"].append(dict(evidenceId="fixture:reference", sourcePath="API/service/File000.py",
+                                  extractor="fixture", kind="AST", summary="Fixture reference"))
+    graph["evidence"].sort(key=lambda item: item["evidenceId"])
+    graph["edges"].append(dict(id=make_edge_id(source, "REFERENCES", target), type="REFERENCES",
+                               confidence="RESOLVED", evidenceIds=["fixture:reference"],
+                               **{"from": source, "to": target}))
+    graph["edges"].sort(key=lambda item: item["id"])
     return generate_city(graph), graph
 
 
@@ -79,6 +91,7 @@ process.stdout.write(JSON.stringify(data.map(globalThis.METROPOGITS_BUILDING_FOR
         scene, _ = projection_fixture()
         blocks = derive_blocks(scene)
         streets = derive_street_grid(scene)["rectangles"]
+        self.assertTrue(streets)
         members = [m for b in blocks for m in b["memberEntityIds"]]
         self.assertEqual(
             sorted(b["entityId"] for b in scene["buildings"]), sorted(members)

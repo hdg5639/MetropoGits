@@ -132,7 +132,8 @@ def render_showcase(scene, graph, width=1200, height=675):
     )
     for district_id in visible_districts:
         mapping[district_id] = dict(kind="district", districtId=district_id)
-    mapping["visual:streets"] = dict(kind="structural-streets", semantic=False)
+    mapping["visual:streets"] = dict(kind="structural-streets", semantic=False,
+                                     basis="network.path", networkIds=sorted(n["id"] for n in networks))
 
     surfaces = [
         (r, district_id)
@@ -226,7 +227,7 @@ def render_showcase(scene, graph, width=1200, height=675):
             colors.get(district_id, "#172236"),
             f'data-map-id="{_escape(district_id)}"',
         )
-    for rect in derive_street_grid(scene)["surfaces"]:
+    for rect in derive_street_grid({**scene, "networks": networks})["surfaces"]:
         polygon(
             [project(x, z) for x, z in _corners(rect)],
             rect["color"],

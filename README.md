@@ -176,8 +176,10 @@ are ignored, reported in build diagnostics, and never override the current UCG.
 
 Layout `hierarchical-paged/1.14` reserves internal streets and uses evidenced
 roles/references for bounded local frontage. It intentionally ignores 1.13
-hints because spacing changed; 1.14 hints preserve existing sites. Streets are
-visual infrastructure, not inferred communication. See [ADR-014](docs/adr/ADR-014.md)
+hints because spacing changed; 1.14 hints preserve existing sites. Paving, lane
+paint and synthetic markers follow the same canonical relationship paths;
+unused circulation space is not automatically paved. These are static relation
+illustrations, not measured runtime traffic. See [ADR-014](docs/adr/ADR-014.md)
 for the distinction and the limits of service-wide boundary placement.
 
 Render a deterministic CPU-only SVG preview:

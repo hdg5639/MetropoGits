@@ -597,6 +597,7 @@
   }
 
   function drawStructuralStreet(rectangle) {
+    if (!filterEngine.corridorVisible(rectangle, renderedNetworkIds)) return;
     const colors = {
       ALLEY: "#263447",
       BOULEVARD: "#0b1320",

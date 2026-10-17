@@ -172,3 +172,31 @@ renderer observations, not GPU FPS or a cold-start SLA. Reproduce and reverse
 order for broader performance conclusions. Canonical layout changed in 1.14,
 so this final run is not a cache-only controlled A/B; the earlier cache-specific
 checkpoint used unchanged scenes.
+
+## Correction: synthetic-on performance and route-derived paving
+
+The previous table measured synthetic-off orbit only. It did not catch the
+synthetic mode bypassing the cache and uploading all geometry every frame.
+The audit now samples 20 synthetic-on frames after five warmup frames at each
+LOD, verifies moving marker vertices and zero static builds, and records upload
+bytes. Camera configuration and frame sequence capture are atomic to avoid a
+pending animation frame being mistaken for a completed camera change.
+
+| Synthetic Detail | Before | Cache fix, same scene | Route-corridor presentation |
+| --- | ---: | ---: | ---: |
+| GJ CPU p95 ms | 105.5 | 1.7 | 1.5 |
+| OJ CPU p95 ms | 49.8 | 0.5 | 0.5 |
+| GJ upload bytes/frame | 14043456 | 174960 | 174960 |
+| OJ upload bytes/frame | 5591232 | 40176 | 40176 |
+| Static builds per 20 frames | 20 | 0 | 0 |
+
+Local raw reports: `artifacts/visual/synthetic-before`, `synthetic-after-r2`,
+and `route-corridors-audit`. These remain software-renderer CPU/submit metrics,
+not hardware FPS. Inputs retain identical canonical UCG and City bytes.
+
+The old paving rule covered all unused cells and was rejected after review.
+Final pavement instead follows exact canonical paths; crossings/overlaps share
+derived geometry and provenance. Actual GJ/OJ Detail and GJ Overview captures
+were inspected, plus the GJ showcase and small/unknown fixtures. Unrelated land
+is no longer striped as roads. Endpoint anchors remain aggregate-level, and
+duplicate labels/Overview archetype placement remain separate open issues.

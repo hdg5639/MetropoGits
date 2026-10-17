@@ -38,8 +38,8 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            # ADR-014: 1.14 circulation spacing and shared curb/asphalt surfaces.
-            "315543d3381a9a40089e92a06b7efea624ad1384bb107974b49d33f90d4c2f2d",
+            # ADR-014 review: exact route-derived pavement, no vacant-land infill.
+            "cc6688eed5bb70ac228ad6396349d16dcfa25788ce833a0b286f98045201e102",
             hashlib.sha256(first).hexdigest(),
         )
 

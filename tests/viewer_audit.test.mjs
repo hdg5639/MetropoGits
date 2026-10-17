@@ -5,7 +5,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Script } from 'node:vm';
 import '../metropogits/viewer_assets/viewer-3d.js';
+import '../metropogits/viewer_assets/viewer-filters.js';
 import { Cdp, instrument, replaceOnce, summarize, reportHtml, prepare } from '../scripts/viewer_audit.mjs';
+
+test('corridor visibility follows its actual contributing routes across filters and LOD', () => {
+  const visible = globalThis.METROPOGITS_FILTERS.corridorVisible;
+  const shared = {networkIds: ['a', 'b']};
+  assert.equal(visible(shared, new Set(['a'])), true);
+  assert.equal(visible(shared, new Set(['b'])), true);
+  assert.equal(visible(shared, new Set(['c'])), false);
+  assert.equal(visible(shared, new Set()), false);
+  assert.equal(visible({}, new Set()), true); // legacy presentation data
+});
 
 test('static geometry cache survives animation ticks and invalidates visual state', () => {
   const cache = globalThis.METROPOGITS_GEOMETRY_CACHE();
