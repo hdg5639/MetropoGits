@@ -85,3 +85,17 @@ jobs:
           for file in graph.ucg.json city.json preview.svg index.html manifest.json README_SNIPPET.md; do
             test -s "$ARTIFACT_PATH/$file"
           done
+
+      - name: Smoke-test the genuine WebGL viewer
+        shell: bash
+        env:
+          ARTIFACT_PATH: ${{ steps.city.outputs.artifact-path }}
+        run: |
+          set -euo pipefail
+          viewer_url="$(python -c 'import os, pathlib; print((pathlib.Path(os.environ["ARTIFACT_PATH"]) / "index.html").resolve().as_uri())')"
+          dom_path="${RUNNER_TEMP}/metropogits-viewer-dom.html"
+          google-chrome --headless=new --no-sandbox --disable-dev-shm-usage \
+            --use-angle=swiftshader --enable-unsafe-swiftshader \
+            --virtual-time-budget=3000 --dump-dom "$viewer_url" > "$dom_path"
+          grep -Fq '>WebGL 3D<' "$dom_path"
+          grep -Fq 'aria-label="Interactive 3D repository city"' "$dom_path"

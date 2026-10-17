@@ -57,6 +57,10 @@ class ContinuousIntegrationTests(unittest.TestCase):
         self.assertIn("tests/fixtures/repositories/spring-positive", source)
         self.assertIn('test "$ACTION_STATUS" = "COMPLETE"', source)
         self.assertIn("graph.ucg.json city.json preview.svg", source)
+        self.assertIn("google-chrome --headless=new", source)
+        self.assertIn("--use-angle=swiftshader --enable-unsafe-swiftshader", source)
+        self.assertIn("'>WebGL 3D<'", source)
+        self.assertIn('aria-label="Interactive 3D repository city"', source)
 
     def test_direct_development_requirements_are_exactly_pinned(self):
         requirements = [
