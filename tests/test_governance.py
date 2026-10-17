@@ -162,7 +162,8 @@ class GovernanceTests(unittest.TestCase):
         active_workflows = list((ROOT / ".github" / "workflows").glob("*.yml"))
 
         self.assertIn("Status: Accepted", decision)
-        self.assertIn("public repository conversion and Pages activation are deferred", decision)
+        self.assertIn("The maintainer completed public repository conversion", decision)
+        self.assertIn("Pages activation remains deferred", decision)
         self.assertIn("explicitly approves", decision)
         self.assertEqual(["ci.yml"], [path.name for path in active_workflows])
 

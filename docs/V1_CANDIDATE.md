@@ -22,9 +22,10 @@ deployment. The machine-readable source of truth remains
 - The primary viewer renders genuine perspective WebGL geometry with orbit,
   zoom, selection, evidence inspection, and filters. WebGL failure starts the
   isometric 2D fallback from the same static artifact.
-- The final repository audit passed 182 tests with one environment-specific
-  symlink skip, repeated deterministic builds, and visual inspection of both
-  render targets. Exact evidence is recorded in
+- The 2026-10-18 regression run executed 218 tests: 217 passed and one
+  Windows symlink test was skipped. The preceding visual checkpoint includes
+  repeated deterministic builds and inspection of both render targets on
+  GJ-Cloud and GamjaOJ. Exact evidence is recorded in
   [`QUALITY_LOG.md`](QUALITY_LOG.md).
 
 ## Conditions for public v1 promotion
@@ -32,10 +33,26 @@ deployment. The machine-readable source of truth remains
 The following promotion condition remains intentionally unresolved:
 
 1. **Deferred Pages publication:** [`ADR-007`](adr/ADR-007.md) selects Pages for
-   the eventual public demo but explicitly prohibits enabling it or changing
-   repository visibility until the maintainer approves publication. After that
-   approval, verify the viewer at its repository-subpath URL.
+   the eventual public demo. Repository visibility became public on 2026-10-18;
+   Pages remains disabled and requires separate publication authorization.
+   After deployment, verify the README link and repository-subpath viewer URL.
 
 Until that condition is resolved, the project stays a v1 candidate,
 `release/readiness.json` stays `BLOCKED`, and no `v1.0.0` tag or package-version
 promotion should be created.
+
+## Visual completion and scope
+
+Automated coverage is not evidence that the city has reached its visual quality
+target. The [visual completion roadmap](V1_VISUAL_COMPLETION_PLAN.md) separately
+tracks README composition, road and archetype legibility, and controlled
+cross-repository comparison. Completing the Pages check alone does not close
+those tasks or automatically authorize a version promotion.
+
+P0 FR-001 through FR-016 remain the functional v1 baseline. Existing optional
+history, metropolis, and synthetic activity implementations are P2; their early
+implementation is recorded in [the decision audit](DECISION_AUDIT.md), and
+further expansion is deferred while visual completion is the priority.
+
+See [current contracts](contracts/CURRENT_BASELINE.md) for UCG/City compatibility
+and the limits of the original v0.1 specification examples.

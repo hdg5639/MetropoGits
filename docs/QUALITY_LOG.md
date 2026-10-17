@@ -1897,3 +1897,43 @@
   size/line metrics still require explicit schema approval.
 - Commits created / pushed (and branch): `08948d9` and `329b40b` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-18 - contract documentation and public repository state
+
+- Implemented: reconciled README, candidate status, versioned contract notes,
+  roadmap, ADR-007, and release-readiness descriptions. Repository visibility
+  is public; Pages remains deferred. Corrected the roadmap's already-shipped
+  Next.js/test PATH rules. No renderer or scene-generation code changed.
+- Fixture(s) / revision(s): maintained `spring-positive` fixture at source
+  revision `22aafa8`; generated revision label `docs-sync`.
+- Commands run: `python -m unittest discover -s tests -q` (218 run, 217 pass,
+  one Windows symlink skip); after the publication assertion update,
+  governance (9) and readiness (11) tests passed; CLI readiness validation,
+  Ruff, compileall, Node parsing, pip check, and git whitespace checks passed.
+  Built twice with `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --repo-id fixture/docs-sync
+  --revision docs-sync --out ../artifacts/visual/docs-sync-20261018/first`
+  and the same command with output `second`; all 12 files including the
+  manifest matched by SHA-256. GitHub repository API returned `private:false`,
+  `visibility:public`, `has_pages:false`.
+- Artifacts inspected: `artifacts/visual/docs-sync-20261018/first` UCG/City,
+  and sibling `viewer.png` / `preview.png` captures from headless Chrome.
+  WebGL rendered six role-colored buildings and two evidenced networks.
+  Representative building evidence and network edge references were inspected.
+- Visual findings: WebGL initialization and the small fixture's distinct
+  silhouettes are usable. Existing detailed SVG has a framing/layering defect:
+  a large district surface covers part of the title region. Recorded as an
+  explicit VIS-02 correction and regression case; visual completion is NOT
+  claimed. No new large-repository or interaction-performance measurement ran.
+- Spec alignment: PASS for documentation reconciliation; UCG remains 0.1,
+  City producer remains 0.2 and layout 1.13. Original sibling specifications
+  received dated reconciliation notes; the committed contract baseline records
+  the same facts because those sibling files are outside this Git repository.
+- Fixes applied and reverified: governance assertion now distinguishes
+  completed public conversion from deferred Pages. Release state remains
+  BLOCKED with unchanged check statuses. The SVG defect is queued for the
+  renderer work unit and blocks claiming visual polish complete.
+- Open risks / next actions: write Showcase ADR, then implement its CPU
+  renderer with protected header bounds and cross-repository visual checks.
+- Commits created / pushed (and branch): this documentation work unit is on
+  `main`; push follows the final documentation validation.

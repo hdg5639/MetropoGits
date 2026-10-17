@@ -5,7 +5,8 @@ cities. The implementation is at a v1 candidate milestone: every P0 functional
 requirement and the genuine 3D viewer have automated evidence, while public
 release remains deliberately deferred under `release/readiness.json`. See
 [v1 candidate status](docs/V1_CANDIDATE.md) for the verified boundary and the
-three promotion conditions.
+remaining Pages promotion condition and the separate visual-completion work.
+The repository is public; the official Pages demo is not enabled yet.
 
 ## Structural preview quick start
 
@@ -99,8 +100,15 @@ Security reporting, contribution gates, and the reviewed direct/transitive
 dependency list are documented in [SECURITY.md](SECURITY.md),
 [CONTRIBUTING.md](CONTRIBUTING.md), and the
 [dependency inventory](docs/DEPENDENCY_INVENTORY.md). MetropoGits is licensed
-under the [Apache License 2.0](LICENSE). Public repository conversion and Pages
-publication remain intentionally deferred.
+under the [Apache License 2.0](LICENSE). The maintainer made the repository
+public on 2026-10-18. Official Pages publication remains deferred.
+
+Current schema versions and compatibility are recorded in the
+[implementation baseline](docs/contracts/CURRENT_BASELINE.md). The
+[visual completion roadmap](docs/V1_VISUAL_COMPLETION_PLAN.md) tracks the
+remaining showcase, road-legibility, and cross-repository comparison work.
+History, metropolis, and synthetic activity remain optional P2 features;
+their presence does not expand the v1 acceptance scope.
 
 Validate an individual Universal Code Graph document:
 

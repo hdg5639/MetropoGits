@@ -87,7 +87,7 @@
       "summary": "Malformed and oversized input remains bounded while safe partial results survive."
     },
     {
-      "blocker": "ADR-007 explicitly defers public repository conversion and Pages activation until maintainer approval; no repository-subpath deployment URL may be verified before that approval.",
+      "blocker": "The repository is public as of 2026-10-18, but ADR-007 still defers Pages activation until separate maintainer approval; an actual deployment and repository-subpath URL check remain outstanding.",
       "evidence": [
         "docs/QUALITY_LOG.md",
         "docs/adr/ADR-007.md",
@@ -176,7 +176,7 @@
       "summary": "DEC-001 through DEC-013 are audited, including genuine WebGL 3D and deterministic non-WebGL rendering paths."
     },
     {
-      "blocker": "The clean GitHub-hosted Action succeeds, but ADR-007 defers Pages activation and public repository conversion until explicit maintainer approval.",
+      "blocker": "The clean GitHub-hosted Action succeeds and the repository is public, but ADR-007 still defers Pages activation until explicit maintainer approval.",
       "evidence": [
         "docs/QUALITY_LOG.md",
         "docs/adr/ADR-007.md",

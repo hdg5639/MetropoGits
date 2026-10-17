@@ -1,9 +1,10 @@
 # GitHub Action and Pages publishing
 
-> **Project publication is currently deferred.** [`ADR-007`](adr/ADR-007.md)
-> prohibits enabling Pages or changing repository visibility until the
-> maintainer explicitly approves publication. The instructions below describe
-> the opt-in workflow for that later point and for independent user projects.
+> **The repository is public; the official Pages demo remains deferred.**
+> The maintainer changed repository visibility on 2026-10-18. Under
+> [`ADR-007`](adr/ADR-007.md), enabling Pages still requires separate approval.
+> The instructions below describe that opt-in workflow and independent user
+> projects.
 
 MetropoGits ships a composite Action that builds the same static artifacts as
 the local CLI. It installs the released Action code into an isolated runner
