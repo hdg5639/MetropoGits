@@ -466,6 +466,103 @@ process.stdout.write(JSON.stringify(
         self.assertEqual(["auth", "ops", "portal"], json.loads(completed.stdout))
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_large_city_lod_is_deterministic_and_progressive(self):
+        script = """
+require(process.argv[1]);
+const districts = [
+  { id: "root", parentId: null },
+  { id: "app", parentId: "root" },
+  { id: "leaf", parentId: "app" },
+  { id: "deep", parentId: "leaf" },
+];
+const buildings = Array.from({ length: 300 }, (_, index) => ({
+  archetype: index < 12 ? "SERVICE_OFFICE" : "GENERIC_BUILDING",
+  districtId: "leaf",
+  entityId: `building-${index}`,
+}));
+const networks = Array.from({ length: 100 }, (_, index) => ({
+  edgeIds: Array.from({ length: 100 - index }, (_, edge) => `edge-${index}-${edge}`),
+  id: `network-${String(index).padStart(3, "0")}`,
+}));
+const policy = globalThis.METROPOGITS_FILTERS.createLodPolicy({
+  buildings,
+  districts,
+  networks,
+});
+const buildingIds = buildings.map((building) => building.entityId);
+const networkIds = networks.map((network) => network.id);
+const overview = policy.visibility("overview", buildingIds, networkIds);
+const district = policy.visibility("district", buildingIds, networkIds);
+const detail = policy.visibility("detail", buildingIds, networkIds);
+process.stdout.write(JSON.stringify({
+  deterministic: JSON.stringify(overview) === JSON.stringify(
+    policy.visibility("overview", buildingIds, networkIds),
+  ),
+  districtCount: district.buildingIds.length,
+  districtVisibility: {
+    deepAtDetail: policy.districtVisible("deep", "detail"),
+    deepAtDistrict: policy.districtVisible("deep", "district"),
+    leafAtOverview: policy.districtVisible("leaf", "overview"),
+    rootAtOverview: policy.districtVisible("root", "overview"),
+  },
+  forcedLevel: policy.levelForZoom(1, true),
+  levels: [
+    policy.levelForZoom(1),
+    policy.levelForZoom(1.5),
+    policy.levelForZoom(2.5),
+  ],
+  overviewBuildings: overview.buildingIds,
+  overviewNetworks: overview.networkIds,
+  detailCounts: [detail.buildingIds.length, detail.networkIds.length],
+  networkCounts: [overview.networkIds.length, district.networkIds.length],
+}));
+"""
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-filters.js"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        result = json.loads(completed.stdout)
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertTrue(result["deterministic"])
+        self.assertEqual(["overview", "district", "detail"], result["levels"])
+        self.assertEqual("detail", result["forcedLevel"])
+        self.assertEqual([300, 100], result["detailCounts"])
+        self.assertEqual([24, 64], result["networkCounts"])
+        self.assertEqual(
+            [f"network-{index:03d}" for index in range(24)],
+            result["overviewNetworks"],
+        )
+        self.assertTrue(
+            {f"building-{index}" for index in range(12)}.issubset(
+                result["overviewBuildings"]
+            )
+        )
+        self.assertLess(len(result["overviewBuildings"]), result["districtCount"])
+        self.assertLess(result["districtCount"], 300)
+        self.assertEqual(
+            {
+                "deepAtDetail": True,
+                "deepAtDistrict": False,
+                "leafAtOverview": True,
+                "rootAtOverview": True,
+            },
+            result["districtVisibility"],
+        )
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
     def test_nearest_manifest_dependencies_are_labeled_as_declarations(self):
         graph = {
             "edges": [

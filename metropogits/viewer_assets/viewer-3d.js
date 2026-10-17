@@ -304,6 +304,7 @@
   const cityStats = document.getElementById("city-stats");
   const clearFilters = document.getElementById("clear-filters");
   const filterSummary = document.getElementById("filter-summary");
+  const detailLevel = document.getElementById("detail-level");
   const activityToggle = document.getElementById("synthetic-activity");
   const activityNote = document.getElementById("synthetic-activity-note");
   const toolbarHelp = document.getElementById("toolbar-help");
@@ -374,6 +375,7 @@
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
+  const lodPolicy = filterEngine.createLodPolicy(scene);
   const majorDistrictColors = ["#18324a", "#2d284a", "#183d37", "#3b2b20", "#35243f"];
   const majorDistrictColorById = new Map(
     [...majorDistrictIds].sort().map((districtId, index) => [
@@ -435,6 +437,12 @@
   let viewportHeight = 1;
   let visibleBuildingIds = new Set(scene.buildings.map((building) => building.entityId));
   let visibleNetworkIds = new Set(scene.networks.map((network) => network.id));
+  let renderedBuildingIds = new Set(visibleBuildingIds);
+  let renderedDistrictIds = new Set(drawableDistrictIds);
+  let renderedNetworkIds = new Set(visibleNetworkIds);
+  let currentDetailLevel = "detail";
+  let lodCacheKey = "";
+  let visibilityVersion = 0;
 
   const colors = {
     CACHE_TOWER: "#facc15",
@@ -614,33 +622,35 @@
       }
     }
 
-    for (const block of civicBlocks) {
-      const blockColor = color("#243248");
-      const curbColor = color("#52637b");
-      box(
-        triangles,
-        block.minX,
-        -0.04,
-        block.minZ,
-        block.maxX - block.minX,
-        0.1,
-        block.maxZ - block.minZ,
-        blockColor,
-      );
-      const corners = [
-        [block.minX, block.minZ],
-        [block.maxX, block.minZ],
-        [block.maxX, block.maxZ],
-        [block.minX, block.maxZ],
-        [block.minX, block.minZ],
-      ];
-      for (let index = 1; index < corners.length; index += 1) {
-        roadSegment(triangles, corners[index - 1], corners[index], 0.42, 0.07, curbColor);
+    if (currentDetailLevel === "detail") {
+      for (const block of civicBlocks) {
+        const blockColor = color("#243248");
+        const curbColor = color("#52637b");
+        box(
+          triangles,
+          block.minX,
+          -0.04,
+          block.minZ,
+          block.maxX - block.minX,
+          0.1,
+          block.maxZ - block.minZ,
+          blockColor,
+        );
+        const corners = [
+          [block.minX, block.minZ],
+          [block.maxX, block.minZ],
+          [block.maxX, block.maxZ],
+          [block.minX, block.maxZ],
+          [block.minX, block.minZ],
+        ];
+        for (let index = 1; index < corners.length; index += 1) {
+          roadSegment(triangles, corners[index - 1], corners[index], 0.42, 0.07, curbColor);
+        }
       }
     }
 
     for (const district of scene.districts) {
-      if (!drawableDistrictIds.has(district.id)) continue;
+      if (!renderedDistrictIds.has(district.id)) continue;
       const depth = districtDepths.get(district.id) || 0;
       const y = 0.06 + depth * 0.025;
       const districtColor = selected("district", district.id)
@@ -674,7 +684,7 @@
     }
 
     for (const network of scene.networks) {
-      if (!visibleNetworkIds.has(network.id)) continue;
+      if (!renderedNetworkIds.has(network.id)) continue;
       const roadColor = selected("network", network.id)
         ? color("#f8fafc")
         : color(networkColors[network.kind] || networkColors.DEPENDENCY_ROAD);
@@ -722,7 +732,7 @@
     }
 
     for (const building of scene.buildings) {
-      if (!visibleBuildingIds.has(building.entityId)) continue;
+      if (!renderedBuildingIds.has(building.entityId)) continue;
       const baseColor = color(colors[building.archetype] || colors.GENERIC_BUILDING);
       const selectedColor = selected("building", building.entityId)
         ? lighten(baseColor, 0.62)
@@ -767,7 +777,7 @@
     if (state.syntheticActivity && activityEngine) {
       const elapsed = Math.max(0, timestamp - state.activityEpoch);
       for (const network of scene.networks) {
-        if (!visibleNetworkIds.has(network.id)) continue;
+        if (!renderedNetworkIds.has(network.id)) continue;
         const progress = (elapsed / 6000 + activityEngine.phaseForId(network.id)) % 1;
         const point = activityEngine.pointAlongPath(network.path, progress);
         if (point) {
@@ -813,7 +823,7 @@
   function buildHitRegions() {
     const regions = [];
     for (const district of scene.districts) {
-      if (!drawableDistrictIds.has(district.id)) continue;
+      if (!renderedDistrictIds.has(district.id)) continue;
       const points = [
         projected([district.x, 0.08, district.z]),
         projected([district.x + district.width, 0.08, district.z]),
@@ -831,7 +841,7 @@
       }
     }
     for (const network of scene.networks) {
-      if (!visibleNetworkIds.has(network.id)) continue;
+      if (!renderedNetworkIds.has(network.id)) continue;
       const points = network.path.map((point) => projected([point[0], 0.22, point[1]]));
       if (points.every(Boolean)) {
         regions.push({
@@ -844,7 +854,7 @@
       }
     }
     for (const building of scene.buildings) {
-      if (!visibleBuildingIds.has(building.entityId)) continue;
+      if (!renderedBuildingIds.has(building.entityId)) continue;
       const corners = [];
       for (const x of [building.x, building.x + building.width]) {
         for (const y of [0.2, building.height + 0.2]) {
@@ -917,7 +927,7 @@
     if (!labelLayer) return;
     const candidates = [];
     for (const district of scene.districts) {
-      if (!drawableDistrictIds.has(district.id)) continue;
+      if (!renderedDistrictIds.has(district.id)) continue;
       const anchor = projected([district.x + 2, 0.35, district.z + 2]);
       if (!anchor || anchor.depth < -1 || anchor.depth > 1) continue;
       const label = districtCanvasLabel(district);
@@ -954,6 +964,7 @@
 
   function render(timestamp = 0) {
     framePending = false;
+    updateLodVisibility();
     viewProjection = cameraMatrix();
     const geometry = buildGeometry(timestamp);
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -969,7 +980,7 @@
     bindAndDraw(lineBuffer, geometry.lines, gl.LINES);
     hitRegions = buildHitRegions();
     renderLabels();
-    if (state.syntheticActivity && visibleNetworkIds.size > 0) scheduleRender();
+    if (state.syntheticActivity && renderedNetworkIds.size > 0) scheduleRender();
   }
 
   function scheduleRender() {
@@ -1033,6 +1044,43 @@
     return Object.values(state.filters).filter(Boolean).length;
   }
 
+  function updateLodVisibility() {
+    const filtered = activeFilterCount() > 0;
+    const zoomRatio = initialCamera.distance / Math.max(0.01, state.distance);
+    const nextDetailLevel = lodPolicy.levelForZoom(zoomRatio, filtered);
+    const selectionKey = state.selected
+      ? `${state.selected.kind}:${state.selected.id}`
+      : "none";
+    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}`;
+    if (nextCacheKey === lodCacheKey) return;
+    currentDetailLevel = nextDetailLevel;
+    lodCacheKey = nextCacheKey;
+    const visible = lodPolicy.visibility(
+      currentDetailLevel,
+      visibleBuildingIds,
+      visibleNetworkIds,
+      state.selected,
+    );
+    renderedBuildingIds = new Set(visible.buildingIds);
+    renderedNetworkIds = new Set(visible.networkIds);
+    renderedDistrictIds = new Set(
+      scene.districts
+        .filter((district) => (
+          drawableDistrictIds.has(district.id)
+          && lodPolicy.districtVisible(district.id, currentDetailLevel)
+        ))
+        .map((district) => district.id),
+    );
+    if (state.selected?.kind === "district") renderedDistrictIds.add(state.selected.id);
+    if (detailLevel) {
+      const label = filtered
+        ? "Filtered detail"
+        : `${currentDetailLevel[0].toUpperCase()}${currentDetailLevel.slice(1)}`;
+      const status = `${label} · ${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings · ${renderedNetworkIds.size}/${visibleNetworkIds.size} routes`;
+      if (detailLevel.textContent !== status) detailLevel.textContent = status;
+    }
+  }
+
   function resetInspector(message = "Choose a building, district, or network to inspect the repository facts behind it.") {
     inspector.replaceChildren();
     inspector.append(element("p", "INSPECTOR", "eyebrow"));
@@ -1051,6 +1099,7 @@
     const visible = filterIndex.filter(state.filters);
     visibleBuildingIds = new Set(visible.buildingIds);
     visibleNetworkIds = new Set(visible.networkIds);
+    visibilityVersion += 1;
     const activeCount = activeFilterCount();
     cityStats.replaceChildren();
     addStat(scene.districts.length, "districts");

@@ -114,6 +114,93 @@
     return [...selected].filter((districtId) => districts.has(districtId)).sort();
   }
 
+  function stableBucket(value, bucketCount) {
+    let hash = 0x811c9dc5;
+    for (const character of String(value)) {
+      hash ^= character.codePointAt(0);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0) % bucketCount;
+  }
+
+  function createLodPolicy(scene) {
+    const buildings = new Map(
+      scene.buildings.map((building) => [building.entityId, building]),
+    );
+    const networks = new Map(scene.networks.map((network) => [network.id, network]));
+    const districts = new Map(scene.districts.map((district) => [district.id, district]));
+    const majorIds = new Set(majorDistrictIds(scene));
+    const districtDepths = new Map();
+
+    function districtDepth(districtId) {
+      if (districtDepths.has(districtId)) return districtDepths.get(districtId);
+      const district = districts.get(districtId);
+      const depth = !district || district.parentId === null
+        ? 0
+        : districtDepth(district.parentId) + 1;
+      districtDepths.set(districtId, depth);
+      return depth;
+    }
+    for (const district of scene.districts) districtDepth(district.id);
+
+    function levelForZoom(zoomRatio, forceDetail = false) {
+      if (forceDetail || scene.buildings.length < 256) return "detail";
+      if (zoomRatio >= 2.4) return "detail";
+      if (zoomRatio >= 1.35) return "district";
+      return "overview";
+    }
+
+    function districtVisible(districtId, level) {
+      if (level === "detail") return true;
+      if (majorIds.has(districtId)) return true;
+      const district = districts.get(districtId);
+      if (!district) return false;
+      if (level === "overview") return district.parentId === null;
+      return districtDepths.get(districtId) <= 2;
+    }
+
+    function visibility(level, candidateBuildingIds, candidateNetworkIds, selected = null) {
+      const candidateBuildings = new Set(candidateBuildingIds);
+      const candidateNetworks = new Set(candidateNetworkIds);
+      const buildingIds = [...candidateBuildings]
+        .filter((id) => {
+          const building = buildings.get(id);
+          if (!building) return false;
+          if (selected?.kind === "building" && selected.id === id) return true;
+          if (level === "detail" || building.archetype !== "GENERIC_BUILDING") return true;
+          return stableBucket(id, level === "overview" ? 8 : 3) === 0;
+        })
+        .sort();
+
+      const networkLimit = level === "overview" ? 24 : level === "district" ? 64 : Infinity;
+      const rankedNetworks = [...candidateNetworks]
+        .map((id) => networks.get(id))
+        .filter(Boolean)
+        .sort(
+          (left, right) =>
+            (right.edgeIds?.length || 0) - (left.edgeIds?.length || 0)
+            || left.id.localeCompare(right.id),
+        );
+      const networkIds = rankedNetworks.slice(0, networkLimit).map((network) => network.id);
+      if (
+        selected?.kind === "network"
+        && candidateNetworks.has(selected.id)
+        && !networkIds.includes(selected.id)
+      ) {
+        networkIds.push(selected.id);
+        networkIds.sort();
+      }
+
+      return { buildingIds, networkIds };
+    }
+
+    return Object.freeze({
+      districtVisible,
+      levelForZoom,
+      visibility,
+    });
+  }
+
   function entityMatches(entity, filters, relatedConfidences = []) {
     if (!entity) return false;
     if (filters.language && entity.language !== filters.language) return false;
@@ -279,6 +366,7 @@
   }
 
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    createLodPolicy,
     createIndex,
     declaredDependenciesForEntity,
     majorDistrictIds,

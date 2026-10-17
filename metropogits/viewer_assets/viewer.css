@@ -194,6 +194,13 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
   padding: 0.36rem 0.58rem;
   text-transform: uppercase;
 }
+.detail-level {
+  border-left: 1px solid #334155;
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  padding-left: 0.65rem;
+  white-space: nowrap;
+}
 .scene-labels { inset: 0; overflow: hidden; pointer-events: none; position: absolute; }
 .scene-label {
   background: rgba(7, 11, 20, 0.82);

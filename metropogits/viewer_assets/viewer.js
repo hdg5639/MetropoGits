@@ -13,6 +13,7 @@
   const cityStats = document.getElementById("city-stats");
   const clearFilters = document.getElementById("clear-filters");
   const filterSummary = document.getElementById("filter-summary");
+  const detailLevel = document.getElementById("detail-level");
   const activityToggle = document.getElementById("synthetic-activity");
   const activityNote = document.getElementById("synthetic-activity-note");
   const activityEngine = globalThis.METROPOGITS_ACTIVITY;
@@ -96,6 +97,7 @@
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
+  const lodPolicy = filterEngine.createLodPolicy(scene);
   const majorDistrictColors = [
     [24, 50, 74],
     [45, 40, 74],
@@ -157,6 +159,12 @@
   let framePending = false;
   let visibleBuildingIds = new Set(scene.buildings.map((building) => building.entityId));
   let visibleNetworkIds = new Set(scene.networks.map((network) => network.id));
+  let renderedBuildingIds = new Set(visibleBuildingIds);
+  let renderedDistrictIds = new Set(drawableDistrictIds);
+  let renderedNetworkIds = new Set(visibleNetworkIds);
+  let currentDetailLevel = "detail";
+  let lodCacheKey = "";
+  let visibilityVersion = 0;
   let viewportWidth = 1;
   let viewportHeight = 1;
   const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)");
@@ -217,6 +225,42 @@
     return Object.values(state.filters).filter(Boolean).length;
   }
 
+  function updateLodVisibility() {
+    const filtered = activeFilterCount() > 0;
+    const nextDetailLevel = lodPolicy.levelForZoom(state.zoom, filtered);
+    const selectionKey = state.selected
+      ? `${state.selected.kind}:${state.selected.id}`
+      : "none";
+    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}`;
+    if (nextCacheKey === lodCacheKey) return;
+    currentDetailLevel = nextDetailLevel;
+    lodCacheKey = nextCacheKey;
+    const visible = lodPolicy.visibility(
+      currentDetailLevel,
+      visibleBuildingIds,
+      visibleNetworkIds,
+      state.selected,
+    );
+    renderedBuildingIds = new Set(visible.buildingIds);
+    renderedNetworkIds = new Set(visible.networkIds);
+    renderedDistrictIds = new Set(
+      scene.districts
+        .filter((district) => (
+          drawableDistrictIds.has(district.id)
+          && lodPolicy.districtVisible(district.id, currentDetailLevel)
+        ))
+        .map((district) => district.id),
+    );
+    if (state.selected?.kind === "district") renderedDistrictIds.add(state.selected.id);
+    if (detailLevel) {
+      const label = filtered
+        ? "Filtered detail"
+        : `${currentDetailLevel[0].toUpperCase()}${currentDetailLevel.slice(1)}`;
+      const status = `${label} · ${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings · ${renderedNetworkIds.size}/${visibleNetworkIds.size} routes`;
+      if (detailLevel.textContent !== status) detailLevel.textContent = status;
+    }
+  }
+
   function selectionIsVisible() {
     if (!state.selected || state.selected.kind === "district") return true;
     if (state.selected.kind === "building") {
@@ -236,6 +280,7 @@
     const visible = filterIndex.filter(state.filters);
     visibleBuildingIds = new Set(visible.buildingIds);
     visibleNetworkIds = new Set(visible.networkIds);
+    visibilityVersion += 1;
     const activeCount = activeFilterCount();
 
     cityStats.replaceChildren();
@@ -511,7 +556,7 @@
     if (!state.syntheticActivity || !activityEngine) return;
     const elapsed = Math.max(0, timestamp - state.activityEpoch);
     for (const network of scene.networks) {
-      if (!visibleNetworkIds.has(network.id)) continue;
+      if (!renderedNetworkIds.has(network.id)) continue;
       const phase = (elapsed / 6000 + activityEngine.phaseForId(network.id)) % 1;
       const point = activityEngine.pointAlongPath(network.path, phase);
       if (!point) continue;
@@ -571,30 +616,33 @@
 
   function render(timestamp = 0) {
     framePending = false;
+    updateLodVisibility();
     hitRegions = [];
     districtLabelCandidates = [];
     context.clearRect(0, 0, viewportWidth, viewportHeight);
     drawGrid();
     for (const district of scene.districts) {
-      if (drawableDistrictIds.has(district.id)) drawDistrict(district);
+      if (renderedDistrictIds.has(district.id)) drawDistrict(district);
     }
     for (const districtId of [...majorDistrictIds].sort()) {
       const district = districts.get(districtId);
       if (district) drawMajorDistrict(district);
     }
-    for (const block of civicBlocks) drawCivicBlock(block);
+    if (currentDetailLevel === "detail") {
+      for (const block of civicBlocks) drawCivicBlock(block);
+    }
     for (const network of scene.networks) {
-      if (visibleNetworkIds.has(network.id)) drawNetwork(network);
+      if (renderedNetworkIds.has(network.id)) drawNetwork(network);
     }
     const orderedBuildings = [...scene.buildings].sort(
       (left, right) => buildingDepth(left) - buildingDepth(right) || left.entityId.localeCompare(right.entityId),
     );
     for (const building of orderedBuildings) {
-      if (visibleBuildingIds.has(building.entityId)) drawBuilding(building);
+      if (renderedBuildingIds.has(building.entityId)) drawBuilding(building);
     }
     drawDistrictLabels();
     drawSyntheticActivity(timestamp);
-    if (state.syntheticActivity && visibleNetworkIds.size > 0) scheduleRender();
+    if (state.syntheticActivity && renderedNetworkIds.size > 0) scheduleRender();
   }
 
   function scheduleRender() {
@@ -680,7 +728,7 @@
   }
 
   function focusWorld(x, z) {
-    state.zoom = Math.max(state.zoom, 1.6);
+    state.zoom = Math.max(state.zoom, 2.6);
     const projected = project(x, z);
     state.panX += viewportWidth / 2 - projected.x;
     state.panY += viewportHeight / 2 - projected.y;
