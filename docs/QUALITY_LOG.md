@@ -564,3 +564,42 @@
   license remain open.
 - Commits created / pushed (and branch): `6e86b45` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — hosted composite Action (`427ca3b`)
+
+- Implemented: a least-privilege `action-smoke` CI job that invokes the checked
+  out composite Action through `uses: ./`, analyzes the bundled Spring fixture,
+  requires `COMPLETE`, and asserts the six required static artifact files on an
+  actual GitHub-hosted `ubuntu-24.04` runner.
+- Fixture(s) / revision(s): `tests/fixtures/repositories/spring-positive` with
+  repository ID `fixture/hosted-action` and synthetic revision `hosted-runner`.
+- Commands run: local CI contract tests and the complete 178-test suite, Ruff
+  and Git whitespace checks, an authenticated read-only GitHub Actions status
+  audit, and the pushed `Quality gates` workflow at commit
+  `427ca3b233df89038375989f977243e6698f8ad7`.
+- Hosted evidence: workflow run
+  `https://github.com/hdg5639/MetropoGits/actions/runs/39018586521` completed
+  successfully. Both `quality` job `117355647077` and `action-smoke` job
+  `117355647299` completed with `success`.
+- Artifacts inspected: the hosted smoke job verified non-empty
+  `graph.ucg.json`, `city.json`, `preview.svg`, `index.html`, `manifest.json`,
+  and `README_SNIPPET.md` at the composite Action's exported artifact path.
+- Visual findings: not applicable to the CI-only change; the same Spring
+  fixture's viewer and SVG were inspected in the immediately preceding network
+  checkpoint.
+- Spec alignment: PARTIAL. The composite Action and static artifact contract
+  are now proven on the standard hosted runner with only `contents: read`.
+  GitHub Pages is not configured for this repository, and its API returned 404,
+  so AC-010 must remain blocked until an owner explicitly opts into publishing
+  and a deployment URL is verified.
+- Tests / determinism / stability: 178 tests passed locally with one unavailable
+  symlink skip, and both hosted jobs passed. Existing deterministic artifact
+  hashes from the preceding checkpoint remain applicable because this work
+  changed only CI orchestration.
+- Fixes applied and reverified: no correction was required after push; the
+  first hosted run containing the smoke job passed both jobs.
+- Open risks / next actions: update readiness evidence to distinguish the now
+  verified hosted Action from the still-unconfigured Pages deployment. DEC-009
+  and the project license also remain owner decisions.
+- Commits created / pushed (and branch): `427ca3b` on `main`, pushed before the
+  hosted check by design; this checkpoint log follows as a separate commit.
