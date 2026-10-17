@@ -20,6 +20,9 @@ class ContinuousIntegrationTests(unittest.TestCase):
         self.assertEqual(
             "read", workflow["jobs"]["quality"]["permissions"]["contents"]
         )
+        self.assertEqual(
+            "read", workflow["jobs"]["action-smoke"]["permissions"]["contents"]
+        )
         self.assertIn("pull_request", workflow["on"])
         self.assertIn("push", workflow["on"])
         self.assertNotIn("pull_request_target", source)
@@ -30,7 +33,7 @@ class ContinuousIntegrationTests(unittest.TestCase):
             match.group(1)
             for match in re.finditer(r"uses:\s+actions/[^@\s]+@([^\s#]+)", source)
         ]
-        self.assertEqual(2, len(references))
+        self.assertEqual(4, len(references))
         for revision in references:
             self.assertRegex(revision, r"^[0-9a-f]{40}$")
 
@@ -45,6 +48,15 @@ class ContinuousIntegrationTests(unittest.TestCase):
             "python -m unittest discover -s tests -v",
         ):
             self.assertIn(command, source)
+
+    def test_hosted_smoke_job_runs_the_composite_action(self):
+        source = WORKFLOW.read_text(encoding="utf-8")
+
+        self.assertIn("action-smoke:", source)
+        self.assertIn("uses: ./", source)
+        self.assertIn("tests/fixtures/repositories/spring-positive", source)
+        self.assertIn('test "$ACTION_STATUS" = "COMPLETE"', source)
+        self.assertIn("graph.ucg.json city.json preview.svg", source)
 
     def test_direct_development_requirements_are_exactly_pinned(self):
         requirements = [

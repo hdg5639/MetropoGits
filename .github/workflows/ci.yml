@@ -48,3 +48,40 @@ jobs:
 
       - name: Run contract and regression tests
         run: python -m unittest discover -s tests -v
+
+  action-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up minimum supported Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Build a fixture through the composite Action
+        id: city
+        uses: ./
+        with:
+          repository: tests/fixtures/repositories/spring-positive
+          output: action-smoke-dist
+          repo-id: fixture/hosted-action
+          revision: hosted-runner
+
+      - name: Verify the complete static artifact contract
+        shell: bash
+        env:
+          ARTIFACT_PATH: ${{ steps.city.outputs.artifact-path }}
+          ACTION_STATUS: ${{ steps.city.outputs.status }}
+        run: |
+          set -euo pipefail
+          test "$ACTION_STATUS" = "COMPLETE"
+          for file in graph.ucg.json city.json preview.svg index.html manifest.json README_SNIPPET.md; do
+            test -s "$ARTIFACT_PATH/$file"
+          done
