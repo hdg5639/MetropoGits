@@ -2138,3 +2138,18 @@
   FR-012/NF-008); schema and evidence unchanged.
 - Next: legend isolation and ADR-014 frontage/circulation implementation.
 - Commit / push: independent perf(viewer) unit on owner-authorized main.
+
+## Checkpoint 2026-10-18 — separate legend row
+
+- Implemented: canvas/labels/hover share a bounded stage; legend occupies an
+  independent auto-sized grid row, including wrapping on narrow screens.
+- Commands: 231 unittest cases (230 pass, one Windows symlink skip), real
+  spring-positive build into `artifacts/visual/frontage-legend/spring`;
+  local review repack of unchanged GJ/OJ canonical scenes into `frontage-legend`;
+  same Node audit into `frontage-legend-audit`.
+- Artifacts inspected: GJ Overview PNG now fits foreground geometry above the
+  legend rather than behind it. Both three-LOD browser audits complete without
+  exceptions. Static SVG output/graph/City are unchanged; this is a UI-only fix.
+- Spec alignment: PASS (FR-012/NF-009). Tests assert stage/legend separation;
+  shared CSS applies to WebGL and fallback. Context labels remain separate work.
+- Commit / push: independent fix(viewer) unit on owner-authorized main.

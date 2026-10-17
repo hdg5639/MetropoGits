@@ -23,6 +23,15 @@ def load_fixture() -> dict:
 
 
 class ViewerTests(unittest.TestCase):
+    def test_legend_has_its_own_row_outside_the_canvas_stage(self):
+        artifacts = render_viewer(generate_city(load_fixture()), load_fixture())
+        html = artifacts["index.html"].decode("utf-8")
+        css = artifacts["assets/viewer.css"].decode("utf-8")
+        self.assertIn('<div class="city-stage">', html)
+        self.assertIn('</div>\n        <div class="legend"', html)
+        self.assertIn('grid-template-rows: minmax(0, 1fr) auto', css)
+        self.assertNotIn('bottom: 0.8rem', css)
+
     def test_viewer_is_deterministic_and_file_protocol_compatible(self):
         graph = load_fixture()
         scene = generate_city(graph)
