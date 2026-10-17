@@ -1,0 +1,17 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "com.example.Service"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "com.example.Service"
+    },
+    {
+      "kind": "MANIFEST",
+      "value": "org.springframework:spring-context"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

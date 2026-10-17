@@ -17,7 +17,12 @@ from metropogits.catalog import (
     manifest_catalog_facts,
     resolve_catalog_claims,
 )
-from metropogits.scanner import ScanLimits, ScanResult, ScannedFile
+from metropogits.scanner import (
+    ScanLimits,
+    ScanResult,
+    ScannedFile,
+    configuration_evidence,
+)
 from scripts.canonical_json import canonical_json_bytes
 from scripts.stable_ids import make_edge_id, make_entity_id
 from scripts.validate_ucg import validate_document as validate_ucg_document
@@ -465,6 +470,48 @@ def _resolve_local_type(
     return None
 
 
+def _configuration_catalog_facts(
+    scan: ScanResult, source_path: str
+) -> tuple[CatalogFact, ...]:
+    source = PurePosixPath(source_path)
+    candidates: list[tuple[int, CatalogFact]] = []
+    for configuration in scan.configurations:
+        configuration_directory = PurePosixPath(configuration.path).parent
+        if configuration_directory.parts[-3:] == ("src", "main", "resources"):
+            scope_parts = configuration_directory.parts[:-3]
+            configuration_directory = (
+                PurePosixPath(*scope_parts) if scope_parts else PurePosixPath(".")
+            )
+        if configuration_directory != PurePosixPath("."):
+            try:
+                source.relative_to(configuration_directory)
+            except ValueError:
+                continue
+        depth = (
+            0
+            if configuration_directory == PurePosixPath(".")
+            else len(configuration_directory.parts)
+        )
+        for fact in configuration.facts:
+            evidence = configuration_evidence(configuration, fact)
+            candidates.append(
+                (
+                    depth,
+                    CatalogFact(
+                        "CONFIG",
+                        f"{fact.key}={fact.value}",
+                        evidence["evidenceId"],
+                    ),
+                )
+            )
+    if not candidates:
+        return ()
+    closest_depth = max(item[0] for item in candidates)
+    return tuple(
+        sorted({fact for depth, fact in candidates if depth == closest_depth})
+    )
+
+
 def enrich_java_graph(
     root: Path,
     scan: ScanResult,
@@ -540,6 +587,7 @@ def enrich_java_graph(
     for unit in units:
         file_entity = entities_by_path[unit.path]
         catalog_facts = list(manifest_catalog_facts(document, unit.path))
+        catalog_facts.extend(_configuration_catalog_facts(scan, unit.path))
         exact_imports = {
             item.name.rsplit(".", 1)[-1]: item.name
             for item in unit.imports
@@ -715,6 +763,13 @@ def enrich_java_graph(
                         "spring.repository",
                     )
                     repository_evidence_id = remember_evidence(repository_evidence)
+                    catalog_facts.append(
+                        CatalogFact(
+                            "INHERITANCE",
+                            JPA_REPOSITORY,
+                            repository_evidence_id,
+                        )
+                    )
                     role_candidates.append(
                         (
                             2,

@@ -358,6 +358,58 @@ file('executed.marker').createNewFile()
             )
         )
 
+    def test_spring_properties_emit_only_allowlisted_non_secret_config_evidence(self):
+        fixture = (
+            Path(__file__).parent
+            / "fixtures"
+            / "repositories"
+            / "postgresql-config"
+        )
+
+        scan = scan_repository(fixture)
+        graph = build_structural_ucg(scan, "example/postgresql")
+
+        self.assertEqual(
+            ["src/main/resources/application.properties"],
+            [item.path for item in scan.configurations],
+        )
+        self.assertEqual(
+            ["spring.datasource.driver-class-name=org.postgresql.Driver"],
+            [
+                f"{fact.key}={fact.value}"
+                for item in scan.configurations
+                for fact in item.facts
+            ],
+        )
+        config_evidence = [
+            item for item in graph["evidence"] if item["kind"] == "CONFIG"
+        ]
+        self.assertEqual(1, len(config_evidence))
+        self.assertEqual(1, config_evidence[0]["startLine"])
+        serialized = canonical_json_bytes(graph)
+        self.assertNotIn(b"must-never-appear", serialized)
+        self.assertNotIn(b"spring.datasource.password", serialized)
+        self.assertEqual([], validate_document(graph))
+
+    def test_ambiguous_spring_property_is_skipped_without_leaking_values(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "App.java").write_text("class App {}", encoding="utf-8")
+            (root / "application.properties").write_text(
+                "spring.datasource.driver-class-name=org.postgresql.Driver\n"
+                "spring.datasource.driver-class-name=org.postgresql.Driver\n"
+                "spring.datasource.password=secret-value\n",
+                encoding="utf-8",
+            )
+
+            scan = scan_repository(root)
+
+        self.assertEqual((), scan.configurations)
+        self.assertTrue(
+            any(item["code"] == "CONFIG_PARSE_FAILED" for item in scan.diagnostics)
+        )
+        self.assertNotIn("secret-value", repr(scan.diagnostics))
+
     def test_maven_parser_ignores_management_plugins_and_interpolation(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

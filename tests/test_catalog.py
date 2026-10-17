@@ -14,7 +14,7 @@ from scripts.validate_catalog import SCHEMA_PATH, validate_document
 
 
 ROOT = Path(__file__).parents[1]
-CATALOG_ROOT = ROOT / "catalog" / "0.2.0"
+CATALOG_ROOT = ROOT / "catalog" / "0.4.0"
 CATALOG_PATH = CATALOG_ROOT / "catalog.json"
 FIXTURE_ROOT = CATALOG_ROOT / "fixtures"
 
@@ -34,7 +34,7 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual([], validate_document(self.catalog, FIXTURE_ROOT))
 
     def test_previous_catalog_releases_remain_valid(self):
-        for version in ("0.1.0", "0.2.0"):
+        for version in ("0.1.0", "0.2.0", "0.3.0"):
             with self.subTest(version=version):
                 release = ROOT / "catalog" / version
                 self.assertEqual(

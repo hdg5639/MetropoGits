@@ -134,7 +134,7 @@ class JavaAnalyzerTests(unittest.TestCase):
             if building["entityId"] == entity["id"]
         }
 
-        self.assertEqual("0.3.0", graph["generator"]["catalogVersion"])
+        self.assertEqual("0.4.0", graph["generator"]["catalogVersion"])
         for name, (technology, capability, role, archetype) in expected.items():
             entity = files[name]
             self.assertEqual([technology], [item["value"] for item in entity["technologies"]])
@@ -166,6 +166,32 @@ class JavaAnalyzerTests(unittest.TestCase):
             self.assertEqual([], entity.get("capabilities", []))
             self.assertEqual([], entity.get("technologies", []))
         self.assertTrue(any(edge["type"] == "DEPENDS_ON" for edge in graph["edges"]))
+
+    def test_postgresql_requires_manifest_inheritance_and_safe_config_evidence(self):
+        graph = analyze(FIXTURES / "postgresql-config")
+        repository = files_by_name(graph)["AccountRepository.java"]
+        evidence = {item["evidenceId"]: item for item in graph["evidence"]}
+
+        self.assertIn(
+            "POSTGRESQL",
+            [item["value"] for item in repository["technologies"]],
+        )
+        self.assertIn(
+            "RELATIONAL_DB",
+            [item["value"] for item in repository["capabilities"]],
+        )
+        postgresql = next(
+            item
+            for item in repository["technologies"]
+            if item["value"] == "POSTGRESQL"
+        )
+        self.assertEqual("DIRECT", postgresql["confidence"])
+        self.assertEqual(
+            {"CONFIG", "INHERITANCE", "MANIFEST"},
+            {evidence[item]["kind"] for item in postgresql["evidenceIds"]},
+        )
+        self.assertNotIn("must-never-appear", canonical_json_bytes(graph).decode())
+        self.assertEqual([], validate_document(graph))
 
     def test_catalog_intersects_nearest_manifest_and_code_evidence(self):
         graph = analyze(FIXTURES / "spring-manifest-usage")

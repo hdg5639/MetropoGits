@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "com.example.redis.RedisTemplate"
+    },
+    {
+      "kind": "MANIFEST",
+      "value": "org.springframework.data:spring-data-redis"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

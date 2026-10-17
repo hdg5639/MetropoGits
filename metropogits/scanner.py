@@ -133,6 +133,12 @@ GRADLE_DEPENDENCY_CALL = re.compile(
     (?=\s*(?:[;}]|$))""",
     re.VERBOSE,
 )
+SPRING_PROPERTIES_NAME = re.compile(
+    r"^application(?:-[A-Za-z0-9_.-]+)?\.properties$"
+)
+SAFE_CONFIG_SIGNATURES = {
+    "spring.datasource.driver-class-name": frozenset({"org.postgresql.Driver"}),
+}
 
 
 class ScannerError(ValueError):
@@ -184,10 +190,25 @@ class ScannedManifest:
 
 
 @dataclass(frozen=True)
+class ConfigurationFact:
+    key: str
+    value: str
+    line: int
+
+
+@dataclass(frozen=True)
+class ScannedConfiguration:
+    path: str
+    format: str
+    facts: tuple[ConfigurationFact, ...]
+
+
+@dataclass(frozen=True)
 class ScanResult:
     files: tuple[ScannedFile, ...]
     diagnostics: tuple[dict[str, Any], ...]
     manifests: tuple[ScannedManifest, ...] = ()
+    configurations: tuple[ScannedConfiguration, ...] = ()
 
 
 def _is_sensitive_file(name: str) -> bool:
@@ -449,6 +470,34 @@ def _parse_npm_lockfile(content: bytes) -> tuple[DeclaredDependency, ...]:
     return _npm_dependencies_from_sections(root_package)
 
 
+def _parse_spring_properties(content: bytes) -> tuple[ConfigurationFact, ...]:
+    try:
+        source = content.decode("utf-8")
+    except UnicodeError as error:
+        raise ScannerError("configuration is not valid UTF-8") from error
+
+    recognized: dict[str, ConfigurationFact] = {}
+    for line_number, raw_line in enumerate(source.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith(("#", "!")):
+            continue
+        match = re.fullmatch(
+            r"(?P<key>[A-Za-z0-9._-]+)\s*(?:=|:)\s*(?P<value>[^\s#]+)\s*",
+            line,
+        )
+        if match is None:
+            continue
+        key = match.group("key")
+        value = match.group("value")
+        allowed_values = SAFE_CONFIG_SIGNATURES.get(key)
+        if allowed_values is None or value not in allowed_values:
+            continue
+        if key in recognized:
+            raise ScannerError("configuration contains an ambiguous duplicate key")
+        recognized[key] = ConfigurationFact(key, value, line_number)
+    return tuple(sorted(recognized.values(), key=lambda item: (item.key, item.value)))
+
+
 def _manifest_evidence(
     manifest: ScannedManifest, coordinate: str
 ) -> dict[str, Any]:
@@ -465,6 +514,31 @@ def _manifest_evidence(
             f"Declared {'npm' if manifest.format == 'npm' else manifest.format.title()} "
             f"dependency {coordinate}"
         ),
+    }
+
+
+def configuration_evidence(
+    configuration: ScannedConfiguration, fact: ConfigurationFact
+) -> dict[str, Any]:
+    rule_id = f"config.{configuration.format}.{fact.key}"
+    identity = [
+        configuration.path,
+        "CONFIG",
+        fact.key,
+        fact.value,
+        fact.line,
+        rule_id,
+    ]
+    digest = hashlib.sha256(canonical_json_bytes(identity)).hexdigest()
+    return {
+        "endLine": fact.line,
+        "evidenceId": f"evidence:sha256:{digest}",
+        "extractor": f"config.{configuration.format}/0.1",
+        "kind": "CONFIG",
+        "ruleId": rule_id,
+        "sourcePath": configuration.path,
+        "startLine": fact.line,
+        "summary": f"Recognized non-secret configuration key {fact.key}",
     }
 
 
@@ -511,6 +585,7 @@ def scan_repository(
 
     files: list[ScannedFile] = []
     manifests: list[ScannedManifest] = []
+    configurations: list[ScannedConfiguration] = []
     diagnostics: list[dict[str, Any]] = []
     excluded: Counter[str] = Counter()
     entry_count = 0
@@ -673,6 +748,48 @@ def scan_repository(
                 total_bytes += entry_stat.st_size
                 continue
 
+            if SPRING_PROPERTIES_NAME.fullmatch(entry.name):
+                if entry_stat.st_size > limits.max_file_bytes:
+                    diagnostics.append(
+                        _diagnostic(
+                            "FILE_SIZE_LIMIT",
+                            "WARNING",
+                            f"File exceeds maximum size {limits.max_file_bytes} bytes",
+                            relative_path,
+                        )
+                    )
+                    continue
+                if total_bytes + entry_stat.st_size > limits.max_total_bytes:
+                    diagnostics.append(
+                        _diagnostic(
+                            "TOTAL_SIZE_LIMIT_REACHED",
+                            "WARNING",
+                            f"Scan stopped before exceeding {limits.max_total_bytes} bytes",
+                        )
+                    )
+                    halted = True
+                    break
+                try:
+                    content = _read_prefix_safely(
+                        Path(entry.path), entry_stat, limits.max_file_bytes + 1
+                    )
+                    facts = _parse_spring_properties(content)
+                except (OSError, UnicodeError, ScannerError):
+                    diagnostics.append(
+                        _diagnostic(
+                            "CONFIG_PARSE_FAILED",
+                            "WARNING",
+                            "Spring properties could not be parsed safely",
+                            relative_path,
+                        )
+                    )
+                    continue
+                configurations.append(
+                    ScannedConfiguration(relative_path, "spring-properties", facts)
+                )
+                total_bytes += entry_stat.st_size
+                continue
+
             extension = Path(entry.name).suffix.lower()
             language = LANGUAGES_BY_EXTENSION.get(extension)
             if language is None:
@@ -769,6 +886,7 @@ def scan_repository(
 
     files.sort(key=lambda item: item.path)
     manifests.sort(key=lambda item: item.path)
+    configurations.sort(key=lambda item: item.path)
     diagnostics.sort(
         key=lambda item: (
             item["code"],
@@ -776,7 +894,12 @@ def scan_repository(
             item["message"],
         )
     )
-    return ScanResult(tuple(files), tuple(diagnostics), tuple(manifests))
+    return ScanResult(
+        tuple(files),
+        tuple(diagnostics),
+        tuple(manifests),
+        tuple(configurations),
+    )
 
 
 def build_structural_ucg(
@@ -857,6 +980,11 @@ def build_structural_ucg(
                 )
             manifest_evidence = _manifest_evidence(manifest, dependency.coordinate)
             evidence.append(manifest_evidence)
+    for configuration in scan.configurations:
+        evidence.extend(
+            configuration_evidence(configuration, fact)
+            for fact in configuration.facts
+        )
 
     edges: list[dict[str, Any]] = []
     for path, entity_id in directory_ids.items():
