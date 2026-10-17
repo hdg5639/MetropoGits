@@ -385,7 +385,122 @@
     return facilities.sort((left, right) => left.id.localeCompare(right.id));
   }
 
+  // Presentation only: no entity, role, relationship or canonical site is changed.
+  function roleFacilities(blocks, scene, ucg, streets = []) {
+    if (!ucg) return blocks;
+    const evidence = new Map(ucg.evidence.map(item => [item.evidenceId, item]));
+    const buildings = new Map(scene.buildings.map(item => [item.entityId, item]));
+    const entities = new Map(ucg.entities.map(item => [item.id, item]));
+    const modules = ucg.entities.filter(item => item.kind === "MODULE")
+      .sort((a, b) => b.path.length - a.path.length || a.id.localeCompare(b.id));
+    const owner = building => {
+      const path = entities.get(building.entityId)?.path || "";
+      return modules.find(item => path.startsWith(`${item.path}/`))?.id || "";
+    };
+    const overlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width
+      && a.z < b.z + b.depth && b.z < a.z + a.depth;
+    const areaInside = (a, b) => Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x))
+      * Math.max(0, Math.min(a.z + a.depth, b.z + b.depth) - Math.max(a.z, b.z));
+    const bounds = members => {
+      const x = Math.min(...members.map(b => b.x));
+      const z = Math.min(...members.map(b => b.z));
+      return { x, z, width: Math.max(...members.map(b => b.x + b.width)) - x,
+        depth: Math.max(...members.map(b => b.z + b.depth)) - z };
+    };
+    function key(building) {
+      const rules = (building.evidenceIds || []).map(id => evidence.get(id)?.ruleId);
+      if (building.archetype === "LIBRARY" && rules.includes("path.test-source")) return "TEST";
+      if (building.archetype !== "GATE") return null;
+      if (rules.includes("path.nextjs.app-page")) return "PAGE";
+      if (rules.includes("path.nextjs.route-handler")) return "API";
+      // Do not merge unknown or differently evidenced gate roles.
+      const spring = rules.filter(rule => rule?.startsWith("spring.controller"));
+      return spring.length ? `GATE:${spring.sort().join(",")}` : null;
+    }
+    function subtract(a, b) {
+      if (!overlap(a, b)) return [a];
+      const x = Math.max(a.x, b.x), z = Math.max(a.z, b.z);
+      const endX = Math.min(a.x + a.width, b.x + b.width);
+      const endZ = Math.min(a.z + a.depth, b.z + b.depth);
+      return [
+        { x: a.x, z: a.z, width: a.width, depth: z - a.z },
+        { x: a.x, z: endZ, width: a.width, depth: a.z + a.depth - endZ },
+        { x: a.x, z, width: x - a.x, depth: endZ - z },
+        { x: endX, z, width: a.x + a.width - endX, depth: endZ - z },
+      ].filter(p => p.width > 0 && p.depth > 0);
+    }
+    const result = [];
+    for (const block of blocks) {
+      const members = block.memberEntityIds.map(id => buildings.get(id));
+      const available = new Set(members.filter(b => key(b)).map(b => b.entityId));
+      const promoted = [];
+      for (const seed of members) {
+        if (!available.has(seed.entityId)) continue;
+        const cluster = [seed];
+        let plot = bounds(cluster);
+        const candidates = members.filter(b => b !== seed && available.has(b.entityId)
+          && key(b) === key(seed) && owner(b) === owner(seed))
+          .sort((a, b) => Math.hypot(a.x - seed.x, a.z - seed.z) - Math.hypot(b.x - seed.x, b.z - seed.z)
+            || a.entityId.localeCompare(b.entityId));
+        for (const candidate of candidates) {
+          if (cluster.includes(candidate)) continue;
+          const rectangle = bounds([...cluster, candidate]);
+          // Absorb all same-role occupants of the enlarged footprint together;
+          // never draw a compound over an omitted file in the next row.
+          const next = scene.buildings.filter(b => overlap(rectangle, b));
+          if (next.some(b => !members.includes(b) || !available.has(b.entityId)
+            || key(b) !== key(seed) || owner(b) !== owner(seed))) continue;
+          if (next.some(b => b.x < rectangle.x || b.z < rectangle.z
+            || b.x + b.width > rectangle.x + rectangle.width
+            || b.z + b.depth > rectangle.z + rectangle.depth)) continue;
+          if (Math.max(rectangle.width, rectangle.depth) > 56) continue;
+          if (!cluster.some(b => Math.hypot(b.x - candidate.x, b.z - candidate.z) <= 15)) continue;
+          if (next.reduce((sum, b) => sum + b.width * b.depth, 0) / (rectangle.width * rectangle.depth) < 0.55) continue;
+          if (Math.abs(block.plots.reduce((sum, p) => sum + areaInside(rectangle, p), 0)
+            - rectangle.width * rectangle.depth) > 0.001) continue;
+          if (streets.some(street => overlap(rectangle, street))) continue;
+          cluster.splice(0, cluster.length, ...next.sort((a, b) => a.entityId.localeCompare(b.entityId)));
+          plot = rectangle;
+        }
+        if (cluster.length < 4) continue;
+        for (const b of cluster) available.delete(b.entityId);
+        const role = key(seed), count = cluster.length;
+        const tier = count >= 12 ? "campus" : "center";
+        const title = role === "TEST" ? `Test ${tier}`
+          : role === "PAGE" ? `Page ${tier === "campus" ? "terminal" : "hall"}`
+          : `${role === "API" || role.includes(".rest") ? "API" : "Entry"} ${tier === "campus" ? "terminal" : "hall"}`;
+        promoted.push({ ...block, ...plot, plots: [plot], role, tier, title,
+          id: `visual:role:${seed.entityId}`, height: Math.min(30, 12 + Math.log2(count) * 3),
+          labelX: plot.x + plot.width / 2, labelZ: plot.z + plot.depth / 2,
+          archetypeCounts: [{ archetype: seed.archetype, count }],
+          evidenceIds: [...new Set(cluster.flatMap(b => b.evidenceIds))].sort(),
+          memberEntityIds: cluster.map(b => b.entityId).sort(),
+          memberDistrictIds: [...new Set(cluster.map(b => b.districtId))].sort(),
+        });
+      }
+      if (!promoted.length) { result.push(block); continue; }
+      const grouped = new Set(promoted.flatMap(p => p.memberEntityIds));
+      const remainder = members.filter(b => !grouped.has(b.entityId));
+      if (remainder.length) {
+        let plots = block.plots;
+        for (const p of promoted) plots = plots.flatMap(plot => subtract(plot, p));
+        const counts = new Map();
+        for (const b of remainder) counts.set(b.archetype, (counts.get(b.archetype) || 0) + 1);
+        result.push({ ...block, plots, memberEntityIds: remainder.map(b => b.entityId),
+          memberDistrictIds: [...new Set(remainder.map(b => b.districtId))].sort(),
+          archetypeCounts: [...counts].map(([archetype, count]) => ({ archetype, count }))
+            .sort((a, b) => b.count - a.count || a.archetype.localeCompare(b.archetype)),
+        });
+      }
+      result.push(...promoted);
+    }
+    return result.sort((a, b) => a.id.localeCompare(b.id));
+  }
+
   function aggregateParts(facility) {
+    if (facility.role) return [{ ...facility, entityId: facility.id,
+      archetype: facility.archetypeCounts[0].archetype,
+      representedCount: facility.memberEntityIds.length, aggregateRole: facility.role }];
     const targetCount = Math.min(
       16,
       Math.max(
@@ -529,7 +644,35 @@
     }));
   }
 
-  function createLodPolicy(scene, territoryData = null, streetData = null) {
+  function roleVolumes(building) {
+    const { x, z, width: w, depth: d, height: h } = building;
+    const part = (px, py, pz, pw, ph, pd, shade = 0) => ({
+      x: x + px * w, y: py * h, z: z + pz * d,
+      width: pw * w, height: ph * h, depth: pd * d, shade,
+      archetype: building.archetype,
+    });
+    const count = building.tier === "campus" ? 4 : 2;
+    if (building.aggregateRole === "TEST") {
+      // Shared low laboratory spine, separate wings, one central test tower.
+      return [part(.08, 0, .38, .84, .22, .24),
+        ...Array.from({length: count}, (_, i) => part(.08 + i * .84 / count, 0, .08,
+          .66 / count, .4, .84, .1)),
+        part(.39, .4, .37, .22, .6, .26, .3)];
+    }
+    // Terminal concourse with bounded entrance bays, not one giant gate.
+    return [part(.06, 0, .3, .88, .38, .62), part(.04, .38, .26, .92, .12, .68, .25),
+      ...Array.from({length: count}, (_, i) => part(.1 + i * .8 / count, 0, .06,
+        .52 / count, .26, .25, .12)), part(.7, .5, .5, .18, .5, .3, .35)];
+  }
+
+  function aggregateLabel(facility, entities) {
+    const paths = facility.memberEntityIds.slice(0, 3).map(id => entities.get(id)?.path || id);
+    const rest = facility.memberEntityIds.length - paths.length;
+    return `${facility.title || "City block"} · ${facility.memberEntityIds.length} files · visual aggregate\n`
+      + paths.join("\n") + (rest > 0 ? `\n+${rest} more — click to inspect` : "");
+  }
+
+  function createLodPolicy(scene, territoryData = null, streetData = null, ucg = null) {
     const buildings = new Map(
       scene.buildings.map((building) => [building.entityId, building]),
     );
@@ -539,7 +682,10 @@
       (territoryData?.districts || []).map((territory) => [territory.id, territory]),
     );
     const majorIds = new Set(majorDistrictIds(scene));
-    const aggregates = aggregateFacilities(scene, majorIds, districts, territories, streetData?.rectangles || []);
+    const aggregates = roleFacilities(
+      aggregateFacilities(scene, majorIds, districts, territories, streetData?.rectangles || []), scene, ucg,
+      streetData?.rectangles || [],
+    );
     const aggregateIds = new Set(aggregates.map((aggregate) => aggregate.id));
     const districtDepths = new Map();
 
@@ -573,7 +719,7 @@
     function visibility(level, candidateBuildingIds, candidateNetworkIds, selected = null) {
       const candidateBuildings = new Set(candidateBuildingIds);
       const candidateNetworks = new Set(candidateNetworkIds);
-      const buildingIds = [...candidateBuildings]
+      let buildingIds = [...candidateBuildings]
         .filter((id) => {
           const building = buildings.get(id);
           if (!building) return false;
@@ -584,19 +730,27 @@
         })
         .sort();
 
-      const visibleAggregateIds = level === "overview"
-        ? aggregates
-          .filter((aggregate) => aggregate.memberEntityIds.some((id) => candidateBuildings.has(id)))
-          .map((aggregate) => aggregate.id)
-        : [];
+      const visibleAggregateIds = aggregates.filter(aggregate =>
+        (level === "overview" || (level === "district" && aggregate.role))
+        && aggregate.memberEntityIds.every(id => candidateBuildings.has(id))
+        && !(selected?.kind === "building" && aggregate.memberEntityIds.includes(selected.id)),
+      ).map(aggregate => aggregate.id);
+      // Partial filters must never reintroduce hidden members through an aggregate.
+      if (level === "overview") {
+        const represented = new Set(aggregates.filter(a => visibleAggregateIds.includes(a.id)).flatMap(a => a.memberEntityIds));
+        buildingIds = [...candidateBuildings].filter(id => buildings.has(id) && !represented.has(id)).sort();
+      }
       if (
         selected?.kind === "aggregate"
         && aggregateIds.has(selected.id)
         && !visibleAggregateIds.includes(selected.id)
+        && aggregates.find(a => a.id === selected.id).memberEntityIds.every(id => candidateBuildings.has(id))
       ) {
         visibleAggregateIds.push(selected.id);
       }
       visibleAggregateIds.sort();
+      const groupedMembers = new Set(aggregates.filter(a => visibleAggregateIds.includes(a.id)).flatMap(a => a.memberEntityIds));
+      buildingIds = buildingIds.filter(id => !groupedMembers.has(id));
 
       const networkLimit = level === "overview" ? 24 : level === "district" ? 64 : Infinity;
       const rankedNetworks = [...candidateNetworks]
@@ -799,6 +953,8 @@
   globalThis.METROPOGITS_FILTERS = Object.freeze({
     corridorVisible,
     aggregateParts,
+    aggregateLabel,
+    roleVolumes,
     createLodPolicy,
     createIndex,
     declaredDependenciesForEntity,

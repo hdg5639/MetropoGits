@@ -124,7 +124,7 @@
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
-  const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets);
+  const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets, ucg);
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -300,7 +300,7 @@
         0,
       );
       const subject = renderedAggregateIds.size
-        ? `${renderedAggregateIds.size} visual blocks / ${representedFiles} files`
+        ? `${renderedAggregateIds.size} aggregates (${representedFiles} files) + ${renderedBuildingIds.size} buildings`
         : `${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings`;
       const status = `${label} · ${subject} · ${renderedNetworkIds.size}/${visibleNetworkIds.size} routes`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
@@ -673,16 +673,16 @@
 
   function drawVolume(building, palette, outlineColor, lineWidth) {
     const bottom = [
-      project(building.x, building.z),
-      project(building.x + building.width, building.z),
-      project(building.x + building.width, building.z + building.depth),
-      project(building.x, building.z + building.depth),
+      project(building.x, building.z, building.y || 0),
+      project(building.x + building.width, building.z, building.y || 0),
+      project(building.x + building.width, building.z + building.depth, building.y || 0),
+      project(building.x, building.z + building.depth, building.y || 0),
     ];
     const top = [
-      project(building.x, building.z, building.height),
-      project(building.x + building.width, building.z, building.height),
-      project(building.x + building.width, building.z + building.depth, building.height),
-      project(building.x, building.z + building.depth, building.height),
+      project(building.x, building.z, building.height + (building.y || 0)),
+      project(building.x + building.width, building.z, building.height + (building.y || 0)),
+      project(building.x + building.width, building.z + building.depth, building.height + (building.y || 0)),
+      project(building.x, building.z + building.depth, building.height + (building.y || 0)),
     ];
     polygonPath([top[1], bottom[1], bottom[2], top[2]]);
     context.fillStyle = palette[1];
@@ -722,15 +722,17 @@
       isSelected ? "#f8fafc" : "#fbbf24",
       isSelected ? 3.2 : 2.2,
     ));
-    for (const part of filterEngine.aggregateParts(facility).sort(
+    for (const part of filterEngine.aggregateParts(facility)
+      .flatMap(part => part.aggregateRole ? filterEngine.roleVolumes(part) : [part]).sort(
       (left, right) => buildingDepth(left) - buildingDepth(right),
     )) {
-      drawVolume(
+      const outline = drawVolume(
         part,
         colors[part.archetype] || colors.GENERIC_BUILDING,
         isSelected ? "#f8fafc" : "rgba(226, 232, 240, 0.8)",
         isSelected ? 2.8 : 1.4,
       );
+      outlines.push(outline);
     }
     if (isSelected) {
       const label = `${districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files`;
@@ -852,10 +854,14 @@
       `Constituent files (${facility.memberEntityIds.length})`,
     ));
     const list = element("ul", undefined, "fact-list");
-    const paths = facility.memberEntityIds
-      .map((entityId) => entities.get(entityId)?.path || entityId)
-      .sort();
-    for (const path of paths) list.append(element("li", path));
+    for (const entityId of facility.memberEntityIds) {
+      const item = element("li");
+      const button = element("button", entities.get(entityId)?.path || entityId, "focus-button");
+      button.type = "button";
+      button.addEventListener("click", () => showSelection({ kind: "building", id: entityId }));
+      item.append(button);
+      list.append(item);
+    }
     details.append(list);
     parent.append(details);
   }
@@ -919,11 +925,12 @@
   function showAggregate(aggregateId) {
     const facility = aggregateFacilities.get(aggregateId);
     inspector.replaceChildren();
-    inspector.append(element("p", "CITY BLOCK · VISUAL AGGREGATE", "eyebrow"));
-    inspector.append(element("h2", districtLabel(districts.get(facility.districtId))));
+    inspector.append(element("p", facility.role ? "ROLE LANDMARK · VISUAL AGGREGATE" : "CITY BLOCK · VISUAL AGGREGATE", "eyebrow"));
+    inspector.append(element("h2", facility.title || districtLabel(districts.get(facility.districtId))));
     inspector.append(element(
       "p",
-      "This overview block groups real file buildings and districts. It is not a code entity or inferred service.",
+      facility.role ? "Nearby files with the same evidenced role, grouped for display only. Not a new service or runtime facility. Zoom in or explore to reveal the original buildings."
+        : "This overview block groups real file buildings and districts. It is not a code entity or inferred service.",
       "aggregate-disclosure",
     ));
     const details = element("dl", undefined, "detail-list");
@@ -932,6 +939,7 @@
     detailRow(details, "Districts", facility.memberDistrictIds?.length || 0);
     detailRow(details, "Representation", "Deterministic visual block aggregate");
     inspector.append(details);
+    if (facility.role) factSection(inspector, "GROUPING EVIDENCE", facility.evidenceIds.map(evidenceLabel));
     factSection(
       inspector,
       "ARCHETYPE COMPOSITION",
@@ -1070,7 +1078,7 @@
   function labelFor(selection) {
     if (selection.kind === "aggregate") {
       const facility = aggregateFacilities.get(selection.id);
-      return `${districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files · visual aggregate`;
+      return filterEngine.aggregateLabel(facility, entities);
     }
     if (selection.kind === "building") {
       const entity = entities.get(selection.id);
@@ -1117,9 +1125,9 @@
       return;
     }
     hoverLabel.textContent = labelFor(hovered);
-    hoverLabel.style.left = `${Math.min(localX + 14, viewportWidth - 260)}px`;
-    hoverLabel.style.top = `${Math.max(8, localY - 34)}px`;
     hoverLabel.hidden = false;
+    hoverLabel.style.left = `${Math.max(8, Math.min(localX + 14, viewportWidth - hoverLabel.offsetWidth - 8))}px`;
+    hoverLabel.style.top = `${Math.max(8, localY - hoverLabel.offsetHeight - 8)}px`;
   });
 
   canvas.addEventListener("pointerup", (event) => {

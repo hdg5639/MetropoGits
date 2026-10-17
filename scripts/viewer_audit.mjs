@@ -65,6 +65,14 @@ export function instrument(source) {
       hitMs: auditHitEnd - auditDrawEnd, labelsMs: ended - auditHitEnd,`);
   return replaceOnce(result, '  new ResizeObserver(resize).observe(canvas);', `
   globalThis.__METRO_AUDIT__ = {
+    roleTargets() {
+      return hitRegions.filter(region => region.kind === 'aggregate' && aggregateFacilities.get(region.id)?.role)
+        .map(region => ({id: region.id, x: (region.minX + region.maxX) / 2, y: (region.minY + region.maxY) / 2}))
+        .filter(point => point.x > 8 && point.y > 8 && point.x < viewportWidth - 8 && point.y < viewportHeight - 8
+          && hitTest(point.x, point.y)?.id === point.id)
+        .map(point => ({...point, members: aggregateFacilities.get(point.id).memberEntityIds,
+          title: aggregateFacilities.get(point.id).title}));
+    },
     configure(options = {}) {
       Object.assign(state, initialCamera);
       state.yaw = cameraPolicy.yaw;
@@ -338,6 +346,36 @@ export async function runAudit(browser, output, inputs, samples = 20) {
         console.log(`  ${lod}: orbit CPU p95=${orbit.cpuMs.p95.toFixed(1)} ms`);
         console.log(`    synthetic CPU p95=${synthetic.cpuMs.p95.toFixed(1)} ms; static builds=${synthetic.staticBuilds}; upload p95=${synthetic.uploadBytes.p95}`);
       }
+      await configure(cdp, {zoom: 1.6});
+      const targets = await cdp.evaluate('globalThis.__METRO_AUDIT__.roleTargets()');
+      if (targets.length) {
+        const target = targets.find(item => item.title.startsWith('Page')) || targets[0];
+        const frame = await snapshot(cdp);
+        const point = {x: target.x + frame.canvasRect.x, y: target.y + frame.canvasRect.y};
+        await cdp.send('Input.dispatchMouseEvent', {type: 'mouseMoved', ...point});
+        const hover = await cdp.evaluate('document.getElementById("hover-label").textContent');
+        if (!hover.includes(target.title) || !hover.includes('visual aggregate')) throw new Error('Role hover disclosure missing');
+        await cdp.send('Input.dispatchMouseEvent', {type: 'mousePressed', button: 'left', clickCount: 1, ...point});
+        await cdp.send('Input.dispatchMouseEvent', {type: 'mouseReleased', button: 'left', clickCount: 1, ...point});
+        const members = await cdp.evaluate('[...document.querySelectorAll(".aggregate-members button")].map(b => b.textContent)');
+        if (members.length !== target.members.length) throw new Error('Role inspector membership mismatch');
+        const png = await cdp.send('Page.captureScreenshot', {format: 'png'});
+        await writeFile(join(directory, 'role-inspector.png'), Buffer.from(png.data, 'base64'));
+        await cdp.evaluate('document.querySelector(".aggregate-members button").click()');
+        const selectedPath = await cdp.evaluate('document.querySelector(".inspector h2").textContent');
+        if (selectedPath !== members[0]) throw new Error('Constituent file navigation failed');
+        result.roleInteraction = {title: target.title, memberCount: members.length, hover, selectedPath};
+      } else {
+        result.roleInteraction = {status: 'No visible role target at this framing'};
+      }
+      await cdp.send('Page.navigate', {url: pathToFileURL(join(directory, 'preview.svg')).href});
+      const previewDeadline = Date.now() + 10000;
+      while (!(await cdp.evaluate('document.documentElement.localName === "svg" && document.readyState === "complete"'))) {
+        if (Date.now() > previewDeadline) throw new Error('Static preview failed to load');
+        await sleep(100);
+      }
+      const previewPng = await cdp.send('Page.captureScreenshot', {format: 'png'});
+      await writeFile(join(directory, 'preview.png'), Buffer.from(previewPng.data, 'base64'));
     }
     const distance = Math.max(...report.cases.map(c => c.initial.fittedDistance));
     report.policy.commonDistance = distance;

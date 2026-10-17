@@ -2304,3 +2304,54 @@
   contextual labels and semantic aggregate placement remain follow-up work.
 - Delivery: independent fix(renderer) unit after 1d5d63d, committed/pushed to
   owner-authorized main with human attribution only. Pages remains deferred.
+
+## Checkpoint 2026-10-18 — evidence-compatible role landmarks (ADR-015)
+- Implemented: shared interactive LOD policy promotes nearby compatible gate
+  and test-file clusters to bounded halls/centers (4–11) or terminals/campuses
+  (12+). Page/API/controller signatures stay separate; tests need test-source
+  evidence. Known module boundaries, parent block land, roads and unrelated
+  buildings constrain membership. Generic/unknown facilities are not promoted.
+- UI: hover shows three sample paths and an explicit visual-aggregate label;
+  inspector exposes complete membership and grouping evidence. File buttons
+  select the original entity; Explore clears aggregate selection and zooms in.
+  Both interactive renderers share compound volumes. Partial filters do not
+  reveal hidden members. Status distinguishes aggregates from individual files.
+- Fixtures: GJ-Cloud 3d9b53f, GamjaOJ b163acd, maintained spring-positive and
+  structural-showcase. Large cases reuse validated canonical graphs/scenes via
+  `artifacts/visual/refresh_for_review.py`; small fixtures use full CLI `build`.
+  No target repository code/dependency/build script was executed.
+- Artifacts: `artifacts/visual/role-landmarks-r2/{gj,oj}`; small full builds in
+  `role-landmarks-r1` and `role-landmarks-r2`. Browser comparisons and screenshots
+  in `role-landmarks-audit-r1/r2/r3`. Commands: `python -m unittest discover -s
+  tests -q`, `node --test tests/viewer_audit.test.mjs tests/role_landmarks.test.mjs`,
+  `python -m ruff check metropogits tests scripts`, `git diff --check`, and
+  `node scripts/viewer_audit.mjs <chrome> <new-audit-dir> <gj> <oj>`.
+- Measurements: GJ 22 page files -> 3 halls/terminals; 47 tests -> 9 centers.
+  OJ 86 tests -> 13 centers/campuses. Exact one-time membership of all 1324/681
+  files across Overview aggregates; zero role-footprint/corridor intersections
+  and zero unrelated-building intersections on both real scenes. Stage, input
+  permutation, sparse/unknown negatives, module separation, geometry bounds,
+  filter and selected-file expansion are regression tested.
+- Visual findings: inspected GJ Overview and page-hall hover/inspector capture,
+  OJ District and test-campus hover/inspector capture, and both static preview
+  captures. Real pointer hover/click and constituent navigation pass in Chrome.
+  Gate concourses and test wings are distinct; some long narrow test parcels
+  remain elongated. Whole-city Overview remains small at this camera fit; this
+  unit does not claim to resolve composition or missing relationship coverage.
+- Tests: 244 Python tests run, 243 passed, one expected Windows symlink skip;
+  13 Node tests passed; Ruff and whitespace checks passed. GJ/OJ UCG, City,
+  preview.svg and showcase.svg are byte-identical to route-corridors-r2;
+  all generated manifest checksums verified. No canonical layout churn.
+- Performance: final r3 synthetic Detail CPU p95 GJ 1.2 ms / OJ 0.5 ms;
+  zero static geometry builds in every sampled animation frame at all LODs.
+  These are headless SwiftShader CPU submission timings, not GPU FPS.
+- Spec alignment: PASS DEC-005/008, AC-002/011, NF-005/008. No schema, source ID,
+  graph, runtime service, dependency, security or deployment changes. Canvas
+  compound geometry is unit-tested/shared; real pointer audit covers WebGL.
+- Open work: CPU showcase role-compound parity, additional role families,
+  relationship-assisted grouping, TS aliases/Java nested types, per-file access
+  branches/shared routes and evidence-backed HTTP/messaging layers. None is
+  implied complete by role landmarks. No new relationship is inferred here.
+- Delivery: one feat(viewer) work unit; verified files staged explicitly for
+  owner-authorized main. Commit/push outcome is recorded in Git history and the
+  handoff, without agent contributor attribution. Pages remains deferred.

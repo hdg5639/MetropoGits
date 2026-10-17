@@ -31,6 +31,12 @@ relationships or mandatory `decorations` entries. Evidence-backed networks
 retain their exact `edgeIds`. Overview block aggregates are visual projections
 under ADR-012, with complete file membership; they are not new City buildings.
 
+[ADR-015](../adr/ADR-015.md) adds evidence-compatible role landmarks to interactive
+Overview/District LOD: nearby gate or test-file groups become bounded halls,
+centers, terminals or campuses. Hover/inspector disclose constituent files and
+evidence; detail/exploration restores originals. Canonical City/UCG, roads and
+static SVG outputs are unchanged. CPU showcase role-compound parity is open.
+
 ADR-014 amends DEC-007/ADR-004's hash-only interpretation: evidenced roles and
 DIRECT/RESOLVED file dependencies may influence local sites while retaining
 directory ownership. Compatible hints take priority over relationship changes.
