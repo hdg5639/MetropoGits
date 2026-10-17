@@ -152,6 +152,42 @@ def validate_document(document: Any) -> list[str]:
     for label in ("requirements", "acceptanceCriteria", "releaseChecks"):
         errors.extend(_validate_evidence(document[label], label))
 
+    release_checks = {
+        entry["id"]: entry for entry in document["releaseChecks"]
+    }
+    aggregate_sources = {
+        "P0_REQUIREMENTS": document["requirements"],
+        "ACCEPTANCE_EVIDENCE": document["acceptanceCriteria"],
+    }
+    for check_id, entries in aggregate_sources.items():
+        release_check = release_checks.get(check_id)
+        if release_check is None:
+            continue
+        expected_status = (
+            "AUTOMATED"
+            if all(entry["status"] == "AUTOMATED" for entry in entries)
+            else "BLOCKED"
+        )
+        if release_check["status"] != expected_status:
+            errors.append(
+                f"{check_id} must be {expected_status} for current entry statuses"
+            )
+
+    acceptance_by_id = {
+        entry["id"]: entry for entry in document["acceptanceCriteria"]
+    }
+    acceptance_010 = acceptance_by_id.get("AC-010")
+    publishing_check = release_checks.get("FRESH_REPOSITORY_PUBLISHING")
+    if acceptance_010 is not None and publishing_check is not None:
+        publishing_status = (
+            "AUTOMATED" if acceptance_010["status"] == "AUTOMATED" else "BLOCKED"
+        )
+        if publishing_check["status"] != publishing_status:
+            errors.append(
+                "FRESH_REPOSITORY_PUBLISHING must be "
+                f"{publishing_status} for AC-010 status"
+            )
+
     blocked = any(
         item["status"] == "BLOCKED"
         for label in ("requirements", "acceptanceCriteria", "releaseChecks")

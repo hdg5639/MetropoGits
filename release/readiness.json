@@ -20,13 +20,13 @@
       "summary": "Repeated builds and previews produce identical deterministic artifacts."
     },
     {
-      "blocker": null,
+      "blocker": "The current collision resolution can move existing buildings when a new file sorts before them, does not keep large districts in bounds, and has no previous-scene hint support.",
       "evidence": [
         "tests/test_layout.py::LayoutTests::test_small_change_preserves_existing_positions"
       ],
       "id": "AC-003",
-      "status": "AUTOMATED",
-      "summary": "Adding one file preserves unrelated district and building anchors."
+      "status": "BLOCKED",
+      "summary": "The existing happy-path fixture is insufficient to prove small-change layout stability."
     },
     {
       "blocker": null,
@@ -86,14 +86,14 @@
       "summary": "Malformed and oversized input remains bounded while safe partial results survive."
     },
     {
-      "blocker": null,
+      "blocker": "Local contract tests do not prove execution on a fresh GitHub-hosted runner or successful GitHub Pages publication under a repository subpath.",
       "evidence": [
         "tests/test_github_action.py::GithubActionTests::test_action_builds_static_artifacts_and_exports_paths",
         "tests/test_viewer.py::ViewerTests::test_viewer_assets_are_subpath_safe"
       ],
       "id": "AC-010",
-      "status": "AUTOMATED",
-      "summary": "The Action emits CPU/static artifacts with relative viewer paths for subpath hosting."
+      "status": "BLOCKED",
+      "summary": "Local tests cover Action outputs and relative assets but not hosted publication."
     },
     {
       "blocker": null,
@@ -136,13 +136,13 @@
   ],
   "releaseChecks": [
     {
-      "blocker": null,
+      "blocker": "AC-003 and AC-010 still require complete implementation or external hosted-runner evidence.",
       "evidence": [
         "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
       ],
       "id": "ACCEPTANCE_EVIDENCE",
-      "status": "AUTOMATED",
-      "summary": "Every currently required acceptance criterion has an automated evidence selector."
+      "status": "BLOCKED",
+      "summary": "Required acceptance criteria are mapped, but not all are fully demonstrated."
     },
     {
       "blocker": null,
@@ -157,7 +157,7 @@
       "summary": "Versioned schemas, canonicalization, stable IDs, and baseline fixtures are tested."
     },
     {
-      "blocker": "DEC-009 requires maintainer resolution: accept the CPU isometric viewer or require a WebGL 3D implementation.",
+      "blocker": "DEC-007 requires a stable bounded hierarchical allocator, DEC-009 requires an interactive 3D decision, and DEC-012 was implemented before its documented post-MVP phase.",
       "evidence": [
         "docs/DECISION_AUDIT.md"
       ],
@@ -166,14 +166,14 @@
       "summary": "DEC-001 through DEC-013 are audited against the implementation without hiding deviations."
     },
     {
-      "blocker": null,
+      "blocker": "AC-010 requires a successful clean GitHub-hosted Action and Pages deployment before fresh-repository publishing is proven.",
       "evidence": [
         "tests/test_github_action.py::GithubActionTests::test_action_builds_static_artifacts_and_exports_paths",
         "tests/test_viewer.py::ViewerTests::test_viewer_assets_are_subpath_safe"
       ],
       "id": "FRESH_REPOSITORY_PUBLISHING",
-      "status": "AUTOMATED",
-      "summary": "The Action and relative viewer assets cover fresh-repository static publishing."
+      "status": "BLOCKED",
+      "summary": "Local checks cover the publishing contract but not an actual hosted deployment."
     },
     {
       "blocker": null,
@@ -206,13 +206,13 @@
       "summary": "The pipeline runs locally without executing or uploading target repository code."
     },
     {
-      "blocker": null,
+      "blocker": "FR-003, FR-006, and FR-009 remain incomplete.",
       "evidence": [
         "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
       ],
       "id": "P0_REQUIREMENTS",
-      "status": "AUTOMATED",
-      "summary": "Every P0 requirement FR-001 through FR-016 has an automated evidence selector."
+      "status": "BLOCKED",
+      "summary": "Every P0 requirement is mapped, but manifest analysis and layout guarantees remain incomplete."
     },
     {
       "blocker": "The project owner must select and publish a project license.",
@@ -257,15 +257,15 @@
       "summary": "Unsupported source languages retain generic file buildings."
     },
     {
-      "blocker": null,
+      "blocker": "Maven, Gradle, npm, lockfile, and configuration parsing are not implemented without executing build scripts.",
       "evidence": [
         "tests/test_java_analyzer.py::JavaAnalyzerTests::test_cli_analysis_runs_java_adapter",
         "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_cli_composes_jsts_adapter_and_city_networks"
       ],
       "id": "FR-003",
       "priority": "P0",
-      "status": "AUTOMATED",
-      "summary": "Supported Java and JavaScript/TypeScript files route through isolated analyzers."
+      "status": "BLOCKED",
+      "summary": "Language analyzers exist, but project and manifest detection is incomplete."
     },
     {
       "blocker": null,
@@ -288,14 +288,14 @@
       "summary": "Universal Code Graph fixtures satisfy the versioned evidence contract."
     },
     {
-      "blocker": null,
+      "blocker": "Hash collisions are resolved in sorted insertion order, large districts overflow their bounds, spatial nesting is absent, and previous-scene hints are unsupported.",
       "evidence": [
         "tests/test_layout.py::LayoutTests::test_small_change_preserves_existing_positions"
       ],
       "id": "FR-006",
       "priority": "P0",
-      "status": "AUTOMATED",
-      "summary": "Directory-first layout preserves stable anchors across small changes."
+      "status": "BLOCKED",
+      "summary": "The layout is deterministic for fixed input but does not yet meet stability and hierarchy guarantees."
     },
     {
       "blocker": null,
@@ -318,14 +318,14 @@
       "summary": "Five core Spring roles require exact annotation evidence."
     },
     {
-      "blocker": null,
+      "blocker": "No manifest or configuration facts exist to distinguish a declared dependency from verified code usage.",
       "evidence": [
         "tests/test_java_analyzer.py::JavaAnalyzerTests::test_negative_near_matches_do_not_create_spring_roles"
       ],
       "id": "FR-009",
       "priority": "P0",
-      "status": "AUTOMATED",
-      "summary": "Technology claims distinguish declarations, usage, and concrete products."
+      "status": "BLOCKED",
+      "summary": "Negative code matches are safe, but declared-package versus actual-usage typing is incomplete."
     },
     {
       "blocker": null,

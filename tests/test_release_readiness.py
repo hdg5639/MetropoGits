@@ -44,14 +44,21 @@ class ReleaseReadinessTests(unittest.TestCase):
             EXPECTED_ACCEPTANCE,
             {item["id"] for item in document["acceptanceCriteria"]},
         )
-        self.assertTrue(
-            all(item["status"] == "AUTOMATED" for item in document["requirements"])
+        self.assertEqual(
+            {"FR-003", "FR-006", "FR-009"},
+            {
+                item["id"]
+                for item in document["requirements"]
+                if item["status"] == "BLOCKED"
+            },
         )
-        self.assertTrue(
-            all(
-                item["status"] == "AUTOMATED"
+        self.assertEqual(
+            {"AC-003", "AC-010"},
+            {
+                item["id"]
                 for item in document["acceptanceCriteria"]
-            )
+                if item["status"] == "BLOCKED"
+            },
         )
 
     def test_missing_test_selector_is_rejected(self):
@@ -81,10 +88,59 @@ class ReleaseReadinessTests(unittest.TestCase):
         ]
 
         self.assertEqual(
-            ["DECISION_COMPLIANCE", "PROJECT_LICENSE"],
+            [
+                "ACCEPTANCE_EVIDENCE",
+                "DECISION_COMPLIANCE",
+                "FRESH_REPOSITORY_PUBLISHING",
+                "P0_REQUIREMENTS",
+                "PROJECT_LICENSE",
+            ],
             [item["id"] for item in blocked],
         )
         self.assertTrue(all(item["blocker"] for item in blocked))
+
+    def test_aggregate_checks_cannot_hide_incomplete_entries(self):
+        document = readiness_document()
+        for check_id in (
+            "ACCEPTANCE_EVIDENCE",
+            "FRESH_REPOSITORY_PUBLISHING",
+            "P0_REQUIREMENTS",
+        ):
+            check = next(
+                item for item in document["releaseChecks"] if item["id"] == check_id
+            )
+            check["status"] = "AUTOMATED"
+            check["blocker"] = None
+
+        errors = validate_document(document)
+
+        self.assertIn(
+            "ACCEPTANCE_EVIDENCE must be BLOCKED for current entry statuses",
+            errors,
+        )
+        self.assertIn(
+            "FRESH_REPOSITORY_PUBLISHING must be BLOCKED for AC-010 status",
+            errors,
+        )
+        self.assertIn(
+            "P0_REQUIREMENTS must be BLOCKED for current entry statuses",
+            errors,
+        )
+
+    def test_missing_aggregate_id_is_reported_without_validator_crash(self):
+        document = readiness_document()
+        document["releaseChecks"][0]["id"] = "UNEXPECTED_CHECK"
+
+        errors = validate_document(document)
+
+        self.assertIn(
+            "releaseChecks missing IDs: ACCEPTANCE_EVIDENCE",
+            errors,
+        )
+        self.assertIn(
+            "releaseChecks has unexpected IDs: UNEXPECTED_CHECK",
+            errors,
+        )
 
     def test_noncanonical_and_unsafe_evidence_is_rejected(self):
         document = copy.deepcopy(readiness_document())

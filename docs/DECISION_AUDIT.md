@@ -13,22 +13,26 @@ clearly aligned; it is not silently treated as compliant.
 | DEC-004 — Unknowns degrade gracefully | Satisfied | `LayoutTests.test_unknown_languages_receive_generic_buildings`. |
 | DEC-005 — Evidence-backed claims | Satisfied | UCG claim/edge validation and positive/negative analyzer fixtures. |
 | DEC-006 — Reproducible fixed inputs | Satisfied | Canonical JSON, stable ID, deterministic layout, preview, CLI, history, and metropolis tests. |
-| DEC-007 — Directory-first geography | Satisfied | `LayoutTests.test_small_change_preserves_existing_positions`. |
+| DEC-007 — Directory-first geography | Review required | The current flat global grid records logical `parentId` values but does not spatially nest districts. Sorted linear probing can move existing districts or buildings after an insertion, large districts can overflow their bounds, and previous-scene hints are unsupported. |
 | DEC-008 — File as base building | Satisfied | Scene contract and layout tests map file entities to buildings and directories to districts. |
 | DEC-009 — Two render targets, including interactive 3D | Review required | The project has deterministic SVG and an interactive static CPU canvas viewer, but the viewer is isometric 2D rather than a WebGL 3D implementation. The maintainer must either accept this as the v1 interpretation through an ADR/decision amendment or require a true 3D renderer. |
 | DEC-010 — Isolated analyzers behind UCG | Satisfied | Java and JS/TS adapters enrich the same versioned UCG without owning scene geometry. |
 | DEC-011 — Aggregated roads preserve edges | Satisfied | `LayoutTests.test_edges_between_districts_are_aggregated_without_losing_ids`. |
-| DEC-012 — Federation is post-MVP | Satisfied | Federation was added as the later `metropolis` command without changing single-repository analysis. |
+| DEC-012 — Federation is post-MVP | Review required | Federation is isolated in the `metropolis` command, but it was implemented before the P0 acceptance gaps were closed. No further federation expansion should precede P0 completion. |
 | DEC-013 — Evidence/test-gated contribution | Satisfied | Versioned declarative catalog fixtures, CI, PR template, and CODEOWNERS. |
 
-## Required decision
+## Required decisions and remediation
 
-DEC-009 is a release blocker. Resolve it with one of these owner decisions:
+DEC-007 requires ADR-004 and a stable, bounded, hierarchical spatial allocator
+with fixture-based churn measurements. DEC-012 requires no owner choice, but P2
+work remains paused until the P0 readiness gaps are closed.
+
+DEC-009 remains an owner decision. Resolve it with one of these paths:
 
 1. Amend DEC-009 to define the current interactive isometric canvas as the v1
    viewer, retaining SVG as the deterministic preview.
 2. Keep DEC-009 unchanged and implement a true interactive 3D viewer with a
    documented non-WebGL fallback.
 
-Until one path is selected and recorded, `release/readiness.json` must keep
-`DECISION_COMPLIANCE` in `BLOCKED` state.
+Until DEC-007 is remediated and one DEC-009 path is selected and recorded,
+`release/readiness.json` must keep `DECISION_COMPLIANCE` in `BLOCKED` state.
