@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import argparse
 import codecs
+import hashlib
 import os
+import re
 import stat
 import sys
+import xml.etree.ElementTree as ElementTree
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -101,6 +104,7 @@ LANGUAGES_BY_EXTENSION = {
     ".vue": "vue",
     ".zig": "zig",
 }
+MAVEN_COORDINATE_PART = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 
 class ScannerError(ValueError):
@@ -139,9 +143,22 @@ class ScannedFile:
 
 
 @dataclass(frozen=True)
+class DeclaredDependency:
+    coordinate: str
+
+
+@dataclass(frozen=True)
+class ScannedManifest:
+    path: str
+    ecosystem: str
+    dependencies: tuple[DeclaredDependency, ...]
+
+
+@dataclass(frozen=True)
 class ScanResult:
     files: tuple[ScannedFile, ...]
     diagnostics: tuple[dict[str, Any], ...]
+    manifests: tuple[ScannedManifest, ...] = ()
 
 
 def _is_sensitive_file(name: str) -> bool:
@@ -186,6 +203,65 @@ def _read_prefix_safely(
             os.close(descriptor)
 
 
+def _xml_local_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _direct_xml_children(
+    element: ElementTree.Element, name: str
+) -> list[ElementTree.Element]:
+    return [child for child in element if _xml_local_name(child.tag) == name]
+
+
+def _direct_xml_text(element: ElementTree.Element, name: str) -> str | None:
+    matches = _direct_xml_children(element, name)
+    if len(matches) != 1 or matches[0].text is None:
+        return None
+    value = matches[0].text.strip()
+    return value or None
+
+
+def _parse_maven_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
+    if b"<!DOCTYPE" in content.upper():
+        raise ScannerError("DOCTYPE declarations are not accepted in Maven manifests")
+    try:
+        root = ElementTree.fromstring(content)
+    except ElementTree.ParseError as error:
+        raise ScannerError("manifest is not well-formed XML") from error
+    if _xml_local_name(root.tag) != "project":
+        raise ScannerError("manifest root must be a Maven project")
+
+    dependencies: set[str] = set()
+    for container in _direct_xml_children(root, "dependencies"):
+        for dependency in _direct_xml_children(container, "dependency"):
+            group_id = _direct_xml_text(dependency, "groupId")
+            artifact_id = _direct_xml_text(dependency, "artifactId")
+            if not group_id or not artifact_id:
+                continue
+            if "${" in group_id or "${" in artifact_id:
+                continue
+            if not all(
+                MAVEN_COORDINATE_PART.fullmatch(value)
+                for value in (group_id, artifact_id)
+            ):
+                continue
+            dependencies.add(f"{group_id}:{artifact_id}")
+    return tuple(DeclaredDependency(item) for item in sorted(dependencies))
+
+
+def _manifest_evidence(path: str, coordinate: str) -> dict[str, Any]:
+    identity = [path, "MANIFEST", coordinate, "maven.dependency"]
+    digest = hashlib.sha256(canonical_json_bytes(identity)).hexdigest()
+    return {
+        "evidenceId": f"evidence:sha256:{digest}",
+        "extractor": "manifest.maven/0.1",
+        "kind": "MANIFEST",
+        "ruleId": "maven.dependency",
+        "sourcePath": path,
+        "summary": f"Declared Maven dependency {coordinate}",
+    }
+
+
 def _diagnostic(
     code: str, severity: str, message: str, source_path: str | None = None
 ) -> dict[str, Any]:
@@ -228,6 +304,7 @@ def scan_repository(
         return False
 
     files: list[ScannedFile] = []
+    manifests: list[ScannedManifest] = []
     diagnostics: list[dict[str, Any]] = []
     excluded: Counter[str] = Counter()
     entry_count = 0
@@ -322,6 +399,49 @@ def scan_repository(
                 continue
             if _is_sensitive_file(entry.name):
                 excluded["sensitive files"] += 1
+                continue
+
+            if entry.name == "pom.xml":
+                if entry_stat.st_size > limits.max_file_bytes:
+                    diagnostics.append(
+                        _diagnostic(
+                            "FILE_SIZE_LIMIT",
+                            "WARNING",
+                            f"File exceeds maximum size {limits.max_file_bytes} bytes",
+                            relative_path,
+                        )
+                    )
+                    continue
+                if total_bytes + entry_stat.st_size > limits.max_total_bytes:
+                    diagnostics.append(
+                        _diagnostic(
+                            "TOTAL_SIZE_LIMIT_REACHED",
+                            "WARNING",
+                            f"Scan stopped before exceeding {limits.max_total_bytes} bytes",
+                        )
+                    )
+                    halted = True
+                    break
+                try:
+                    content = _read_prefix_safely(
+                        Path(entry.path), entry_stat, limits.max_file_bytes + 1
+                    )
+                    content.decode("utf-8")
+                    dependencies = _parse_maven_manifest(content)
+                except (OSError, UnicodeError, ScannerError):
+                    diagnostics.append(
+                        _diagnostic(
+                            "MANIFEST_PARSE_FAILED",
+                            "WARNING",
+                            "Maven manifest could not be parsed safely",
+                            relative_path,
+                        )
+                    )
+                    continue
+                manifests.append(
+                    ScannedManifest(relative_path, "maven", dependencies)
+                )
+                total_bytes += entry_stat.st_size
                 continue
 
             extension = Path(entry.name).suffix.lower()
@@ -419,6 +539,7 @@ def scan_repository(
         )
 
     files.sort(key=lambda item: item.path)
+    manifests.sort(key=lambda item: item.path)
     diagnostics.sort(
         key=lambda item: (
             item["code"],
@@ -426,7 +547,7 @@ def scan_repository(
             item["message"],
         )
     )
-    return ScanResult(tuple(files), tuple(diagnostics))
+    return ScanResult(tuple(files), tuple(diagnostics), tuple(manifests))
 
 
 def build_structural_ucg(
@@ -469,6 +590,43 @@ def build_structural_ucg(
             }
         )
 
+    module_ids: dict[str, str] = {}
+    external_package_ids: dict[str, str] = {}
+    evidence: list[dict[str, Any]] = []
+    for manifest in scan.manifests:
+        if manifest.ecosystem != "maven":
+            continue
+        module_id = make_entity_id(repository_id, "MODULE", manifest.path)
+        module_ids[manifest.path] = module_id
+        entities.append(
+            {
+                "id": module_id,
+                "kind": "MODULE",
+                "path": manifest.path,
+            }
+        )
+        for dependency in manifest.dependencies:
+            group_id, artifact_id = dependency.coordinate.split(":", 1)
+            package_path = (
+                "maven/" + group_id.replace(".", "/") + "/" + artifact_id
+            )
+            package_id = make_entity_id(
+                repository_id, "EXTERNAL_PACKAGE", package_path
+            )
+            if dependency.coordinate not in external_package_ids:
+                external_package_ids[dependency.coordinate] = package_id
+                entities.append(
+                    {
+                        "id": package_id,
+                        "kind": "EXTERNAL_PACKAGE",
+                        "path": package_path,
+                    }
+                )
+            manifest_evidence = _manifest_evidence(
+                manifest.path, dependency.coordinate
+            )
+            evidence.append(manifest_evidence)
+
     edges: list[dict[str, Any]] = []
     for path, entity_id in directory_ids.items():
         parent = str(PurePosixPath(path).parent)
@@ -499,12 +657,49 @@ def build_structural_ucg(
                     "type": "CONTAINS",
                 }
             )
+    for manifest in scan.manifests:
+        module_id = module_ids.get(manifest.path)
+        if module_id is None:
+            continue
+        parent = str(PurePosixPath(manifest.path).parent)
+        if parent in directory_ids:
+            parent_id = directory_ids[parent]
+            edges.append(
+                {
+                    "confidence": "DIRECT",
+                    "evidenceIds": [],
+                    "from": parent_id,
+                    "id": make_edge_id(parent_id, "CONTAINS", module_id),
+                    "to": module_id,
+                    "type": "CONTAINS",
+                }
+            )
+        for dependency in manifest.dependencies:
+            package_id = external_package_ids[dependency.coordinate]
+            manifest_evidence = _manifest_evidence(
+                manifest.path, dependency.coordinate
+            )
+            edges.append(
+                {
+                    "confidence": "DIRECT",
+                    "evidenceIds": [manifest_evidence["evidenceId"]],
+                    "from": module_id,
+                    "id": make_edge_id(
+                        module_id,
+                        "DEPENDS_ON",
+                        package_id,
+                        dependency.coordinate,
+                    ),
+                    "to": package_id,
+                    "type": "DEPENDS_ON",
+                }
+            )
 
     document: dict[str, Any] = {
         "diagnostics": list(scan.diagnostics),
         "edges": sorted(edges, key=lambda item: item["id"]),
         "entities": sorted(entities, key=lambda item: item["id"]),
-        "evidence": [],
+        "evidence": sorted(evidence, key=lambda item: item["evidenceId"]),
         "generator": {
             "catalogVersion": CATALOG_VERSION,
             "name": "metropogits",

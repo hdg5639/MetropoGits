@@ -126,6 +126,109 @@ class ScannerTests(unittest.TestCase):
 
         self.assertEqual(1, len(result.files))
 
+    def test_maven_dependencies_create_manifest_evidenced_edges(self):
+        fixture = Path(__file__).parent / "fixtures" / "repositories" / "maven-manifest"
+
+        scan = scan_repository(fixture)
+        graph = build_structural_ucg(scan, "example/maven")
+
+        self.assertEqual(["pom.xml"], [item.path for item in scan.manifests])
+        self.assertEqual(
+            ["org.springframework:spring-context"],
+            [
+                dependency.coordinate
+                for dependency in scan.manifests[0].dependencies
+            ],
+        )
+        dependencies = [
+            edge for edge in graph["edges"] if edge["type"] == "DEPENDS_ON"
+        ]
+        self.assertEqual(1, len(dependencies))
+        entities = {item["id"]: item for item in graph["entities"]}
+        self.assertEqual("MODULE", entities[dependencies[0]["from"]]["kind"])
+        self.assertEqual(
+            "EXTERNAL_PACKAGE", entities[dependencies[0]["to"]]["kind"]
+        )
+        evidence = {item["evidenceId"]: item for item in graph["evidence"]}
+        self.assertEqual(
+            "MANIFEST", evidence[dependencies[0]["evidenceIds"][0]]["kind"]
+        )
+        self.assertFalse(
+            any(
+                entity.get("technologies")
+                for entity in graph["entities"]
+            )
+        )
+        self.assertEqual([], validate_document(graph))
+
+    def test_shared_maven_dependency_uses_one_external_package_entity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for directory in (root / "first", root / "second"):
+                directory.mkdir()
+                (directory / "pom.xml").write_text(
+                    """<project><dependencies><dependency>
+<groupId>com.example</groupId><artifactId>shared</artifactId>
+</dependency></dependencies></project>""",
+                    encoding="utf-8",
+                )
+            (root / "App.java").write_text("class App {}", encoding="utf-8")
+
+            graph = build_structural_ucg(scan_repository(root), "example/maven")
+
+        packages = [
+            entity
+            for entity in graph["entities"]
+            if entity["kind"] == "EXTERNAL_PACKAGE"
+        ]
+        dependencies = [
+            edge for edge in graph["edges"] if edge["type"] == "DEPENDS_ON"
+        ]
+        self.assertEqual(1, len(packages))
+        self.assertEqual(2, len(dependencies))
+        self.assertEqual([], validate_document(graph))
+
+    def test_maven_parser_ignores_management_plugins_and_interpolation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "App.java").write_text("class App {}", encoding="utf-8")
+            (root / "pom.xml").write_text(
+                """<project>
+  <dependencies>
+    <dependency><groupId>${group}</groupId><artifactId>dynamic</artifactId></dependency>
+  </dependencies>
+  <dependencyManagement><dependencies>
+    <dependency><groupId>managed</groupId><artifactId>only</artifactId></dependency>
+  </dependencies></dependencyManagement>
+  <build><plugins><plugin><dependencies>
+    <dependency><groupId>plugin</groupId><artifactId>only</artifactId></dependency>
+  </dependencies></plugin></plugins></build>
+</project>""",
+                encoding="utf-8",
+            )
+
+            scan = scan_repository(root)
+
+        self.assertEqual((), scan.manifests[0].dependencies)
+
+    def test_malformed_or_doctype_maven_manifest_is_rejected_safely(self):
+        for content in ("<project>", "<!DOCTYPE project><project />"):
+            with self.subTest(content=content):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    (root / "App.java").write_text("class App {}", encoding="utf-8")
+                    (root / "pom.xml").write_text(content, encoding="utf-8")
+
+                    scan = scan_repository(root)
+
+                self.assertEqual((), scan.manifests)
+                self.assertTrue(
+                    any(
+                        item["code"] == "MANIFEST_PARSE_FAILED"
+                        for item in scan.diagnostics
+                    )
+                )
+
     def test_symlink_is_not_followed_when_supported(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
