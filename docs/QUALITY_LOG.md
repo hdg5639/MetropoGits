@@ -2226,3 +2226,31 @@
   infer HTTP/message traffic from visual streets or imports. Pages stays blocked.
 - Commit / push: one coherent layout/circulation unit on owner-authorized main,
   after the independent ADR, cache and legend commits; no agent attribution.
+
+## Checkpoint 2026-10-18 — synthetic animation regression
+
+- Fixed: synthetic activity no longer bypasses static geometry caching. Moving
+  markers have a separate DYNAMIC_DRAW buffer. Unchanged camera/LOD/filter/
+  selection reuses hit regions and labels as well. No graph/City changes.
+- Baseline correction: prior timing checks covered synthetic-off only. The old
+  synthetic path rebuilt/re-uploaded the entire city on every frame. Actual GJ
+  Detail CPU p95 was 105.5 ms and upload 14043456 bytes/frame (20 sampled frames,
+  20 static builds). This regression was missed in the previous checkpoint.
+- Verification: extended `scripts/viewer_audit.mjs` enables/disables synthetic at
+  all three LODs, checks marker vertex motion, static build count, and upload
+  bytes. Fixes a CDP measurement race by capturing sequence and configuring the
+  camera atomically. Cache invalidation and isolated dynamic-buffer tests added.
+- Artifacts: unchanged canonical GJ/OJ scenes repackaged with current assets in
+  workspace `artifacts/visual/synthetic-fixed-r2/{gj,oj}`; real spring-positive
+  pipeline in `synthetic-fixed/spring`. Baseline `synthetic-before/report.json`;
+  after `synthetic-after-r2/report.json`. GJ Detail capture inspected: city and
+  routes retained; road geometry itself is still the separate next correction.
+- Measured: GJ synthetic CPU p95 Overview/District/Detail 0.6/0.8/1.7 ms; every
+  sampled frame has zero static builds. Detail uploads 174960 bytes/frame,
+  representing 135 animated markers only. Headless SwiftShader, JS CPU draw
+  submission, not GPU/display FPS or a universal performance promise.
+- Checks: full 240-test suite, 239 pass/one Windows symlink skip; seven Node
+  audit tests, Ruff and whitespace checks. No new dependencies or P2 feature
+  expansion; this repairs an existing regression under TECH 8 / FR-023.
+- Delivery: independent fix(viewer) commit to owner-authorized main. Next is
+  route-derived road geometry, not further decoration of empty land.

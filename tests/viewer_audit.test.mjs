@@ -7,7 +7,7 @@ import { Script } from 'node:vm';
 import '../metropogits/viewer_assets/viewer-3d.js';
 import { Cdp, instrument, replaceOnce, summarize, reportHtml, prepare } from '../scripts/viewer_audit.mjs';
 
-test('geometry cache reuses camera frames, invalidates visual state, bypasses animation', () => {
+test('static geometry cache survives animation ticks and invalidates visual state', () => {
   const cache = globalThis.METROPOGITS_GEOMETRY_CACHE();
   let builds = 0;
   const build = () => ({triangles: [++builds], lines: []});
@@ -18,9 +18,18 @@ test('geometry cache reuses camera frames, invalidates visual state, bypasses an
     assert.equal(cache(key, build), geometry);
   }
   assert.equal(builds, 4);
-  const animated = cache('district:1:building:a', build, true);
-  assert.notEqual(cache('district:1:building:a', build, true), animated);
+  for (let frame = 0; frame < 60; frame += 1) cache('district:1:building:a', build);
+  assert.equal(builds, 4);
   assert.equal(cache('district:1:building:a', build).triangles[0], 4);
+});
+
+test('animation uses its own dynamic buffer and never disables static cache', async () => {
+  const source = await readFile(new URL('../metropogits/viewer_assets/viewer-3d.js', import.meta.url), 'utf8');
+  assert.ok(source.includes('bindAndDraw(activityBuffer, buildActivityGeometry(timestamp), gl.TRIANGLES, gl.DYNAMIC_DRAW)'));
+  const staticBuilder = source.split('function buildUncachedGeometry(timestamp) {')[1].split('function buildActivityGeometry')[0];
+  assert.ok(!staticBuilder.includes('syntheticActivity'));
+  assert.ok(!staticBuilder.includes('pointAlongPath'));
+  assert.ok(source.includes('projectionKey !== lastProjectionKey'));
 });
 
 test('instrumentation is isolated, parseable and fails closed on marker drift', async () => {

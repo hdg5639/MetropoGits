@@ -219,8 +219,7 @@
   function createGeometryCache() {
     let savedKey;
     let saved;
-    return (key, build, animated = false) => {
-      if (animated) return build();
+    return (key, build) => {
       if (!saved || key !== savedKey) {
         saved = build();
         savedKey = key;
@@ -481,6 +480,7 @@
   const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)");
   const triangleBuffer = gl.createBuffer();
   const lineBuffer = gl.createBuffer();
+  const activityBuffer = gl.createBuffer();
   const positionLocation = gl.getAttribLocation(program, "a_position");
   const normalLocation = gl.getAttribLocation(program, "a_normal");
   const colorLocation = gl.getAttribLocation(program, "a_color");
@@ -649,7 +649,7 @@
   const uploadedGeometry = new WeakMap();
 
   function buildGeometry(timestamp) {
-    return geometryCache(lodCacheKey, () => buildUncachedGeometry(timestamp), state.syntheticActivity);
+    return geometryCache(lodCacheKey, () => buildUncachedGeometry(timestamp));
   }
 
   function buildUncachedGeometry(timestamp) {
@@ -895,6 +895,11 @@
       }
     }
 
+    return { lines, triangles };
+  }
+
+  function buildActivityGeometry(timestamp) {
+    const triangles = [];
     if (state.syntheticActivity && activityEngine) {
       const elapsed = Math.max(0, timestamp - state.activityEpoch);
       for (const network of scene.networks) {
@@ -906,14 +911,14 @@
         }
       }
     }
-    return { lines, triangles };
+    return triangles;
   }
 
-  function bindAndDraw(buffer, values, primitive) {
+  function bindAndDraw(buffer, values, primitive, usage = gl.STATIC_DRAW) {
     if (!values.length) return;
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     if (uploadedGeometry.get(buffer) !== values) {
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), usage);
       uploadedGeometry.set(buffer, values);
     }
     const stride = 9 * Float32Array.BYTES_PER_ELEMENT;
@@ -945,6 +950,7 @@
   }
 
   function buildHitRegions() {
+    if (!projectionDirty) return hitRegions;
     const regions = [];
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
@@ -1076,6 +1082,7 @@
   }
 
   function renderLabels() {
+    if (!projectionDirty) return;
     if (!labelLayer) return;
     const candidates = [];
     for (const district of scene.districts) {
@@ -1144,6 +1151,8 @@
       }));
   }
 
+  let lastProjectionKey = null;
+  let projectionDirty = true;
   function render(timestamp = 0) {
     framePending = false;
     updateLodVisibility();
@@ -1158,10 +1167,14 @@
     gl.useProgram(program);
     gl.uniformMatrix4fv(matrixLocation, false, new Float32Array(viewProjection));
     bindAndDraw(triangleBuffer, geometry.triangles, gl.TRIANGLES);
+    bindAndDraw(activityBuffer, buildActivityGeometry(timestamp), gl.TRIANGLES, gl.DYNAMIC_DRAW);
     gl.disable(gl.CULL_FACE);
     bindAndDraw(lineBuffer, geometry.lines, gl.LINES);
+    const projectionKey = `${lodCacheKey}:${viewportWidth}:${viewportHeight}:${viewProjection.join(',')}`;
+    projectionDirty = projectionKey !== lastProjectionKey;
     hitRegions = buildHitRegions();
     renderLabels();
+    lastProjectionKey = projectionKey;
     if (state.syntheticActivity && renderedNetworkIds.size > 0) scheduleRender();
   }
 

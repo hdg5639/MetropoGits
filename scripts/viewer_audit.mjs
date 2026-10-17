@@ -30,13 +30,28 @@ export function instrument(source) {
   let auditLod = null;
   let auditFirstDraw = null;
   let auditSequence = 0;
+  let auditStaticBuilds = 0;
+  let auditUploadBytes = 0;
+  let auditUploadPosition = null;
+  const auditBufferData = gl.bufferData.bind(gl);
+  gl.bufferData = (...args) => {
+    auditUploadBytes += args[1]?.byteLength || 0;
+    auditUploadPosition = args[1]?.slice ? Array.from(args[1].slice(0, 3)) : null;
+    return auditBufferData(...args);
+  };
   function render(timestamp = 0) {
-    const auditStart = performance.now();`);
+    const auditStart = performance.now();
+    const auditBeforeBuilds = auditStaticBuilds;
+    const auditBeforeUploads = auditUploadBytes;`);
+  result = replaceOnce(result, '  function buildUncachedGeometry(timestamp) {',
+    '  function buildUncachedGeometry(timestamp) {\n    auditStaticBuilds += 1;');
   result = replaceOnce(result, '    renderLabels();', `    renderLabels();
     const ended = performance.now();
     auditFirstDraw ??= ended;
     auditSequence += 1;
     auditFrames.push({start: auditStart, end: ended, cpuMs: ended - auditStart,
+      staticBuilds: auditStaticBuilds - auditBeforeBuilds, uploadBytes: auditUploadBytes - auditBeforeUploads,
+      uploadPosition: auditUploadPosition,
       triangles: geometry.triangles.length / 27, lines: geometry.lines.length / 18});
     if (auditFrames.length > 1024) auditFrames.shift();`);
   result = replaceOnce(result, 'const nextDetailLevel = lodPolicy.levelForZoom(zoomRatio, filtered);',
@@ -144,9 +159,40 @@ async function nextDraw(cdp, sequence) {
   throw new Error('No viewer draw after input');
 }
 async function configure(cdp, options) {
+  const sequence = await cdp.evaluate(`(() => {
+    const sequence = __METRO_AUDIT__.snapshot().sequence;
+    __METRO_AUDIT__.configure(${JSON.stringify(options)});
+    return sequence;
+  })()`);
+  return nextDraw(cdp, sequence);
+}
+
+async function syntheticFrames(cdp, samples) {
   const before = await snapshot(cdp);
-  await cdp.evaluate(`__METRO_AUDIT__.configure(${JSON.stringify(options)})`);
-  return nextDraw(cdp, before.sequence);
+  await cdp.evaluate(`(() => {
+    const toggle = document.getElementById('synthetic-activity');
+    if (toggle.disabled) throw new Error('Synthetic unavailable');
+    toggle.checked = true; toggle.dispatchEvent(new Event('change'));
+  })()`);
+  let frames;
+  const deadline = Date.now() + 30000;
+  try {
+    do {
+      if (Date.now() > deadline) throw new Error('Synthetic frame timeout');
+      await sleep(100);
+      frames = (await snapshot(cdp)).frames.filter(frame => frame.start > before.frames.at(-1).end);
+    } while (frames.length < samples + 5);
+    frames = frames.slice(5, samples + 5);
+    return {cpuMs: summarize(frames.map(frame => frame.cpuMs)),
+      staticBuilds: frames.reduce((sum, frame) => sum + frame.staticBuilds, 0),
+      moved: new Set(frames.map(frame => JSON.stringify(frame.uploadPosition))).size > 1,
+      uploadBytes: summarize(frames.map(frame => frame.uploadBytes)), frames};
+  } finally {
+    await cdp.evaluate(`(() => {
+      const toggle = document.getElementById('synthetic-activity');
+      toggle.checked = false; toggle.dispatchEvent(new Event('change'));
+    })()`);
+  }
 }
 
 // Trusted UI events exercise the actual orbit/wheel handlers, one completed draw
@@ -200,7 +246,7 @@ export function reportHtml(report) {
     .pair{display:flex;gap:16px}figure{flex:1;min-width:0;margin:0}img{width:100%}figcaption{overflow-wrap:anywhere;color:#a8b8cb;font-size:13px}
     table{border-collapse:collapse}td,th{padding:8px;border:1px solid #445}section{margin:32px 0}
     @media(max-width:900px){.pair{display:block}figure{margin-bottom:20px}}</style>
-    <h1>Controlled WebGL comparison</h1><p>1280 × 800, DPR 1, yaw −0.68, pitch 0.62. Synthetic activity off.</p>
+    <h1>Controlled WebGL comparison</h1><p>1280 × 800, DPR 1, yaw −0.68, pitch 0.62. Screenshots/orbit: synthetic off. Separate synthetic-on frames are recorded in the raw report.</p>
     <p>Software SwiftShader. Timings measure JavaScript draw submission, <strong>not GPU completion or display FPS</strong>.
     Input latency includes CDP dispatch and scheduling. Counts are LOD submissions, not on-screen visibility.</p>
     <p><a href="report.json">Raw report, environment, hashes and samples</a>. Local development evidence; do not publish private metadata.</p>
@@ -283,8 +329,14 @@ export async function runAudit(browser, output, inputs, samples = 20) {
         const orbit = await interaction(cdp, 'orbit', samples);
         await configure(cdp, {zoom});
         const wheel = await interaction(cdp, 'wheel', samples);
-        result.views[lod] = {state, orbit, wheel};
+        await configure(cdp, {zoom});
+        const synthetic = await syntheticFrames(cdp, samples);
+        if (synthetic.staticBuilds !== 0 || !synthetic.moved) {
+          throw new Error('Synthetic regression: static city rebuilt or activity did not move');
+        }
+        result.views[lod] = {state, orbit, wheel, synthetic};
         console.log(`  ${lod}: orbit CPU p95=${orbit.cpuMs.p95.toFixed(1)} ms`);
+        console.log(`    synthetic CPU p95=${synthetic.cpuMs.p95.toFixed(1)} ms; static builds=${synthetic.staticBuilds}; upload p95=${synthetic.uploadBytes.p95}`);
       }
     }
     const distance = Math.max(...report.cases.map(c => c.initial.fittedDistance));
