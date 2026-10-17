@@ -1708,3 +1708,66 @@
   TypeScript files remain generic.
 - Commits created / pushed (and branch): `87c2d20` and `d0d0077` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-18 - traceable block overview LOD (`4f9fffb`, `6eb5bb6`)
+
+- Implemented: large-city overview no longer replaces each major service with
+  one tower. It assigns every file through canonical district ancestry, makes
+  a deterministic spatial partition inside each major district, and renders
+  each partition as a visual city block. Block floors are clipped to the real
+  polygon territory rather than refilling an overlapping rectangular AABB.
+  District/detail levels still reveal canonical file buildings.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`; a synthetic 300-file
+  large-city fixture with nested districts, filters, and 100 ranked networks;
+  and all existing viewer, history, metropolis, layout, and contract fixtures.
+- Commands run: three complete GJ-Cloud builds while correcting rectangular
+  overlap and label priority; Node-derived block integrity measurements; Edge
+  SwiftShader WebGL captures; repeated in-memory viewer packaging; Ruff,
+  `compileall`, JavaScript syntax checks, whitespace checks, and the complete
+  automated suite.
+- Artifacts inspected: `viewer-webgl.png` and the complete static output under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-block-lod-3`.
+- Visual findings: PASS for the block-level overview objective and PARTIAL for
+  the broader living-city target. The metropolitan view now shows a populated
+  campus of blocks inside Ops, VM, Auth, User, and Portal instead of seven
+  structures surrounded by unchanged territory. Default block labels were
+  removed after they obscured the more important service labels; block names
+  remain available through hover and selection. The grey massing is still an
+  intentionally schematic blueprint rather than a finished city art style.
+- Overview findings: 1,324 files map exactly once to 37 visual blocks and 128
+  representative masses. Median block population is 37 files, with a range of
+  1-61. Polygon clipping produces 511 non-overlapping plot rectangles and zero
+  inter-block plot intersections. Overview keeps the existing cap of 24 from
+  135 evidence networks.
+- Traceability and evidence findings: every block retains sorted canonical
+  file IDs and constituent district IDs. The inspector explicitly labels it a
+  visual aggregate, lists both compositions, and can enter the real buildings.
+  Filters hide blocks without matching files but never invent filtered
+  membership. UCG entities, City buildings, evidence, layout coordinates, and
+  network edge IDs are unchanged.
+- Spec alignment: PASS under ADR-012, DEC-008, AC-006, and the renderer-only
+  aggregation boundary. Block IDs use `visual:block:` and are not encoded as
+  semantic UCG or City entities. No schema change, repository-code execution,
+  dependency installation, external analyzer, or AI service was introduced.
+- Tests / determinism: 215 tests passed with one expected Windows symlink skip.
+  Ruff, compilation, JavaScript parsing, and whitespace checks passed. Repeated
+  viewer packaging was byte-identical with aggregate artifact SHA-256
+  `83ad9b49194937fab6c924c022e36ab362f50001ffdd8c8462dd3c152224118f`.
+  The end-to-end City SHA-256 remains
+  `33d3d4ff869979f95297d3f3d20c6ee9679d2ea3048072b46582339af43f70c1`;
+  the UCG SHA-256 remains
+  `8382dbb2beb4fa888ba0a5d5caffa113c9671e2b2e94a446f457e10e8a8c65cf`.
+- Fixes applied and reverified: the first block implementation used occupied
+  AABBs and created three overlaps where concave service territories interlock.
+  Intersecting each block with the major district's polygon territory reduced
+  physical overlap to zero. The first readable capture then showed too many
+  block labels; limiting persistent labels to major districts restored the
+  service-first hierarchy without removing block hover or inspection.
+- Open risks / next actions: README SVG remains the detailed renderer rather
+  than a dedicated showcase composition. Building silhouettes still lack
+  source-size variation because line/byte metrics require explicit UCG schema
+  approval. Portal's 466 TypeScript files also remain generic, so semantic
+  landmark classification is the next approved visual improvement.
+- Commits created / pushed (and branch): `4f9fffb` and `6eb5bb6` on local
+  `main`; push is scheduled after this checkpoint log commit.
