@@ -105,6 +105,20 @@ LANGUAGES_BY_EXTENSION = {
     ".zig": "zig",
 }
 MAVEN_COORDINATE_PART = re.compile(r"^[A-Za-z0-9_.-]+$")
+GRADLE_DEPENDENCY_BLOCK = re.compile(r"\bdependencies\s*\{")
+GRADLE_DEPENDENCY_CALL = re.compile(
+    r"""(?:^|[;{])\s*
+    (?:api|implementation|compile|compileOnly|runtime|runtimeOnly|
+       annotationProcessor|testCompile|testImplementation|testCompileOnly|
+       testRuntimeOnly|kapt|ksp|classpath)\s*
+    (?:\(\s*)?
+    (?P<quote>["'])
+    (?P<group>[A-Za-z0-9_.-]+):(?P<artifact>[A-Za-z0-9_.-]+)
+    (?::[^"']+)?
+    (?P=quote)\s*\)?
+    (?=\s*(?:[;}]|$))""",
+    re.VERBOSE,
+)
 
 
 class ScannerError(ValueError):
@@ -150,6 +164,7 @@ class DeclaredDependency:
 @dataclass(frozen=True)
 class ScannedManifest:
     path: str
+    format: str
     ecosystem: str
     dependencies: tuple[DeclaredDependency, ...]
 
@@ -249,16 +264,143 @@ def _parse_maven_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
     return tuple(DeclaredDependency(item) for item in sorted(dependencies))
 
 
-def _manifest_evidence(path: str, coordinate: str) -> dict[str, Any]:
-    identity = [path, "MANIFEST", coordinate, "maven.dependency"]
+def _gradle_code_line(
+    line: str, in_block_comment: bool, multiline_quote: str | None
+) -> tuple[str, str, bool, str | None]:
+    code: list[str] = []
+    structure: list[str] = []
+    quote: str | None = None
+    escaped = False
+    index = 0
+    while index < len(line):
+        character = line[index]
+        following = line[index + 1] if index + 1 < len(line) else ""
+        triplet = line[index : index + 3]
+        if multiline_quote is not None:
+            if triplet == multiline_quote:
+                code.extend((" ", " ", " "))
+                structure.extend((" ", " ", " "))
+                multiline_quote = None
+                index += 3
+            else:
+                code.append(" ")
+                structure.append(" ")
+                index += 1
+            continue
+        if in_block_comment:
+            if character == "*" and following == "/":
+                code.extend((" ", " "))
+                structure.extend((" ", " "))
+                in_block_comment = False
+                index += 2
+            else:
+                code.append(" ")
+                structure.append(" ")
+                index += 1
+            continue
+        if triplet in {"'''", '\"\"\"'}:
+            code.extend((" ", " ", " "))
+            structure.extend((" ", " ", " "))
+            multiline_quote = triplet
+            index += 3
+            continue
+        if quote is not None:
+            code.append(character)
+            structure.append(" ")
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = None
+            index += 1
+            continue
+        if character == "/" and following == "*":
+            code.extend((" ", " "))
+            structure.extend((" ", " "))
+            in_block_comment = True
+            index += 2
+            continue
+        if character == "/" and following == "/":
+            padding = " " * (len(line) - index)
+            code.append(padding)
+            structure.append(padding)
+            break
+        code.append(character)
+        if character in {"'", '"'}:
+            quote = character
+            structure.append(" ")
+        else:
+            structure.append(character)
+        index += 1
+    return (
+        "".join(code),
+        "".join(structure),
+        in_block_comment,
+        multiline_quote,
+    )
+
+
+def _parse_gradle_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
+    try:
+        source = content.decode("utf-8")
+    except UnicodeError as error:
+        raise ScannerError("manifest is not valid UTF-8") from error
+
+    dependencies: set[str] = set()
+    depth = 0
+    dependency_depths: list[int] = []
+    in_block_comment = False
+    multiline_quote: str | None = None
+    for line in source.splitlines():
+        code, structure, in_block_comment, multiline_quote = _gradle_code_line(
+            line, in_block_comment, multiline_quote
+        )
+        starts = list(GRADLE_DEPENDENCY_BLOCK.finditer(structure))
+        started_depths: list[tuple[int, int]] = []
+        for match in starts:
+            prefix = structure[: match.end()]
+            started_depths.append(
+                (
+                    match.start(),
+                    depth + prefix.count("{") - prefix.count("}"),
+                )
+            )
+        for match in GRADLE_DEPENDENCY_CALL.finditer(code):
+            prefix = structure[: match.start()]
+            current_depth = depth + prefix.count("{") - prefix.count("}")
+            active_depths = dependency_depths + [
+                dependency_depth
+                for position, dependency_depth in started_depths
+                if position < match.start()
+            ]
+            if any(current_depth >= item for item in active_depths):
+                dependencies.add(
+                    f"{match.group('group')}:{match.group('artifact')}"
+                )
+        dependency_depths.extend(item for _, item in started_depths)
+        depth += structure.count("{") - structure.count("}")
+        dependency_depths = [
+            dependency_depth
+            for dependency_depth in dependency_depths
+            if depth >= dependency_depth
+        ]
+    return tuple(DeclaredDependency(item) for item in sorted(dependencies))
+
+
+def _manifest_evidence(
+    manifest: ScannedManifest, coordinate: str
+) -> dict[str, Any]:
+    rule_id = f"{manifest.format}.dependency"
+    identity = [manifest.path, "MANIFEST", coordinate, rule_id]
     digest = hashlib.sha256(canonical_json_bytes(identity)).hexdigest()
     return {
         "evidenceId": f"evidence:sha256:{digest}",
-        "extractor": "manifest.maven/0.1",
+        "extractor": f"manifest.{manifest.format}/0.1",
         "kind": "MANIFEST",
-        "ruleId": "maven.dependency",
-        "sourcePath": path,
-        "summary": f"Declared Maven dependency {coordinate}",
+        "ruleId": rule_id,
+        "sourcePath": manifest.path,
+        "summary": f"Declared {manifest.format.title()} dependency {coordinate}",
     }
 
 
@@ -401,7 +543,12 @@ def scan_repository(
                 excluded["sensitive files"] += 1
                 continue
 
-            if entry.name == "pom.xml":
+            manifest_format = {
+                "build.gradle": "gradle",
+                "build.gradle.kts": "gradle",
+                "pom.xml": "maven",
+            }.get(entry.name)
+            if manifest_format is not None:
                 if entry_stat.st_size > limits.max_file_bytes:
                     diagnostics.append(
                         _diagnostic(
@@ -426,20 +573,28 @@ def scan_repository(
                     content = _read_prefix_safely(
                         Path(entry.path), entry_stat, limits.max_file_bytes + 1
                     )
-                    content.decode("utf-8")
-                    dependencies = _parse_maven_manifest(content)
+                    dependencies = (
+                        _parse_maven_manifest(content)
+                        if manifest_format == "maven"
+                        else _parse_gradle_manifest(content)
+                    )
                 except (OSError, UnicodeError, ScannerError):
                     diagnostics.append(
                         _diagnostic(
                             "MANIFEST_PARSE_FAILED",
                             "WARNING",
-                            "Maven manifest could not be parsed safely",
+                            f"{manifest_format.title()} manifest could not be parsed safely",
                             relative_path,
                         )
                     )
                     continue
                 manifests.append(
-                    ScannedManifest(relative_path, "maven", dependencies)
+                    ScannedManifest(
+                        relative_path,
+                        manifest_format,
+                        "maven",
+                        dependencies,
+                    )
                 )
                 total_bytes += entry_stat.st_size
                 continue
@@ -622,9 +777,7 @@ def build_structural_ucg(
                         "path": package_path,
                     }
                 )
-            manifest_evidence = _manifest_evidence(
-                manifest.path, dependency.coordinate
-            )
+            manifest_evidence = _manifest_evidence(manifest, dependency.coordinate)
             evidence.append(manifest_evidence)
 
     edges: list[dict[str, Any]] = []
@@ -676,9 +829,7 @@ def build_structural_ucg(
             )
         for dependency in manifest.dependencies:
             package_id = external_package_ids[dependency.coordinate]
-            manifest_evidence = _manifest_evidence(
-                manifest.path, dependency.coordinate
-            )
+            manifest_evidence = _manifest_evidence(manifest, dependency.coordinate)
             edges.append(
                 {
                     "confidence": "DIRECT",

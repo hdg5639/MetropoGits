@@ -188,6 +188,66 @@ class ScannerTests(unittest.TestCase):
         self.assertEqual(2, len(dependencies))
         self.assertEqual([], validate_document(graph))
 
+    def test_gradle_literal_dependencies_create_manifest_evidenced_edges(self):
+        fixture = Path(__file__).parent / "fixtures" / "repositories" / "gradle-manifest"
+
+        scan = scan_repository(fixture)
+        graph = build_structural_ucg(scan, "example/gradle")
+
+        self.assertEqual(["build.gradle.kts"], [item.path for item in scan.manifests])
+        self.assertEqual("gradle", scan.manifests[0].format)
+        self.assertEqual(
+            ["org.springframework:spring-context"],
+            [item.coordinate for item in scan.manifests[0].dependencies],
+        )
+        dependency = next(
+            edge for edge in graph["edges"] if edge["type"] == "DEPENDS_ON"
+        )
+        evidence = {item["evidenceId"]: item for item in graph["evidence"]}
+        manifest_evidence = evidence[dependency["evidenceIds"][0]]
+        self.assertEqual("manifest.gradle/0.1", manifest_evidence["extractor"])
+        self.assertEqual("gradle.dependency", manifest_evidence["ruleId"])
+        package = next(
+            item for item in graph["entities"] if item["id"] == dependency["to"]
+        )
+        self.assertEqual(
+            "maven/org/springframework/spring-context", package["path"]
+        )
+        self.assertEqual([], validate_document(graph))
+
+    def test_gradle_parser_ignores_comments_dynamic_and_project_dependencies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            marker = root / "executed.marker"
+            (root / "App.kt").write_text("class App", encoding="utf-8")
+            (root / "build.gradle").write_text(
+                '''def documentation = """
+dependencies {
+  implementation 'string:ignored:1.0'
+}
+"""
+dependencies {
+  // implementation 'commented:dependency:1.0'
+  /* implementation 'blocked:dependency:1.0' */
+  implementation project(':local')
+  implementation files('local.jar')
+  implementation "${dynamic}:artifact:1.0"
+  implementation 'literal:accepted:1.0'
+}; implementation 'outside:ignored:1.0'
+file('executed.marker').createNewFile()
+''',
+                encoding="utf-8",
+            )
+
+            scan = scan_repository(root)
+
+            self.assertFalse(marker.exists())
+
+        self.assertEqual(
+            ["literal:accepted"],
+            [item.coordinate for item in scan.manifests[0].dependencies],
+        )
+
     def test_maven_parser_ignores_management_plugins_and_interpolation(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

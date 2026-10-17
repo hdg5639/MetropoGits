@@ -24,11 +24,12 @@ evidence-backed local imports, inheritance, declarations, and core Spring
 stereotypes. The JavaScript/TypeScript adapter resolves explicit local ESM and
 CommonJS module references without running repository code; its conservative
 resolution rules are documented in [the JS/TS analyzer guide](docs/JSTS_ANALYZER.md).
-Direct dependencies in Maven `pom.xml` files are recorded as bounded
+Direct dependencies in Maven `pom.xml` and Gradle `build.gradle` or
+`build.gradle.kts` files are recorded as bounded
 `MODULE -> EXTERNAL_PACKAGE` declarations with manifest evidence. Dependency
-management entries, plugin dependencies, and interpolated coordinates are not
-treated as active dependencies, and a declaration alone does not claim runtime
-technology usage.
+management entries, Maven plugin dependencies, Gradle project/file references,
+and dynamic group or artifact coordinates are not treated as active external
+dependencies. A declaration alone does not claim runtime technology usage.
 Unsupported source languages still produce generic buildings without guessed
 semantics.
 
