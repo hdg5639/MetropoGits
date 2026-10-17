@@ -114,3 +114,57 @@
   2D-versus-3D renderer, hosted-runner, and license risks remain open.
 - Commits created / pushed (and branch): `4401455` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — Gradle manifest evidence (`be96b73`)
+
+- Implemented: non-executing extraction of literal Maven-style coordinates
+  from `dependencies {}` blocks in `build.gradle` and `build.gradle.kts`;
+  comment, string, and brace-aware lexical scoping; Gradle-specific manifest
+  evidence attached to stable package dependencies.
+- Fixture(s) / revision(s):
+  `tests/fixtures/repositories/gradle-manifest` at synthetic revision
+  `fixture-1`, with one Kotlin source file, one direct external dependency, one
+  project dependency, and one commented near-match.
+- Commands run: three equivalent `python -m metropogits build --repo
+  tests/fixtures/repositories/gradle-manifest --repo-id
+  fixture/gradle-manifest --revision fixture-1 --source-url
+  https://github.com/example/gradle-manifest/tree/fixture-1 --out
+  <artifact-dir>` builds; UCG and City validators; Chrome headless viewer and
+  SVG captures; full lint, compile, unit-test, dependency, readiness, and
+  JavaScript-parse gates. After tightening multiline-string handling, the
+  scanner suite and end-to-end fixture build were rerun.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `gradle-viewer.png`, and `gradle-preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-gradle-20e4f3856db441e0afdc9d7c96909924`.
+  The graph contains one direct `MODULE -> EXTERNAL_PACKAGE` edge backed by
+  `manifest.gradle/0.1`; the project dependency and commented coordinate do not
+  appear.
+- Visual findings: both render targets show the single generic Kotlin building
+  without clipping and correctly omit a road for the declaration-only package.
+  The stable hash slot places this lone building near the district corner, and
+  the deep source path again produces excessive empty space in a sparse city.
+- Spec alignment: DEVIATION. Maven and Gradle now cover two principal JVM
+  manifest forms while preserving no-execution, exact evidence, stable IDs,
+  and declaration-versus-runtime separation. npm parsing and the cross-layer
+  declared-versus-used resolver are still missing, so FR-003 and FR-009 remain
+  blocked.
+- Tests / determinism / stability: the full suite passed 162 tests with one
+  unavailable-symlink skip. The final scanner suite passed 14 tests with the
+  same skip after multiline-string hardening. Repeated artifacts retained
+  SHA-256 `2e0773286dd8b7f2b9ffe2fef5907d8152b23133770c616c792e75115c608338`
+  for `graph.ucg.json`,
+  `7fc00e11f03012efe04117728ccb326b6fdeb6363c56bf792d795ab298d53f75`
+  for `city.json`, and
+  `ab2b8e1361fc3733d9210d32f595cf7de7b8778d33be017258eee6ca09359cf9`
+  for `preview.svg`.
+- Fixes applied and reverified: dependency-block membership is evaluated at
+  each call position, so a call after a same-line closing brace is ignored;
+  Groovy triple-quoted strings cannot inject fake dependency blocks. Both
+  cases have regression coverage and the maintained fixture hash is unchanged.
+- Open risks / next actions: add bounded npm `package.json` parsing, then join
+  manifest coordinates with code-use evidence without promoting declarations
+  alone. Correct sparse single-building placement as a separate layout unit.
+  Existing road endpoint, dense SVG label, 2D-versus-3D renderer,
+  hosted-runner, and license risks remain open.
+- Commits created / pushed (and branch): `be96b73` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
