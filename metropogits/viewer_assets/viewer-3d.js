@@ -184,6 +184,12 @@
     }
   }
 
+  const networkProfiles = Object.freeze({
+    DEPENDENCY_ROAD: Object.freeze({ marking: 0.2, shoulder: 2.1, surface: 1.35 }),
+    HTTP_HIGHWAY: Object.freeze({ marking: 0.34, shoulder: 3.0, surface: 2.15 }),
+    MESSAGING_PATH: Object.freeze({ marking: 0.42, shoulder: 1.55, surface: 0.9 }),
+  });
+
   globalThis.METROPOGITS_WEBGL_MATH = Object.freeze({
     lookAt,
     multiply,
@@ -194,6 +200,7 @@
   globalThis.METROPOGITS_BUILDING_FORMS = Object.freeze({
     partsFor: buildingParts,
   });
+  globalThis.METROPOGITS_NETWORK_STYLES = networkProfiles;
 
   if (typeof document === "undefined") return;
 
@@ -306,6 +313,21 @@
   const districtsWithBuildings = new Set(
     scene.buildings.map((building) => building.districtId),
   );
+  const buildingsByDistrict = new Map();
+  for (const building of scene.buildings) {
+    const members = buildingsByDistrict.get(building.districtId) || [];
+    members.push(building);
+    buildingsByDistrict.set(building.districtId, members);
+  }
+  const civicBlocks = [...buildingsByDistrict.entries()]
+    .map(([districtId, members]) => ({
+      districtId,
+      maxX: Math.max(...members.map((building) => building.x + building.width)) + 1.1,
+      maxZ: Math.max(...members.map((building) => building.z + building.depth)) + 1.1,
+      minX: Math.min(...members.map((building) => building.x)) - 1.1,
+      minZ: Math.min(...members.map((building) => building.z)) - 1.1,
+    }))
+    .sort((left, right) => left.districtId.localeCompare(right.districtId));
   for (const district of scene.districts) {
     if (district.parentId === null) continue;
     const children = districtChildren.get(district.parentId) || [];
@@ -410,7 +432,7 @@
     STRUCTURED_WAREHOUSE: "#34d399",
   };
   const networkColors = {
-    DEPENDENCY_ROAD: "#64748b",
+    DEPENDENCY_ROAD: "#a8b5c8",
     HTTP_HIGHWAY: "#f97316",
     MESSAGING_PATH: "#a855f7",
   };
@@ -549,6 +571,31 @@
       line(lines, [worldBounds.minX, 0.02, z], [worldBounds.maxX, 0.02, z], gridColor);
     }
 
+    for (const block of civicBlocks) {
+      const blockColor = color("#243248");
+      const curbColor = color("#52637b");
+      box(
+        triangles,
+        block.minX,
+        -0.04,
+        block.minZ,
+        block.maxX - block.minX,
+        0.1,
+        block.maxZ - block.minZ,
+        blockColor,
+      );
+      const corners = [
+        [block.minX, block.minZ],
+        [block.maxX, block.minZ],
+        [block.maxX, block.maxZ],
+        [block.minX, block.maxZ],
+        [block.minX, block.minZ],
+      ];
+      for (let index = 1; index < corners.length; index += 1) {
+        roadSegment(triangles, corners[index - 1], corners[index], 0.42, 0.07, curbColor);
+      }
+    }
+
     for (const district of scene.districts) {
       if (!drawableDistrictIds.has(district.id)) continue;
       const depth = districtDepths.get(district.id) || 0;
@@ -569,13 +616,44 @@
       const roadColor = selected("network", network.id)
         ? color("#f8fafc")
         : color(networkColors[network.kind] || networkColors.DEPENDENCY_ROAD);
+      const profile = networkProfiles[network.kind] || networkProfiles.DEPENDENCY_ROAD;
+      const selectionScale = selected("network", network.id) ? 1.28 : 1;
       for (let index = 1; index < network.path.length; index += 1) {
         roadSegment(
           triangles,
           network.path[index - 1],
           network.path[index],
-          selected("network", network.id) ? 1.1 : 0.64,
+          profile.shoulder * selectionScale,
+          0.1,
+          color("#080d16"),
+        );
+        roadSegment(
+          triangles,
+          network.path[index - 1],
+          network.path[index],
+          profile.surface * selectionScale,
+          0.14,
+          color(network.kind === "HTTP_HIGHWAY" ? "#4b3a31" : "#354256"),
+        );
+        roadSegment(
+          triangles,
+          network.path[index - 1],
+          network.path[index],
+          profile.marking * selectionScale,
           0.18,
+          roadColor,
+        );
+      }
+      for (const point of network.path) {
+        const junctionSize = profile.surface * selectionScale;
+        box(
+          triangles,
+          point[0] - junctionSize / 2,
+          0.1,
+          point[1] - junctionSize / 2,
+          junctionSize,
+          0.09,
+          junctionSize,
           roadColor,
         );
       }

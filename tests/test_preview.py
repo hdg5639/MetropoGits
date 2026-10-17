@@ -34,7 +34,7 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            "29151bd0ca748140aea626dd173e9b4d9820ccbe7b1e9ef2d4d4730f9840f20f",
+            "d30d152debb47f42295518d43c7ef4dd6f590e6480bf1fb79e3914550fe11644",
             hashlib.sha256(first).hexdigest(),
         )
 
@@ -53,6 +53,21 @@ class PreviewTests(unittest.TestCase):
         )
         self.assertIn('data-roof-form="SERVICE_OFFICE"', preview)
         self.assertIn('data-roof-form="STRUCTURED_WAREHOUSE"', preview)
+
+    def test_preview_distinguishes_visual_blocks_from_evidence_roads(self):
+        preview = render_preview(self.scene, self.ucg).decode("utf-8")
+        occupied_districts = {
+            building["districtId"] for building in self.scene["buildings"]
+        }
+
+        self.assertIn('id="civic-blocks"', preview)
+        self.assertIn("Visual civic block; no dependency claim", preview)
+        self.assertEqual(
+            len(occupied_districts), preview.count("data-civic-district=")
+        )
+        self.assertEqual(
+            len(self.scene["networks"]), preview.count("data-network-id=")
+        )
         self.assertIn("SERVICE_OFFICE", preview)
         self.assertIn("STRUCTURED_WAREHOUSE", preview)
         self.assertIn(self.ucg["edges"][0]["id"], preview)

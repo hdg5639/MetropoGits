@@ -44,6 +44,21 @@
   const districtsWithBuildings = new Set(
     scene.buildings.map((building) => building.districtId),
   );
+  const buildingsByDistrict = new Map();
+  for (const building of scene.buildings) {
+    const members = buildingsByDistrict.get(building.districtId) || [];
+    members.push(building);
+    buildingsByDistrict.set(building.districtId, members);
+  }
+  const civicBlocks = [...buildingsByDistrict.entries()]
+    .map(([districtId, members]) => ({
+      districtId,
+      maxX: Math.max(...members.map((building) => building.x + building.width)) + 1.1,
+      maxZ: Math.max(...members.map((building) => building.z + building.depth)) + 1.1,
+      minX: Math.min(...members.map((building) => building.x)) - 1.1,
+      minZ: Math.min(...members.map((building) => building.z)) - 1.1,
+    }))
+    .sort((left, right) => left.districtId.localeCompare(right.districtId));
   for (const district of scene.districts) {
     if (district.parentId === null) continue;
     const children = districtChildren.get(district.parentId) || [];
@@ -93,9 +108,14 @@
     STRUCTURED_WAREHOUSE: ["#34d399", "#047857", "#064e3b"],
   };
   const networkColors = {
-    DEPENDENCY_ROAD: "#64748b",
+    DEPENDENCY_ROAD: "#a8b5c8",
     HTTP_HIGHWAY: "#f97316",
     MESSAGING_PATH: "#a855f7",
+  };
+  const networkProfiles = {
+    DEPENDENCY_ROAD: { marking: 2, shoulder: 10, surface: 7 },
+    HTTP_HIGHWAY: { marking: 3, shoulder: 14, surface: 10 },
+    MESSAGING_PATH: { marking: 2.5, shoulder: 8, surface: 5 },
   };
 
   const state = {
@@ -398,19 +418,52 @@
     }
   }
 
+  function drawCivicBlock(block) {
+    const points = [
+      project(block.minX, block.minZ, 0.08),
+      project(block.maxX, block.minZ, 0.08),
+      project(block.maxX, block.maxZ, 0.08),
+      project(block.minX, block.maxZ, 0.08),
+    ];
+    polygonPath(points);
+    context.fillStyle = "rgba(36, 50, 72, 0.94)";
+    context.fill();
+    context.strokeStyle = "rgba(82, 99, 123, 0.92)";
+    context.lineWidth = 1.4;
+    context.stroke();
+  }
+
   function drawNetwork(network) {
     const points = network.path.map((point) => project(point[0], point[1], 0.5));
-    context.beginPath();
-    context.moveTo(points[0].x, points[0].y);
-    for (const point of points.slice(1)) context.lineTo(point.x, point.y);
+    const trace = () => {
+      context.beginPath();
+      context.moveTo(points[0].x, points[0].y);
+      for (const point of points.slice(1)) context.lineTo(point.x, point.y);
+    };
+    const profile = networkProfiles[network.kind] || networkProfiles.DEPENDENCY_ROAD;
+    const selectionScale = selected("network", network.id) ? 1.24 : 1;
     context.lineJoin = "round";
     context.lineCap = "round";
+    trace();
     context.strokeStyle = "rgba(3, 7, 18, 0.9)";
-    context.lineWidth = selected("network", network.id) ? 9 : 7;
+    context.lineWidth = profile.shoulder * selectionScale;
     context.stroke();
+    trace();
+    context.strokeStyle = network.kind === "HTTP_HIGHWAY" ? "#4b3a31" : "#354256";
+    context.lineWidth = profile.surface * selectionScale;
+    context.stroke();
+    trace();
     context.strokeStyle = networkColors[network.kind] || networkColors.DEPENDENCY_ROAD;
-    context.lineWidth = selected("network", network.id) ? 4 : 2.5;
+    context.lineWidth = profile.marking * selectionScale;
+    context.setLineDash(network.kind === "MESSAGING_PATH" ? [6, 4] : []);
     context.stroke();
+    context.setLineDash([]);
+    for (const point of points) {
+      context.beginPath();
+      context.arc(point.x, point.y, profile.surface * 0.42 * selectionScale, 0, Math.PI * 2);
+      context.fillStyle = networkColors[network.kind] || networkColors.DEPENDENCY_ROAD;
+      context.fill();
+    }
     hitRegions.push({ kind: "network", id: network.id, points });
   }
 
@@ -485,6 +538,7 @@
     for (const district of scene.districts) {
       if (drawableDistrictIds.has(district.id)) drawDistrict(district);
     }
+    for (const block of civicBlocks) drawCivicBlock(block);
     for (const network of scene.networks) {
       if (visibleNetworkIds.has(network.id)) drawNetwork(network);
     }

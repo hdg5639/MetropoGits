@@ -31,9 +31,14 @@ ARCHETYPE_COLORS = {
     "STRUCTURED_WAREHOUSE": ("#34d399", "#047857", "#064e3b"),
 }
 NETWORK_COLORS = {
-    "DEPENDENCY_ROAD": "#64748b",
+    "DEPENDENCY_ROAD": "#a8b5c8",
     "HTTP_HIGHWAY": "#f97316",
     "MESSAGING_PATH": "#a855f7",
+}
+NETWORK_STYLES = {
+    "DEPENDENCY_ROAD": {"marking": 1.4, "shoulder": 7.5, "surface": 5.0},
+    "HTTP_HIGHWAY": {"marking": 2.2, "shoulder": 10.0, "surface": 7.0},
+    "MESSAGING_PATH": {"marking": 1.8, "shoulder": 6.0, "surface": 3.6},
 }
 
 
@@ -408,29 +413,81 @@ def render_preview(
         lines.append("    </g>")
     lines.append("  </g>")
 
+    buildings_by_district: dict[str, list[dict[str, Any]]] = {}
+    for building in scene["buildings"]:
+        buildings_by_district.setdefault(building["districtId"], []).append(
+            building
+        )
+    lines.append(
+        '  <g id="civic-blocks" aria-label="Decorative civic blocks; not dependency evidence">'
+    )
+    for district_id in sorted(buildings_by_district):
+        members = buildings_by_district[district_id]
+        min_block_x = min(float(item["x"]) for item in members) - 1.1
+        min_block_z = min(float(item["z"]) for item in members) - 1.1
+        max_block_x = max(
+            float(item["x"]) + float(item["width"]) for item in members
+        ) + 1.1
+        max_block_z = max(
+            float(item["z"]) + float(item["depth"]) for item in members
+        ) + 1.1
+        block_x, block_y = project(min_block_x, min_block_z)
+        block_width = (max_block_x - min_block_x) * scale
+        block_depth = (max_block_z - min_block_z) * scale
+        lines.extend(
+            [
+                f'    <g data-civic-district="{_escape(district_id)}">',
+                "      <title>Visual civic block; no dependency claim</title>",
+                (
+                    f'      <rect x="{_fmt(block_x)}" y="{_fmt(block_y)}" '
+                    f'width="{_fmt(block_width)}" height="{_fmt(block_depth)}" '
+                    'rx="2" fill="#243248" stroke="#52637b" stroke-width="1"/>'
+                ),
+                "    </g>",
+            ]
+        )
+    lines.append("  </g>")
+
     lines.append("  <g id=\"networks\" fill=\"none\">")
     for network in scene["networks"]:
         projected = [project(point[0], point[1]) for point in network["path"]]
         points = " ".join(f"{_fmt(x)},{_fmt(y)}" for x, y in projected)
         color = NETWORK_COLORS.get(network["kind"], NETWORK_COLORS["DEPENDENCY_ROAD"])
+        style = NETWORK_STYLES.get(
+            network["kind"], NETWORK_STYLES["DEPENDENCY_ROAD"]
+        )
         edge_summary = ", ".join(network["edgeIds"])
+        surface_color = "#4b3a31" if network["kind"] == "HTTP_HIGHWAY" else "#354256"
+        dash = ' stroke-dasharray="6 4"' if network["kind"] == "MESSAGING_PATH" else ""
         lines.extend(
             [
                 (
                     f"    <polyline data-network-id=\"{_escape(network['id'])}\" "
-                    f"points=\"{points}\" stroke=\"#0f172a\" stroke-width=\"6\" "
+                    f"points=\"{points}\" stroke=\"#080d16\" "
+                    f"stroke-width=\"{_fmt(style['shoulder'])}\" "
                     "stroke-linejoin=\"round\" stroke-linecap=\"round\" "
-                    "opacity=\"0.75\"/>"
+                    "opacity=\"0.92\"/>"
+                ),
+                (
+                    f"    <polyline points=\"{points}\" stroke=\"{surface_color}\" "
+                    f"stroke-width=\"{_fmt(style['surface'])}\" "
+                    "stroke-linejoin=\"round\" stroke-linecap=\"round\"/>"
                 ),
                 (
                     f"    <polyline points=\"{points}\" stroke=\"{color}\" "
-                    "stroke-width=\"2.5\" stroke-linejoin=\"round\" "
+                    f"stroke-width=\"{_fmt(style['marking'])}\"{dash} "
+                    "stroke-linejoin=\"round\" "
                     "stroke-linecap=\"round\"><title>"
                     f"{_escape(network['kind'])}: {_escape(edge_summary)}"
                     "</title></polyline>"
                 ),
             ]
         )
+        for junction_x, junction_y in projected:
+            lines.append(
+                f'    <circle cx="{_fmt(junction_x)}" cy="{_fmt(junction_y)}" '
+                f'r="{_fmt(style["surface"] * 0.36)}" fill="{color}"/>'
+            )
     lines.append("  </g>")
 
     lines.append("  <g id=\"buildings\">")

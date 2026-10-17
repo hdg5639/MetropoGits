@@ -198,6 +198,43 @@ process.stdout.write(JSON.stringify(result));
                 self.assertLessEqual(part["z"] + part["depth"], 26)
                 self.assertLessEqual(part["y"] + part["height"], 18.000001)
 
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_network_categories_have_distinct_layered_road_profiles(self):
+        script = """
+require(process.argv[1]);
+process.stdout.write(JSON.stringify(globalThis.METROPOGITS_NETWORK_STYLES));
+"""
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-3d.js"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        profiles = json.loads(completed.stdout)
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual(
+            {"DEPENDENCY_ROAD", "HTTP_HIGHWAY", "MESSAGING_PATH"},
+            set(profiles),
+        )
+        self.assertEqual(
+            3,
+            len({json.dumps(profile, sort_keys=True) for profile in profiles.values()}),
+        )
+        for profile in profiles.values():
+            self.assertGreater(profile["shoulder"], profile["surface"])
+            self.assertGreater(profile["surface"], profile["marking"])
+
     def test_webgl_renderer_has_explicit_2d_fallback_boundary(self):
         artifacts = render_viewer(generate_city(load_fixture()), load_fixture())
         webgl = artifacts["assets/viewer-3d.js"].decode("utf-8")

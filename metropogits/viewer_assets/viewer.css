@@ -252,7 +252,11 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
 .swatch.entry { background: #f472b6; }
 .swatch.persistence { background: #34d399; }
 .line { width: 0.85rem; height: 2px; }
-.line.road { background: #64748b; }
+.block { width: 0.65rem; height: 0.5rem; }
+.block.civic { border: 1px solid #52637b; background: #243248; }
+.line.dependency { border-top: 2px solid #a8b5c8; border-bottom: 2px solid #18202d; }
+.line.http { border-top: 2px solid #f97316; border-bottom: 2px solid #2b211d; }
+.line.messaging { border-top: 2px dashed #a855f7; }
 
 .hover-label {
   position: absolute;
