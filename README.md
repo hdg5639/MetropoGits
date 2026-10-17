@@ -51,6 +51,10 @@ python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
 
+The same lint, compile, JavaScript parse, dependency consistency, and full test
+gates run automatically on pull requests and pushes to `main` through the
+least-privilege [quality workflow](.github/workflows/ci.yml).
+
 Validate an individual Universal Code Graph document:
 
 ```powershell
