@@ -1632,3 +1632,79 @@
   before implementation. Portal's 466 TypeScript files also remain generic.
 - Commits created / pushed (and branch): `ed1012d` and `771f80a` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-18 - compact small-leaf blocks (`87c2d20`, `d0d0077`)
+
+- Implemented: layout `hierarchical-paged/1.13` identifies groups of at least
+  two deep sibling leaf districts containing one to three files, aligns their
+  six-unit buildings inside seven-unit parcels, and packs them as one balanced
+  rectangular block. Every source directory remains an individual canonical
+  district. Shallow module and service boundaries retain the 1.12 street
+  reserves. Root packing permits a bounded 12 percent long-side tradeoff before
+  minimizing AABB area so local compaction does not create a larger city void.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`; the maintained Spring
+  UCG fixture; synthetic three- and four-member small-leaf blocks; and existing
+  large, mixed-size, polygon-interlock, hint, history, and metropolis cases.
+- Commands run: one initial and one corrected complete GJ-Cloud build; cold,
+  repeated, and v1.13 hinted City generations; UCG and City CLI validation;
+  Edge SwiftShader WebGL and CPU SVG captures; Ruff, `compileall`, JavaScript
+  syntax checks, whitespace checks, and the complete automated suite.
+- Artifacts inspected: `viewer-webgl.png`, `preview.png`, and the complete
+  output under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-leaf-block-2`;
+  deterministic comparison files under
+  `D:\Code\MetroPoGits\artifacts\quality\leaf-block-1.13`.
+- Visual findings: PASS for compact detailed blocks and PARTIAL for overview
+  presentation. Deep one-to-three-file districts now form dense parcels with
+  narrow internal alleys instead of repeated padded islands. The first render
+  exposed a larger central service void despite smaller leaves; bounded
+  density-aware root packing removed that regression. Overview still replaces
+  all files with seven aggregate facilities, so the new block structure is
+  mainly visible in the detailed SVG and close viewer levels. The resulting
+  city is denser but portrait-oriented in the fixed wide README frame; the
+  planned block-level semantic LOD and showcase camera remain necessary.
+- Geometry findings: 45 eligible sibling blocks contain 137 canonical leaf
+  districts. Their combined AABB area falls from `92,561` to `16,464` square
+  units, an 82.2 percent reduction. Mean member-footprint coverage rises from
+  65.8 to 85.7 percent, median coverage from 72.0 to 88.9 percent, and minimum
+  coverage from 6.4 to 52.0 percent. The root AABB falls from `833 x 532`
+  (`443,156`) to `525 x 777` (`407,925`), an 8.0 percent area reduction; root
+  occupied footprint falls from `231,329` to `210,651`. Building density rises
+  from 10.8 to 11.7 percent of the AABB and from 20.6 to 22.6 percent of the
+  occupied root footprint.
+- Integrity findings: all 506 district IDs and 1,324 building identities remain
+  present. Sibling footprint intersections and evidence-route/building
+  intersections are both zero. The 135 networks use 1,120 orthogonal segments
+  over `48,265` world units; simplified paths contain 2 to 34 vertices with a
+  median of 8. Network edge IDs and UCG semantic counts are unchanged.
+- Spec alignment: PASS under ADR-011, DEC-007, DEC-008, AC-003, and AC-006.
+  Compact blocks and alleys are layout infrastructure rather than semantic
+  entities. Directory hierarchy, source membership, UCG evidence, relationship
+  aggregation, inspector traceability, and City `city/0.2` remain intact. No
+  repository code, dependency, external analyzer, or AI service was executed.
+- Tests / determinism / stability: 215 tests passed with one expected Windows
+  symlink skip. Ruff, compilation, JavaScript syntax, contract validation, and
+  whitespace checks passed. The end-to-end, independent cold, and same-version
+  hinted City files are byte-identical at SHA-256
+  `33d3d4ff869979f95297d3f3d20c6ee9679d2ea3048072b46582339af43f70c1`.
+  The unchanged UCG SHA-256 is
+  `8382dbb2beb4fa888ba0a5d5caffa113c9671e2b2e94a446f457e10e8a8c65cf`,
+  and the deterministic SVG SHA-256 is
+  `67eeaeff469b9cdf3a16aa05e535f7c6fa2c8944badc65674b9522684786334f`.
+  Adding a fourth leaf sibling with a canonical JSON round-tripped previous
+  scene moved zero existing block members.
+- Fixes applied and reverified: strict longest-side root scoring initially
+  changed a smaller local footprint into a larger `721 x 714` city AABB.
+  Bounded density selection reduced it to `525 x 777` without breaking the
+  existing corner-fit and aspect-ratio fixtures. Canonical JSON loads fractional
+  coordinates as `Decimal`; the hint validator initially rejected those values.
+  Decimal-safe validation and offset conversion restored a real CLI
+  `LAYOUT_HINT_APPLIED` result with zero moved districts and buildings.
+- Open risks / next actions: overview semantic LOD must expose these compact
+  blocks instead of seven isolated aggregate towers. README framing should then
+  choose a showcase composition suited to the city aspect ratio. File line and
+  byte metrics remain held for explicit UCG schema approval, and Portal's 466
+  TypeScript files remain generic.
+- Commits created / pushed (and branch): `87c2d20` and `d0d0077` on local
+  `main`; push is scheduled after this checkpoint log commit.
