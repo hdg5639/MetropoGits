@@ -328,3 +328,53 @@
   hosted runner, and project license remain open.
 - Commits created / pushed (and branch): `2676c84` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — npm lockfile analysis (`78f7fe6`)
+
+- Implemented: bounded strict-JSON parsing for npm `package-lock.json` v2/v3;
+  extraction limited to the root `packages[""]` dependency sections; explicit
+  rejection of legacy structures that cannot distinguish direct dependencies
+  conservatively.
+- Fixture(s) / revision(s): `tests/fixtures/repositories/npm-lockfile` at
+  synthetic revision `fixture-1`, with two direct root packages and one nested
+  transitive-only package. A temporary v1 lockfile covers the unsupported path.
+- Commands run: two identical `python -m metropogits build --repo
+  tests/fixtures/repositories/npm-lockfile --repo-id fixture/npm-lockfile
+  --revision fixture-1 --source-url
+  https://github.com/example/npm-lockfile/tree/fixture-1 --out <artifact-dir>`
+  builds; UCG and City validation; graph package/evidence inspection; Chrome
+  headless viewer and SVG captures; lint, compilation, 171-test full suite,
+  dependency consistency, readiness validation, and JavaScript syntax checks.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `lockfile-viewer.png`, and `lockfile-preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-lockfile-48155fb9301f4a599016e3ed89339ad2`.
+  Only `npm/react` and `npm/@types/node` exist as packages; the nested
+  `transitive-only` entry is absent. Evidence identifies
+  `manifest.npm-lock/0.1` and the lockfile source path.
+- Visual findings: both render targets retain one generic JS building and draw
+  no lockfile dependency as a runtime road. The stable hash slot again leaves
+  a small repository visually sparse, consistent with the tracked layout risk.
+- Spec alignment: DEVIATION. The supported lockfile is parsed without running
+  npm or lifecycle scripts, observes the same resource bounds as source and
+  manifest files, and does not inflate transitive packages into direct facts.
+  Other lockfile families and bounded configuration facts remain absent, so
+  FR-003 stays blocked.
+- Tests / determinism / stability: 171 tests passed with one unavailable
+  symlink skip. Repeated builds produced SHA-256
+  `e71d0abd92faf7c66d3546c9dffc80ad7ebf006bbdeabe106d7dc24f53bb9b66`
+  for `graph.ucg.json`,
+  `12851bbe1e779fe1f768b4a44d31c58ec4a62525017a0b9919752d3231604034`
+  for `city.json`, and
+  `827d41a6e0f7367b239059d754d1c20894d0f91aec865ea14bc3ef78135307ac`
+  for `preview.svg`. All auxiliary gates and contracts passed.
+- Fixes applied and reverified: the parser shares npm package-name and local
+  specifier policy with `package.json`; duplicate keys, malformed sections,
+  and missing root package entries fail safely. Positive and legacy-negative
+  tests pass.
+- Open risks / next actions: add bounded non-secret configuration facts and
+  decide whether additional lockfile families are necessary for FR-003. Expose
+  declaration facts in the inspector and correct sparse placement. Dense SVG
+  labels, road endpoints, the 3D decision, hosted runner, and license remain
+  open.
+- Commits created / pushed (and branch): `78f7fe6` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
