@@ -830,3 +830,49 @@
   maintainer approves repository visibility and Pages publication.
 - Commits created / pushed (and branch): `a9d9a88` on `main`, pushed and
   verified by the hosted workflow above.
+
+## Checkpoint 2026-10-17 — private technical v1 candidate (`87f4d2e`)
+
+- Implemented: DEC-009 and the release map now record the genuine WebGL 3D
+  renderer, deterministic 2D fallback, and GPU-free SVG preview as verified.
+  Apache-2.0 licensing and the explicit publication gate remain in force.
+- Fixture(s) / revision(s): the complete MetropoGits repository at revision
+  `87f4d2e`, analyzed twice as `hdg5639/MetropoGits`.
+- Commands run: two real end-to-end CLI builds; Edge headless WebGL capture
+  using software SwiftShader; forced `--disable-webgl` fallback capture; SVG
+  capture; `pip check`; Ruff; `compileall`; JavaScript syntax checks;
+  release-readiness validation; the complete unit, integration, contract,
+  security, governance, and regression suite; and Git whitespace checks.
+- Artifacts inspected: the complete 11-file static artifact set plus
+  `viewer-webgl.png`, `viewer-fallback.png`, and `preview.png` under
+  `D:\Code\MetroPoGits\.verification-private-v1-d2ae4ee25145415183057d56fa149361`.
+  The self-analysis completed with 76 buildings, 52 districts, 3 networks, 5
+  informational diagnostics, no warnings, and no errors.
+- Visual findings: PASS. The `WEBGL 3D` capture visibly preserves perspective,
+  height, shading, depth, evidence-backed roads, and a complete-city initial
+  frame. The forced `2D FALLBACK` capture remains readable and complete. The
+  SVG preview remains deterministic, centered, and independent of WebGL.
+- Spec alignment: PASS for the private technical v1 candidate. DEC-001 through
+  DEC-013, including the stable-v1 3D requirement, are implemented and mapped.
+  Repository visibility and Pages were not changed, as required by ADR-007.
+- Tests / determinism / stability: 188 tests passed; one symlink-boundary test
+  was explicitly skipped because this Windows environment cannot create the
+  required symbolic link. Repeated builds produced identical SHA-256
+  `097a3fce2845ddf0b3f13badb4d38eab9daba83401429fe4c620b76f3f50362f`
+  for `graph.ucg.json`,
+  `9b73b62b1df409f2c8bea143991c59bde8c86903b1d452c4c01e3232419df098`
+  for `city.json`, and
+  `cdd61683c786b14b7b5009928c6a5c6990d8d428e0ca8af4e3549ca01ce2aaf9`
+  for `preview.svg`.
+- Hosted evidence: GitHub Actions run `39029488279` passed both the quality job
+  (`117386896985`) and the Ubuntu Chrome WebGL smoke job (`117386896818`) on
+  private `main`.
+- Fixes applied and reverified: the release evidence now distinguishes the
+  completed technical v1 scope from publication readiness, so genuine 3D is no
+  longer reported as an implementation blocker.
+- Open risks / next actions: AC-010, `ACCEPTANCE_EVIDENCE`, and
+  `FRESH_REPOSITORY_PUBLISHING` remain intentionally blocked by ADR-007. They
+  require explicit maintainer approval before repository visibility or Pages
+  can change. No `v1.0.0` tag or version promotion is authorized yet.
+- Commits created / pushed (and branch): `1ba3f7f` and `87f4d2e` on local
+  `main`; push is scheduled after this checkpoint log commit.
