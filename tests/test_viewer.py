@@ -566,6 +566,65 @@ const balancedCenter = balancedParts.reduce((center, part) => ({
   x: center.x + part.x + part.width / 2,
   z: center.z + part.z + part.depth / 2,
 }), { x: 0, z: 0 });
+const nestedDistricts = [
+  { depth: 240, id: "nested-root", parentId: null, width: 240, x: 0, z: 0 },
+  { depth: 220, id: "frontend", parentId: "nested-root", width: 220, x: 0, z: 0 },
+  { depth: 100, id: "app", parentId: "frontend", width: 100, x: 20, z: 20 },
+  { depth: 60, id: "tests", parentId: "frontend", width: 100, x: 20, z: 130 },
+];
+const nestedBuildings = [
+  ...Array.from({ length: 6 }, (_, index) => ({
+    archetype: "GENERIC_BUILDING",
+    depth: 6,
+    districtId: "frontend",
+    entityId: `frontend-${index}`,
+    height: 10,
+    width: 6,
+    x: index % 2 ? 180 : 2,
+    z: 25 + Math.floor(index / 2) * 8,
+  })),
+  ...Array.from({ length: 100 }, (_, index) => ({
+    archetype: "GENERIC_BUILDING",
+    depth: 6,
+    districtId: "app",
+    entityId: `app-${index}`,
+    height: 10,
+    width: 6,
+    x: 20 + (index % 10) * 8,
+    z: 20 + Math.floor(index / 10) * 8,
+  })),
+  ...Array.from({ length: 80 }, (_, index) => ({
+    archetype: "LIBRARY",
+    depth: 6,
+    districtId: "tests",
+    entityId: `tests-${index}`,
+    height: 10,
+    width: 6,
+    x: 20 + (index % 10) * 8,
+    z: 130 + Math.floor(index / 10) * 7,
+  })),
+];
+const nestedTerritories = { districts: [
+  { id: "frontend", rectangles: [{ depth: 220, width: 220, x: 0, z: 0 }] },
+  { id: "app", rectangles: [{ depth: 100, width: 100, x: 20, z: 20 }] },
+  { id: "tests", rectangles: [{ depth: 60, width: 100, x: 20, z: 130 }] },
+] };
+const nestedPolicy = globalThis.METROPOGITS_FILTERS.createLodPolicy(
+  { buildings: nestedBuildings, districts: nestedDistricts, networks: [] },
+  nestedTerritories,
+);
+const nestedPlots = nestedPolicy.aggregates.flatMap((facility) =>
+  facility.plots.map((plot) => ({ ...plot, aggregateId: facility.id })),
+);
+const nestedOverlaps = nestedPlots.flatMap((left, leftIndex) =>
+  nestedPlots.slice(leftIndex + 1).filter((right) =>
+    left.aggregateId !== right.aggregateId
+    && left.x < right.x + right.width
+    && right.x < left.x + left.width
+    && left.z < right.z + right.depth
+    && right.z < left.z + left.depth
+  )
+);
 process.stdout.write(JSON.stringify({
   deterministic: JSON.stringify(overview) === JSON.stringify(
     policy.visibility("overview", buildingIds, networkIds),
@@ -631,6 +690,13 @@ process.stdout.write(JSON.stringify({
     x: balancedCenter.x / balancedParts.length,
     z: balancedCenter.z / balancedParts.length,
   },
+  nestedMajorDistricts: {
+    ids: globalThis.METROPOGITS_FILTERS.majorDistrictIds({
+      buildings: nestedBuildings,
+      districts: nestedDistricts,
+    }),
+    overlapCount: nestedOverlaps.length,
+  },
   selectedAggregate: policy.visibility(
     "district",
     buildingIds,
@@ -689,6 +755,8 @@ process.stdout.write(JSON.stringify({
         self.assertLessEqual(result["representativeBalance"]["x"], 60)
         self.assertGreaterEqual(result["representativeBalance"]["z"], 40)
         self.assertLessEqual(result["representativeBalance"]["z"], 60)
+        self.assertEqual(["app", "tests"], result["nestedMajorDistricts"]["ids"])
+        self.assertEqual(0, result["nestedMajorDistricts"]["overlapCount"])
         self.assertTrue(result["filteredAggregatesMatch"])
         self.assertEqual(1, len(result["selectedAggregate"]))
         self.assertEqual(

@@ -247,11 +247,54 @@
       return territory?.landmarkPlot || territory?.rectangles?.[0] || district;
     }
 
+    function isStrictDescendant(districtId, ancestorId) {
+      let current = districts.get(districtId);
+      while (current?.parentId !== null) {
+        if (current.parentId === ancestorId) return true;
+        current = districts.get(current.parentId);
+      }
+      return false;
+    }
+
+    function subtractRectangle(plot, blocker) {
+      const overlapX = Math.max(plot.x, blocker.x);
+      const overlapZ = Math.max(plot.z, blocker.z);
+      const overlapMaxX = Math.min(plot.x + plot.width, blocker.x + blocker.width);
+      const overlapMaxZ = Math.min(plot.z + plot.depth, blocker.z + blocker.depth);
+      if (overlapX >= overlapMaxX || overlapZ >= overlapMaxZ) return [plot];
+      return [
+        {
+          depth: overlapZ - plot.z,
+          width: plot.width,
+          x: plot.x,
+          z: plot.z,
+        },
+        {
+          depth: plot.z + plot.depth - overlapMaxZ,
+          width: plot.width,
+          x: plot.x,
+          z: overlapMaxZ,
+        },
+        {
+          depth: overlapMaxZ - overlapZ,
+          width: overlapX - plot.x,
+          x: plot.x,
+          z: overlapZ,
+        },
+        {
+          depth: overlapMaxZ - overlapZ,
+          width: plot.x + plot.width - overlapMaxX,
+          x: overlapMaxX,
+          z: overlapZ,
+        },
+      ].filter((part) => part.width > 0 && part.depth > 0);
+    }
+
     function clippedPlots(placement, majorDistrictId) {
       const rectangles = territories.get(majorDistrictId)?.rectangles || [];
       const maxX = placement.x + placement.width;
       const maxZ = placement.z + placement.depth;
-      const plots = rectangles.map((rectangle) => {
+      let plots = rectangles.map((rectangle) => {
         const x = Math.max(placement.x, rectangle.x);
         const z = Math.max(placement.z, rectangle.z);
         return {
@@ -261,6 +304,12 @@
           z,
         };
       }).filter((plot) => plot.width > 0 && plot.depth > 0);
+      const nestedMajorRectangles = [...majorIds]
+        .filter((districtId) => isStrictDescendant(districtId, majorDistrictId))
+        .flatMap((districtId) => territories.get(districtId)?.rectangles || []);
+      for (const blocker of nestedMajorRectangles) {
+        plots = plots.flatMap((plot) => subtractRectangle(plot, blocker));
+      }
       return (plots.length ? plots : [placement]).sort(
         (left, right) => left.z - right.z || left.x - right.x
           || left.depth - right.depth || left.width - right.width,
