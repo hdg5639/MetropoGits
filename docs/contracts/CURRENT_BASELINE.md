@@ -9,7 +9,7 @@ introduce a new schema or weaken a requirement.
 | --- | --- | --- |
 | UCG | `ucg/0.1` | [Schema](../../schemas/ucg-0.1.schema.json); file/edge/evidence identities are unchanged |
 | City Scene | `city/0.2` | [Schema](../../schemas/city-0.2.schema.json), [ADR-009](../adr/ADR-009.md); `city/0.1` remains readable and validated under its original contract |
-| Single-repository layout | `hierarchical-paged/1.13` | [ADR-009](../adr/ADR-009.md), [ADR-010](../adr/ADR-010.md), [ADR-011](../adr/ADR-011.md); hints require the current supported layout version |
+| Single-repository layout | `hierarchical-paged/1.14` | [ADR-009](../adr/ADR-009.md), [ADR-010](../adr/ADR-010.md), [ADR-011](../adr/ADR-011.md), [ADR-014](../adr/ADR-014.md); hints require the current supported layout version |
 | Catalog | release `0.4.0`, schema `catalog/0.1` | [Catalog](../../catalog/0.4.0/catalog.json), [path rules](../PATH_SEMANTICS.md) |
 | Viewer | browser-native WebGL with 2D fallback | [ADR-002](../adr/ADR-002.md), [ADR-005](../adr/ADR-005.md) amend the original Three.js candidate |
 | Static preview | CPU-only deterministic detailed and isometric SVG | `preview.svg` and `showcase.svg`; [ADR-013](../adr/ADR-013.md) and [output guide](../SHOWCASE.md) |
@@ -30,6 +30,13 @@ Structural street surfaces are derived visual geometry under ADR-010, not UCG
 relationships or mandatory `decorations` entries. Evidence-backed networks
 retain their exact `edgeIds`. Overview block aggregates are visual projections
 under ADR-012, with complete file membership; they are not new City buildings.
+
+ADR-014 amends DEC-007/ADR-004's hash-only interpretation: evidenced roles and
+DIRECT/RESOLVED file dependencies may influence local sites while retaining
+directory ownership. Compatible hints take priority over relationship changes.
+Internal circulation is reserved before buildings are placed; visual street
+surfaces are not communication claims. Layout 1.13 hints are intentionally
+incompatible with 1.14; all source identities and UCG facts remain unchanged.
 
 ## Functional scope and open work
 

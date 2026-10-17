@@ -5,7 +5,8 @@ from pathlib import Path
 
 from metropogits.layout import (
     BUILDING_OFFSET,
-    BUILDING_SPACING,
+    DISTRICT_DEPTH,
+    BUILDING_AXIS,
     FOOTPRINT_CELL_SIZE,
     generate_city,
 )
@@ -255,6 +256,7 @@ class LayoutTests(unittest.TestCase):
             "hierarchical-paged/1.10",
             "hierarchical-paged/1.11",
             "hierarchical-paged/1.12",
+            "hierarchical-paged/1.13",
         ):
             with self.subTest(version=version):
                 previous = {**cold, "layoutAlgorithm": version}
@@ -463,7 +465,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.13", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.14", scene["layoutAlgorithm"])
         self.assertEqual("city/0.2", scene["schemaVersion"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
@@ -551,11 +553,11 @@ class LayoutTests(unittest.TestCase):
         rows = sorted({item["z"] - district["z"] for item in buildings})
 
         self.assertEqual(
-            [BUILDING_OFFSET + index * BUILDING_SPACING for index in range(len(columns))],
+            [BUILDING_OFFSET + BUILDING_AXIS[index] for index in range(len(columns))],
             columns,
         )
         self.assertEqual(
-            [BUILDING_OFFSET + index * BUILDING_SPACING for index in range(len(rows))],
+            [BUILDING_OFFSET + BUILDING_AXIS[index] for index in range(len(rows))],
             rows,
         )
         self.assertEqual([], validate_document(scene, ucg))
@@ -661,8 +663,8 @@ class LayoutTests(unittest.TestCase):
         }
         medium = children["medium"]
 
-        self.assertLessEqual(root["width"], 140)
-        self.assertLessEqual(root["depth"], 147)
+        self.assertLessEqual(root["width"], 154)  # Includes two seven-unit circulation lanes.
+        self.assertLessEqual(root["depth"], 175)  # Two blocks each reserve two street rows.
         for name in ("small-a", "small-b"):
             self.assertGreaterEqual(children[name]["x"], medium["x"])
             self.assertGreaterEqual(
@@ -738,8 +740,8 @@ class LayoutTests(unittest.TestCase):
                     if item["id"] == "example/large:directory:src"
                 )
                 expected_pages = (file_count + 63) // 64
-                self.assertLessEqual(district["width"], 64)
-                self.assertLessEqual(district["depth"], expected_pages * 64)
+                self.assertLessEqual(district["width"], BUILDING_AXIS[-1] + FOOTPRINT_CELL_SIZE)
+                self.assertLessEqual(district["depth"], expected_pages * DISTRICT_DEPTH)
                 positions = {
                     (building["x"], building["z"])
                     for building in scene["buildings"]
@@ -775,7 +777,7 @@ class LayoutTests(unittest.TestCase):
         building = scene["buildings"][0]
 
         self.assertEqual((14, 14), (district["width"], district["depth"]))
-        self.assertEqual((3, 3), (building["x"], building["z"]))
+        self.assertEqual((BUILDING_OFFSET, BUILDING_OFFSET), (building["x"], building["z"]))
         self.assertEqual([], validate_document(scene, ucg))
 
     def test_large_modular_hierarchy_limits_recursive_padding(self):

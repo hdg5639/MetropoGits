@@ -230,8 +230,8 @@ def build_metropolis(
             )
             merged_buildings.append(cloned)
             building_positions[cloned["entityId"]] = (
-                cloned["x"] + cloned["width"] / 2,
-                cloned["z"] + cloned["depth"] / 2,
+                float(cloned["x"]) + float(cloned["width"]) / 2,
+                float(cloned["z"]) + float(cloned["depth"]) / 2,
             )
         for network in member.scene["networks"]:
             cloned = copy.deepcopy(network)

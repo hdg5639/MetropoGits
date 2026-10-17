@@ -136,10 +136,10 @@ def derive_street_grid(scene: dict[str, Any]) -> dict[str, Any]:
     }
     for district_id in sorted(districts):
         child_ids = children[district_id]
-        if not child_ids:
+        if not child_ids and not direct_buildings[district_id]:
             continue
         child_cells = [district_cell_cache[child_id] for child_id in child_ids]
-        owned = set().union(*child_cells)
+        owned = set().union(*child_cells) if child_cells else set()
         for building in direct_buildings[district_id]:
             owned.update(_rectangle_cells(building))
         district_depth = depth(district_id)
@@ -182,4 +182,23 @@ def derive_street_grid(scene: dict[str, Any]) -> dict[str, Any]:
         "cellSize": STREET_CELL_SIZE,
         "rectangles": rectangles,
         "semantic": False,
+        "surfaces": [part for rectangle in rectangles for part in street_surfaces(rectangle)],
     }
+
+
+def street_surfaces(rectangle: dict[str, Any]) -> list[dict[str, Any]]:
+    """Shared curb/asphalt/paint geometry. Never represents a dependency edge."""
+    x, z, width, depth = (float(rectangle[key]) for key in ("x", "z", "width", "depth"))
+    parts = [dict(x=x, z=z, width=width, depth=depth, color="#526176", elevation=0.12)]
+    inset = min(0.45, width / 6, depth / 6)
+    parts.append(dict(x=x + inset, z=z + inset, width=width - 2 * inset,
+                      depth=depth - 2 * inset, color="#253141", elevation=0.13))
+    length = max(width, depth)
+    if min(width, depth) >= 7 and length >= 21:
+        for offset in range(3, int(length) - 3, 8):
+            parts.append(dict(x=x + offset if width >= depth else x + width / 2 - 0.10,
+                              z=z + depth / 2 - 0.10 if width >= depth else z + offset,
+                              width=min(3, length - offset - 1) if width >= depth else 0.20,
+                              depth=0.20 if width >= depth else min(3, length - offset - 1),
+                              color="#a2a996", elevation=0.145))
+    return parts

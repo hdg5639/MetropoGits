@@ -11,6 +11,7 @@ from collections import Counter, defaultdict
 
 from metropogits.preview import _major_district_ids
 from metropogits.territory import derive_district_territories
+from metropogits.streets import derive_street_grid
 
 
 def _round(value):
@@ -142,6 +143,7 @@ def derive_blocks(scene, territory_data=None):
     """Return complete, disjoint file membership with viewer-compatible plots."""
     territory_data = territory_data or derive_district_territories(scene)
     territories = {t["id"]: t for t in territory_data["districts"]}
+    streets = derive_street_grid(scene)["rectangles"]
     districts = {d["id"]: d for d in scene["districts"]}
     major_ids = _major_district_ids(scene)
     owners = district_owners(scene, major_ids)
@@ -190,6 +192,8 @@ def derive_blocks(scene, territory_data=None):
                     plots = [
                         part for plot in plots for part in _subtract(plot, blocker)
                     ]
+            for blocker in streets:
+                plots = [part for plot in plots for part in _subtract(plot, blocker)]
             plots = sorted(
                 plots or [placement],
                 key=lambda p: (p["z"], p["x"], p["depth"], p["width"]),

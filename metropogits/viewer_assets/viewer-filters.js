@@ -123,7 +123,7 @@
     return (hash >>> 0) % bucketCount;
   }
 
-  function aggregateFacilities(scene, majorIds, districts, territories) {
+  function aggregateFacilities(scene, majorIds, districts, territories, streets = []) {
     const groups = new Map();
 
     function aggregateDistrictId(districtId) {
@@ -308,6 +308,9 @@
         .filter((districtId) => isStrictDescendant(districtId, majorDistrictId))
         .flatMap((districtId) => territories.get(districtId)?.rectangles || []);
       for (const blocker of nestedMajorRectangles) {
+        plots = plots.flatMap((plot) => subtractRectangle(plot, blocker));
+      }
+      for (const blocker of streets) {
         plots = plots.flatMap((plot) => subtractRectangle(plot, blocker));
       }
       return (plots.length ? plots : [placement]).sort(
@@ -526,7 +529,7 @@
     }));
   }
 
-  function createLodPolicy(scene, territoryData = null) {
+  function createLodPolicy(scene, territoryData = null, streetData = null) {
     const buildings = new Map(
       scene.buildings.map((building) => [building.entityId, building]),
     );
@@ -536,7 +539,7 @@
       (territoryData?.districts || []).map((territory) => [territory.id, territory]),
     );
     const majorIds = new Set(majorDistrictIds(scene));
-    const aggregates = aggregateFacilities(scene, majorIds, districts, territories);
+    const aggregates = aggregateFacilities(scene, majorIds, districts, territories, streetData?.rectangles || []);
     const aggregateIds = new Set(aggregates.map((aggregate) => aggregate.id));
     const districtDepths = new Map();
 

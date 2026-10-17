@@ -216,6 +216,7 @@ class MetropolisTests(unittest.TestCase):
                 text=True,
                 check=False,
             )
+            self.assertEqual(0, completed.returncode, completed.stderr)
             document = json.loads((output / "metropolis.json").read_text("utf-8"))
 
         self.assertEqual(0, completed.returncode, completed.stderr)

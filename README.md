@@ -174,6 +174,12 @@ python -m metropogits build --repo . --out dist --previous-scene dist/city.json
 The hint is loaded before output is replaced. Unsupported or malformed hints
 are ignored, reported in build diagnostics, and never override the current UCG.
 
+Layout `hierarchical-paged/1.14` reserves internal streets and uses evidenced
+roles/references for bounded local frontage. It intentionally ignores 1.13
+hints because spacing changed; 1.14 hints preserve existing sites. Streets are
+visual infrastructure, not inferred communication. See [ADR-014](docs/adr/ADR-014.md)
+for the distinction and the limits of service-wide boundary placement.
+
 Render a deterministic CPU-only SVG preview:
 
 ```powershell

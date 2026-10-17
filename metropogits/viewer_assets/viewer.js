@@ -44,7 +44,7 @@
   const districtTerritories = new Map(
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
-  const streetRectangles = data.streets?.rectangles || [];
+  const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
   function districtTerritory(district) {
     return districtTerritories.get(district.id) || {
       boundary: [
@@ -124,7 +124,7 @@
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
-  const lodPolicy = filterEngine.createLodPolicy(scene, data.territories);
+  const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets);
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -610,7 +610,7 @@
       project(rectangle.x, rectangle.z + rectangle.depth, 0.09),
     ];
     polygonPath(points);
-    context.fillStyle = colors[rectangle.tier] || colors.STREET;
+    context.fillStyle = rectangle.color || colors[rectangle.tier] || colors.STREET;
     context.fill();
   }
 
@@ -772,10 +772,10 @@
       const district = districts.get(districtId);
       if (district) drawMajorDistrict(district);
     }
-    for (const rectangle of streetRectangles) drawStructuralStreet(rectangle);
     if (currentDetailLevel === "detail") {
       for (const block of civicBlocks) drawCivicBlock(block);
     }
+    for (const rectangle of streetRectangles) drawStructuralStreet(rectangle);
     for (const network of scene.networks) {
       if (renderedNetworkIds.has(network.id)) drawNetwork(network);
     }

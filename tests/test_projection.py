@@ -9,6 +9,7 @@ from metropogits.building_forms import FORMS, building_parts
 from metropogits.projection import aggregate_parts, derive_blocks
 from metropogits.scanner import ScanResult, ScannedFile, build_structural_ucg
 from metropogits.territory import derive_district_territories
+from metropogits.streets import derive_street_grid
 
 
 def projection_fixture():
@@ -77,11 +78,20 @@ process.stdout.write(JSON.stringify(data.map(globalThis.METROPOGITS_BUILDING_FOR
     def test_blocks_cover_every_file_once_and_parts_stay_in_plots(self):
         scene, _ = projection_fixture()
         blocks = derive_blocks(scene)
+        streets = derive_street_grid(scene)["rectangles"]
         members = [m for b in blocks for m in b["memberEntityIds"]]
         self.assertEqual(
             sorted(b["entityId"] for b in scene["buildings"]), sorted(members)
         )
         for block in blocks:
+            for plot in block["plots"]:
+                for street in streets:
+                    self.assertFalse(
+                        plot["x"] < street["x"] + street["width"] - 1e-9
+                        and plot["x"] + plot["width"] > street["x"] + 1e-9
+                        and plot["z"] < street["z"] + street["depth"] - 1e-9
+                        and plot["z"] + plot["depth"] > street["z"] + 1e-9
+                    )
             parts = aggregate_parts(block)
             self.assertEqual(
                 len(block["memberEntityIds"]), sum(p["representedCount"] for p in parts)
@@ -105,7 +115,7 @@ process.stdout.write(JSON.stringify(data.map(globalThis.METROPOGITS_BUILDING_FOR
 require(process.argv[1]);
 const data = JSON.parse(require('fs').readFileSync(0, 'utf8'));
 const api = globalThis.METROPOGITS_FILTERS;
-const blocks = api.createLodPolicy(data.scene, data.territories).aggregates;
+const blocks = api.createLodPolicy(data.scene, data.territories, data.streets).aggregates;
 process.stdout.write(JSON.stringify({blocks, parts: blocks.map(api.aggregateParts)}));
 """
         result = subprocess.run(
@@ -118,7 +128,7 @@ process.stdout.write(JSON.stringify({blocks, parts: blocks.map(api.aggregatePart
                     / "metropogits/viewer_assets/viewer-filters.js"
                 ),
             ],
-            input=json.dumps(dict(scene=scene, territories=territories)),
+            input=json.dumps(dict(scene=scene, territories=territories, streets=derive_street_grid(scene))),
             capture_output=True,
             text=True,
             check=True,

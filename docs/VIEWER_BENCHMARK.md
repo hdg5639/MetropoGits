@@ -145,3 +145,30 @@ with this harness; do not disguise performance problems by removing facts.
 
 This task establishes the comparison tool and baseline only. It does not claim
 to have fixed these defects, measured native GPU FPS, or enabled Pages.
+
+## Follow-up checkpoint: 1.14 frontage and internal streets
+
+Geometry reuse (`86b50a9`) and a separate legend row (`9779393`) address items
+5 and 1 above. ADR-014 adds internal circulation and evidence-aware local sites.
+The duplicate WebGL `tests` labels and aggregate silhouette proportions remain
+open; do not interpret this as completion of all visual work.
+
+Fresh full builds: workspace `artifacts/visual/frontage-streets-r4/{gj,oj}`.
+Controlled captures: `frontage-streets-r4-audit`; isolated timing rerun (no
+concurrent build/test): `frontage-streets-r4-timing`. Same harness and viewport,
+three natural LODs and common scale. GJ/OJ Overview and Detail screenshots plus
+both CPU showcases were inspected. Streets now pass between building groups,
+not just around major service outlines. Zoomed Detail deliberately crops the
+city; fitted Overview no longer has legend overlap. Fine relation traces and
+thin aggregate towers still need work, with no new semantic claims introduced.
+
+| Orbit callback CPU p95 (ms) | Overview | District | Detail |
+| --- | ---: | ---: | ---: |
+| GJ | 3.1 | 2.3 | 5.4 |
+| OJ | 1.2 | 1.7 | 2.1 |
+
+First draw submission: GJ 730.9 ms, OJ 135.6 ms. These are single-order software
+renderer observations, not GPU FPS or a cold-start SLA. Reproduce and reverse
+order for broader performance conclusions. Canonical layout changed in 1.14,
+so this final run is not a cache-only controlled A/B; the earlier cache-specific
+checkpoint used unchanged scenes.

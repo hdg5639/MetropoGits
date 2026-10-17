@@ -226,10 +226,10 @@ def render_showcase(scene, graph, width=1200, height=675):
             colors.get(district_id, "#172236"),
             f'data-map-id="{_escape(district_id)}"',
         )
-    for rect in streets:
+    for rect in derive_street_grid(scene)["surfaces"]:
         polygon(
             [project(x, z) for x, z in _corners(rect)],
-            "#354155" if rect["tier"] == "BOULEVARD" else "#293548",
+            rect["color"],
             'data-map-id="visual:streets"',
         )
     for plot, owner in plots:

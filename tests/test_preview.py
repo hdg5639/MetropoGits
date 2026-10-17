@@ -38,7 +38,8 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            "f157d486487bfd0ade55905e296ff43962a01a95eab97037a24ff5329a61a219",
+            # ADR-014: 1.14 circulation spacing and shared curb/asphalt surfaces.
+            "315543d3381a9a40089e92a06b7efea624ad1384bb107974b49d33f90d4c2f2d",
             hashlib.sha256(first).hexdigest(),
         )
 

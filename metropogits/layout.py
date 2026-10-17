@@ -11,6 +11,8 @@ from decimal import Decimal
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from metropogits.frontage import Affinity, arrange_equal_shapes, assign_frontage, derive_affinity
+
 from scripts.canonical_json import (
     CanonicalJsonError,
     canonical_json_bytes,
@@ -21,18 +23,19 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.13"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.14"
 HINT_LAYOUT_ALGORITHMS = frozenset({LAYOUT_ALGORITHM})
 SCENE_SCHEMA_VERSION = "city/0.2"
 FOOTPRINT_CELL_SIZE = 7
-DISTRICT_DEPTH = 64
+DISTRICT_DEPTH = 84
 DISTRICT_PADDING = 4
 MIN_DISTRICT_SIZE = 14
 EMPTY_DISTRICT_SIZE = 8
 DISTRICT_EDGE_PADDING = 2
 BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
-BUILDING_OFFSET = 3
+BUILDING_OFFSET = 0.5
+BUILDING_AXIS = tuple((index + index // 3) * BUILDING_SPACING for index in range(BUILDING_COLUMNS))
 COMPACT_LEAF_BUILDING_OFFSET = 0.5
 COMPACT_LEAF_MAX_FILES = 3
 BUILDING_SIZE = 6
@@ -265,18 +268,18 @@ def _hinted_local_slots(
                 if district_id in compact_leaf_ids
                 else BUILDING_OFFSET
             )
-            column_value = (offset_x - building_offset) / BUILDING_SPACING
+            column_value = offset_x - building_offset
             page = math.floor(offset_z / DISTRICT_DEPTH)
             page_offset_z = offset_z - page * DISTRICT_DEPTH
-            row_value = (page_offset_z - building_offset) / BUILDING_SPACING
+            row_value = page_offset_z - building_offset
             if (
                 page < 0
-                or not float(column_value).is_integer()
-                or not float(row_value).is_integer()
+                or column_value not in BUILDING_AXIS
+                or row_value not in BUILDING_AXIS
             ):
                 continue
-            column = int(column_value)
-            row = int(row_value)
+            column = BUILDING_AXIS.index(column_value)
+            row = BUILDING_AXIS.index(row_value)
             if not (0 <= column < BUILDING_COLUMNS and 0 <= row < BUILDING_COLUMNS):
                 continue
             slot = (
@@ -549,14 +552,14 @@ def _pack_shape(
 
 
 def _direct_footprint_cells(
-    slots: dict[str, int], building_offset: float = BUILDING_OFFSET
+    slots: dict[str, int], building_offset: float = BUILDING_OFFSET, minimum: int = 1
 ) -> set[Cell]:
     cells: set[Cell] = set()
     for slot in slots.values():
         page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
         row, column = divmod(page_slot, BUILDING_COLUMNS)
-        x = building_offset + column * BUILDING_SPACING
-        z = page * DISTRICT_DEPTH + building_offset + row * BUILDING_SPACING
+        x = building_offset + BUILDING_AXIS[column]
+        z = page * DISTRICT_DEPTH + building_offset + BUILDING_AXIS[row]
         start_x = math.floor(x / FOOTPRINT_CELL_SIZE)
         start_z = math.floor(z / FOOTPRINT_CELL_SIZE)
         end_x = math.ceil((x + BUILDING_SIZE) / FOOTPRINT_CELL_SIZE)
@@ -566,6 +569,11 @@ def _direct_footprint_cells(
             for cell_z in range(start_z, end_z)
             for cell_x in range(start_x, end_x)
         )
+    # A file block reserves its internal cross streets before any building is
+    # emitted. Empty allocation cells are circulation, not fictitious entities.
+    if cells:
+        cells = {(x, z) for x in range(max(minimum, max(x for x, _ in cells) + 1))
+                 for z in range(max(minimum, max(z for _, z in cells) + 1))}
     return cells
 
 
@@ -694,6 +702,7 @@ def _measure_districts(
     footprint_cells: dict[str, set[Cell]],
     compact_leaf_groups: dict[str, tuple[str, ...]],
     compact_leaf_ids: set[str],
+    affinity: Affinity,
     hierarchy_depth: int = 0,
 ) -> tuple[float, float]:
     children = _ordered_children(district_id, children_by_parent)
@@ -709,6 +718,7 @@ def _measure_districts(
             footprint_cells,
             compact_leaf_groups,
             compact_leaf_ids,
+            affinity,
             hierarchy_depth + 1,
         )
     local_slots = allocated_slots.get(district_id, {})
@@ -717,7 +727,7 @@ def _measure_districts(
         if district_id in compact_leaf_ids
         else BUILDING_OFFSET
     )
-    direct_cells = _direct_footprint_cells(local_slots, building_offset)
+    direct_cells = _direct_footprint_cells(local_slots, building_offset, 1 if district_id in compact_leaf_ids else 2)
     if not direct_cells and not children:
         direct_cells = {(0, 0)}
 
@@ -812,6 +822,9 @@ def _measure_districts(
             )
         occupied.update(_translated_cells(block_cells, block_offset))
 
+    # Identical-shape swaps retain every reserved cell, including access lanes.
+    # Hinted children and compact leaf parcels are not candidates for movement.
+    offsets = arrange_equal_shapes(offsets, footprint_cells, dimensions, unhinted, affinity)
     occupied = _fill_enclosed_cells(_connect_local_cells(occupied))
     occupied = _normalized_cells(occupied)
     width = float((max(x for x, _ in occupied) + 1) * FOOTPRINT_CELL_SIZE)
@@ -1170,6 +1183,9 @@ def generate_city(
         for member_ids in compact_leaf_groups.values()
         for child_id in member_ids
     }
+    owners = {entity["id"]: district for district, items in files_by_district.items() for entity in items}
+    parents = {child: parent for parent, children in children_by_parent.items() for child in children}
+    affinity = derive_affinity(ucg, owners, parents)
     locked_slots = _hinted_local_slots(
         files_by_district,
         district_hints,
@@ -1184,6 +1200,10 @@ def generate_city(
         )
         allocated_slots[district_id] = (
             slots if locked_slots.get(district_id) else _compact_cold_slots(slots)
+        )
+        allocated_slots[district_id] = assign_frontage(
+            allocated_slots[district_id], affinity, locked_slots.get(district_id, {}),
+            list(BUILDING_AXIS), DISTRICT_DEPTH,
         )
 
     dimensions: dict[str, tuple[float, float]] = {}
@@ -1200,6 +1220,7 @@ def generate_city(
         footprint_cells,
         compact_leaf_groups,
         compact_leaf_ids,
+        affinity,
     )
     districts: list[dict[str, Any]] = []
     _place_districts(
@@ -1242,12 +1263,12 @@ def generate_city(
                     "height": height,
                     "styleVariant": entity.get("language") or "unknown",
                     "width": BUILDING_SIZE,
-                    "x": district["x"] + building_offset + column * BUILDING_SPACING,
+                    "x": district["x"] + building_offset + BUILDING_AXIS[column],
                     "z": (
                         district["z"]
                         + page * DISTRICT_DEPTH
                         + building_offset
-                        + row * BUILDING_SPACING
+                        + BUILDING_AXIS[row]
                     ),
                 }
             )

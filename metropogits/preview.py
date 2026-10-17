@@ -567,24 +567,18 @@ def render_preview(
         )
     lines.append("  </g>")
 
-    street_colors = {
-        "ALLEY": "#263447",
-        "BOULEVARD": "#0b1320",
-        "ROUTE_ACCESS": "#1c293b",
-        "STREET": "#172437",
-    }
-    lines.append(
+    street_lines = [
         '  <g id="structural-streets" aria-label="Visual street infrastructure; not dependency evidence">'
-    )
-    for rectangle in street_data["rectangles"]:
+    ]
+    for rectangle in street_data["surfaces"]:
         x, y = project(rectangle["x"], rectangle["z"])
-        lines.append(
+        street_lines.append(
             f'    <rect x="{_fmt(x)}" y="{_fmt(y)}" '
-            f'width="{_fmt(max(float(rectangle["width"]) * scale, 1.0))}" '
-            f'height="{_fmt(max(float(rectangle["depth"]) * scale, 1.0))}" '
-            f'fill="{street_colors[rectangle["tier"]]}"/>'
+            f'width="{_fmt(float(rectangle["width"]) * scale)}" '
+            f'height="{_fmt(float(rectangle["depth"]) * scale)}" '
+            f'fill="{rectangle["color"]}"/>'
         )
-    lines.append("  </g>")
+    street_lines.append("  </g>")
 
     buildings_by_district: dict[str, list[dict[str, Any]]] = {}
     for building in scene["buildings"]:
@@ -621,6 +615,7 @@ def render_preview(
         )
     lines.append("  </g>")
 
+    lines.extend(street_lines)
     lines.append("  <g id=\"networks\" fill=\"none\">")
     for network in scene["networks"]:
         projected = [project(point[0], point[1]) for point in network["path"]]

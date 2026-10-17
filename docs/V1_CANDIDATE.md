@@ -22,7 +22,7 @@ deployment. The machine-readable source of truth remains
 - The primary viewer renders genuine perspective WebGL geometry with orbit,
   zoom, selection, evidence inspection, and filters. WebGL failure starts the
   isometric 2D fallback from the same static artifact.
-- The 2026-10-18 viewer-audit regression run executed 230 tests: 229 passed and one
+- The 2026-10-18 frontage regression run executed 240 tests: 239 passed and one
   Windows symlink test was skipped. The preceding visual checkpoint includes
   repeated deterministic builds and inspection of both render targets on
   GJ-Cloud and GamjaOJ. Exact evidence is recorded in
@@ -32,6 +32,9 @@ deployment. The machine-readable source of truth remains
   captures and software-renderer input/CPU timing are now recorded in
   [`VIEWER_BENCHMARK.md`](VIEWER_BENCHMARK.md); GPU FPS and broader
   road/landmark polish remain open.
+- ADR-014 adds bounded role/dependency-aware frontage inside directory-owned
+  sites, with internal street reservations. This is not a runtime service-flow
+  inference or a guarantee of optimal major-service boundary placement.
 
 ## Conditions for public v1 promotion
 

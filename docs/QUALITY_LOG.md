@@ -2153,3 +2153,76 @@
 - Spec alignment: PASS (FR-012/NF-009). Tests assert stage/legend separation;
   shared CSS applies to WebGL and fallback. Context labels remain separate work.
 - Commit / push: independent fix(viewer) unit on owner-authorized main.
+
+## Checkpoint 2026-10-18 — evidence-aware frontage and reserved internal streets
+
+- Implemented: ADR-014, layout `hierarchical-paged/1.14`. Evidenced file roles
+  and DIRECT/RESOLVED references influence boundary/interior sites within each
+  directory page. Duplicate pairs cannot amplify weights; popular targets are
+  normalized. Identical-shape sibling swaps strictly reduce weighted sibling
+  distance without changing occupied land; hints and compact leaf groups lock.
+  Internal cross streets are reserved before placement. WebGL/fallback/SVG use
+  shared curb/asphalt/paint geometry. Overview plots exclude streets.
+- Fixtures: GJ-Cloud `3d9b53f9dac9af1187ac9754cb3066b27e43b766` (1324 buildings),
+  GamjaOJ `b163acd2b5fe41edfc1e7fc7d367362851241896` (681), maintained
+  spring-positive and structural-showcase (unknown-language) fixtures.
+- Commands: `python -m unittest discover -s tests` (240 run, 239 pass, one
+  expected Windows symlink skip); Ruff, compileall, Node syntax, pip check,
+  release-readiness validation, whitespace check. Real `python -m metropogits
+  build --repo <fixture> --out ../artifacts/visual/frontage-streets-r4/<case>`
+  for all four fixtures. `node scripts/viewer_audit.mjs <chrome>
+  ../artifacts/visual/frontage-streets-r4-audit <gj-build> <oj-build>`;
+  isolated timing repeat into `frontage-streets-r4-timing`.
+- Inspected: GJ/OJ Overview/Detail browser PNGs and both rendered showcase SVGs;
+  small Spring preview and unknown-framework showcase. The latter two were
+  inspected in the earlier frontage-streets run and rebuilt with final layout.
+  Internal road space is now visible inside dense districts. Overview still
+  has slender representative towers; OJ duplicate WebGL labels remain open.
+- Quantitative comparison: local developer audit `artifacts/visual/audit_frontage.py
+  frontage-streets-r4` generates fresh neutral/repeat/hinted scenes and reports
+  per-case `layout-review.json`. No sample graph/source data is committed.
+
+| Metric | GJ neutral / current | OJ neutral / current |
+| --- | ---: | ---: |
+| Root AABB area (same new circulation spacing) | 437325 / 437325 | 150920 / 150920 |
+| Mean unique linked-file Manhattan distance | 156.49 / 151.57 | 135.72 / 121.82 |
+| Mean normalized boundary inset, outward-biased files | .0880 / .0818 | .0753 / .0628 |
+| Mean normalized inset, inward-biased files | .0821 / .1303 | .0814 / .0814 |
+
+- Scope of metrics: distance is unweighted unique-pair file distance, not runtime
+  latency or shortest routed distance. Inset is relative to the owning directory
+  AABB, not proof of major-service outer-boundary placement. The neutral control
+  disables only role/relation preference with identical circulation geometry.
+  New root area vs old 1.13: GJ 407925 → 437325 (+7.2%); OJ 121520 → 150920
+  (+24.2%). This is the explicit cost of reserving internal street space; do
+  not claim the old and new algorithms have equal density.
+- Determinism / integrity: both real graphs byte-identical to prior baseline;
+  all network IDs and exact edge memberships preserved. Final cold repeat
+  canonical City bytes match. Reusing the final scene as hint preserves all
+  buildings/districts. Street/building intersections and route centerline
+  crossings are zero in both inputs; City validators report zero errors.
+  Algorithm migration moves 1324/1324 and 678/681 file positions respectively;
+  this is a deliberate version migration, not small-change hint churn.
+  Regression fixtures separately cover new-reference hint stability and nearby
+  file changes, evidence negatives, exact shape swaps, and JS/Python parity.
+- Corrections made: rejected role-first group packing (GJ area 616077), then
+  rejected merely equal-score placement ties (global footprint still grew).
+  Identical-footprint swaps keep the control's exact root area. Fractional
+  building offsets exposed a Decimal/float federation-reader crash; normalized
+  coordinate arithmetic and reran the existing CLI test without expanding P2.
+  Updated SVG golden hash only for reviewed spacing/street-layer migration.
+- Performance: isolated GJ/OJ Detail orbit CPU p95 5.4/2.1 ms, versus the old
+  GJ 87–99 ms baseline; software renderer, not GPU FPS. Full measurements and
+  limitations are in VIEWER_BENCHMARK.md.
+- Spec alignment: PASS with approved ADR-014 amendment to DEC-007/ADR-004.
+  UCG/City fields and stable IDs unchanged; City layout enum extended. 1.13
+  hints rejected with diagnostics; old scenes remain readable. Three sibling
+  source specifications updated locally; tracked current-contract/ADR/roadmap
+  documents record the same amendment. No repository code executed, backend,
+  LLM, new dependency, deployment, or sample publication introduced.
+- Open risks / next actions: macro service-boundary gates are not guaranteed;
+  aggregate silhouettes do not preserve individual role frontage. Refine
+  semantic Overview anchors/proportions and contextual labels next. Do not
+  infer HTTP/message traffic from visual streets or imports. Pages stays blocked.
+- Commit / push: one coherent layout/circulation unit on owner-authorized main,
+  after the independent ADR, cache and legend commits; no agent attribution.

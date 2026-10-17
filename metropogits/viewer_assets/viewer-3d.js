@@ -341,7 +341,7 @@
   const districtTerritories = new Map(
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
-  const streetRectangles = data.streets?.rectangles || [];
+  const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
   function districtTerritory(district) {
     return districtTerritories.get(district.id) || {
       boundary: [
@@ -422,7 +422,7 @@
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
-  const lodPolicy = filterEngine.createLodPolicy(scene, data.territories);
+  const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets);
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -703,12 +703,12 @@
       box(
         triangles,
         rectangle.x,
-        0.08,
+        rectangle.elevation ?? 0.08,
         rectangle.z,
         rectangle.width,
-        0.035,
+        0.008,
         rectangle.depth,
-        color(streetColors[rectangle.tier] || streetColors.STREET),
+        color(rectangle.color || streetColors[rectangle.tier] || streetColors.STREET),
       );
     }
 
