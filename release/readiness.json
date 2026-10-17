@@ -207,13 +207,13 @@
       "summary": "The pipeline runs locally without executing or uploading target repository code."
     },
     {
-      "blocker": "FR-003 still lacks lockfile and configuration parsing, and FR-009 still lacks catalog-level declared-versus-used resolution.",
+      "blocker": "FR-003 still lacks lockfile and configuration parsing.",
       "evidence": [
         "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
       ],
       "id": "P0_REQUIREMENTS",
       "status": "BLOCKED",
-      "summary": "Every P0 requirement is mapped, but complete L2 project detection and declared-versus-used technology resolution remain incomplete."
+      "summary": "Every P0 requirement is mapped, but complete L2 project detection remains incomplete."
     },
     {
       "blocker": "The project owner must select and publish a project license.",
@@ -330,15 +330,17 @@
       "summary": "Five core Spring roles require exact annotation evidence."
     },
     {
-      "blocker": "Manifest dependencies and code imports are distinct graph facts, but catalog classification does not yet intersect them to distinguish declared technology from verified usage.",
+      "blocker": null,
       "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_catalog_rules_create_evidence_backed_technology_archetypes",
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_declared_technology_without_code_usage_remains_unclassified",
         "tests/test_java_analyzer.py::JavaAnalyzerTests::test_negative_near_matches_do_not_create_spring_roles",
         "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_npm_manifest_and_import_share_package_without_claiming_unused_usage"
       ],
       "id": "FR-009",
       "priority": "P0",
-      "status": "BLOCKED",
-      "summary": "Declared packages and observed imports remain separate, but technology typing does not yet resolve their combined evidence."
+      "status": "AUTOMATED",
+      "summary": "Manifest declarations remain dependency facts until exact code evidence activates a catalog rule; JPA alone never identifies PostgreSQL."
     },
     {
       "blocker": null,

@@ -45,7 +45,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             {item["id"] for item in document["acceptanceCriteria"]},
         )
         self.assertEqual(
-            {"FR-003", "FR-009"},
+            {"FR-003"},
             {
                 item["id"]
                 for item in document["requirements"]
@@ -99,7 +99,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         )
         self.assertTrue(all(item["blocker"] for item in blocked))
 
-    def test_l2_progress_keeps_only_unimplemented_semantics_blocked(self):
+    def test_l2_progress_keeps_only_unimplemented_project_detection_blocked(self):
         document = readiness_document()
         requirements = {item["id"]: item for item in document["requirements"]}
 
@@ -118,9 +118,20 @@ class ReleaseReadinessTests(unittest.TestCase):
         )
 
         technology_typing = requirements["FR-009"]
-        self.assertEqual("BLOCKED", technology_typing["status"])
-        self.assertIn("catalog", technology_typing["blocker"])
-        self.assertIn("distinct graph facts", technology_typing["blocker"])
+        self.assertEqual("AUTOMATED", technology_typing["status"])
+        self.assertIsNone(technology_typing["blocker"])
+        self.assertTrue(
+            any(
+                "test_declared_technology_without_code_usage" in item
+                for item in technology_typing["evidence"]
+            )
+        )
+        self.assertTrue(
+            any(
+                "test_negative_near_matches_do_not_create_spring_roles" in item
+                for item in technology_typing["evidence"]
+            )
+        )
 
     def test_aggregate_checks_cannot_hide_incomplete_entries(self):
         document = readiness_document()
