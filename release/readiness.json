@@ -282,12 +282,13 @@
     {
       "blocker": null,
       "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_same_package_field_type_creates_resolved_reference",
         "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_explicit_module_forms_create_evidenced_edges"
       ],
       "id": "FR-004",
       "priority": "P0",
       "status": "AUTOMATED",
-      "summary": "Only resolved source relationships create evidenced local graph edges."
+      "summary": "Java local type uses and JavaScript/TypeScript module forms create local graph edges only when their targets resolve uniquely."
     },
     {
       "blocker": null,
