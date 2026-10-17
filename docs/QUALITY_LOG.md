@@ -276,3 +276,55 @@
   project license remain open.
 - Commits created / pushed (and branch): `b404ff6` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — catalog 0.3.0 (`2676c84`)
+
+- Implemented: immutable catalog `0.3.0`; exact Maven coordinates and required
+  manifest evidence for Spring RestClient, Kafka, MongoDB, RabbitMQ, and Redis
+  direct-use rules; preserved validation of catalog `0.1.0` and `0.2.0`.
+- Fixture(s) / revision(s): `tests/fixtures/repositories/technology-positive`
+  and `technology-declared-only` at synthetic revision `fixture-1`. Both
+  declare the same five packages; only the positive fixture imports their
+  exact code signatures. Matching and lookalike catalog fixtures include the
+  same declaration precondition.
+- Commands run: two identical positive `python -m metropogits build` runs and
+  one declared-only build; UCG and City validation for both outcomes; graph
+  claim counts; Chrome headless captures for the positive viewer/SVG and the
+  declared-only viewer; catalog validation; full lint, compile, 169-test,
+  dependency, readiness, and JavaScript syntax gates.
+- Artifacts inspected: positive and declared-only `graph.ucg.json`,
+  `city.json`, `preview.svg`, and `index.html`, plus `positive-viewer.png`,
+  `positive-preview.png`, and `declared-viewer.png` under
+  `C:\WINDOWS\TEMP\metropogits-catalog-030-dc6db118422f433096116b8f76239177`.
+  The positive graph has five technology claims; the declaration-only graph
+  has five dependency edges and zero technology claims.
+- Visual findings: the positive city displays five distinct specialized
+  archetype/color outcomes, while the same declarations without code usage
+  produce a single gray generic building. Neither case invents runtime roads.
+  The five-building composition is readable, but stable hashed cells leave
+  uneven gaps; the one-building negative retains the known sparse-layout issue.
+- Spec alignment: DEVIATION. Catalog-only declarations no longer assert active
+  Redis, MongoDB, Kafka, RabbitMQ, or RestClient facilities, satisfying the
+  central FR-009 negative behavior for the bundled mappings. Configuration and
+  lockfile facts remain absent, declared dependencies are not yet visible in
+  the inspector, and the 2D viewer still deviates from DEC-009.
+- Tests / determinism / stability: 169 tests passed with one unavailable
+  symlink skip. Positive builds produced identical SHA-256
+  `71ad55a0874c88f51a19bad447096879d8c43cc54cc1ffc8788972132cef2409`
+  for `graph.ucg.json`,
+  `a2ad3212b55cb7d7f1ec9cab46234fd38b684aa980fba95d47032ebf80b3ca8d`
+  for `city.json`, and
+  `7dd6164639aefff295a61881b0579643fe8f3999e2acd8c60b74153077955272`
+  for `preview.svg`. Both positive and declared-only contracts validated.
+- Fixes applied and reverified: an accidental leading patch marker in the new
+  repository POM fixtures caused manifest rejection and was caught by the Java
+  integration tests; it was removed before commit, the targeted suites passed,
+  and the full gates were rerun. Trailing blank lines reported by Git's
+  whitespace check were removed before finalizing the feature commit.
+- Open risks / next actions: audit whether FR-009 can now leave `BLOCKED`, then
+  add bounded lockfile and non-secret configuration facts for FR-003. Expose
+  declared dependencies in the inspector without drawing runtime roads, and
+  correct sparse placement. Dense SVG labels, road endpoints, the 3D decision,
+  hosted runner, and project license remain open.
+- Commits created / pushed (and branch): `2676c84` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
