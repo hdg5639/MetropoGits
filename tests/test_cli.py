@@ -76,6 +76,7 @@ class CliTests(unittest.TestCase):
                 "index.html",
                 "manifest.json",
                 "preview.svg",
+                "showcase.svg",
             },
             set(first_bytes),
         )
@@ -85,6 +86,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual([], validate_ucg_document(graph))
         self.assertEqual([], validate_city_document(scene, graph))
         element_tree.fromstring(first_bytes["preview.svg"])
+        element_tree.fromstring(first_bytes["showcase.svg"])
+        self.assertIn(b'(showcase.svg)', first_bytes['README_SNIPPET.md'])
         self.assertEqual("manifest/0.1", manifest["schemaVersion"])
         self.assertIn("codes", manifest["diagnostics"])
         self.assertNotIn(str(repository), first_bytes["manifest.json"].decode("utf-8"))
@@ -126,7 +129,8 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual(0, completed.returncode, completed.stderr)
             self.assertTrue((output / "preview.svg").is_file())
-            self.assertIn("Built 11 artifacts", completed.stdout)
+            self.assertTrue((output / "showcase.svg").is_file())
+            self.assertIn("Built 12 artifacts", completed.stdout)
 
     def test_build_accepts_previous_scene_and_reports_hint_churn(self):
         with tempfile.TemporaryDirectory() as temporary:

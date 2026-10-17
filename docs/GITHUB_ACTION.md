@@ -49,7 +49,7 @@ Publishing never edits the repository. After the first deployment, copy and
 adapt the generated `README_SNIPPET.md` with the Pages URL, for example:
 
 ```markdown
-[![MetropoGits city](https://OWNER.github.io/REPOSITORY/preview.svg)](https://OWNER.github.io/REPOSITORY/)
+[![MetropoGits city](https://OWNER.github.io/REPOSITORY/showcase.svg)](https://OWNER.github.io/REPOSITORY/)
 ```
 
 Generated metadata exposes filenames and architecture. Review the complete

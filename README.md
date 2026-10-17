@@ -17,7 +17,7 @@ python -m pip install -e .
 metropogits build --repo . --out dist --theme minimal
 ```
 
-The command writes the graph and scene contracts, a deterministic SVG preview,
+The command writes the graph and scene contracts, deterministic SVG previews,
 an interactive static viewer, a diagnostic manifest, and a linked README
 snippet. Open `dist/index.html` directly for the perspective WebGL city: drag
 to orbit, use Alt/secondary drag to pan, and use the wheel to zoom. If WebGL
@@ -53,6 +53,12 @@ dependencies, and legacy lockfiles without a `packages[""]` entry are rejected
 with a diagnostic instead of being guessed.
 Unsupported source languages still produce generic buildings without guessed
 semantics.
+
+Open `dist/showcase.svg` for the README composition: a fitted 3/4 isometric
+city with traceable visual blocks and up to 24 evidence routes. The generated
+snippet uses this image. `dist/preview.svg` retains the detailed top-down view.
+Both use the same canonical city and preserve the graph's source evidence.
+See [Showcase rendering](docs/SHOWCASE.md) for metadata and inspection limits.
 
 The viewer also offers an opt-in synthetic activity overlay. It is disabled by
 default, respects reduced-motion preferences, and never claims to show measured
@@ -173,6 +179,16 @@ Render a deterministic CPU-only SVG preview:
 ```powershell
 python -m metropogits.preview --scene city.json --ucg graph.ucg.json --out preview.svg
 ```
+
+Render a README showcase from an existing scene and graph:
+
+```powershell
+metropogits render --scene dist/city.json --graph dist/graph.ucg.json --mode showcase --out dist/showcase.svg
+```
+
+Omitting `--mode` from `render` keeps the detailed preview behavior. To update
+an existing build and its manifest together, rerun `build`; a standalone
+`render` command writes only the requested image.
 
 Combine ordered build directories into an inspectable revision timeline:
 

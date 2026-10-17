@@ -1975,3 +1975,85 @@
   top-down output remains a structural inspection target.
 - Commit / push: independent preview fix on main; delivery follows the
   completed showcase checkpoint.
+
+## Checkpoint 2026-10-18 - CPU showcase and build integration (ADR-013)
+
+- Implemented: CPU block/representative projection and existing WebGL cuboid
+  forms, deterministic four-orientation isometric framing, bounded evidence
+  routes, path-aware major labels, protected header/footer and trace metadata.
+  `render --mode showcase` is opt-in; `build` emits both SVGs, checksums them,
+  and points the generated README snippet at showcase. Composite Action output
+  remains compatible; hosted smoke now requires both images.
+- Fixture(s) / revision(s): GJ-Cloud at
+  `3d9b53f9dac9af1187ac9754cb3066b27e43b766`, GamjaOJ at
+  `b163acd2b5fe41edfc1e7fc7d367362851241896`; maintained Spring positive,
+  new Go/Rust/Elixir structural-only fixture, and a synthetic 315-file nested
+  major-district scene including mixed-case IDs. Target code was not executed.
+- Pipeline commands: `python -m metropogits build --repo
+  ../visual_test_proj/GJ-Cloud --out ../artifacts/visual/showcase-20261018/gj`
+  and the equivalent `GamjaOJ` / `oj` command; small fixture builds use
+  `--repo tests/fixtures/repositories/spring-positive --repo-id fixture/showcase
+  --revision showcase --out ../artifacts/visual/showcase-20261018/spring` and
+  `--repo tests/fixtures/repositories/structural-showcase --repo-id fixture/unknown
+  --revision showcase --out ../artifacts/visual/showcase-20261018/unknown`.
+  All four builds returned COMPLETE with 12 manifest-listed artifacts.
+- Render commands: `python -m metropogits render --scene <build>/city.json
+  --graph <build>/graph.ucg.json --mode showcase --width 640 --height 360
+  --out ../artifacts/visual/showcase-20261018/<case>-thumb.svg` for GJ/OJ.
+  Default 1200x675 images are in each complete build directory.
+- Artifacts inspected: `gj.png`, `oj.png`, `spring.png`, `unknown.png`,
+  `gj-thumb.png`, `oj-thumb.png`, `gj-viewer.png`, and `oj-viewer.png` under
+  `artifacts/visual/showcase-20261018`. Chrome headless captured SVG at
+  1200x675 / 640x360 and WebGL with SwiftShader at 1280x800. WebGL initializes
+  with the existing overview blocks and the detailed-preview fallback link.
+- Visual findings: major services are legible in the GJ isometric composition;
+  OJ's distinct facility clusters persist and its duplicate tests labels are
+  disambiguated in showcase. Building silhouettes now show genuine vertical
+  faces in the README image. Header/footer and building tops are not clipped.
+  Small output initially reserved too much margin; reduced thumbnail margins
+  were re-rendered and inspected. Sparse input remains three generic files,
+  with no invented landmarks to fill its structural street area.
+- Projection measurements (relative to the protected content area):
+
+  | Fixture | Files / blocks | Yaw | Bounding-box occupancy | Sampled polygon coverage | Shown routes |
+  | --- | --- | --- | --- | --- | --- |
+  | GJ-Cloud | 1324 / 37 | 90 degrees | 87.9% | 40.2% | 24 / 135 |
+  | GamjaOJ | 681 / 30 | 270 degrees | 76.1% | 35.8% | 24 / 31 |
+  | Spring | 6 / detail | 180 degrees | 76.4% | 37.4% | 2 / 2 |
+  | Unknown languages | 3 / detail | 180 degrees | 92.5% | 50.4% | 0 / 0 |
+
+  Coverage is deterministic 160x90 center sampling of terrain/building polygons,
+  not pixel opacity, building density, or measured runtime usage.
+- Tests / determinism / stability: 229 tests run, 228 passed and one expected
+  Windows symlink skip. Ruff, compileall, Node syntax, pip consistency,
+  readiness validation and whitespace checks passed. Re-rendering each of the
+  four saved scenes twice reproduced its build SVG bytes; every manifest
+  artifact size and SHA-256 was checked. Fresh GJ/OJ graph and City bytes are
+  identical to their previous centered-overview/overlap-fixed baselines, so
+  this work introduces no semantic or canonical layout churn.
+- CPU/WebGL parity: synthetic regression compares complete block geometry and
+  membership, balanced representative positions and all archetype cuboids.
+  A separate Node/Python comparison of the actual GJ/OJ City documents found
+  zero membership or geometry differences across 37/30 blocks and 235/148
+  representative masses. Browser locale list order is ignored by matching
+  stable block IDs and canonical member lists; numeric tolerance is 1e-7 for
+  that audit. Complete membership, plot containment, explicit hidden route
+  IDs and exact evidence edge lists remain tested independently.
+- Fixes applied and reverified: standalone CLI strict JSON decoding exposed
+  Decimal/float mixing in projection; a private numeric render copy fixes it
+  without mutating canonical input. Detailed preview's unpublished framing
+  commit was also corrected and given a strict-loader regression; its final
+  commit is `0c64bb1`.
+- Spec alignment: PASS under ADR-013, DEC-005/006/008/009/011 and FR-011.
+  UCG/City contracts, file IDs and network membership are unchanged. The
+  original sibling specification files were updated locally to describe the
+  additive output; those files are outside this Git repository.
+- Open risks / next actions: VIS-06 controlled same-view WebGL comparisons and
+  input/FPS measurements remain pending. WebGL still has duplicate short tests
+  labels and dense content near its legend; this renderer does not change that
+  UI. Thin evidence routes and dense generic silhouettes still need VIS-03/04
+  polish. Neither the new artifact nor public repository visibility activates
+  Pages; external repository output stays local.
+- Commits / push: `0c64bb1` is the independent preview fix; showcase plus its
+  build/Action integration is the following feature commit. Both use the
+  configured human identity, with delivery to the maintainer-authorized main.

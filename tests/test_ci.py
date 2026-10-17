@@ -56,7 +56,7 @@ class ContinuousIntegrationTests(unittest.TestCase):
         self.assertIn("uses: ./", source)
         self.assertIn("tests/fixtures/repositories/spring-positive", source)
         self.assertIn('test "$ACTION_STATUS" = "COMPLETE"', source)
-        self.assertIn("graph.ucg.json city.json preview.svg", source)
+        self.assertIn("graph.ucg.json city.json preview.svg showcase.svg", source)
         self.assertIn("google-chrome --headless=new", source)
         self.assertIn("--use-angle=swiftshader --enable-unsafe-swiftshader", source)
         self.assertIn("'>WebGL 3D<'", source)

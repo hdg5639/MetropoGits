@@ -2,7 +2,7 @@
 
 작성일: 2026-10-18
 
-상태: VIS-00 및 VIS-01 완료; 다음 작업은 VIS-02 구현
+상태: VIS-00~02 완료; 다음 작업은 VIS-06 통제 비교 및 도로·아키타입 가독성 보완
 
 대상: v1 후보의 도시 표현력, 쇼케이스 품질, 교차 저장소 검증
 
@@ -70,7 +70,7 @@ MetropoGits의 분석 결과를 삭제하거나 과장하지 않으면서, 처�
 
 ### VIS-01. README Showcase 출력 계약 결정
 
-상태: [ADR-013](adr/ADR-013.md)로 구현 계약 확정. `showcase.svg` 생성 기능은 아직 구현되지 않았다.
+상태: [ADR-013](adr/ADR-013.md)로 구현 계약 확정; VIS-02에서 구현 및 검증 완료.
 
 - 상세 탐색용 `preview.svg`와 README 전시용 결과의 책임을 분리하는 ADR을 작성한다.
 - 권장안은 기존 `preview.svg` 호환성을 유지하고 `showcase.svg`를 추가하는 것이다.
@@ -82,6 +82,8 @@ MetropoGits의 분석 결과를 삭제하거나 과장하지 않으면서, 처�
 - 출력 파일, CLI 동작, Action 연동, 호환성, 추적성 규칙이 ADR로 확정된다.
 
 ### VIS-02. 결정론적 Showcase Renderer 구현
+
+상태: 완료. `build`에 `showcase.svg`와 manifest checksum을 추가하고 README 스니펫을 연결했다. CPU/WebGL 블록·형태 비교, 실제 두 저장소와 Spring/구조 전용 fixture의 SVG 검사, 반복 생성 검증을 수행했다. 자세한 사용법은 [SHOWCASE.md](SHOWCASE.md), 관측 결과와 남은 한계는 QUALITY_LOG를 참고한다.
 
 - 주요 서비스 구역과 의미 있는 대표 시설을 우선 표시한다.
 - Overview와 동일한 블록 대표물을 사용하되 너무 적은 건물만 남지 않도록 밀도 하한을 둔다.

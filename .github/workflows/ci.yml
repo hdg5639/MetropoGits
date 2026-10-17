@@ -82,7 +82,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$ACTION_STATUS" = "COMPLETE"
-          for file in graph.ucg.json city.json preview.svg index.html manifest.json README_SNIPPET.md; do
+          for file in graph.ucg.json city.json preview.svg showcase.svg index.html manifest.json README_SNIPPET.md; do
             test -s "$ARTIFACT_PATH/$file"
           done
 

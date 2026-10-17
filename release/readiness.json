@@ -13,7 +13,8 @@
       "blocker": null,
       "evidence": [
         "tests/test_cli.py::CliTests::test_build_repository_creates_deterministic_artifact_set",
-        "tests/test_preview.py::PreviewTests::test_preview_is_deterministic_valid_svg"
+        "tests/test_preview.py::PreviewTests::test_preview_is_deterministic_valid_svg",
+        "tests/test_showcase.py::ShowcaseTests::test_deterministic_projection_preserves_inputs_and_evidence"
       ],
       "id": "AC-002",
       "status": "AUTOMATED",
@@ -374,12 +375,13 @@
     {
       "blocker": null,
       "evidence": [
-        "tests/test_preview.py::PreviewTests::test_preview_is_deterministic_valid_svg"
+        "tests/test_preview.py::PreviewTests::test_preview_is_deterministic_valid_svg",
+        "tests/test_showcase.py::ShowcaseTests::test_deterministic_projection_preserves_inputs_and_evidence"
       ],
       "id": "FR-011",
       "priority": "P0",
       "status": "AUTOMATED",
-      "summary": "The CPU-only SVG preview is deterministic and valid."
+      "summary": "The CPU-only detailed and isometric showcase SVGs are deterministic, validated, and preserve source traceability."
     },
     {
       "blocker": null,

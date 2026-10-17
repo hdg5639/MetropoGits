@@ -22,11 +22,14 @@ deployment. The machine-readable source of truth remains
 - The primary viewer renders genuine perspective WebGL geometry with orbit,
   zoom, selection, evidence inspection, and filters. WebGL failure starts the
   isometric 2D fallback from the same static artifact.
-- The 2026-10-18 regression run executed 218 tests: 217 passed and one
+- The 2026-10-18 showcase regression run executed 229 tests: 228 passed and one
   Windows symlink test was skipped. The preceding visual checkpoint includes
   repeated deterministic builds and inspection of both render targets on
   GJ-Cloud and GamjaOJ. Exact evidence is recorded in
   [`QUALITY_LOG.md`](QUALITY_LOG.md).
+- Builds now emit a traceable isometric `showcase.svg` for README use alongside
+  the detailed preview. Four fixture shapes were inspected; controlled WebGL
+  interaction benchmarks and broader road/landmark polish remain open.
 
 ## Conditions for public v1 promotion
 

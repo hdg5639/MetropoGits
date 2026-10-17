@@ -35,6 +35,13 @@ class GithubActionTests(unittest.TestCase):
             )
 
             manifest = run_action(action_environment(workspace, output_file))
+            showcase = workspace / "generated-city" / "showcase.svg"
+            self.assertTrue(showcase.is_file())
+            self.assertIn("showcase.svg", {item["path"] for item in manifest["artifacts"]})
+            self.assertIn(
+                "(showcase.svg)",
+                (workspace / "generated-city" / "README_SNIPPET.md").read_text(),
+            )
             outputs = dict(
                 line.split("=", 1)
                 for line in output_file.read_text(encoding="utf-8").splitlines()

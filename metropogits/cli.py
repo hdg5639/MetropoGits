@@ -17,6 +17,7 @@ from metropogits.history import HistorySnapshot, build_history
 from metropogits.layout import LayoutError, generate_city
 from metropogits.metropolis import MetropolisMember, build_metropolis
 from metropogits.preview import PreviewError, render_preview
+from metropogits.showcase import render_showcase
 from metropogits.scanner import (
     ScanLimits,
     ScannerError,
@@ -196,11 +197,12 @@ def build_repository(
     layout_diagnostics: list[dict[str, Any]] = []
     scene = generate_city(graph, theme, previous_scene, layout_diagnostics)
     preview = render_preview(scene, graph, width, height)
+    showcase = render_showcase(scene, graph, width, height)
     viewer_artifacts = render_viewer(scene, graph)
 
     graph_bytes = canonical_json_bytes(graph)
     scene_bytes = canonical_json_bytes(scene)
-    snippet_bytes = ("[![MetropoGits city preview](preview.svg)](index.html)\n").encode(
+    snippet_bytes = ("[![MetropoGits city showcase](showcase.svg)](index.html)\n").encode(
         "utf-8"
     )
     media_types = {
@@ -218,6 +220,7 @@ def build_repository(
             _artifact_record("city.json", "application/json", scene_bytes),
             _artifact_record("graph.ucg.json", "application/json", graph_bytes),
             _artifact_record("preview.svg", "image/svg+xml", preview),
+            _artifact_record("showcase.svg", "image/svg+xml", showcase),
         ]
         + [
             _artifact_record(path, media_types[path], content)
@@ -263,6 +266,7 @@ def build_repository(
     _write_bytes(output / "graph.ucg.json", graph_bytes)
     _write_bytes(output / "city.json", scene_bytes)
     _write_bytes(output / "preview.svg", preview)
+    _write_bytes(output / "showcase.svg", showcase)
     _write_bytes(output / "README_SNIPPET.md", snippet_bytes)
     for relative_path, content in viewer_artifacts.items():
         _write_bytes(output / relative_path, content)
@@ -333,6 +337,7 @@ def _build_parser() -> argparse.ArgumentParser:
     render.add_argument("--out", type=Path, required=True)
     render.add_argument("--width", type=int, default=1200)
     render.add_argument("--height", type=int, default=675)
+    render.add_argument("--mode", choices=("detail", "showcase"), default="detail")
 
     build = commands.add_parser("build", help="run the structural preview pipeline")
     _add_json_option(build, suppress_default=True)
@@ -426,7 +431,8 @@ def _run(args: argparse.Namespace) -> CommandResult:
     if args.command == "render":
         graph = _load_json(args.graph, "UCG")
         scene = _load_json(args.scene, "City Scene")
-        preview = render_preview(scene, graph, args.width, args.height)
+        renderer = render_showcase if args.mode == "showcase" else render_preview
+        preview = renderer(scene, graph, args.width, args.height)
         _write_bytes(args.out, preview)
         return CommandResult(f"Wrote SVG preview: {args.out}", str(args.out))
 
