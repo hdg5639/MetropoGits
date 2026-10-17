@@ -20,18 +20,17 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.5"
-HINT_LAYOUT_ALGORITHMS = frozenset(
-    {"hierarchical-paged/1.4", LAYOUT_ALGORITHM}
-)
+LAYOUT_ALGORITHM = "hierarchical-paged/1.6"
+HINT_LAYOUT_ALGORITHMS = frozenset({LAYOUT_ALGORITHM})
 DISTRICT_DEPTH = 64
-DISTRICT_PADDING = 16
-MIN_DISTRICT_SIZE = 24
-DISTRICT_EDGE_PADDING = 3
+DISTRICT_PADDING = 8
+MIN_DISTRICT_SIZE = 14
+EMPTY_DISTRICT_SIZE = 8
+DISTRICT_EDGE_PADDING = 2
 CHILD_PACKING_WIDTH_BIAS = 1.16
 BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
-BUILDING_OFFSET = 6
+BUILDING_OFFSET = 3
 BUILDING_SIZE = 6
 BUILDING_PAGE_CAPACITY = BUILDING_COLUMNS * BUILDING_COLUMNS
 MAX_HINT_ITEMS = 100_000
@@ -369,8 +368,8 @@ def _measure_districts(
         direct_width = max(MIN_DISTRICT_SIZE, direct_width)
         direct_depth = max(MIN_DISTRICT_SIZE, direct_depth)
     elif not children:
-        direct_width = MIN_DISTRICT_SIZE
-        direct_depth = MIN_DISTRICT_SIZE
+        direct_width = EMPTY_DISTRICT_SIZE
+        direct_depth = EMPTY_DISTRICT_SIZE
 
     # Empty directory chains carry hierarchy but need no dedicated city block.
     # Sharing the child's footprint keeps the full parent graph without turning
