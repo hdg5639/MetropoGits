@@ -25,6 +25,11 @@ resolution rules are documented in [the JS/TS analyzer guide](docs/JSTS_ANALYZER
 Unsupported source languages still produce generic buildings without guessed
 semantics.
 
+The viewer also offers an opt-in synthetic activity overlay. It is disabled by
+default, respects reduced-motion preferences, and never claims to show measured
+runtime traffic. See [synthetic activity](docs/SYNTHETIC_ACTIVITY.md) for its
+interpretation limits.
+
 For automation, add `--json` before or after a command. Complete, partial,
 invalid-input, resource-limit, and internal-error outcomes have stable exit
 codes documented in [the CLI result contract](docs/CLI_RESULTS.md).

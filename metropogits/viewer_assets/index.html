@@ -25,6 +25,11 @@
       <button type="button" data-action="zoom-in" title="Zoom in (+)">＋</button>
       <button type="button" data-action="zoom-out" title="Zoom out (-)">－</button>
       <button type="button" data-action="reset" title="Reset camera (R)">Reset</button>
+      <label class="activity-control">
+        <input id="synthetic-activity" type="checkbox" aria-describedby="synthetic-activity-note">
+        <span>Synthetic activity</span>
+      </label>
+      <span id="synthetic-activity-note" class="activity-note">Illustration only &mdash; not measured runtime traffic</span>
       <span class="toolbar-help">Drag to pan · Alt/secondary drag to rotate · Wheel to zoom</span>
     </nav>
 
@@ -77,6 +82,7 @@
     </footer>
     <noscript><p>This viewer requires local JavaScript. <a href="preview.svg">Open the SVG preview instead.</a></p></noscript>
     <script src="assets/viewer-data.js" defer></script>
+    <script src="assets/viewer-activity.js" defer></script>
     <script src="assets/viewer-filters.js" defer></script>
     <script src="assets/viewer.js" defer></script>
   </body>

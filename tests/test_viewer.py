@@ -33,6 +33,7 @@ class ViewerTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(
             {
+                "assets/viewer-activity.js",
                 "assets/viewer-data.js",
                 "assets/viewer.css",
                 "assets/viewer-filters.js",
@@ -45,6 +46,8 @@ class ViewerTests(unittest.TestCase):
         self.assertIn("Content-Security-Policy", html)
         self.assertIn('data-filter="role"', html)
         self.assertIn('data-filter="confidence"', html)
+        self.assertIn('id="synthetic-activity"', html)
+        self.assertIn("not measured runtime traffic", html)
         self.assertNotIn("http://", html)
         self.assertNotIn("https://", html)
         self.assertNotIn("fetch(", first["assets/viewer.js"].decode("utf-8"))
@@ -84,7 +87,7 @@ class ViewerTests(unittest.TestCase):
         graph = load_fixture()
         artifacts = render_viewer(generate_city(graph), graph)
         with tempfile.TemporaryDirectory() as temporary:
-            for name in ("viewer-filters.js", "viewer.js"):
+            for name in ("viewer-activity.js", "viewer-filters.js", "viewer.js"):
                 script = Path(temporary) / name
                 script.write_bytes(artifacts[f"assets/{name}"])
                 completed = subprocess.run(
@@ -94,6 +97,47 @@ class ViewerTests(unittest.TestCase):
                     check=False,
                 )
                 self.assertEqual(0, completed.returncode, completed.stderr)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_synthetic_activity_is_deterministic_and_path_bounded(self):
+        script = """
+require(process.argv[1]);
+const activity = globalThis.METROPOGITS_ACTIVITY;
+const first = activity.phaseForId("network:demo");
+const second = activity.phaseForId("network:demo");
+process.stdout.write(JSON.stringify({
+  first,
+  second,
+  midpoint: activity.pointAlongPath([[0, 0], [10, 0], [10, 10]], 0.75),
+  start: activity.pointAlongPath([[2, 3], [4, 5]], -1),
+  end: activity.pointAlongPath([[2, 3], [4, 5]], 2),
+}));
+"""
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-activity.js"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        result = json.loads(completed.stdout)
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual(result["first"], result["second"])
+        self.assertGreaterEqual(result["first"], 0)
+        self.assertLess(result["first"], 1)
+        self.assertEqual([10, 5], result["midpoint"])
+        self.assertEqual([2, 3], result["start"])
+        self.assertEqual([4, 5], result["end"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
     def test_category_filters_cover_buildings_and_networks(self):

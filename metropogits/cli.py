@@ -199,6 +199,7 @@ def build_repository(
         "utf-8"
     )
     media_types = {
+        "assets/viewer-activity.js": "text/javascript",
         "assets/viewer-data.js": "text/javascript",
         "assets/viewer.css": "text/css",
         "assets/viewer-filters.js": "text/javascript",

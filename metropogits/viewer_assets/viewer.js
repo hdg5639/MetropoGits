@@ -11,6 +11,9 @@
   const cityStats = document.getElementById("city-stats");
   const clearFilters = document.getElementById("clear-filters");
   const filterSummary = document.getElementById("filter-summary");
+  const activityToggle = document.getElementById("synthetic-activity");
+  const activityNote = document.getElementById("synthetic-activity-note");
+  const activityEngine = globalThis.METROPOGITS_ACTIVITY;
   const filterControls = new Map(
     [...document.querySelectorAll("[data-filter]")].map((control) => [
       control.dataset.filter,
@@ -54,6 +57,7 @@
 
   const state = {
     angle: -Math.PI / 4,
+    activityEpoch: 0,
     dragging: false,
     dragMode: "pan",
     filters: {
@@ -68,6 +72,7 @@
     pointerX: 0,
     pointerY: 0,
     selected: null,
+    syntheticActivity: false,
     zoom: 1,
   };
   let hitRegions = [];
@@ -76,6 +81,7 @@
   let visibleNetworkIds = new Set(scene.networks.map((network) => network.id));
   let viewportWidth = 1;
   let viewportHeight = 1;
+  const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)");
 
   const worldBounds = (() => {
     if (!scene.districts.length) return { minX: 0, minZ: 0, maxX: 1, maxZ: 1 };
@@ -324,6 +330,25 @@
     hitRegions.push({ kind: "network", id: network.id, points });
   }
 
+  function drawSyntheticActivity(timestamp) {
+    if (!state.syntheticActivity || !activityEngine) return;
+    const elapsed = Math.max(0, timestamp - state.activityEpoch);
+    for (const network of scene.networks) {
+      if (!visibleNetworkIds.has(network.id)) continue;
+      const phase = (elapsed / 6000 + activityEngine.phaseForId(network.id)) % 1;
+      const point = activityEngine.pointAlongPath(network.path, phase);
+      if (!point) continue;
+      const projected = project(point[0], point[1], 1.25);
+      context.beginPath();
+      context.arc(projected.x, projected.y, 4, 0, Math.PI * 2);
+      context.fillStyle = "#f8fafc";
+      context.shadowColor = networkColors[network.kind] || "#38bdf8";
+      context.shadowBlur = 9;
+      context.fill();
+      context.shadowBlur = 0;
+    }
+  }
+
   function buildingDepth(building) {
     const rotated = rotatePoint(
       building.x + building.width / 2,
@@ -365,7 +390,7 @@
     hitRegions.push({ kind: "building", id: building.entityId, points: outline });
   }
 
-  function render() {
+  function render(timestamp = 0) {
     framePending = false;
     hitRegions = [];
     context.clearRect(0, 0, viewportWidth, viewportHeight);
@@ -380,6 +405,8 @@
     for (const building of orderedBuildings) {
       if (visibleBuildingIds.has(building.entityId)) drawBuilding(building);
     }
+    drawSyntheticActivity(timestamp);
+    if (state.syntheticActivity && visibleNetworkIds.size > 0) scheduleRender();
   }
 
   function scheduleRender() {
@@ -684,6 +711,31 @@
     }
     applyFilters();
   });
+  function updateActivityAvailability() {
+    const motionReduced = reducedMotion?.matches === true;
+    const noNetworks = scene.networks.length === 0;
+    const unavailable = motionReduced || noNetworks || !activityEngine;
+    activityToggle.disabled = unavailable;
+    if (unavailable) {
+      activityToggle.checked = false;
+      state.syntheticActivity = false;
+    }
+    activityNote.textContent = motionReduced
+      ? "Synthetic illustration disabled by reduced-motion preference"
+      : noNetworks
+        ? "Synthetic illustration unavailable — this city has no networks"
+        : "Illustration only — not measured runtime traffic";
+    scheduleRender();
+  }
+  activityToggle.addEventListener("change", () => {
+    state.syntheticActivity = activityToggle.checked;
+    state.activityEpoch = globalThis.performance.now();
+    activityNote.textContent = state.syntheticActivity
+      ? "Synthetic illustration active — not measured runtime traffic"
+      : "Illustration only — not measured runtime traffic";
+    scheduleRender();
+  });
+  reducedMotion?.addEventListener?.("change", updateActivityAvailability);
   document.addEventListener("keydown", (event) => {
     const actions = { q: "rotate-left", e: "rotate-right", "+": "zoom-in", "=": "zoom-in", "-": "zoom-out", r: "reset" };
     const action = actions[event.key.toLowerCase()];
@@ -694,6 +746,7 @@
   });
 
   new ResizeObserver(resize).observe(canvas);
+  updateActivityAvailability();
   applyFilters();
   resize();
 })();

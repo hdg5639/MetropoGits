@@ -145,6 +145,7 @@ class HistoryTests(unittest.TestCase):
 
         self.assertEqual(
             {
+                "assets/viewer-activity.js",
                 "assets/viewer-data.js",
                 "assets/viewer-filters.js",
                 "assets/viewer-history.js",

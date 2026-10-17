@@ -65,6 +65,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(
             {
                 "README_SNIPPET.md",
+                "assets/viewer-activity.js",
                 "assets/viewer-data.js",
                 "assets/viewer.css",
                 "assets/viewer-filters.js",
@@ -124,7 +125,7 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual(0, completed.returncode, completed.stderr)
             self.assertTrue((output / "preview.svg").is_file())
-            self.assertIn("Built 9 artifacts", completed.stdout)
+            self.assertIn("Built 10 artifacts", completed.stdout)
 
     def test_module_cli_rejects_unknown_contract(self):
         with tempfile.TemporaryDirectory() as temporary:

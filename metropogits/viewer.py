@@ -47,6 +47,9 @@ def render_viewer(scene: dict[str, Any], ucg: dict[str, Any]) -> dict[str, bytes
     result = {
         "index.html": resources.joinpath("index.html").read_bytes(),
         "assets/viewer.css": resources.joinpath("viewer.css").read_bytes(),
+        "assets/viewer-activity.js": resources.joinpath(
+            "viewer-activity.js"
+        ).read_bytes(),
         "assets/viewer-filters.js": resources.joinpath(
             "viewer-filters.js"
         ).read_bytes(),
@@ -110,6 +113,9 @@ def render_history_viewer(
     result = {
         "index.html": html.encode("utf-8"),
         "assets/viewer.css": resources.joinpath("viewer.css").read_bytes(),
+        "assets/viewer-activity.js": resources.joinpath(
+            "viewer-activity.js"
+        ).read_bytes(),
         "assets/viewer-filters.js": resources.joinpath(
             "viewer-filters.js"
         ).read_bytes(),
@@ -171,6 +177,9 @@ def render_metropolis_viewer(
     result = {
         "index.html": html.encode("utf-8"),
         "assets/viewer.css": resources.joinpath("viewer.css").read_bytes(),
+        "assets/viewer-activity.js": resources.joinpath(
+            "viewer-activity.js"
+        ).read_bytes(),
         "assets/viewer-filters.js": resources.joinpath(
             "viewer-filters.js"
         ).read_bytes(),
