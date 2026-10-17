@@ -1567,3 +1567,68 @@
   empty rectangular allocation.
 - Commits created / pushed (and branch): `53f88d1` and `6b862ac` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - hierarchy-aware street routing (`ed1012d`, `771f80a`)
+
+- Implemented: layout `hierarchical-paged/1.12` reserves a two-cell boulevard
+  between top-level siblings and a one-cell street between shallow package
+  groups. Dependency networks now follow deterministic orthogonal shortest
+  paths through building-free cells instead of three-point L-shaped lines
+  through buildings. Static and WebGL renderers derive explicitly non-semantic
+  boulevard, street, alley, and route-access surfaces from the same City Scene.
+  Evidence-backed networks remain separate and retain every exact `edgeId`.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`; the maintained Spring UCG
+  fixture; and synthetic top-level sibling, aggregate-edge, large-zone, hint,
+  history, and metropolis cases.
+- Commands run: one complete GJ-Cloud build, independent cold and v1.12 hinted
+  City generations, City and UCG validation through the end-to-end pipeline,
+  Edge SwiftShader WebGL and CPU SVG captures, Ruff, `compileall`, JavaScript
+  syntax checks, whitespace checks, and the complete automated suite.
+- Artifacts inspected: `viewer-webgl.png`, `preview.png`, and the complete
+  output under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-street-grid-2`;
+  deterministic City comparisons under
+  `D:\Code\MetroPoGits\artifacts\quality\street-grid-1.12`.
+- Visual findings: PASS for explicit inter-block streets and PARTIAL for the
+  broader living-city target. Major services are separated by dark boulevard
+  corridors, detailed dependency routes no longer cross buildings, route
+  junction dots were removed, and evidence roads use thinner bounded widths.
+  The overview still replaces 1,324 files with seven aggregate facilities, so
+  the large-plot sparse view remains a separate semantic-LOD follow-up rather
+  than being disguised by this routing change.
+- Geometry findings: the GJ-Cloud root AABB is `833 x 532` (`443,156` square
+  units), 12.2 percent smaller than layout 1.11's `504,798` square units while
+  adding hierarchy-aware gaps. The derived street projection contains 717
+  merged rectangles: 388 boulevard, 13 street, 280 alley, and 36 route-access
+  rectangles. Its total projected area is `151,508` square units. All 135
+  evidence networks route through 1,023 orthogonal segments over `48,328`
+  world units, with zero building intersections. Simplified paths range from
+  2 to 25 vertices with a median of 7.
+- Spec alignment: PASS under ADR-010. Street surfaces are a renderer
+  projection and explicitly make no dependency claim. Canonical network
+  records still provide the only evidence-backed road semantics and preserve
+  all UCG edge identities. No repository code, dependency, AI service, or
+  external analyzer was executed. The UCG schema is unchanged; file-size and
+  line-count work remains held for its separately approved schema decision.
+- Tests / determinism / stability: 213 tests passed with one expected Windows
+  symlink skip. Ruff, compilation, JavaScript syntax, and whitespace checks
+  passed. The end-to-end, independent cold, and same-version hinted City files
+  are byte-identical at SHA-256
+  `12bb2c0e1842edf39d3e2bc40ac148dda4583aa063813493fda85e19609d8eca`.
+  The unchanged UCG SHA-256 is
+  `8382dbb2beb4fa888ba0a5d5caffa113c9671e2b2e94a446f457e10e8a8c65cf`,
+  and the new deterministic SVG SHA-256 is
+  `848d6d11d3972f8e6b62bf77c99fc919691f521a54b42d6066faf6109ba985e6`.
+- Fixes applied and reverified: the first rendering made weighted network roads
+  too tube-like and marked every route turn as a node. Widths were reduced,
+  logarithmically bounded by represented edge count, and junction markers
+  removed. Structural street halos were then widened around top-level service
+  footprints so the reserved allocation gaps read as continuous boulevards.
+- Open risks / next actions: group one-to-three-file leaf directories into
+  shared rectangular blocks without losing canonical district identity, then
+  replace seven-facility overview LOD with traceable block-level massing. File
+  size and line-count skyline metrics require an explicit UCG schema approval
+  before implementation. Portal's 466 TypeScript files also remain generic.
+- Commits created / pushed (and branch): `ed1012d` and `771f80a` on local
+  `main`; push is scheduled after this checkpoint log commit.
