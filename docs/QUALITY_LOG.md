@@ -963,3 +963,48 @@
   Publication remains deferred by ADR-007.
 - Commits created / pushed (and branch): `cc07c73` on local `main`; push is
   scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 — evidence-road infrastructure (`b8b3f78`)
+
+- Implemented: every evidence network now renders as a layered route with
+  shoulder, surface, category marking, and junction pads. Dependency, HTTP, and
+  messaging categories have distinct profiles. Existing building clusters gain
+  muted civic blocks that are explicitly labeled as visual, non-evidence
+  infrastructure.
+- Fixture(s) / revision(s): the complete MetropoGits repository at revision
+  `b8b3f78`, analyzed twice as `hdg5639/MetropoGits`; renderer contracts also
+  exercise all three allowed network kinds.
+- Commands run: two real CLI builds; Edge SwiftShader WebGL, forced 2D fallback,
+  and CPU SVG captures; `pip check`; Ruff; `compileall`; JavaScript syntax;
+  release-readiness validation; the full automated suite; and whitespace checks.
+- Artifacts inspected: `viewer-webgl.png`, `viewer-fallback.png`, `preview.png`,
+  and the complete static artifact set under
+  `D:\Code\MetroPoGits\.visual-recovery-road-checkpoint`.
+- Visual findings: PASS. The three actual dependency aggregates now read as
+  bright-centered roads with dark asphalt and visible junctions rather than
+  single black graph lines. Civic blocks establish local parcels in occupied
+  districts without competing with evidence routes. The legend states the
+  distinction, and the WebGL, 2D fallback, and SVG outputs all preserve it.
+- Spec alignment: PASS. The scene still contains exactly 3 networks, and every
+  selectable semantic route retains only its original validated `edgeIds`.
+  Civic blocks are renderer-derived visual treatment, have no hit target, and
+  make no architecture or dependency claim.
+- Tests / determinism / stability: 193 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. Network profiles are
+  tested as three distinct ordered layers; preview tests require one evidence
+  route per scene network and explicit non-evidence labeling. Repeated builds
+  produced identical SHA-256
+  `664f577d84814947b8567ac9a62d7e43fca2310b9abb0ffe010809409a45b751`
+  for `graph.ucg.json`,
+  `3fc65f497ce36078d8031f49ef647b718e7112ec4b57f4bb387d1daeefa47dc4`
+  for `city.json`, and
+  `3d1bde5d78fe13f371fc8c003cb3afc0756a5b9d98df85b52c445c191fb62b60`
+  for `preview.svg`.
+- Fixes applied and reverified: dependency markings were brightened after the
+  first capture still read too much like black graph strokes; all three outputs
+  were regenerated and inspected afterward.
+- Open risks / next actions: improve the default camera composition and make
+  selected buildings, districts, and routes more obvious at city scale.
+  Publication remains deferred by ADR-007.
+- Commits created / pushed (and branch): `b8b3f78` on local `main`; push is
+  scheduled after this checkpoint log commit.
