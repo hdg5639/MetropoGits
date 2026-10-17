@@ -12,7 +12,7 @@ introduce a new schema or weaken a requirement.
 | Single-repository layout | `hierarchical-paged/1.13` | [ADR-009](../adr/ADR-009.md), [ADR-010](../adr/ADR-010.md), [ADR-011](../adr/ADR-011.md); hints require the current supported layout version |
 | Catalog | release `0.4.0`, schema `catalog/0.1` | [Catalog](../../catalog/0.4.0/catalog.json), [path rules](../PATH_SEMANTICS.md) |
 | Viewer | browser-native WebGL with 2D fallback | [ADR-002](../adr/ADR-002.md), [ADR-005](../adr/ADR-005.md) amend the original Three.js candidate |
-| Static preview | CPU-only deterministic detailed SVG | `preview.svg`; a dedicated showcase is planned, not yet emitted |
+| Static preview | CPU-only deterministic detailed SVG | `preview.svg`; [ADR-013](../adr/ADR-013.md) specifies the additional showcase, not yet emitted |
 
 ## City v0.2 interpretation
 

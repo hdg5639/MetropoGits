@@ -1937,3 +1937,16 @@
   renderer with protected header bounds and cross-repository visual checks.
 - Commits created / pushed (and branch): this documentation work unit is on
   `main`; push follows the final documentation validation.
+
+### Documentation follow-up — ADR-013
+
+- Accepted the implementation contract for an additional CPU-only
+  `showcase.svg`, with preserved detailed-preview defaults, traceable block
+  membership, versioned SVG metadata, deterministic camera selection,
+  protected header/legend bounds, and staged CLI/Action integration.
+- Reviewed consumers: CLI build/render, artifact manifest, generated README
+  snippet, Action artifact directory, hosted smoke checks and viewer fallback.
+  No runtime implementation or generated artifact changed after the checkpoint
+  above; the new renderer is explicitly still pending.
+- Documentation/link and whitespace validation precede the independent ADR
+  commit. VIS-00 is commit `fa4c1ae`; VIS-01 is the subsequent ADR commit.
