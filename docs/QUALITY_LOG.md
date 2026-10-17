@@ -603,3 +603,47 @@
   and the project license also remain owner decisions.
 - Commits created / pushed (and branch): `427ca3b` on `main`, pushed before the
   hosted check by design; this checkpoint log follows as a separate commit.
+
+## Checkpoint 2026-10-17 — resolved Java type references (`a21e895`)
+
+- Implemented: conservative Java local-type `REFERENCES` extraction for actual
+  body uses bound by an exact import, same package, wildcard import with one
+  possible local target, or a fully qualified name. Package/import statements,
+  type declaration headers, comments, strings, self-file targets, duplicates,
+  and ambiguous wildcard targets do not emit reference edges.
+- Fixture(s) / revision(s): `tests/fixtures/repositories/spring-positive` at
+  synthetic revision `reference-check`, plus temporary same-package positive,
+  comment/string/unused-import negative, and ambiguous wildcard fixtures.
+- Commands run: two identical end-to-end CLI builds; Java-focused and full
+  181-test suites; UCG relationship and City network inspection; Edge headless
+  viewer and SVG captures; Ruff, `compileall`, dependency consistency,
+  release-readiness validation, JavaScript syntax, and Git whitespace checks.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `viewer.png`, and `preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-java-refs-94bc1cc6a770422081fc32fe658c7b6e`.
+  The graph contains two local IMPORTS and two local REFERENCES edges; each of
+  the two displayed roads preserves the matching import and type-reference IDs.
+- Visual findings: the canvas and SVG keep two clear building-attached roads.
+  Adding type-reference provenance does not duplicate visible routes or detach
+  their endpoints; it enriches the drill-down records behind each route.
+- Spec alignment: PASS. FR-004's proven reference path now covers bound Java
+  type uses without suffix guessing or unresolved name assumptions, and every
+  edge has source-line AST evidence with RESOLVED confidence.
+- Tests / determinism / stability: 181 tests passed with one unavailable
+  symlink skip. Repeated builds produced identical SHA-256
+  `ab85bf5d5f6ec7d451d218682f1a2bcbb63aea85df2f3560058d5f3dc2cd2b2a`
+  for `graph.ucg.json`,
+  `5446e4979e21ccd263ca16a7118c269f76c0c819d23bf36de8f2866d4df479d4`
+  for `city.json`, and
+  `8f14a0e66802a1ef916b24165dd0f142d8f0652785d580498bf9ee9a72185ee2`
+  for `preview.svg`.
+- Fixes applied and reverified: the first temporary positive fixture placed its
+  package and class declaration on one physical line, outside the analyzer's
+  supported top-level declaration form; the fixture was corrected to normal
+  Java formatting. Existing network assertions were also expanded to require
+  both import and reference edge IDs. Focused and full gates then passed.
+- Open risks / next actions: update FR-004 readiness evidence and finish the v1
+  candidate audit. Pages publication, DEC-009, and the project license remain
+  owner-controlled blockers.
+- Commits created / pushed (and branch): `a21e895` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
