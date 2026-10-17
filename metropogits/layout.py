@@ -28,6 +28,7 @@ ROOT_SLOT = 27
 BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
 BUILDING_OFFSET = 6
+BUILDING_PAGE_CAPACITY = BUILDING_COLUMNS * BUILDING_COLUMNS
 
 ROLE_STYLES = {
     "ENTRYPOINT": ("GATE", 14),
@@ -94,10 +95,23 @@ def _allocate_local_slots(entity_ids: list[str]) -> dict[str, int]:
     occupied: set[int] = set()
     result: dict[str, int] = {}
     for entity_id in sorted(entity_ids):
-        start = _hash_integer(entity_id) % 64
-        selected = start
-        while selected in occupied:
-            selected += 1
+        digest = hashlib.sha256(entity_id.encode("utf-8")).digest()
+        home = int.from_bytes(digest[:8], "big") % BUILDING_PAGE_CAPACITY
+        stride = (
+            int.from_bytes(digest[8:16], "big") % (BUILDING_PAGE_CAPACITY // 2)
+        ) * 2 + 1
+        page = len(occupied) // BUILDING_PAGE_CAPACITY
+        page_offset = page * BUILDING_PAGE_CAPACITY
+        selected: int | None = None
+        for probe in range(BUILDING_PAGE_CAPACITY):
+            candidate = page_offset + (
+                (home + probe * stride) % BUILDING_PAGE_CAPACITY
+            )
+            if candidate not in occupied:
+                selected = candidate
+                break
+        if selected is None:
+            raise LayoutError("building page allocation exhausted unexpectedly")
         occupied.add(selected)
         result[entity_id] = selected
     return result
@@ -208,10 +222,17 @@ def generate_city(ucg: dict[str, Any], theme: str = "minimal") -> dict[str, Any]
         district = districts_by_id[district_id]
         entities = files_by_district[district_id]
         local_slots = _allocate_local_slots([entity["id"] for entity in entities])
+        page_count = max(
+            1,
+            (len(entities) + BUILDING_PAGE_CAPACITY - 1)
+            // BUILDING_PAGE_CAPACITY,
+        )
+        district["depth"] = DISTRICT_DEPTH * page_count
         for entity in sorted(entities, key=lambda item: item["id"]):
             slot = local_slots[entity["id"]]
-            column = slot % BUILDING_COLUMNS
-            row = slot // BUILDING_COLUMNS
+            page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
+            column = page_slot % BUILDING_COLUMNS
+            row = page_slot // BUILDING_COLUMNS
             archetype, height, evidence_ids = _building_style(entity)
             buildings.append(
                 {
@@ -224,7 +245,12 @@ def generate_city(ucg: dict[str, Any], theme: str = "minimal") -> dict[str, Any]
                     "styleVariant": entity.get("language") or "unknown",
                     "width": 4,
                     "x": district["x"] + BUILDING_OFFSET + column * BUILDING_SPACING,
-                    "z": district["z"] + BUILDING_OFFSET + row * BUILDING_SPACING,
+                    "z": (
+                        district["z"]
+                        + page * DISTRICT_DEPTH
+                        + BUILDING_OFFSET
+                        + row * BUILDING_SPACING
+                    ),
                 }
             )
             entity_districts[entity["id"]] = district_id

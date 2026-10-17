@@ -94,6 +94,24 @@ class CityContractTests(unittest.TestCase):
 
         self.assertIn("buildings must use canonical order", errors)
 
+    def test_building_outside_its_district_is_rejected(self):
+        scene = deepcopy(self.scene)
+        district = scene["districts"][0]
+        scene["buildings"][0]["x"] = district["x"] + district["width"]
+
+        errors = validate_document(scene, self.ucg)
+
+        self.assertTrue(any("lies outside district" in error for error in errors))
+
+    def test_overlapping_buildings_are_rejected(self):
+        scene = deepcopy(self.scene)
+        scene["buildings"][1]["x"] = scene["buildings"][0]["x"]
+        scene["buildings"][1]["z"] = scene["buildings"][0]["z"]
+
+        errors = validate_document(scene, self.ucg)
+
+        self.assertTrue(any("overlap in district" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

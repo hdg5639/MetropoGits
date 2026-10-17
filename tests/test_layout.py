@@ -4,7 +4,12 @@ import unittest
 from pathlib import Path
 
 from metropogits.layout import generate_city
-from metropogits.scanner import build_structural_ucg, scan_repository
+from metropogits.scanner import (
+    ScanResult,
+    ScannedFile,
+    build_structural_ucg,
+    scan_repository,
+)
 from scripts.canonical_json import canonical_json_bytes
 from scripts.stable_ids import make_edge_id
 from scripts.validate_city import validate_document
@@ -156,6 +161,50 @@ class LayoutTests(unittest.TestCase):
             district for district in scene["districts"] if district["parentId"] is None
         )
         self.assertEqual(root_district["id"], scene["buildings"][0]["districtId"])
+
+    def test_large_directories_expand_in_bounded_non_overlapping_pages(self):
+        for file_count in (65, 100, 1_000):
+            with self.subTest(file_count=file_count):
+                scan = ScanResult(
+                    files=tuple(
+                        ScannedFile(
+                            path=f"src/File{index:04}.py",
+                            language="python",
+                            size_bytes=4,
+                        )
+                        for index in range(file_count)
+                    ),
+                    diagnostics=(),
+                )
+                ucg = build_structural_ucg(scan, "example/large")
+
+                scene = generate_city(ucg)
+
+                self.assertEqual([], validate_document(scene, ucg))
+                district = next(
+                    item
+                    for item in scene["districts"]
+                    if item["id"] == "example/large:directory:src"
+                )
+                expected_pages = (file_count + 63) // 64
+                self.assertEqual(64, district["width"])
+                self.assertEqual(expected_pages * 64, district["depth"])
+                positions = {
+                    (building["x"], building["z"])
+                    for building in scene["buildings"]
+                }
+                self.assertEqual(file_count, len(positions))
+                for building in scene["buildings"]:
+                    self.assertGreaterEqual(building["x"], district["x"])
+                    self.assertGreaterEqual(building["z"], district["z"])
+                    self.assertLessEqual(
+                        building["x"] + building["width"],
+                        district["x"] + district["width"],
+                    )
+                    self.assertLessEqual(
+                        building["z"] + building["depth"],
+                        district["z"] + district["depth"],
+                    )
 
 
 if __name__ == "__main__":

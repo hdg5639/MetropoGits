@@ -31,6 +31,7 @@ else:
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "city-0.1.schema.json"
+MAX_OVERLAP_COMPARISONS = 1_000_000
 
 
 def ucg_digest(document: Any) -> str:
@@ -86,6 +87,86 @@ def _check_district_hierarchy(
                 break
             chain.append(current)
             current = districts_by_id[current]["parentId"]
+
+
+def _contains(outer: dict[str, Any], inner: dict[str, Any]) -> bool:
+    return (
+        outer["x"] <= inner["x"]
+        and outer["z"] <= inner["z"]
+        and inner["x"] + inner["width"] <= outer["x"] + outer["width"]
+        and inner["z"] + inner["depth"] <= outer["z"] + outer["depth"]
+    )
+
+
+def _overlaps(first: dict[str, Any], second: dict[str, Any]) -> bool:
+    return (
+        first["x"] < second["x"] + second["width"]
+        and second["x"] < first["x"] + first["width"]
+        and first["z"] < second["z"] + second["depth"]
+        and second["z"] < first["z"] + first["depth"]
+    )
+
+
+def _find_building_overlap(
+    buildings: list[dict[str, Any]], axis: str, dimension: str
+) -> tuple[tuple[dict[str, Any], dict[str, Any]] | None, bool]:
+    other_axis = "z" if axis == "x" else "x"
+    ordered = sorted(
+        buildings,
+        key=lambda item: (item[axis], item[other_axis], item["entityId"]),
+    )
+    comparisons = 0
+    for index, first in enumerate(ordered):
+        for second in ordered[index + 1 :]:
+            if second[axis] >= first[axis] + first[dimension]:
+                break
+            comparisons += 1
+            if _overlaps(first, second):
+                return (first, second), False
+            if comparisons >= MAX_OVERLAP_COMPARISONS:
+                return None, True
+    return None, False
+
+
+def _check_building_geometry(
+    errors: list[str],
+    buildings: list[dict[str, Any]],
+    districts_by_id: dict[str, dict[str, Any]],
+) -> None:
+    buildings_by_district: dict[str, list[dict[str, Any]]] = {}
+    for building in buildings:
+        district = districts_by_id.get(building["districtId"])
+        if district is None:
+            continue
+        if not _contains(district, building):
+            errors.append(
+                f"building {building['entityId']!r} lies outside district "
+                f"{building['districtId']!r}"
+            )
+        buildings_by_district.setdefault(building["districtId"], []).append(
+            building
+        )
+
+    for district_id in sorted(buildings_by_district):
+        district_buildings = buildings_by_district[district_id]
+        overlap, exhausted = _find_building_overlap(
+            district_buildings, "x", "width"
+        )
+        if overlap is None and exhausted:
+            overlap, exhausted = _find_building_overlap(
+                district_buildings, "z", "depth"
+            )
+        if overlap is not None:
+            first, second = overlap
+            errors.append(
+                f"buildings {first['entityId']!r} and "
+                f"{second['entityId']!r} overlap in district {district_id!r}"
+            )
+        elif exhausted:
+            errors.append(
+                "building overlap validation exceeded its comparison limit in "
+                f"district {district_id!r}"
+            )
 
 
 def validate_document(scene: Any, ucg: Any) -> list[str]:
@@ -181,6 +262,8 @@ def validate_document(scene: Any, ucg: Any) -> list[str]:
                     f"$.buildings[{index}].evidenceIds references missing UCG "
                     f"evidence {evidence_id!r}"
                 )
+
+    _check_building_geometry(errors, buildings, districts_by_id)
 
     for index, network in enumerate(networks):
         _check_sorted(
