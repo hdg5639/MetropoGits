@@ -20,7 +20,7 @@
       "summary": "Repeated builds and previews produce identical deterministic artifacts."
     },
     {
-      "blocker": "The current collision resolution can move existing buildings when a new file sorts before them, does not keep large districts in bounds, and has no previous-scene hint support.",
+      "blocker": "Cold collision clusters and child insertion can still move existing geometry, and previous-scene hint support and churn gates are not implemented.",
       "evidence": [
         "tests/test_layout.py::LayoutTests::test_small_change_preserves_existing_positions"
       ],
@@ -157,7 +157,7 @@
       "summary": "Versioned schemas, canonicalization, stable IDs, and baseline fixtures are tested."
     },
     {
-      "blocker": "DEC-007 requires a stable bounded hierarchical allocator, DEC-009 requires an interactive 3D decision, and DEC-012 was implemented before its documented post-MVP phase.",
+      "blocker": "DEC-007 still requires hint-preserving churn guarantees, DEC-009 requires an interactive 3D decision, and DEC-012 was implemented before its documented post-MVP phase.",
       "evidence": [
         "docs/DECISION_AUDIT.md"
       ],
@@ -288,7 +288,7 @@
       "summary": "Universal Code Graph fixtures satisfy the versioned evidence contract."
     },
     {
-      "blocker": "Hash collisions are resolved in sorted insertion order, large districts overflow their bounds, spatial nesting is absent, and previous-scene hints are unsupported.",
+      "blocker": "Cold collision clusters and child insertion can still move existing geometry, while previous-scene hints and fixture-based churn reporting are unsupported.",
       "evidence": [
         "tests/test_layout.py::LayoutTests::test_small_change_preserves_existing_positions"
       ],

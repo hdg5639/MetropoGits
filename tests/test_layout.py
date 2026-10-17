@@ -162,6 +162,57 @@ class LayoutTests(unittest.TestCase):
         )
         self.assertEqual(root_district["id"], scene["buildings"][0]["districtId"])
 
+    def test_directory_tree_is_spatially_nested_without_sibling_overlap(self):
+        paths = (
+            "src/App.py",
+            "src/data/Repository.py",
+            "src/service/Service.py",
+            "src/service/internal/Helper.py",
+            "tests/TestApp.py",
+        )
+        scan = ScanResult(
+            files=tuple(
+                ScannedFile(path=path, language="python", size_bytes=4)
+                for path in paths
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/nested")
+
+        scene = generate_city(ucg)
+
+        self.assertEqual("hierarchical-paged/1.0", scene["layoutAlgorithm"])
+        self.assertEqual([], validate_document(scene, ucg))
+        districts = {item["id"]: item for item in scene["districts"]}
+        siblings: dict[str, list[dict]] = {}
+        for district in scene["districts"]:
+            parent_id = district["parentId"]
+            if parent_id is None:
+                continue
+            parent = districts[parent_id]
+            self.assertGreaterEqual(district["x"], parent["x"])
+            self.assertGreaterEqual(district["z"], parent["z"])
+            self.assertLessEqual(
+                district["x"] + district["width"],
+                parent["x"] + parent["width"],
+            )
+            self.assertLessEqual(
+                district["z"] + district["depth"],
+                parent["z"] + parent["depth"],
+            )
+            siblings.setdefault(parent_id, []).append(district)
+
+        for group in siblings.values():
+            for index, first in enumerate(group):
+                for second in group[index + 1 :]:
+                    overlaps = (
+                        first["x"] < second["x"] + second["width"]
+                        and second["x"] < first["x"] + first["width"]
+                        and first["z"] < second["z"] + second["depth"]
+                        and second["z"] < first["z"] + first["depth"]
+                    )
+                    self.assertFalse(overlaps)
+
     def test_large_directories_expand_in_bounded_non_overlapping_pages(self):
         for file_count in (65, 100, 1_000):
             with self.subTest(file_count=file_count):

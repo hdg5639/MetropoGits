@@ -23,7 +23,10 @@
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
     "layoutAlgorithm": {
-      "const": "anchored-directory/0.1"
+      "enum": [
+        "anchored-directory/0.1",
+        "hierarchical-paged/1.0"
+      ]
     },
     "theme": {
       "$ref": "#/$defs/nonEmptyString"

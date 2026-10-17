@@ -19,12 +19,10 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "anchored-directory/0.1"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.0"
 DISTRICT_WIDTH = 64
 DISTRICT_DEPTH = 64
-DISTRICT_PITCH = 80
-DISTRICT_COLUMNS = 8
-ROOT_SLOT = 27
+DISTRICT_PADDING = 16
 BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
 BUILDING_OFFSET = 6
@@ -64,33 +62,6 @@ def _hash_integer(value: str) -> int:
     return int.from_bytes(hashlib.sha256(value.encode("utf-8")).digest()[:8], "big")
 
 
-def _allocate_district_slots(ids: list[str]) -> dict[str, int]:
-    slots = [slot for slot in range(64) if slot != ROOT_SLOT]
-    occupied = {ROOT_SLOT}
-    result: dict[str, int] = {}
-    for district_id in sorted(ids):
-        start = _hash_integer(district_id) % len(slots)
-        selected: int | None = None
-        for offset in range(len(slots)):
-            candidate = slots[(start + offset) % len(slots)]
-            if candidate not in occupied:
-                selected = candidate
-                break
-        if selected is None:
-            selected = 64
-            while selected in occupied:
-                selected += 1
-        occupied.add(selected)
-        result[district_id] = selected
-    return result
-
-
-def _district_coordinates(slot: int) -> tuple[int, int]:
-    column = slot % DISTRICT_COLUMNS
-    row = slot // DISTRICT_COLUMNS
-    return (column - 3) * DISTRICT_PITCH, (row - 3) * DISTRICT_PITCH
-
-
 def _allocate_local_slots(entity_ids: list[str]) -> dict[str, int]:
     occupied: set[int] = set()
     result: dict[str, int] = {}
@@ -126,6 +97,91 @@ def _district_parent_id(
 ) -> str:
     parent_path = str(PurePosixPath(path).parent)
     return directory_ids.get(parent_path, root_id)
+
+
+def _ordered_children(
+    district_id: str, children_by_parent: dict[str, list[str]]
+) -> list[str]:
+    return sorted(
+        children_by_parent.get(district_id, []),
+        key=lambda child_id: (_hash_integer(child_id), child_id),
+    )
+
+
+def _building_page_count(file_count: int) -> int:
+    return max(
+        1,
+        (file_count + BUILDING_PAGE_CAPACITY - 1) // BUILDING_PAGE_CAPACITY,
+    )
+
+
+def _measure_districts(
+    district_id: str,
+    children_by_parent: dict[str, list[str]],
+    files_by_district: dict[str, list[dict[str, Any]]],
+    dimensions: dict[str, tuple[int, int, int]],
+) -> tuple[int, int, int]:
+    children = _ordered_children(district_id, children_by_parent)
+    child_dimensions = [
+        _measure_districts(
+            child_id,
+            children_by_parent,
+            files_by_district,
+            dimensions,
+        )
+        for child_id in children
+    ]
+    direct_depth = DISTRICT_DEPTH * _building_page_count(
+        len(files_by_district.get(district_id, []))
+    )
+    width = DISTRICT_WIDTH
+    depth = direct_depth
+    if child_dimensions:
+        width = max(
+            width,
+            max(child_width for child_width, _, _ in child_dimensions)
+            + 2 * DISTRICT_PADDING,
+        )
+        depth += DISTRICT_PADDING + sum(
+            child_depth + DISTRICT_PADDING
+            for _, child_depth, _ in child_dimensions
+        )
+    dimensions[district_id] = (width, depth, direct_depth)
+    return dimensions[district_id]
+
+
+def _place_districts(
+    district_id: str,
+    parent_id: str | None,
+    x: int,
+    z: int,
+    children_by_parent: dict[str, list[str]],
+    dimensions: dict[str, tuple[int, int, int]],
+    districts: list[dict[str, Any]],
+) -> None:
+    width, depth, direct_depth = dimensions[district_id]
+    districts.append(
+        {
+            "depth": depth,
+            "id": district_id,
+            "parentId": parent_id,
+            "width": width,
+            "x": x,
+            "z": z,
+        }
+    )
+    child_z = z + direct_depth + DISTRICT_PADDING
+    for child_id in _ordered_children(district_id, children_by_parent):
+        _place_districts(
+            child_id,
+            district_id,
+            x + DISTRICT_PADDING,
+            child_z,
+            children_by_parent,
+            dimensions,
+            districts,
+        )
+        child_z += dimensions[child_id][1] + DISTRICT_PADDING
 
 
 def _building_style(entity: dict[str, Any]) -> tuple[str, int, list[str]]:
@@ -175,35 +231,6 @@ def generate_city(ucg: dict[str, Any], theme: str = "minimal") -> dict[str, Any]
         if entity["kind"] == "DIRECTORY" and "path" in entity
     ]
     directory_ids = {entity["path"]: entity["id"] for entity in directory_entities}
-    district_slots = _allocate_district_slots(list(directory_ids.values()))
-
-    root_x, root_z = _district_coordinates(ROOT_SLOT)
-    districts: list[dict[str, Any]] = [
-        {
-            "depth": DISTRICT_DEPTH,
-            "id": root_id,
-            "parentId": None,
-            "width": DISTRICT_WIDTH,
-            "x": root_x,
-            "z": root_z,
-        }
-    ]
-    for entity in directory_entities:
-        x, z = _district_coordinates(district_slots[entity["id"]])
-        districts.append(
-            {
-                "depth": DISTRICT_DEPTH,
-                "id": entity["id"],
-                "parentId": _district_parent_id(
-                    entity["path"], directory_ids, root_id
-                ),
-                "width": DISTRICT_WIDTH,
-                "x": x,
-                "z": z,
-            }
-        )
-    districts.sort(key=lambda item: item["id"])
-    districts_by_id = {item["id"]: item for item in districts}
 
     file_entities = [
         entity
@@ -216,18 +243,36 @@ def generate_city(ucg: dict[str, Any], theme: str = "minimal") -> dict[str, Any]
         district_id = directory_ids.get(parent_path, root_id)
         files_by_district[district_id].append(entity)
 
+    children_by_parent: dict[str, list[str]] = defaultdict(list)
+    for entity in directory_entities:
+        parent_id = _district_parent_id(entity["path"], directory_ids, root_id)
+        children_by_parent[parent_id].append(entity["id"])
+    dimensions: dict[str, tuple[int, int, int]] = {}
+    _measure_districts(
+        root_id,
+        children_by_parent,
+        files_by_district,
+        dimensions,
+    )
+    districts: list[dict[str, Any]] = []
+    _place_districts(
+        root_id,
+        None,
+        0,
+        0,
+        children_by_parent,
+        dimensions,
+        districts,
+    )
+    districts.sort(key=lambda item: item["id"])
+    districts_by_id = {item["id"]: item for item in districts}
+
     buildings: list[dict[str, Any]] = []
     entity_districts: dict[str, str] = {}
     for district_id in sorted(files_by_district):
         district = districts_by_id[district_id]
         entities = files_by_district[district_id]
         local_slots = _allocate_local_slots([entity["id"] for entity in entities])
-        page_count = max(
-            1,
-            (len(entities) + BUILDING_PAGE_CAPACITY - 1)
-            // BUILDING_PAGE_CAPACITY,
-        )
-        district["depth"] = DISTRICT_DEPTH * page_count
         for entity in sorted(entities, key=lambda item: item["id"]):
             slot = local_slots[entity["id"]]
             page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)

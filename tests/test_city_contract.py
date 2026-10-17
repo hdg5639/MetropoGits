@@ -112,6 +112,45 @@ class CityContractTests(unittest.TestCase):
 
         self.assertTrue(any("overlap in district" in error for error in errors))
 
+    def test_child_district_outside_parent_is_rejected(self):
+        scene = deepcopy(self.scene)
+        parent = scene["districts"][0]
+        scene["districts"].append(
+            {
+                "depth": 10,
+                "id": "demo:directory:src/child",
+                "parentId": parent["id"],
+                "width": 10,
+                "x": parent["x"] + parent["width"],
+                "z": parent["z"],
+            }
+        )
+        scene["districts"].sort(key=lambda item: item["id"])
+
+        errors = validate_document(scene, self.ucg)
+
+        self.assertTrue(any("lies outside parent" in error for error in errors))
+
+    def test_overlapping_sibling_districts_are_rejected(self):
+        scene = deepcopy(self.scene)
+        parent = scene["districts"][0]
+        for name in ("alpha", "beta"):
+            scene["districts"].append(
+                {
+                    "depth": 10,
+                    "id": f"demo:directory:src/{name}",
+                    "parentId": parent["id"],
+                    "width": 10,
+                    "x": parent["x"] + 1,
+                    "z": parent["z"] + 1,
+                }
+            )
+        scene["districts"].sort(key=lambda item: item["id"])
+
+        errors = validate_document(scene, self.ucg)
+
+        self.assertTrue(any("sibling districts" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()
