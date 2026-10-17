@@ -173,6 +173,37 @@ class JsTsAnalyzerTests(unittest.TestCase):
         self.assertEqual("broken.ts", skipped[0]["sourcePath"])
         self.assertIn("safe.ts", files_by_name(graph))
 
+    def test_jsx_closing_tags_do_not_hide_static_imports(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "component.tsx").write_text(
+                """import { Target } from "./target";
+const compared = value < /from\\s+\"fake\"/.source.length;
+export function Component() {
+  return <section><Target /><span>
+    /{value}
+  </span></section>;
+}
+""",
+                encoding="utf-8",
+            )
+            (root / "target.tsx").write_text(
+                "export function Target() { return <span />; }\n",
+                encoding="utf-8",
+            )
+
+            graph = analyze(root)
+
+        skipped = [
+            item
+            for item in graph["diagnostics"]
+            if item["code"] == "JSTS_ANALYSIS_SKIPPED"
+        ]
+        import_edges = [edge for edge in graph["edges"] if edge["type"] == "IMPORTS"]
+        self.assertEqual([], skipped)
+        self.assertEqual(1, len(import_edges))
+        self.assertTrue(import_edges[0]["to"].endswith(":file:target.tsx"))
+
 
 if __name__ == "__main__":
     unittest.main()

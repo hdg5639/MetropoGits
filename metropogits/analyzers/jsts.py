@@ -192,7 +192,26 @@ def _tokenize(source: str) -> tuple[Token, ...]:
                     f"unterminated template literal starting at line {start_line}"
                 )
             continue
-        if character == "/" and _regex_can_start(previous):
+        jsx_closing_tag = (
+            previous is not None
+            and previous.kind == "PUNCT"
+            and previous.value == "<"
+            and index > 0
+            and source[index - 1] == "<"
+            and (following.isalpha() or following in {"_", "$", ">"})
+        )
+        jsx_text_slash = (
+            previous is not None
+            and previous.kind == "PUNCT"
+            and previous.value == ">"
+            and following == "{"
+        )
+        if (
+            character == "/"
+            and _regex_can_start(previous)
+            and not jsx_closing_tag
+            and not jsx_text_slash
+        ):
             start_line = line
             index += 1
             in_character_class = False
