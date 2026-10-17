@@ -101,6 +101,138 @@ class LayoutTests(unittest.TestCase):
         for entity_id, position in before_buildings.items():
             self.assertEqual(position, after_buildings[entity_id])
 
+    def test_previous_scene_hint_preserves_colliding_file_positions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "src").mkdir()
+            for index in range(30):
+                (root / "src" / f"m{index:03}.py").write_text(
+                    "pass", encoding="utf-8"
+                )
+            before_graph = build_structural_ucg(
+                scan_repository(root), "example/hint"
+            )
+            before = generate_city(before_graph)
+            (root / "src" / "0000.py").write_text("pass", encoding="utf-8")
+            after_graph = build_structural_ucg(
+                scan_repository(root), "example/hint"
+            )
+
+            cold = generate_city(after_graph)
+            diagnostics: list[dict] = []
+            hinted = generate_city(
+                after_graph, previous_scene=before, diagnostics=diagnostics
+            )
+
+        before_positions = {
+            item["entityId"]: (item["x"], item["z"])
+            for item in before["buildings"]
+        }
+        cold_positions = {
+            item["entityId"]: (item["x"], item["z"])
+            for item in cold["buildings"]
+        }
+        hinted_positions = {
+            item["entityId"]: (item["x"], item["z"])
+            for item in hinted["buildings"]
+        }
+        cold_moved = {
+            entity_id
+            for entity_id, position in before_positions.items()
+            if cold_positions[entity_id] != position
+        }
+        self.assertGreater(len(cold_moved), 0)
+        self.assertLess(len(cold_moved), len(before_positions))
+        before_district_ids = {item["id"] for item in before["districts"]}
+        self.assertEqual(
+            {
+                item["id"]: (item["x"], item["z"])
+                for item in before["districts"]
+            },
+            {
+                item["id"]: (item["x"], item["z"])
+                for item in cold["districts"]
+                if item["id"] in before_district_ids
+            },
+        )
+        self.assertEqual(
+            before_positions,
+            {
+                entity_id: hinted_positions[entity_id]
+                for entity_id in before_positions
+            },
+        )
+        self.assertEqual("LAYOUT_HINT_APPLIED", diagnostics[-1]["code"])
+        self.assertIn("moved 0 district(s) and 0 building(s)", diagnostics[-1]["message"])
+
+    def test_previous_scene_hint_preserves_existing_district_subtrees(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for index in range(10):
+                directory = root / f"m{index:03}"
+                directory.mkdir()
+                (directory / "x.py").write_text("pass", encoding="utf-8")
+            before_graph = build_structural_ucg(
+                scan_repository(root), "example/district-hint"
+            )
+            before = generate_city(before_graph)
+            added = root / "0000"
+            added.mkdir()
+            (added / "x.py").write_text("pass", encoding="utf-8")
+            after_graph = build_structural_ucg(
+                scan_repository(root), "example/district-hint"
+            )
+
+            cold = generate_city(after_graph)
+            diagnostics: list[dict] = []
+            hinted = generate_city(
+                after_graph, previous_scene=before, diagnostics=diagnostics
+            )
+
+        for collection, identity in (("districts", "id"), ("buildings", "entityId")):
+            before_positions = {
+                item[identity]: (item["x"], item["z"])
+                for item in before[collection]
+            }
+            cold_positions = {
+                item[identity]: (item["x"], item["z"])
+                for item in cold[collection]
+            }
+            hinted_positions = {
+                item[identity]: (item["x"], item["z"])
+                for item in hinted[collection]
+            }
+            if collection == "districts":
+                self.assertTrue(
+                    any(
+                        cold_positions[item_id] != position
+                        for item_id, position in before_positions.items()
+                    )
+                )
+            self.assertEqual(
+                before_positions,
+                {
+                    item_id: hinted_positions[item_id]
+                    for item_id in before_positions
+                },
+            )
+        self.assertEqual("LAYOUT_HINT_APPLIED", diagnostics[-1]["code"])
+
+    def test_malformed_previous_scene_is_ignored_deterministically(self):
+        ucg = load_json(FIXTURES / "ucg" / "valid" / "spring-minimal.json")
+        cold = generate_city(ucg)
+        diagnostics: list[dict] = []
+
+        hinted = generate_city(
+            ucg,
+            previous_scene={"schemaVersion": "city/invalid"},
+            diagnostics=diagnostics,
+        )
+
+        self.assertEqual(canonical_json_bytes(cold), canonical_json_bytes(hinted))
+        self.assertEqual("LAYOUT_HINT_IGNORED", diagnostics[-1]["code"])
+        self.assertEqual("WARNING", diagnostics[-1]["severity"])
+
     def test_edges_between_districts_are_aggregated_without_losing_ids(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

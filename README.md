@@ -119,6 +119,16 @@ Generate a deterministic City Scene from a UCG:
 python -m metropogits.layout --graph graph.ucg.json --out city.json --theme minimal
 ```
 
+Preserve unaffected building and district positions across a small change by
+supplying the previous generated scene as a non-authoritative layout hint:
+
+```powershell
+python -m metropogits build --repo . --out dist --previous-scene dist/city.json
+```
+
+The hint is loaded before output is replaced. Unsupported or malformed hints
+are ignored, reported in build diagnostics, and never override the current UCG.
+
 Render a deterministic CPU-only SVG preview:
 
 ```powershell

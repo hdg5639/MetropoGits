@@ -13,7 +13,7 @@ clearly aligned; it is not silently treated as compliant.
 | DEC-004 — Unknowns degrade gracefully | Satisfied | `LayoutTests.test_unknown_languages_receive_generic_buildings`. |
 | DEC-005 — Evidence-backed claims | Satisfied | UCG claim/edge validation and positive/negative analyzer fixtures. |
 | DEC-006 — Reproducible fixed inputs | Satisfied | Canonical JSON, stable ID, deterministic layout, preview, CLI, history, and metropolis tests. |
-| DEC-007 — Directory-first geography | Review required | [`ADR-004`](adr/ADR-004.md) now drives nested, bounded, non-overlapping district geometry. Previous-scene hints and the required churn gates remain incomplete. |
+| DEC-007 — Directory-first geography | Satisfied | [`ADR-004`](adr/ADR-004.md) drives nested, bounded, non-overlapping district geometry; previous-scene hints preserve unaffected anchors, and fixture gates measure cold and hinted churn. |
 | DEC-008 — File as base building | Satisfied | Scene contract and layout tests map file entities to buildings and directories to districts. |
 | DEC-009 — Two render targets, including interactive 3D | Review required | The project has deterministic SVG and an interactive static CPU canvas viewer, but the viewer is isometric 2D rather than a WebGL 3D implementation. The maintainer must either accept this as the v1 interpretation through an ADR/decision amendment or require a true 3D renderer. |
 | DEC-010 — Isolated analyzers behind UCG | Satisfied | Java and JS/TS adapters enrich the same versioned UCG without owning scene geometry. |
@@ -23,10 +23,8 @@ clearly aligned; it is not silently treated as compliant.
 
 ## Required decisions and remediation
 
-DEC-007 has an accepted design in [`ADR-004`](adr/ADR-004.md) and its bounded
-hierarchical geometry is implemented, but remains blocked until previous-scene
-hints and the churn gates are complete. DEC-012 requires no owner choice, but
-P2 work remains paused until the P0 readiness gaps are closed.
+DEC-007 is implemented under [`ADR-004`](adr/ADR-004.md). DEC-012 requires no
+owner choice, but P2 work remains paused until the P0 readiness gaps are closed.
 
 DEC-009 remains an owner decision. Resolve it with one of these paths:
 

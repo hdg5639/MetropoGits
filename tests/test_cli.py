@@ -127,6 +127,68 @@ class CliTests(unittest.TestCase):
             self.assertTrue((output / "preview.svg").is_file())
             self.assertIn("Built 10 artifacts", completed.stdout)
 
+    def test_build_accepts_previous_scene_and_reports_hint_churn(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            repository = workspace / "repository"
+            output = workspace / "artifacts"
+            (repository / "src").mkdir(parents=True)
+            for index in range(30):
+                (repository / "src" / f"m{index:03}.py").write_text(
+                    "pass", encoding="utf-8"
+                )
+            arguments = [
+                "build",
+                "--repo",
+                str(repository),
+                "--repo-id",
+                "example/cli-hint",
+                "--out",
+                str(output),
+            ]
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(0, main(arguments))
+            before = json.loads(
+                (output / "city.json").read_text(encoding="utf-8")
+            )
+            (repository / "src" / "0000.py").write_text("pass", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                exit_code = main(
+                    [
+                        *arguments,
+                        "--previous-scene",
+                        str(output / "city.json"),
+                    ]
+                )
+            after = json.loads(
+                (output / "city.json").read_text(encoding="utf-8")
+            )
+            manifest = json.loads(
+                (output / "manifest.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(0, exit_code)
+        before_positions = {
+            item["entityId"]: (item["x"], item["z"])
+            for item in before["buildings"]
+        }
+        after_positions = {
+            item["entityId"]: (item["x"], item["z"])
+            for item in after["buildings"]
+        }
+        self.assertEqual(
+            before_positions,
+            {
+                entity_id: after_positions[entity_id]
+                for entity_id in before_positions
+            },
+        )
+        self.assertIn(
+            {"code": "LAYOUT_HINT_APPLIED", "count": 1},
+            manifest["diagnostics"]["codes"],
+        )
+
     def test_module_cli_rejects_unknown_contract(self):
         with tempfile.TemporaryDirectory() as temporary:
             document = Path(temporary) / "unknown.json"

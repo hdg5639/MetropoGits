@@ -20,13 +20,14 @@
       "summary": "Repeated builds and previews produce identical deterministic artifacts."
     },
     {
-      "blocker": "Cold collision clusters and child insertion can still move existing geometry, and previous-scene hint support and churn gates are not implemented.",
+      "blocker": null,
       "evidence": [
-        "tests/test_layout.py::LayoutTests::test_small_change_preserves_existing_positions"
+        "tests/test_layout.py::LayoutTests::test_previous_scene_hint_preserves_colliding_file_positions",
+        "tests/test_layout.py::LayoutTests::test_previous_scene_hint_preserves_existing_district_subtrees"
       ],
       "id": "AC-003",
-      "status": "BLOCKED",
-      "summary": "The existing happy-path fixture is insufficient to prove small-change layout stability."
+      "status": "AUTOMATED",
+      "summary": "Previous-scene hints preserve unaffected building and district anchors across collision fixtures."
     },
     {
       "blocker": null,
@@ -136,7 +137,7 @@
   ],
   "releaseChecks": [
     {
-      "blocker": "AC-003 and AC-010 still require complete implementation or external hosted-runner evidence.",
+      "blocker": "AC-010 still requires external hosted-runner and Pages evidence.",
       "evidence": [
         "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
       ],
@@ -157,7 +158,7 @@
       "summary": "Versioned schemas, canonicalization, stable IDs, and baseline fixtures are tested."
     },
     {
-      "blocker": "DEC-007 still requires hint-preserving churn guarantees, DEC-009 requires an interactive 3D decision, and DEC-012 was implemented before its documented post-MVP phase.",
+      "blocker": "DEC-009 requires an interactive 3D decision, and DEC-012 was implemented before its documented post-MVP phase.",
       "evidence": [
         "docs/DECISION_AUDIT.md"
       ],
@@ -206,7 +207,7 @@
       "summary": "The pipeline runs locally without executing or uploading target repository code."
     },
     {
-      "blocker": "FR-003, FR-006, and FR-009 remain incomplete.",
+      "blocker": "FR-003 and FR-009 remain incomplete.",
       "evidence": [
         "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
       ],
@@ -288,14 +289,18 @@
       "summary": "Universal Code Graph fixtures satisfy the versioned evidence contract."
     },
     {
-      "blocker": "Cold collision clusters and child insertion can still move existing geometry, while previous-scene hints and fixture-based churn reporting are unsupported.",
+      "blocker": null,
       "evidence": [
-        "tests/test_layout.py::LayoutTests::test_small_change_preserves_existing_positions"
+        "tests/test_layout.py::LayoutTests::test_directory_tree_is_spatially_nested_without_sibling_overlap",
+        "tests/test_layout.py::LayoutTests::test_large_directories_expand_in_bounded_non_overlapping_pages",
+        "tests/test_layout.py::LayoutTests::test_malformed_previous_scene_is_ignored_deterministically",
+        "tests/test_layout.py::LayoutTests::test_previous_scene_hint_preserves_colliding_file_positions",
+        "tests/test_layout.py::LayoutTests::test_previous_scene_hint_preserves_existing_district_subtrees"
       ],
       "id": "FR-006",
       "priority": "P0",
-      "status": "BLOCKED",
-      "summary": "The layout is deterministic for fixed input but does not yet meet stability and hierarchy guarantees."
+      "status": "AUTOMATED",
+      "summary": "Hierarchical paged layout is deterministic, bounded, and hint-stable across measured fixtures."
     },
     {
       "blocker": null,

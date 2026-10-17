@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import math
 import sys
 from collections import defaultdict
 from pathlib import Path, PurePosixPath
@@ -27,6 +28,7 @@ BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
 BUILDING_OFFSET = 6
 BUILDING_PAGE_CAPACITY = BUILDING_COLUMNS * BUILDING_COLUMNS
+MAX_HINT_ITEMS = 100_000
 
 ROLE_STYLES = {
     "ENTRYPOINT": ("GATE", 14),
@@ -62,27 +64,34 @@ def _hash_integer(value: str) -> int:
     return int.from_bytes(hashlib.sha256(value.encode("utf-8")).digest()[:8], "big")
 
 
-def _allocate_local_slots(entity_ids: list[str]) -> dict[str, int]:
-    occupied: set[int] = set()
-    result: dict[str, int] = {}
-    for entity_id in sorted(entity_ids):
+def _allocate_local_slots(
+    entity_ids: list[str], locked: dict[str, int] | None = None
+) -> dict[str, int]:
+    known_ids = set(entity_ids)
+    result = {
+        entity_id: slot
+        for entity_id, slot in (locked or {}).items()
+        if entity_id in known_ids
+    }
+    occupied = set(result.values())
+    for entity_id in sorted(known_ids - set(result)):
         digest = hashlib.sha256(entity_id.encode("utf-8")).digest()
         home = int.from_bytes(digest[:8], "big") % BUILDING_PAGE_CAPACITY
         stride = (
             int.from_bytes(digest[8:16], "big") % (BUILDING_PAGE_CAPACITY // 2)
         ) * 2 + 1
-        page = len(occupied) // BUILDING_PAGE_CAPACITY
-        page_offset = page * BUILDING_PAGE_CAPACITY
         selected: int | None = None
-        for probe in range(BUILDING_PAGE_CAPACITY):
-            candidate = page_offset + (
-                (home + probe * stride) % BUILDING_PAGE_CAPACITY
-            )
-            if candidate not in occupied:
-                selected = candidate
-                break
-        if selected is None:
-            raise LayoutError("building page allocation exhausted unexpectedly")
+        page = 0
+        while selected is None:
+            page_offset = page * BUILDING_PAGE_CAPACITY
+            for probe in range(BUILDING_PAGE_CAPACITY):
+                candidate = page_offset + (
+                    (home + probe * stride) % BUILDING_PAGE_CAPACITY
+                )
+                if candidate not in occupied:
+                    selected = candidate
+                    break
+            page += 1
         occupied.add(selected)
         result[entity_id] = selected
     return result
@@ -97,6 +106,169 @@ def _district_parent_id(
 ) -> str:
     parent_path = str(PurePosixPath(path).parent)
     return directory_ids.get(parent_path, root_id)
+
+
+def _layout_diagnostic(code: str, severity: str, message: str) -> dict[str, Any]:
+    return {"code": code, "message": message, "severity": severity}
+
+
+def _finite_number(value: Any) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+    )
+
+
+def _prepare_layout_hint(
+    previous_scene: dict[str, Any] | None,
+    diagnostics: list[dict[str, Any]] | None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]], bool]:
+    if previous_scene is None:
+        return {}, {}, False
+
+    reason: str | None = None
+    if previous_scene.get("schemaVersion") != "city/0.1":
+        reason = "unsupported or missing scene schema"
+    elif previous_scene.get("layoutAlgorithm") != LAYOUT_ALGORITHM:
+        reason = "unsupported layout algorithm family"
+    elif not isinstance(previous_scene.get("districts"), list) or not isinstance(
+        previous_scene.get("buildings"), list
+    ):
+        reason = "districts and buildings must be arrays"
+    elif (
+        len(previous_scene["districts"]) > MAX_HINT_ITEMS
+        or len(previous_scene["buildings"]) > MAX_HINT_ITEMS
+    ):
+        reason = "scene exceeds the layout hint item limit"
+
+    district_hints: dict[str, dict[str, Any]] = {}
+    building_hints: dict[str, dict[str, Any]] = {}
+    if reason is None:
+        for item in previous_scene["districts"]:
+            if (
+                not isinstance(item, dict)
+                or not isinstance(item.get("id"), str)
+                or not item["id"]
+                or (
+                    item.get("parentId") is not None
+                    and not isinstance(item.get("parentId"), str)
+                )
+                or not all(_finite_number(item.get(key)) for key in ("x", "z"))
+                or not all(
+                    _finite_number(item.get(key)) and item[key] > 0
+                    for key in ("width", "depth")
+                )
+                or item["id"] in district_hints
+            ):
+                reason = "district geometry or identity is malformed"
+                break
+            district_hints[item["id"]] = item
+
+    if reason is None:
+        for item in previous_scene["buildings"]:
+            if (
+                not isinstance(item, dict)
+                or not isinstance(item.get("entityId"), str)
+                or not item["entityId"]
+                or not isinstance(item.get("districtId"), str)
+                or not all(_finite_number(item.get(key)) for key in ("x", "z"))
+                or not all(
+                    _finite_number(item.get(key)) and item[key] > 0
+                    for key in ("width", "depth")
+                )
+                or item["entityId"] in building_hints
+            ):
+                reason = "building geometry or identity is malformed"
+                break
+            building_hints[item["entityId"]] = item
+
+    if reason is None:
+        for district in district_hints.values():
+            parent_id = district["parentId"]
+            if parent_id is not None and parent_id not in district_hints:
+                reason = "district parent relationship is incomplete"
+                break
+
+    if reason is None:
+        for district_id in sorted(district_hints):
+            chain: set[str] = set()
+            current: str | None = district_id
+            while current is not None:
+                if current in chain:
+                    reason = "district parent relationship contains a cycle"
+                    break
+                chain.add(current)
+                current = district_hints[current]["parentId"]
+            if reason is not None:
+                break
+
+    if reason is None and any(
+        item["districtId"] not in district_hints
+        for item in building_hints.values()
+    ):
+        reason = "building references a missing district"
+
+    if reason is not None:
+        if diagnostics is not None:
+            diagnostics.append(
+                _layout_diagnostic(
+                    "LAYOUT_HINT_IGNORED",
+                    "WARNING",
+                    f"Previous City Scene was ignored: {reason}",
+                )
+            )
+        return {}, {}, False
+    return district_hints, building_hints, True
+
+
+def _hinted_local_slots(
+    files_by_district: dict[str, list[dict[str, Any]]],
+    district_hints: dict[str, dict[str, Any]],
+    building_hints: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, int]]:
+    result: dict[str, dict[str, int]] = {}
+    for district_id in sorted(files_by_district):
+        district_hint = district_hints.get(district_id)
+        if district_hint is None:
+            continue
+        occupied: set[int] = set()
+        slots: dict[str, int] = {}
+        for entity in sorted(files_by_district[district_id], key=lambda item: item["id"]):
+            building_hint = building_hints.get(entity["id"])
+            if (
+                building_hint is None
+                or building_hint["districtId"] != district_id
+            ):
+                continue
+            offset_x = building_hint["x"] - district_hint["x"]
+            offset_z = building_hint["z"] - district_hint["z"]
+            column_value = (offset_x - BUILDING_OFFSET) / BUILDING_SPACING
+            page = math.floor(offset_z / DISTRICT_DEPTH)
+            page_offset_z = offset_z - page * DISTRICT_DEPTH
+            row_value = (page_offset_z - BUILDING_OFFSET) / BUILDING_SPACING
+            if (
+                page < 0
+                or not float(column_value).is_integer()
+                or not float(row_value).is_integer()
+            ):
+                continue
+            column = int(column_value)
+            row = int(row_value)
+            if not (0 <= column < BUILDING_COLUMNS and 0 <= row < BUILDING_COLUMNS):
+                continue
+            slot = (
+                page * BUILDING_PAGE_CAPACITY
+                + row * BUILDING_COLUMNS
+                + column
+            )
+            if slot in occupied:
+                continue
+            occupied.add(slot)
+            slots[entity["id"]] = slot
+        if slots:
+            result[district_id] = slots
+    return result
 
 
 def _ordered_children(
@@ -115,37 +287,96 @@ def _building_page_count(file_count: int) -> int:
     )
 
 
+def _local_rectangles_overlap(
+    first: tuple[float, float, float, float],
+    second: tuple[float, float, float, float],
+) -> bool:
+    first_x, first_z, first_width, first_depth = first
+    second_x, second_z, second_width, second_depth = second
+    return (
+        first_x < second_x + second_width
+        and second_x < first_x + first_width
+        and first_z < second_z + second_depth
+        and second_z < first_z + first_depth
+    )
+
+
 def _measure_districts(
     district_id: str,
     children_by_parent: dict[str, list[str]],
     files_by_district: dict[str, list[dict[str, Any]]],
-    dimensions: dict[str, tuple[int, int, int]],
-) -> tuple[int, int, int]:
+    district_hints: dict[str, dict[str, Any]],
+    locked_slots: dict[str, dict[str, int]],
+    dimensions: dict[str, tuple[float, float, int]],
+    child_offsets: dict[str, dict[str, tuple[float, float]]],
+) -> tuple[float, float, int]:
     children = _ordered_children(district_id, children_by_parent)
-    child_dimensions = [
+    for child_id in children:
         _measure_districts(
             child_id,
             children_by_parent,
             files_by_district,
+            district_hints,
+            locked_slots,
             dimensions,
+            child_offsets,
         )
-        for child_id in children
-    ]
-    direct_depth = DISTRICT_DEPTH * _building_page_count(
-        len(files_by_district.get(district_id, []))
+    highest_locked_slot = max(locked_slots.get(district_id, {}).values(), default=-1)
+    direct_pages = max(
+        _building_page_count(len(files_by_district.get(district_id, []))),
+        highest_locked_slot // BUILDING_PAGE_CAPACITY + 1,
     )
-    width = DISTRICT_WIDTH
+    direct_depth = DISTRICT_DEPTH * direct_pages
+    hint = district_hints.get(district_id)
+    width = max(DISTRICT_WIDTH, hint["width"] if hint is not None else 0)
     depth = direct_depth
-    if child_dimensions:
-        width = max(
-            width,
-            max(child_width for child_width, _, _ in child_dimensions)
-            + 2 * DISTRICT_PADDING,
+    if hint is not None:
+        depth = max(depth, hint["depth"])
+
+    offsets: dict[str, tuple[float, float]] = {}
+    occupied: list[tuple[float, float, float, float]] = []
+    hinted_children: list[tuple[float, float, str]] = []
+    for child_id in children:
+        child_hint = district_hints.get(child_id)
+        if hint is None or child_hint is None or child_hint["parentId"] != district_id:
+            continue
+        hinted_children.append(
+            (
+                child_hint["z"] - hint["z"],
+                child_hint["x"] - hint["x"],
+                child_id,
+            )
         )
-        depth += DISTRICT_PADDING + sum(
-            child_depth + DISTRICT_PADDING
-            for _, child_depth, _ in child_dimensions
-        )
+    for offset_z, offset_x, child_id in sorted(hinted_children):
+        child_width, child_depth, _ = dimensions[child_id]
+        rectangle = (offset_x, offset_z, child_width, child_depth)
+        if (
+            offset_x < DISTRICT_PADDING
+            or offset_z < direct_depth + DISTRICT_PADDING
+            or any(_local_rectangles_overlap(rectangle, item) for item in occupied)
+        ):
+            continue
+        offsets[child_id] = (offset_x, offset_z)
+        occupied.append(rectangle)
+
+    child_z = max(
+        direct_depth + DISTRICT_PADDING,
+        max((z + child_depth + DISTRICT_PADDING for _, z, _, child_depth in occupied), default=0),
+    )
+    for child_id in children:
+        if child_id in offsets:
+            continue
+        child_width, child_depth, _ = dimensions[child_id]
+        offset = (DISTRICT_PADDING, child_z)
+        offsets[child_id] = offset
+        occupied.append((offset[0], offset[1], child_width, child_depth))
+        child_z += child_depth + DISTRICT_PADDING
+
+    for child_id, (offset_x, offset_z) in offsets.items():
+        child_width, child_depth, _ = dimensions[child_id]
+        width = max(width, offset_x + child_width + DISTRICT_PADDING)
+        depth = max(depth, offset_z + child_depth + DISTRICT_PADDING)
+    child_offsets[district_id] = offsets
     dimensions[district_id] = (width, depth, direct_depth)
     return dimensions[district_id]
 
@@ -153,10 +384,11 @@ def _measure_districts(
 def _place_districts(
     district_id: str,
     parent_id: str | None,
-    x: int,
-    z: int,
+    x: float,
+    z: float,
     children_by_parent: dict[str, list[str]],
-    dimensions: dict[str, tuple[int, int, int]],
+    dimensions: dict[str, tuple[float, float, int]],
+    child_offsets: dict[str, dict[str, tuple[float, float]]],
     districts: list[dict[str, Any]],
 ) -> None:
     width, depth, direct_depth = dimensions[district_id]
@@ -170,18 +402,18 @@ def _place_districts(
             "z": z,
         }
     )
-    child_z = z + direct_depth + DISTRICT_PADDING
     for child_id in _ordered_children(district_id, children_by_parent):
+        offset_x, offset_z = child_offsets[district_id][child_id]
         _place_districts(
             child_id,
             district_id,
-            x + DISTRICT_PADDING,
-            child_z,
+            x + offset_x,
+            z + offset_z,
             children_by_parent,
             dimensions,
+            child_offsets,
             districts,
         )
-        child_z += dimensions[child_id][1] + DISTRICT_PADDING
 
 
 def _building_style(entity: dict[str, Any]) -> tuple[str, int, list[str]]:
@@ -216,12 +448,21 @@ def _network_id(
     return f"network:sha256:{digest}"
 
 
-def generate_city(ucg: dict[str, Any], theme: str = "minimal") -> dict[str, Any]:
+def generate_city(
+    ucg: dict[str, Any],
+    theme: str = "minimal",
+    previous_scene: dict[str, Any] | None = None,
+    diagnostics: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     ucg_errors = validate_ucg_document(ucg)
     if ucg_errors:
         raise LayoutError("invalid UCG: " + "; ".join(ucg_errors))
     if not theme:
         raise LayoutError("theme must be non-empty")
+
+    district_hints, building_hints, hint_valid = _prepare_layout_hint(
+        previous_scene, diagnostics
+    )
 
     repository_id = ucg["repository"]["id"]
     root_id = _root_district_id(repository_id)
@@ -242,17 +483,24 @@ def generate_city(ucg: dict[str, Any], theme: str = "minimal") -> dict[str, Any]
         parent_path = str(PurePosixPath(entity["path"]).parent)
         district_id = directory_ids.get(parent_path, root_id)
         files_by_district[district_id].append(entity)
+    locked_slots = _hinted_local_slots(
+        files_by_district, district_hints, building_hints
+    )
 
     children_by_parent: dict[str, list[str]] = defaultdict(list)
     for entity in directory_entities:
         parent_id = _district_parent_id(entity["path"], directory_ids, root_id)
         children_by_parent[parent_id].append(entity["id"])
-    dimensions: dict[str, tuple[int, int, int]] = {}
+    dimensions: dict[str, tuple[float, float, int]] = {}
+    child_offsets: dict[str, dict[str, tuple[float, float]]] = {}
     _measure_districts(
         root_id,
         children_by_parent,
         files_by_district,
+        district_hints,
+        locked_slots,
         dimensions,
+        child_offsets,
     )
     districts: list[dict[str, Any]] = []
     _place_districts(
@@ -262,6 +510,7 @@ def generate_city(ucg: dict[str, Any], theme: str = "minimal") -> dict[str, Any]
         0,
         children_by_parent,
         dimensions,
+        child_offsets,
         districts,
     )
     districts.sort(key=lambda item: item["id"])
@@ -272,7 +521,10 @@ def generate_city(ucg: dict[str, Any], theme: str = "minimal") -> dict[str, Any]
     for district_id in sorted(files_by_district):
         district = districts_by_id[district_id]
         entities = files_by_district[district_id]
-        local_slots = _allocate_local_slots([entity["id"] for entity in entities])
+        local_slots = _allocate_local_slots(
+            [entity["id"] for entity in entities],
+            locked_slots.get(district_id),
+        )
         for entity in sorted(entities, key=lambda item: item["id"]):
             slot = local_slots[entity["id"]]
             page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
@@ -352,17 +604,68 @@ def generate_city(ucg: dict[str, Any], theme: str = "minimal") -> dict[str, Any]
     scene_errors = validate_city_document(scene, ucg)
     if scene_errors:
         raise LayoutError("generated invalid City Scene: " + "; ".join(scene_errors))
+    if hint_valid and previous_scene is not None and diagnostics is not None:
+        previous_districts = {
+            item["id"]: item for item in previous_scene["districts"]
+        }
+        previous_buildings = {
+            item["entityId"]: item for item in previous_scene["buildings"]
+        }
+        moved_districts = sum(
+            1
+            for item in districts
+            if item["id"] in previous_districts
+            and (item["x"], item["z"])
+            != (
+                previous_districts[item["id"]]["x"],
+                previous_districts[item["id"]]["z"],
+            )
+        )
+        moved_buildings = sum(
+            1
+            for item in buildings
+            if item["entityId"] in previous_buildings
+            and (item["x"], item["z"])
+            != (
+                previous_buildings[item["entityId"]]["x"],
+                previous_buildings[item["entityId"]]["z"],
+            )
+        )
+        compared_districts = sum(
+            item["id"] in previous_districts for item in districts
+        )
+        compared_buildings = sum(
+            item["entityId"] in previous_buildings for item in buildings
+        )
+        moved = moved_districts + moved_buildings
+        diagnostics.append(
+            _layout_diagnostic(
+                "LAYOUT_HINT_PARTIAL" if moved else "LAYOUT_HINT_APPLIED",
+                "WARNING" if moved else "INFO",
+                (
+                    "Previous City Scene compared "
+                    f"{compared_districts} district(s) and "
+                    f"{compared_buildings} building(s); moved "
+                    f"{moved_districts} district(s) and "
+                    f"{moved_buildings} building(s)"
+                ),
+            )
+        )
     return scene
 
 
-def _load_ucg(path: Path) -> dict[str, Any]:
+def _load_document(path: Path, label: str) -> dict[str, Any]:
     try:
         document = loads_strict_json(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, CanonicalJsonError) as error:
-        raise LayoutError(f"unable to read UCG: {error}") from error
+        raise LayoutError(f"unable to read {label}: {error}") from error
     if not isinstance(document, dict):
-        raise LayoutError("UCG root must be an object")
+        raise LayoutError(f"{label} root must be an object")
     return document
+
+
+def _load_ucg(path: Path) -> dict[str, Any]:
+    return _load_document(path, "UCG")
 
 
 def main() -> int:
@@ -370,10 +673,19 @@ def main() -> int:
     parser.add_argument("--graph", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--theme", default="minimal")
+    parser.add_argument("--previous-scene", type=Path)
     args = parser.parse_args()
 
     try:
-        scene = generate_city(_load_ucg(args.graph), args.theme)
+        diagnostics: list[dict[str, Any]] = []
+        previous_scene = (
+            _load_document(args.previous_scene, "previous City Scene")
+            if args.previous_scene is not None
+            else None
+        )
+        scene = generate_city(
+            _load_ucg(args.graph), args.theme, previous_scene, diagnostics
+        )
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_bytes(canonical_json_bytes(scene))
     except (OSError, LayoutError, ValueError) as error:
@@ -381,6 +693,12 @@ def main() -> int:
         return 2
 
     print(f"Wrote City Scene with {len(scene['buildings'])} buildings: {args.out}")
+    for diagnostic in diagnostics:
+        print(
+            f"{diagnostic['severity']}: {diagnostic['code']}: "
+            f"{diagnostic['message']}",
+            file=sys.stderr,
+        )
     return 0
 
 

@@ -45,7 +45,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             {item["id"] for item in document["acceptanceCriteria"]},
         )
         self.assertEqual(
-            {"FR-003", "FR-006", "FR-009"},
+            {"FR-003", "FR-009"},
             {
                 item["id"]
                 for item in document["requirements"]
@@ -53,7 +53,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             },
         )
         self.assertEqual(
-            {"AC-003", "AC-010"},
+            {"AC-010"},
             {
                 item["id"]
                 for item in document["acceptanceCriteria"]

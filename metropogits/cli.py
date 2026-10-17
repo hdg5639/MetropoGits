@@ -179,6 +179,7 @@ def build_repository(
     width: int = 1200,
     height: int = 675,
     limits: ScanLimits | None = None,
+    previous_scene: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     resolved_repo = repo.resolve(strict=False)
     resolved_output = output.resolve(strict=False)
@@ -192,7 +193,8 @@ def build_repository(
         limits,
         excluded_paths=(output,),
     )
-    scene = generate_city(graph, theme)
+    layout_diagnostics: list[dict[str, Any]] = []
+    scene = generate_city(graph, theme, previous_scene, layout_diagnostics)
     preview = render_preview(scene, graph, width, height)
     viewer_artifacts = render_viewer(scene, graph)
 
@@ -222,7 +224,14 @@ def build_repository(
         ],
         key=lambda item: item["path"],
     )
-    diagnostics = graph["diagnostics"]
+    diagnostics = sorted(
+        [*graph["diagnostics"], *layout_diagnostics],
+        key=lambda item: (
+            item.get("code", ""),
+            item.get("sourcePath", ""),
+            item.get("message", ""),
+        ),
+    )
     diagnostic_summary = _diagnostic_summary(diagnostics)
     manifest: dict[str, Any] = {
         "artifacts": artifacts,
@@ -314,6 +323,7 @@ def _build_parser() -> argparse.ArgumentParser:
     generate.add_argument("--graph", type=Path, required=True)
     generate.add_argument("--out", type=Path, required=True)
     generate.add_argument("--theme", default="minimal")
+    generate.add_argument("--previous-scene", type=Path)
 
     render = commands.add_parser("render", help="render an SVG preview")
     _add_json_option(render, suppress_default=True)
@@ -330,6 +340,7 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--theme", default="minimal")
     build.add_argument("--width", type=int, default=1200)
     build.add_argument("--height", type=int, default=675)
+    build.add_argument("--previous-scene", type=Path)
 
     history = commands.add_parser(
         "history", help="build a timeline from ordered build directories"
@@ -389,11 +400,26 @@ def _run(args: argparse.Namespace) -> CommandResult:
 
     if args.command == "generate":
         graph = _load_json(args.graph, "UCG")
-        scene = generate_city(graph, args.theme)
+        previous_scene = (
+            _load_json(args.previous_scene, "previous City Scene")
+            if args.previous_scene is not None
+            else None
+        )
+        layout_diagnostics: list[dict[str, Any]] = []
+        scene = generate_city(
+            graph, args.theme, previous_scene, layout_diagnostics
+        )
         _write_bytes(args.out, canonical_json_bytes(scene))
+        diagnostic_summary = (
+            _diagnostic_summary(layout_diagnostics) if layout_diagnostics else None
+        )
+        exit_code = _diagnostic_exit_code(layout_diagnostics)
         return CommandResult(
             f"Wrote City Scene with {len(scene['buildings'])} buildings: {args.out}",
             str(args.out),
+            "PARTIAL" if exit_code else "COMPLETE",
+            exit_code,
+            diagnostic_summary,
         )
 
     if args.command == "render":
@@ -404,6 +430,11 @@ def _run(args: argparse.Namespace) -> CommandResult:
         return CommandResult(f"Wrote SVG preview: {args.out}", str(args.out))
 
     if args.command == "build":
+        previous_scene = (
+            _load_json(args.previous_scene, "previous City Scene")
+            if args.previous_scene is not None
+            else None
+        )
         manifest = build_repository(
             args.repo,
             args.out,
@@ -414,6 +445,7 @@ def _run(args: argparse.Namespace) -> CommandResult:
             args.width,
             args.height,
             _limits_from_args(args),
+            previous_scene,
         )
         diagnostic_codes = {item["code"] for item in manifest["diagnostics"]["codes"]}
         exit_code = (
