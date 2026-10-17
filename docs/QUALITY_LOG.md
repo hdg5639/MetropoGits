@@ -1426,3 +1426,74 @@
   renderer over the same City Scene rather than fabricated geometry.
 - Commits created / pushed (and branch): `c90c496` and `a1a9d6a` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - occupancy-derived district territory (`56d11c1`, `221f729`)
+
+- Implemented: static packaging now derives deterministic orthogonal territory
+  masks from real descendant building footprints. Disconnected occupied blocks
+  receive shortest deterministic connectors and one-cell dilation, adjacent
+  cells are merged into rendering rectangles, and the largest fully occupied
+  rectangle becomes the aggregate-campus plot. WebGL, the 2D fallback, history
+  frames, and CPU SVG all consume the same derived territory data.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  with the audited source state and explicit revision metadata
+  `3d9b53f9dac9af1187ac9754cb3066b27e43b766`; the maintained Spring-positive
+  repository fixture; and synthetic sparse, nested, and empty territory cases.
+- Commands run: three iterative complete GJ-Cloud builds followed by two
+  byte-matching final builds; a baseline-options build for semantic artifact
+  comparison; Chrome SwiftShader WebGL, forced 2D fallback, and CPU SVG
+  captures; territory coverage and size audits; `pip check`; Ruff;
+  `compileall`; JavaScript syntax checks; release-readiness validation; the
+  full automated suite; and whitespace checks.
+- Artifacts inspected: `viewer-webgl.png`, `viewer-fallback.png`, `preview.png`,
+  and the complete output under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-occupied-territory`,
+  plus the small-fixture output under
+  `D:\Code\MetroPoGits\artifacts\verification\occupied-territory-spring`.
+- Visual findings: PASS for false-land removal and PARTIAL for physical
+  compaction. WebGL no longer draws one full rectangular ground slab, and Auth,
+  Ops, User, VM, and portal render as separate concave occupied territories.
+  VM's internal void and the gaps between services remain visibly empty instead
+  of being colored as district land. Aggregate campuses sit on the largest
+  occupied plot. Canonical service positions are intentionally unchanged, so
+  the remaining distance between territories has not yet been repacked away.
+- Coverage findings: occupied territory covers 61.5 percent of Auth's canonical
+  envelope, 59.6 percent of Ops, 60.6 percent of User, 60.8 percent of VM, and
+  63.3 percent of portal. The other 36.7 to 40.4 percent is no longer rendered
+  as owned land. All 506 districts produce 1,443 merged rectangles and 4,136
+  exterior segments in about 0.65 seconds on the reference machine.
+- Spec alignment: PASS. Territory is a renderer projection over unchanged
+  `city/0.1` allocation bounds, not a new entity, relationship, or semantic
+  claim. Every building intersects its direct and ancestor territory, all
+  rectangles remain inside canonical bounds, empty districts retain a safe
+  rectangular fallback, and selection still resolves to canonical district
+  IDs. ADR-008 records the separation between stable allocation envelopes and
+  rendered territory.
+- Tests / determinism / stability: 208 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. All 12 non-image
+  artifacts matched across final repeated builds. With prior build options,
+  `graph.ucg.json` remains byte-identical at SHA-256
+  `8382dbb2beb4fa888ba0a5d5caffa113c9671e2b2e94a446f457e10e8a8c65cf`
+  and `city.json` remains byte-identical at
+  `8f9161dd3ffd6c99f99d40572aa62d3678ef9f185b3203c92c01201bb3fe2893`.
+  The new deterministic `preview.svg` hash is
+  `4024fbd59c411ce25849038ac875be424ad4b435371ba2d60c564b7f3f52e63d`.
+- Size findings: the GJ-Cloud viewer data grows from 11,884,025 to 12,165,718
+  bytes (2.37 percent), and the SVG grows from 2,048,971 to 2,273,976 bytes
+  (10.98 percent). This remains a bounded derived-geometry cost, but SVG size
+  should be watched on larger fixtures.
+- Fixes applied and reverified: the first undilated mask looked like thin
+  circuit traces and left aggregate campuses undersized. One-cell dilation and
+  a deterministic maximal occupied plot changed the result into substantial
+  city blocks. A second inspection found the old full WebGL base slab still
+  presented unused bounds as land; it was replaced with occupied territory
+  slabs. An initially blank fallback capture was rerun with a complete browser
+  frame and rendered correctly.
+- Open risks / next actions: this work does not yet let sibling allocation
+  envelopes interlock, so it removes false visible land without moving Auth,
+  Ops, User, VM, or portal closer together. A true polygon-aware allocator
+  would change overlap validation and previous-scene hint semantics and needs a
+  separate layout version plus churn tests. Complete-view dependency roads also
+  remain visually circuit-like, and portal's 466 files remain generic.
+- Commits created / pushed (and branch): `56d11c1` and `221f729` on local
+  `main`; push is scheduled after this checkpoint log commit.
