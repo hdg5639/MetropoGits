@@ -185,6 +185,29 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
 #city-canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
 #city-canvas.dragging { cursor: grabbing; }
 #city-canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.renderer-mode {
+  border: 1px solid #28405f;
+  border-radius: 999px;
+  color: #8fd3ff;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 0.36rem 0.58rem;
+  text-transform: uppercase;
+}
+.scene-labels { inset: 0; overflow: hidden; pointer-events: none; position: absolute; }
+.scene-label {
+  background: rgba(7, 11, 20, 0.82);
+  border: 1px solid rgba(100, 116, 139, 0.55);
+  color: #b9c7d9;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 15px;
+  overflow: hidden;
+  padding: 0 3px;
+  position: absolute;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .inspector {
   overflow: auto;

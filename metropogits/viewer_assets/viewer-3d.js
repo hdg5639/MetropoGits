@@ -1,0 +1,1100 @@
+(() => {
+  "use strict";
+
+  function multiply(left, right) {
+    const result = new Array(16).fill(0);
+    for (let column = 0; column < 4; column += 1) {
+      for (let row = 0; row < 4; row += 1) {
+        for (let index = 0; index < 4; index += 1) {
+          result[column * 4 + row] += left[index * 4 + row] * right[column * 4 + index];
+        }
+      }
+    }
+    return result;
+  }
+
+  function perspective(fieldOfView, aspect, near, far) {
+    const scale = 1 / Math.tan(fieldOfView / 2);
+    const range = 1 / (near - far);
+    return [
+      scale / aspect, 0, 0, 0,
+      0, scale, 0, 0,
+      0, 0, (far + near) * range, -1,
+      0, 0, 2 * far * near * range, 0,
+    ];
+  }
+
+  function subtract(left, right) {
+    return [left[0] - right[0], left[1] - right[1], left[2] - right[2]];
+  }
+
+  function normalize(vector) {
+    const length = Math.hypot(...vector) || 1;
+    return vector.map((value) => value / length);
+  }
+
+  function cross(left, right) {
+    return [
+      left[1] * right[2] - left[2] * right[1],
+      left[2] * right[0] - left[0] * right[2],
+      left[0] * right[1] - left[1] * right[0],
+    ];
+  }
+
+  function lookAt(eye, target, up) {
+    const forward = normalize(subtract(eye, target));
+    const right = normalize(cross(up, forward));
+    const cameraUp = cross(forward, right);
+    return [
+      right[0], cameraUp[0], forward[0], 0,
+      right[1], cameraUp[1], forward[1], 0,
+      right[2], cameraUp[2], forward[2], 0,
+      -right.reduce((sum, value, index) => sum + value * eye[index], 0),
+      -cameraUp.reduce((sum, value, index) => sum + value * eye[index], 0),
+      -forward.reduce((sum, value, index) => sum + value * eye[index], 0),
+      1,
+    ];
+  }
+
+  function transformPoint(matrix, point) {
+    const [x, y, z] = point;
+    return [
+      matrix[0] * x + matrix[4] * y + matrix[8] * z + matrix[12],
+      matrix[1] * x + matrix[5] * y + matrix[9] * z + matrix[13],
+      matrix[2] * x + matrix[6] * y + matrix[10] * z + matrix[14],
+      matrix[3] * x + matrix[7] * y + matrix[11] * z + matrix[15],
+    ];
+  }
+
+  function projectPoint(matrix, point, width, height) {
+    const clip = transformPoint(matrix, point);
+    if (clip[3] <= 0) return null;
+    return {
+      depth: clip[2] / clip[3],
+      x: (clip[0] / clip[3] * 0.5 + 0.5) * width,
+      y: (1 - (clip[1] / clip[3] * 0.5 + 0.5)) * height,
+    };
+  }
+
+  globalThis.METROPOGITS_WEBGL_MATH = Object.freeze({
+    lookAt,
+    multiply,
+    perspective,
+    projectPoint,
+    transformPoint,
+  });
+
+  if (typeof document === "undefined") return;
+
+  const data = globalThis.METROPOGITS_DATA;
+  const filterEngine = globalThis.METROPOGITS_FILTERS;
+  const activityEngine = globalThis.METROPOGITS_ACTIVITY;
+  const canvas = document.getElementById("city-canvas");
+  const rendererMode = document.getElementById("renderer-mode");
+  if (!data?.scene || !data?.ucg || !filterEngine || !canvas) return;
+
+  const gl = canvas.getContext("webgl", {
+    alpha: false,
+    antialias: true,
+    depth: true,
+    preserveDrawingBuffer: true,
+  });
+  if (!gl) {
+    if (rendererMode) rendererMode.textContent = "2D fallback";
+    return;
+  }
+
+  function restoreCanvasForFallback() {
+    const replacement = canvas.cloneNode(false);
+    canvas.replaceWith(replacement);
+    if (rendererMode) rendererMode.textContent = "2D fallback";
+  }
+
+  function compileShader(type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const message = gl.getShaderInfoLog(shader) || "unknown shader error";
+      gl.deleteShader(shader);
+      throw new Error(message);
+    }
+    return shader;
+  }
+
+  function createProgram() {
+    const vertex = compileShader(gl.VERTEX_SHADER, `
+      attribute vec3 a_position;
+      attribute vec3 a_normal;
+      attribute vec3 a_color;
+      uniform mat4 u_view_projection;
+      varying vec3 v_color;
+      varying float v_light;
+      void main() {
+        vec3 light_direction = normalize(vec3(0.45, 0.85, 0.35));
+        v_light = 0.46 + max(dot(normalize(a_normal), light_direction), 0.0) * 0.54;
+        v_color = a_color;
+        gl_Position = u_view_projection * vec4(a_position, 1.0);
+      }
+    `);
+    const fragment = compileShader(gl.FRAGMENT_SHADER, `
+      precision mediump float;
+      varying vec3 v_color;
+      varying float v_light;
+      void main() {
+        gl_FragColor = vec4(v_color * v_light, 1.0);
+      }
+    `);
+    const linked = gl.createProgram();
+    gl.attachShader(linked, vertex);
+    gl.attachShader(linked, fragment);
+    gl.linkProgram(linked);
+    gl.deleteShader(vertex);
+    gl.deleteShader(fragment);
+    if (!gl.getProgramParameter(linked, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(linked) || "unknown program link error");
+    }
+    return linked;
+  }
+
+  let program;
+  try {
+    program = createProgram();
+  } catch {
+    restoreCanvasForFallback();
+    return;
+  }
+
+  globalThis.METROPOGITS_RENDERER = "webgl";
+  canvas.setAttribute("aria-label", "Interactive 3D repository city");
+  if (rendererMode) rendererMode.textContent = "WebGL 3D";
+
+  const scene = data.scene;
+  const ucg = data.ucg;
+  const inspector = document.getElementById("inspector-content");
+  const hoverLabel = document.getElementById("hover-label");
+  const labelLayer = document.getElementById("scene-labels");
+  const repositoryName = document.getElementById("repository-name");
+  const cityStats = document.getElementById("city-stats");
+  const clearFilters = document.getElementById("clear-filters");
+  const filterSummary = document.getElementById("filter-summary");
+  const activityToggle = document.getElementById("synthetic-activity");
+  const activityNote = document.getElementById("synthetic-activity-note");
+  const toolbarHelp = document.getElementById("toolbar-help");
+  const filterControls = new Map(
+    [...document.querySelectorAll("[data-filter]")].map((control) => [
+      control.dataset.filter,
+      control,
+    ]),
+  );
+  const entities = new Map(ucg.entities.map((entity) => [entity.id, entity]));
+  const edges = new Map(ucg.edges.map((edge) => [edge.id, edge]));
+  const evidence = new Map(ucg.evidence.map((item) => [item.evidenceId, item]));
+  const districts = new Map(scene.districts.map((district) => [district.id, district]));
+  const districtChildren = new Map();
+  const districtsWithBuildings = new Set(
+    scene.buildings.map((building) => building.districtId),
+  );
+  for (const district of scene.districts) {
+    if (district.parentId === null) continue;
+    const children = districtChildren.get(district.parentId) || [];
+    children.push(district.id);
+    districtChildren.set(district.parentId, children);
+  }
+  const drawableDistrictIds = new Set(
+    scene.districts
+      .filter((district) => {
+        const children = districtChildren.get(district.id) || [];
+        if (districtsWithBuildings.has(district.id) || children.length !== 1) return true;
+        const child = districts.get(children[0]);
+        return !child
+          || district.x !== child.x
+          || district.z !== child.z
+          || district.width !== child.width
+          || district.depth !== child.depth;
+      })
+      .map((district) => district.id),
+  );
+  const districtDepths = new Map();
+  function districtDepth(districtId) {
+    if (districtDepths.has(districtId)) return districtDepths.get(districtId);
+    const district = districts.get(districtId);
+    const depth = district?.parentId === null ? 0 : districtDepth(district.parentId) + 1;
+    districtDepths.set(districtId, depth);
+    return depth;
+  }
+  for (const district of scene.districts) districtDepth(district.id);
+  const metropolis = globalThis.METROPOGITS_METROPOLIS;
+  const repositoriesByRootDistrict = new Map(
+    (metropolis?.repositories || []).map((repository) => [
+      repository.rootDistrictId,
+      repository,
+    ]),
+  );
+  const filterIndex = filterEngine.createIndex(scene, ucg);
+  const worldBounds = scene.districts.reduce(
+    (bounds, district) => ({
+      maxX: Math.max(bounds.maxX, district.x + district.width),
+      maxZ: Math.max(bounds.maxZ, district.z + district.depth),
+      minX: Math.min(bounds.minX, district.x),
+      minZ: Math.min(bounds.minZ, district.z),
+    }),
+    { maxX: 1, maxZ: 1, minX: 0, minZ: 0 },
+  );
+  const worldSpan = Math.max(
+    worldBounds.maxX - worldBounds.minX,
+    worldBounds.maxZ - worldBounds.minZ,
+    24,
+  );
+  const worldDiagonal = Math.hypot(
+    worldBounds.maxX - worldBounds.minX,
+    worldBounds.maxZ - worldBounds.minZ,
+  );
+  const tallestBuilding = Math.max(8, ...scene.buildings.map((building) => building.height));
+  const initialCamera = {
+    distance: Math.max(worldSpan * 1.35, worldDiagonal * 1.05, tallestBuilding * 4),
+    pitch: 0.72,
+    targetX: (worldBounds.minX + worldBounds.maxX) / 2,
+    targetY: -worldSpan * 0.08,
+    targetZ: (worldBounds.minZ + worldBounds.maxZ) / 2,
+    yaw: -0.78,
+  };
+  const state = {
+    ...initialCamera,
+    activityEpoch: 0,
+    dragging: false,
+    dragMode: "orbit",
+    filters: { confidence: "", language: "", role: "", technology: "" },
+    moved: false,
+    pointerX: 0,
+    pointerY: 0,
+    selected: null,
+    syntheticActivity: false,
+  };
+  const reducedMotion = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)");
+  const triangleBuffer = gl.createBuffer();
+  const lineBuffer = gl.createBuffer();
+  const positionLocation = gl.getAttribLocation(program, "a_position");
+  const normalLocation = gl.getAttribLocation(program, "a_normal");
+  const colorLocation = gl.getAttribLocation(program, "a_color");
+  const matrixLocation = gl.getUniformLocation(program, "u_view_projection");
+  let framePending = false;
+  let cameraFitted = false;
+  let hitRegions = [];
+  let viewProjection = null;
+  let viewportWidth = 1;
+  let viewportHeight = 1;
+  let visibleBuildingIds = new Set(scene.buildings.map((building) => building.entityId));
+  let visibleNetworkIds = new Set(scene.networks.map((network) => network.id));
+
+  const colors = {
+    CACHE_TOWER: "#facc15",
+    CONTROL_CENTER: "#a78bfa",
+    DOCUMENT_DEPOT: "#fb923c",
+    EXCHANGE: "#2dd4bf",
+    GATE: "#f472b6",
+    GENERIC_BUILDING: "#94a3b8",
+    PORT: "#38bdf8",
+    SERVICE_OFFICE: "#60a5fa",
+    STRUCTURED_WAREHOUSE: "#34d399",
+  };
+  const networkColors = {
+    DEPENDENCY_ROAD: "#64748b",
+    HTTP_HIGHWAY: "#f97316",
+    MESSAGING_PATH: "#a855f7",
+  };
+
+  function color(value) {
+    const hex = value.startsWith("#") ? value.slice(1) : value;
+    return [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
+  }
+
+  function lighten(value, amount) {
+    return value.map((channel) => channel + (1 - channel) * amount);
+  }
+
+  function vertex(target, position, normal, vertexColor) {
+    target.push(...position, ...normal, ...vertexColor);
+  }
+
+  function quad(target, corners, normal, vertexColor) {
+    for (const index of [0, 1, 2, 0, 2, 3]) vertex(target, corners[index], normal, vertexColor);
+  }
+
+  function box(target, x, y, z, width, height, depth, vertexColor) {
+    const x1 = x + width;
+    const y1 = y + height;
+    const z1 = z + depth;
+    quad(target, [[x, y1, z], [x, y1, z1], [x1, y1, z1], [x1, y1, z]], [0, 1, 0], vertexColor);
+    quad(target, [[x, y, z1], [x, y1, z1], [x, y1, z], [x, y, z]], [-1, 0, 0], vertexColor);
+    quad(target, [[x1, y, z], [x1, y1, z], [x1, y1, z1], [x1, y, z1]], [1, 0, 0], vertexColor);
+    quad(target, [[x, y, z], [x, y1, z], [x1, y1, z], [x1, y, z]], [0, 0, -1], vertexColor);
+    quad(target, [[x1, y, z1], [x1, y1, z1], [x, y1, z1], [x, y, z1]], [0, 0, 1], vertexColor);
+    quad(target, [[x, y, z1], [x, y, z], [x1, y, z], [x1, y, z1]], [0, -1, 0], vertexColor);
+  }
+
+  function line(target, start, end, vertexColor) {
+    vertex(target, start, [0, 1, 0], vertexColor);
+    vertex(target, end, [0, 1, 0], vertexColor);
+  }
+
+  function roadSegment(target, start, end, width, y, vertexColor) {
+    const deltaX = end[0] - start[0];
+    const deltaZ = end[1] - start[1];
+    const length = Math.hypot(deltaX, deltaZ) || 1;
+    const offsetX = -deltaZ / length * width / 2;
+    const offsetZ = deltaX / length * width / 2;
+    quad(target, [
+      [start[0] + offsetX, y, start[1] + offsetZ],
+      [end[0] + offsetX, y, end[1] + offsetZ],
+      [end[0] - offsetX, y, end[1] - offsetZ],
+      [start[0] - offsetX, y, start[1] - offsetZ],
+    ], [0, 1, 0], vertexColor);
+  }
+
+  function cameraMatrixAtDistance(distance) {
+    const horizontal = Math.cos(state.pitch) * distance;
+    const eye = [
+      state.targetX + Math.sin(state.yaw) * horizontal,
+      state.targetY + Math.sin(state.pitch) * distance,
+      state.targetZ + Math.cos(state.yaw) * horizontal,
+    ];
+    const view = lookAt(eye, [state.targetX, state.targetY, state.targetZ], [0, 1, 0]);
+    const projection = perspective(
+      Math.PI / 4,
+      Math.max(0.1, viewportWidth / viewportHeight),
+      Math.max(0.1, distance / 250),
+      distance * 10 + tallestBuilding * 4,
+    );
+    return multiply(projection, view);
+  }
+
+  function cameraMatrix() {
+    return cameraMatrixAtDistance(state.distance);
+  }
+
+  function fitInitialDistance() {
+    const points = [];
+    for (const district of scene.districts) {
+      points.push(
+        [district.x, 0, district.z],
+        [district.x + district.width, 0, district.z],
+        [district.x + district.width, 0, district.z + district.depth],
+        [district.x, 0, district.z + district.depth],
+      );
+    }
+    for (const building of scene.buildings) {
+      points.push(
+        [building.x, building.height, building.z],
+        [building.x + building.width, building.height, building.z],
+        [building.x + building.width, building.height, building.z + building.depth],
+        [building.x, building.height, building.z + building.depth],
+      );
+    }
+    function fits(distance) {
+      const matrix = cameraMatrixAtDistance(distance);
+      return points.every((point) => {
+        const clip = transformPoint(matrix, point);
+        if (clip[3] <= 0) return false;
+        return Math.abs(clip[0] / clip[3]) <= 0.9
+          && Math.abs(clip[1] / clip[3]) <= 0.88;
+      });
+    }
+    let low = Math.max(8, tallestBuilding);
+    let high = Math.max(initialCamera.distance, low * 2);
+    while (!fits(high) && high < worldSpan * 20) high *= 1.35;
+    for (let iteration = 0; iteration < 24; iteration += 1) {
+      const middle = (low + high) / 2;
+      if (fits(middle)) high = middle;
+      else low = middle;
+    }
+    return high * 1.03;
+  }
+
+  function selected(kind, id) {
+    return state.selected?.kind === kind && state.selected.id === id;
+  }
+
+  function buildGeometry(timestamp) {
+    const triangles = [];
+    const lines = [];
+    box(
+      triangles,
+      worldBounds.minX,
+      -0.55,
+      worldBounds.minZ,
+      worldBounds.maxX - worldBounds.minX,
+      0.5,
+      worldBounds.maxZ - worldBounds.minZ,
+      color("#182337"),
+    );
+
+    const gridStep = Math.max(7, Math.ceil(worldSpan / 24 / 7) * 7);
+    const gridColor = color("#263a54");
+    for (let x = worldBounds.minX; x <= worldBounds.maxX; x += gridStep) {
+      line(lines, [x, 0.02, worldBounds.minZ], [x, 0.02, worldBounds.maxZ], gridColor);
+    }
+    for (let z = worldBounds.minZ; z <= worldBounds.maxZ; z += gridStep) {
+      line(lines, [worldBounds.minX, 0.02, z], [worldBounds.maxX, 0.02, z], gridColor);
+    }
+
+    for (const district of scene.districts) {
+      if (!drawableDistrictIds.has(district.id)) continue;
+      const depth = districtDepths.get(district.id) || 0;
+      const y = 0.06 + depth * 0.025;
+      const districtColor = selected("district", district.id)
+        ? color("#38bdf8")
+        : lighten(color("#40516c"), Math.min(0.18, depth * 0.025));
+      const x1 = district.x + district.width;
+      const z1 = district.z + district.depth;
+      line(lines, [district.x, y, district.z], [x1, y, district.z], districtColor);
+      line(lines, [x1, y, district.z], [x1, y, z1], districtColor);
+      line(lines, [x1, y, z1], [district.x, y, z1], districtColor);
+      line(lines, [district.x, y, z1], [district.x, y, district.z], districtColor);
+    }
+
+    for (const network of scene.networks) {
+      if (!visibleNetworkIds.has(network.id)) continue;
+      const roadColor = selected("network", network.id)
+        ? color("#f8fafc")
+        : color(networkColors[network.kind] || networkColors.DEPENDENCY_ROAD);
+      for (let index = 1; index < network.path.length; index += 1) {
+        roadSegment(
+          triangles,
+          network.path[index - 1],
+          network.path[index],
+          selected("network", network.id) ? 1.1 : 0.64,
+          0.18,
+          roadColor,
+        );
+      }
+    }
+
+    for (const building of scene.buildings) {
+      if (!visibleBuildingIds.has(building.entityId)) continue;
+      const baseColor = color(colors[building.archetype] || colors.GENERIC_BUILDING);
+      box(
+        triangles,
+        building.x,
+        0.2,
+        building.z,
+        building.width,
+        building.height,
+        building.depth,
+        selected("building", building.entityId) ? lighten(baseColor, 0.62) : baseColor,
+      );
+    }
+
+    if (state.syntheticActivity && activityEngine) {
+      const elapsed = Math.max(0, timestamp - state.activityEpoch);
+      for (const network of scene.networks) {
+        if (!visibleNetworkIds.has(network.id)) continue;
+        const progress = (elapsed / 6000 + activityEngine.phaseForId(network.id)) % 1;
+        const point = activityEngine.pointAlongPath(network.path, progress);
+        if (point) {
+          box(triangles, point[0] - 0.45, 0.8, point[1] - 0.45, 0.9, 0.9, 0.9, color("#f8fafc"));
+        }
+      }
+    }
+    return { lines, triangles };
+  }
+
+  function bindAndDraw(buffer, values, primitive) {
+    if (!values.length) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), gl.DYNAMIC_DRAW);
+    const stride = 9 * Float32Array.BYTES_PER_ELEMENT;
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, stride, 0);
+    gl.enableVertexAttribArray(normalLocation);
+    gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, stride, 3 * 4);
+    gl.enableVertexAttribArray(colorLocation);
+    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, stride, 6 * 4);
+    gl.drawArrays(primitive, 0, values.length / 9);
+  }
+
+  function districtLabel(district) {
+    const entity = entities.get(district?.id);
+    const member = repositoriesByRootDistrict.get(district?.id);
+    return entity?.path
+      || member?.id
+      || (district?.parentId === null ? ucg.repository.id : district?.id)
+      || "Unknown district";
+  }
+
+  function districtCanvasLabel(district) {
+    const label = districtLabel(district);
+    return label.split("/").filter(Boolean).at(-1) || label;
+  }
+
+  function projected(point) {
+    return projectPoint(viewProjection, point, viewportWidth, viewportHeight);
+  }
+
+  function buildHitRegions() {
+    const regions = [];
+    for (const district of scene.districts) {
+      if (!drawableDistrictIds.has(district.id)) continue;
+      const points = [
+        projected([district.x, 0.08, district.z]),
+        projected([district.x + district.width, 0.08, district.z]),
+        projected([district.x + district.width, 0.08, district.z + district.depth]),
+        projected([district.x, 0.08, district.z + district.depth]),
+      ];
+      if (points.every(Boolean)) {
+        regions.push({
+          depth: Math.min(...points.map((point) => point.depth)),
+          id: district.id,
+          kind: "district",
+          points,
+          priority: districtDepths.get(district.id) || 0,
+        });
+      }
+    }
+    for (const network of scene.networks) {
+      if (!visibleNetworkIds.has(network.id)) continue;
+      const points = network.path.map((point) => projected([point[0], 0.22, point[1]]));
+      if (points.every(Boolean)) {
+        regions.push({
+          depth: Math.min(...points.map((point) => point.depth)),
+          id: network.id,
+          kind: "network",
+          points,
+          priority: 100,
+        });
+      }
+    }
+    for (const building of scene.buildings) {
+      if (!visibleBuildingIds.has(building.entityId)) continue;
+      const corners = [];
+      for (const x of [building.x, building.x + building.width]) {
+        for (const y of [0.2, building.height + 0.2]) {
+          for (const z of [building.z, building.z + building.depth]) {
+            const point = projected([x, y, z]);
+            if (point) corners.push(point);
+          }
+        }
+      }
+      if (corners.length === 8) {
+        regions.push({
+          depth: Math.min(...corners.map((point) => point.depth)),
+          id: building.entityId,
+          kind: "building",
+          maxX: Math.max(...corners.map((point) => point.x)),
+          maxY: Math.max(...corners.map((point) => point.y)),
+          minX: Math.min(...corners.map((point) => point.x)),
+          minY: Math.min(...corners.map((point) => point.y)),
+          priority: 200,
+        });
+      }
+    }
+    return regions.sort((left, right) => right.priority - left.priority || left.depth - right.depth);
+  }
+
+  function pointInPolygon(x, y, points) {
+    let inside = false;
+    for (let index = 0, previous = points.length - 1; index < points.length; previous = index++) {
+      const currentPoint = points[index];
+      const previousPoint = points[previous];
+      const crosses = currentPoint.y > y !== previousPoint.y > y
+        && x < ((previousPoint.x - currentPoint.x) * (y - currentPoint.y))
+          / (previousPoint.y - currentPoint.y) + currentPoint.x;
+      if (crosses) inside = !inside;
+    }
+    return inside;
+  }
+
+  function distanceToSegment(x, y, start, end) {
+    const deltaX = end.x - start.x;
+    const deltaY = end.y - start.y;
+    const lengthSquared = deltaX * deltaX + deltaY * deltaY;
+    if (!lengthSquared) return Math.hypot(x - start.x, y - start.y);
+    const fraction = Math.max(0, Math.min(
+      1,
+      ((x - start.x) * deltaX + (y - start.y) * deltaY) / lengthSquared,
+    ));
+    return Math.hypot(
+      x - (start.x + fraction * deltaX),
+      y - (start.y + fraction * deltaY),
+    );
+  }
+
+  function hitTest(x, y) {
+    for (const region of hitRegions) {
+      if (region.kind === "building") {
+        if (x >= region.minX && x <= region.maxX && y >= region.minY && y <= region.maxY) return region;
+      } else if (region.kind === "network") {
+        for (let index = 1; index < region.points.length; index += 1) {
+          if (distanceToSegment(x, y, region.points[index - 1], region.points[index]) <= 8) return region;
+        }
+      } else if (pointInPolygon(x, y, region.points)) {
+        return region;
+      }
+    }
+    return null;
+  }
+
+  function renderLabels() {
+    if (!labelLayer) return;
+    const candidates = [];
+    for (const district of scene.districts) {
+      if (!drawableDistrictIds.has(district.id)) continue;
+      const anchor = projected([district.x + 2, 0.35, district.z + 2]);
+      if (!anchor || anchor.depth < -1 || anchor.depth > 1) continue;
+      const label = districtCanvasLabel(district);
+      candidates.push({
+        height: 17,
+        id: district.id,
+        label,
+        priority: (districtsWithBuildings.has(district.id) ? 1000 : 0)
+          + (districtDepths.get(district.id) || 0),
+        width: Math.min(180, Math.max(24, label.length * 6 + 10)),
+        x: anchor.x,
+        y: anchor.y - 18,
+      });
+    }
+    const visibleIds = new Set(
+      filterEngine.selectNonOverlappingLabels(candidates, viewportWidth, viewportHeight),
+    );
+    labelLayer.replaceChildren(...candidates
+      .filter((candidate) => visibleIds.has(candidate.id))
+      .map((candidate) => {
+        const node = document.createElement("span");
+        node.className = "scene-label";
+        node.style.left = `${candidate.x}px`;
+        node.style.top = `${candidate.y}px`;
+        node.style.maxWidth = `${candidate.width}px`;
+        node.textContent = candidate.label;
+        return node;
+      }));
+  }
+
+  function render(timestamp = 0) {
+    framePending = false;
+    viewProjection = cameraMatrix();
+    const geometry = buildGeometry(timestamp);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0.027, 0.043, 0.075, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    gl.useProgram(program);
+    gl.uniformMatrix4fv(matrixLocation, false, new Float32Array(viewProjection));
+    bindAndDraw(triangleBuffer, geometry.triangles, gl.TRIANGLES);
+    gl.disable(gl.CULL_FACE);
+    bindAndDraw(lineBuffer, geometry.lines, gl.LINES);
+    hitRegions = buildHitRegions();
+    renderLabels();
+    if (state.syntheticActivity && visibleNetworkIds.size > 0) scheduleRender();
+  }
+
+  function scheduleRender() {
+    if (!framePending) {
+      framePending = true;
+      requestAnimationFrame(render);
+    }
+  }
+
+  function resize() {
+    const rectangle = canvas.getBoundingClientRect();
+    const ratio = Math.min(globalThis.devicePixelRatio || 1, 2);
+    viewportWidth = Math.max(1, rectangle.width);
+    viewportHeight = Math.max(1, rectangle.height);
+    canvas.width = Math.round(viewportWidth * ratio);
+    canvas.height = Math.round(viewportHeight * ratio);
+    if (!cameraFitted && viewportWidth > 10 && viewportHeight > 10) {
+      state.distance = fitInitialDistance();
+      initialCamera.distance = state.distance;
+      cameraFitted = true;
+    }
+    scheduleRender();
+  }
+
+  function element(tagName, text, className) {
+    const node = document.createElement(tagName);
+    if (text !== undefined) node.textContent = String(text);
+    if (className) node.className = className;
+    return node;
+  }
+
+  function addStat(value, label) {
+    cityStats.append(element("span", `${value} ${label}`, "stat"));
+  }
+
+  function displayValue(value) {
+    return value.replaceAll("_", " ");
+  }
+
+  function populateFilter(name, values) {
+    const control = filterControls.get(name);
+    if (!control) return;
+    const labels = {
+      confidence: "evidence levels",
+      language: "languages",
+      role: "roles",
+      technology: "technologies",
+    };
+    const allOption = element("option", `All ${labels[name]}`);
+    allOption.value = "";
+    control.append(allOption);
+    for (const value of values) {
+      const option = element("option", displayValue(value));
+      option.value = value;
+      control.append(option);
+    }
+    control.disabled = values.length === 0;
+  }
+
+  function activeFilterCount() {
+    return Object.values(state.filters).filter(Boolean).length;
+  }
+
+  function resetInspector(message = "Choose a building, district, or network to inspect the repository facts behind it.") {
+    inspector.replaceChildren();
+    inspector.append(element("p", "INSPECTOR", "eyebrow"));
+    inspector.append(element("h2", "Select a city element"));
+    inspector.append(element("p", message, "muted"));
+  }
+
+  function selectionIsVisible() {
+    if (!state.selected || state.selected.kind === "district") return true;
+    return state.selected.kind === "building"
+      ? visibleBuildingIds.has(state.selected.id)
+      : visibleNetworkIds.has(state.selected.id);
+  }
+
+  function applyFilters() {
+    const visible = filterIndex.filter(state.filters);
+    visibleBuildingIds = new Set(visible.buildingIds);
+    visibleNetworkIds = new Set(visible.networkIds);
+    const activeCount = activeFilterCount();
+    cityStats.replaceChildren();
+    addStat(scene.districts.length, "districts");
+    addStat(`${visibleBuildingIds.size}/${scene.buildings.length}`, "buildings");
+    addStat(`${visibleNetworkIds.size}/${scene.networks.length}`, "networks");
+    filterSummary.textContent = activeCount
+      ? `${visibleBuildingIds.size} buildings and ${visibleNetworkIds.size} links match ${activeCount} filter${activeCount === 1 ? "" : "s"}`
+      : "Showing the complete city";
+    clearFilters.disabled = activeCount === 0;
+    hoverLabel.hidden = true;
+    if (!selectionIsVisible()) {
+      state.selected = null;
+      resetInspector("The previous selection is hidden by the active filters.");
+    }
+    scheduleRender();
+  }
+
+  function detailRow(list, label, value) {
+    const wrapper = element("div", undefined, "detail-row");
+    wrapper.append(element("dt", label), element("dd", value ?? "Unknown"));
+    list.append(wrapper);
+  }
+
+  function factSection(parent, title, values) {
+    parent.append(element("h3", title, "section-title"));
+    if (!values.length) {
+      parent.append(element("p", "No verified facts", "muted"));
+      return;
+    }
+    const list = element("ul", undefined, "fact-list");
+    for (const value of values) list.append(element("li", value));
+    parent.append(list);
+  }
+
+  function evidenceLabel(evidenceId) {
+    const item = evidence.get(evidenceId);
+    if (!item) return evidenceId;
+    const range = item.startLine
+      ? `${item.sourcePath}:${item.startLine}${item.endLine !== item.startLine ? `-${item.endLine}` : ""}`
+      : item.sourcePath;
+    return `${item.summary} · ${item.kind} · ${range}`;
+  }
+
+  function sourceLink(entity) {
+    const member = (metropolis?.repositories || []).find((repository) =>
+      entity?.id?.startsWith(`${repository.id}:`),
+    );
+    const sourceUrl = member?.sourceUrl || ucg.repository.sourceUrl;
+    const revision = member?.revision || ucg.repository.revision;
+    if (!sourceUrl || !revision || !entity?.path) return null;
+    try {
+      const url = new URL(sourceUrl);
+      if (!["http:", "https:"].includes(url.protocol)) return null;
+      const encodedPath = entity.path.split("/").map(encodeURIComponent).join("/");
+      url.pathname = `${url.pathname.replace(/\/$/, "")}/blob/${encodeURIComponent(revision)}/${encodedPath}`;
+      const link = element("a", "Open source at revision", "source-link");
+      link.href = url.toString();
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      return link;
+    } catch {
+      return null;
+    }
+  }
+
+  function focusButton(x, y, z, label) {
+    const button = element("button", label, "focus-button");
+    button.type = "button";
+    button.addEventListener("click", () => {
+      state.targetX = x;
+      state.targetY = y;
+      state.targetZ = z;
+      state.distance = Math.min(state.distance, Math.max(28, tallestBuilding * 3));
+      scheduleRender();
+    });
+    return button;
+  }
+
+  function showBuilding(entityId) {
+    const building = scene.buildings.find((item) => item.entityId === entityId);
+    const entity = entities.get(entityId) || {};
+    inspector.replaceChildren();
+    inspector.append(element("p", "BUILDING", "eyebrow"));
+    inspector.append(element("h2", entity.path || entityId));
+    const details = element("dl", undefined, "detail-list");
+    detailRow(details, "Archetype", building.archetype);
+    detailRow(details, "Language", entity.language || "Unknown");
+    detailRow(details, "Height", building.height);
+    detailRow(details, "District", districtLabel(districts.get(building.districtId)));
+    inspector.append(details);
+    factSection(inspector, "VERIFIED ROLES", (entity.roles || []).map(
+      (claim) => `${claim.value} · ${claim.confidence}`,
+    ));
+    factSection(inspector, "TECHNOLOGIES", (entity.technologies || []).map(
+      (claim) => `${claim.value} · ${claim.confidence}`,
+    ));
+    factSection(inspector, "CAPABILITIES", (entity.capabilities || []).map(
+      (claim) => `${claim.value} · ${claim.confidence}`,
+    ));
+    const dependencies = filterEngine.declaredDependenciesForEntity(ucg, entityId);
+    factSection(inspector, "DECLARED DEPENDENCIES (NOT USAGE)", dependencies.map(
+      (item) => `${item.coordinate} · ${item.ecosystem} · DECLARED`,
+    ));
+    const evidenceIds = new Set([
+      ...(building.evidenceIds || []),
+      ...(entity.roles || []).flatMap((claim) => claim.evidenceIds),
+      ...(entity.technologies || []).flatMap((claim) => claim.evidenceIds),
+      ...(entity.capabilities || []).flatMap((claim) => claim.evidenceIds),
+      ...dependencies.flatMap((item) => item.evidenceIds),
+    ]);
+    factSection(inspector, "EVIDENCE", [...evidenceIds].map(evidenceLabel));
+    const link = sourceLink(entity);
+    if (link) inspector.append(link);
+    inspector.append(focusButton(
+      building.x + building.width / 2,
+      building.height / 2,
+      building.z + building.depth / 2,
+      "Focus building",
+    ));
+  }
+
+  function showDistrict(districtId) {
+    const district = districts.get(districtId);
+    const districtBuildings = scene.buildings.filter((item) => item.districtId === districtId);
+    const visibleCount = districtBuildings.filter((item) => visibleBuildingIds.has(item.entityId)).length;
+    inspector.replaceChildren();
+    inspector.append(element("p", "DISTRICT", "eyebrow"));
+    inspector.append(element("h2", districtLabel(district)));
+    const details = element("dl", undefined, "detail-list");
+    detailRow(details, "Buildings", `${visibleCount}/${districtBuildings.length} visible`);
+    detailRow(details, "Parent", district.parentId
+      ? districtLabel(districts.get(district.parentId))
+      : "City root");
+    detailRow(details, "Size", `${district.width} × ${district.depth}`);
+    inspector.append(details);
+    inspector.append(focusButton(
+      district.x + district.width / 2,
+      tallestBuilding * 0.12,
+      district.z + district.depth / 2,
+      "Focus district",
+    ));
+  }
+
+  function showNetwork(networkId) {
+    const network = scene.networks.find((item) => item.id === networkId);
+    inspector.replaceChildren();
+    inspector.append(element("p", "NETWORK", "eyebrow"));
+    inspector.append(element("h2", network.kind));
+    const details = element("dl", undefined, "detail-list");
+    detailRow(details, "Graph edges", network.edgeIds.length);
+    detailRow(details, "Route points", network.path.length);
+    inspector.append(details);
+    factSection(inspector, "UNDERLYING EDGES", network.edgeIds.map((id) => {
+      const edge = edges.get(id);
+      return edge ? `${edge.type}: ${edge.from} → ${edge.to} (${edge.confidence})` : id;
+    }));
+    factSection(inspector, "EVIDENCE", network.edgeIds.flatMap((id) => {
+      const edge = edges.get(id);
+      return (edge?.evidenceIds || []).map(evidenceLabel);
+    }));
+    const middle = network.path[Math.floor(network.path.length / 2)];
+    inspector.append(focusButton(middle[0], 1, middle[1], "Focus network"));
+  }
+
+  function showSelection(selection) {
+    if (!selection) return;
+    state.selected = { id: selection.id, kind: selection.kind };
+    if (selection.kind === "building") showBuilding(selection.id);
+    if (selection.kind === "district") showDistrict(selection.id);
+    if (selection.kind === "network") showNetwork(selection.id);
+    scheduleRender();
+  }
+
+  function labelFor(selection) {
+    if (selection.kind === "building") {
+      const entity = entities.get(selection.id);
+      const building = scene.buildings.find((item) => item.entityId === selection.id);
+      return `${entity?.path || selection.id} · ${building.archetype}`;
+    }
+    if (selection.kind === "district") return districtLabel(districts.get(selection.id));
+    const network = scene.networks.find((item) => item.id === selection.id);
+    return `${network.kind} · ${network.edgeIds.length} edge${network.edgeIds.length === 1 ? "" : "s"}`;
+  }
+
+  function runAction(action) {
+    if (action === "rotate-left") state.yaw -= Math.PI / 8;
+    if (action === "rotate-right") state.yaw += Math.PI / 8;
+    if (action === "zoom-in") state.distance = Math.max(8, state.distance / 1.2);
+    if (action === "zoom-out") state.distance = Math.min(worldSpan * 8, state.distance * 1.2);
+    if (action === "reset") Object.assign(state, initialCamera);
+    scheduleRender();
+  }
+
+  canvas.addEventListener("pointerdown", (event) => {
+    canvas.setPointerCapture(event.pointerId);
+    state.dragging = true;
+    state.dragMode = event.altKey || event.button === 2 ? "pan" : "orbit";
+    state.pointerX = event.clientX;
+    state.pointerY = event.clientY;
+    state.moved = false;
+    canvas.classList.add("dragging");
+  });
+  canvas.addEventListener("pointermove", (event) => {
+    const rectangle = canvas.getBoundingClientRect();
+    const localX = event.clientX - rectangle.left;
+    const localY = event.clientY - rectangle.top;
+    if (state.dragging) {
+      const deltaX = event.clientX - state.pointerX;
+      const deltaY = event.clientY - state.pointerY;
+      state.moved ||= Math.abs(deltaX) + Math.abs(deltaY) > 2;
+      if (state.dragMode === "orbit") {
+        state.yaw -= deltaX * 0.008;
+        state.pitch = Math.max(0.16, Math.min(1.42, state.pitch + deltaY * 0.006));
+      } else {
+        const scale = state.distance / Math.max(viewportHeight, 1);
+        const rightX = Math.cos(state.yaw);
+        const rightZ = -Math.sin(state.yaw);
+        state.targetX -= deltaX * scale * rightX;
+        state.targetZ -= deltaX * scale * rightZ;
+        state.targetY += deltaY * scale;
+      }
+      state.pointerX = event.clientX;
+      state.pointerY = event.clientY;
+      hoverLabel.hidden = true;
+      scheduleRender();
+      return;
+    }
+    const hovered = hitTest(localX, localY);
+    if (!hovered) {
+      hoverLabel.hidden = true;
+      return;
+    }
+    hoverLabel.textContent = labelFor(hovered);
+    hoverLabel.style.left = `${Math.min(localX + 14, viewportWidth - 260)}px`;
+    hoverLabel.style.top = `${Math.max(8, localY - 34)}px`;
+    hoverLabel.hidden = false;
+  });
+  canvas.addEventListener("pointerup", (event) => {
+    const rectangle = canvas.getBoundingClientRect();
+    if (!state.moved) showSelection(hitTest(event.clientX - rectangle.left, event.clientY - rectangle.top));
+    state.dragging = false;
+    canvas.classList.remove("dragging");
+  });
+  canvas.addEventListener("pointercancel", () => {
+    state.dragging = false;
+    canvas.classList.remove("dragging");
+  });
+  canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+  canvas.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    state.distance = Math.max(8, Math.min(
+      worldSpan * 8,
+      state.distance * Math.exp(event.deltaY * 0.001),
+    ));
+    scheduleRender();
+  }, { passive: false });
+
+  document.querySelectorAll("[data-action]").forEach((button) => {
+    button.addEventListener("click", () => runAction(button.dataset.action));
+  });
+  for (const [name, control] of filterControls) {
+    control.addEventListener("change", () => {
+      state.filters[name] = control.value;
+      applyFilters();
+    });
+  }
+  clearFilters.addEventListener("click", () => {
+    for (const [name, control] of filterControls) {
+      control.value = "";
+      state.filters[name] = "";
+    }
+    applyFilters();
+  });
+
+  function updateActivityAvailability() {
+    const motionReduced = reducedMotion?.matches === true;
+    const noNetworks = scene.networks.length === 0;
+    const unavailable = motionReduced || noNetworks || !activityEngine;
+    activityToggle.disabled = unavailable;
+    if (unavailable) {
+      activityToggle.checked = false;
+      state.syntheticActivity = false;
+    }
+    activityNote.textContent = motionReduced
+      ? "Synthetic illustration disabled by reduced-motion preference"
+      : noNetworks
+        ? "Synthetic illustration unavailable · this city has no networks"
+        : "Illustration only · not measured runtime traffic";
+    scheduleRender();
+  }
+
+  activityToggle.addEventListener("change", () => {
+    state.syntheticActivity = activityToggle.checked;
+    state.activityEpoch = globalThis.performance.now();
+    activityNote.textContent = state.syntheticActivity
+      ? "Synthetic illustration active · not measured runtime traffic"
+      : "Illustration only · not measured runtime traffic";
+    scheduleRender();
+  });
+  reducedMotion?.addEventListener?.("change", updateActivityAvailability);
+  document.addEventListener("keydown", (event) => {
+    const actions = {
+      "+": "zoom-in",
+      "-": "zoom-out",
+      "=": "zoom-in",
+      e: "rotate-right",
+      q: "rotate-left",
+      r: "reset",
+    };
+    const action = actions[event.key.toLowerCase()];
+    if (action) {
+      event.preventDefault();
+      runAction(action);
+    }
+  });
+
+  repositoryName.textContent = ucg.repository.id;
+  document.title = `${ucg.repository.id} · MetropoGits`;
+  if (toolbarHelp) {
+    toolbarHelp.textContent = "Drag to orbit · Alt/secondary drag to pan · Wheel to zoom";
+  }
+  populateFilter("role", filterIndex.options.roles);
+  populateFilter("language", filterIndex.options.languages);
+  populateFilter("technology", filterIndex.options.technologies);
+  populateFilter("confidence", filterIndex.options.confidences);
+  new ResizeObserver(resize).observe(canvas);
+  updateActivityAvailability();
+  applyFilters();
+  resize();
+})();

@@ -53,6 +53,7 @@ def render_viewer(scene: dict[str, Any], ucg: dict[str, Any]) -> dict[str, bytes
         "assets/viewer-filters.js": resources.joinpath(
             "viewer-filters.js"
         ).read_bytes(),
+        "assets/viewer-3d.js": resources.joinpath("viewer-3d.js").read_bytes(),
         "assets/viewer.js": resources.joinpath("viewer.js").read_bytes(),
         "assets/viewer-data.js": _javascript_data(scene, ucg),
     }
@@ -119,6 +120,7 @@ def render_history_viewer(
         "assets/viewer-filters.js": resources.joinpath(
             "viewer-filters.js"
         ).read_bytes(),
+        "assets/viewer-3d.js": resources.joinpath("viewer-3d.js").read_bytes(),
         "assets/viewer-history.js": resources.joinpath(
             "viewer-history.js"
         ).read_bytes(),
@@ -183,6 +185,7 @@ def render_metropolis_viewer(
         "assets/viewer-filters.js": resources.joinpath(
             "viewer-filters.js"
         ).read_bytes(),
+        "assets/viewer-3d.js": resources.joinpath("viewer-3d.js").read_bytes(),
         "assets/viewer-metropolis.js": resources.joinpath(
             "viewer-metropolis.js"
         ).read_bytes(),

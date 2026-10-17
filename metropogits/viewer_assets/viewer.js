@@ -1,6 +1,8 @@
 (() => {
   "use strict";
 
+  if (globalThis.METROPOGITS_RENDERER === "webgl") return;
+
   const data = globalThis.METROPOGITS_DATA;
   const filterEngine = globalThis.METROPOGITS_FILTERS;
   const canvas = document.getElementById("city-canvas");
@@ -14,6 +16,7 @@
   const activityToggle = document.getElementById("synthetic-activity");
   const activityNote = document.getElementById("synthetic-activity-note");
   const activityEngine = globalThis.METROPOGITS_ACTIVITY;
+  const rendererMode = document.getElementById("renderer-mode");
   const MAX_INITIAL_SCALE = 11;
   const filterControls = new Map(
     [...document.querySelectorAll("[data-filter]")].map((control) => [
@@ -26,6 +29,10 @@
     repositoryName.textContent = "Viewer data unavailable";
     return;
   }
+
+  globalThis.METROPOGITS_RENDERER = "canvas-2d";
+  canvas.setAttribute("aria-label", "Interactive isometric 2D repository city fallback");
+  if (rendererMode) rendererMode.textContent = "2D fallback";
 
   const scene = data.scene;
   const ucg = data.ucg;

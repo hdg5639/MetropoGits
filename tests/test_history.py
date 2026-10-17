@@ -146,6 +146,7 @@ class HistoryTests(unittest.TestCase):
         self.assertEqual(
             {
                 "assets/viewer-activity.js",
+                "assets/viewer-3d.js",
                 "assets/viewer-data.js",
                 "assets/viewer-filters.js",
                 "assets/viewer-history.js",
@@ -195,7 +196,7 @@ class HistoryTests(unittest.TestCase):
             [{"scene": item.scene, "ucg": item.ucg} for item in ordered],
         )
         with tempfile.TemporaryDirectory() as temporary:
-            for name in ("viewer-history.js", "viewer.js"):
+            for name in ("viewer-history.js", "viewer-3d.js", "viewer.js"):
                 script = Path(temporary) / name
                 script.write_bytes(artifacts[f"assets/{name}"])
                 completed = subprocess.run(

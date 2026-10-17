@@ -66,6 +66,7 @@ class CliTests(unittest.TestCase):
             {
                 "README_SNIPPET.md",
                 "assets/viewer-activity.js",
+                "assets/viewer-3d.js",
                 "assets/viewer-data.js",
                 "assets/viewer.css",
                 "assets/viewer-filters.js",
@@ -125,7 +126,7 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual(0, completed.returncode, completed.stderr)
             self.assertTrue((output / "preview.svg").is_file())
-            self.assertIn("Built 10 artifacts", completed.stdout)
+            self.assertIn("Built 11 artifacts", completed.stdout)
 
     def test_build_accepts_previous_scene_and_reports_hint_churn(self):
         with tempfile.TemporaryDirectory() as temporary:

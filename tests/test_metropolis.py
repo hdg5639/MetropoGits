@@ -145,6 +145,7 @@ class MetropolisTests(unittest.TestCase):
         )
 
         self.assertIn("assets/viewer-metropolis.js", viewer)
+        self.assertIn("assets/viewer-3d.js", viewer)
         self.assertIn('id="metropolis-link"', viewer["index.html"].decode("utf-8"))
         script = viewer["assets/viewer-metropolis.js"].decode("utf-8")
         data = viewer["assets/viewer-data.js"].decode("utf-8")

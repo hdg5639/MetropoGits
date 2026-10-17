@@ -18,10 +18,13 @@ metropogits build --repo . --out dist --theme minimal
 
 The command writes the graph and scene contracts, a deterministic SVG preview,
 an interactive static viewer, a diagnostic manifest, and a linked README
-snippet. Open `dist/index.html` directly to pan, zoom, rotate, and inspect the
-city. Buildings and links can be filtered by verified role, language,
-technology, and evidence level. District labels are decluttered at each view so
-deeper, populated districts remain readable while zooming and rotating. The
+snippet. Open `dist/index.html` directly for the perspective WebGL city: drag
+to orbit, use Alt/secondary drag to pan, and use the wheel to zoom. If WebGL
+initialization fails, the same artifact automatically opens the interactive
+isometric 2D fallback. Both paths support selection, evidence inspection, and
+filters for verified role, language, technology, and evidence level. District
+labels are decluttered at each view so deeper, populated districts remain
+readable while navigating. The
 bundled Java analyzer recognizes evidence-backed local imports, uniquely
 resolved local type references, inheritance, declarations, and core Spring
 stereotypes. The JavaScript/TypeScript adapter resolves explicit local ESM and

@@ -34,6 +34,7 @@ class ViewerTests(unittest.TestCase):
         self.assertEqual(
             {
                 "assets/viewer-activity.js",
+                "assets/viewer-3d.js",
                 "assets/viewer-data.js",
                 "assets/viewer.css",
                 "assets/viewer-filters.js",
@@ -61,6 +62,8 @@ class ViewerTests(unittest.TestCase):
         self.assertNotRegex(html, r'''(?:href|src)=["']/''')
         self.assertIn('href="assets/viewer.css"', html)
         self.assertIn('src="assets/viewer.js"', html)
+        self.assertIn('src="assets/viewer-3d.js"', html)
+        self.assertLess(html.index("viewer-3d.js"), html.index("viewer.js"))
         self.assertIn('href="preview.svg"', html)
 
     def test_untrusted_graph_text_is_encoded_as_javascript_data(self):
@@ -76,14 +79,14 @@ class ViewerTests(unittest.TestCase):
         self.assertIn(r"\u003c/script\u003e", viewer_data)
 
     def test_viewer_script_avoids_html_injection_sinks(self):
-        script = render_viewer(generate_city(load_fixture()), load_fixture())[
-            "assets/viewer.js"
-        ].decode("utf-8")
-
-        self.assertNotIn("innerHTML", script)
-        self.assertNotIn("outerHTML", script)
-        self.assertNotIn("eval(", script)
-        self.assertIn("textContent", script)
+        artifacts = render_viewer(generate_city(load_fixture()), load_fixture())
+        for name in ("assets/viewer-3d.js", "assets/viewer.js"):
+            script = artifacts[name].decode("utf-8")
+            self.assertNotIn("innerHTML", script)
+            self.assertNotIn("outerHTML", script)
+            self.assertNotIn("eval(", script)
+            self.assertNotIn("fetch(", script)
+            self.assertIn("textContent", script)
 
     def test_invalid_scene_is_rejected(self):
         graph = load_fixture()
@@ -98,7 +101,12 @@ class ViewerTests(unittest.TestCase):
         graph = load_fixture()
         artifacts = render_viewer(generate_city(graph), graph)
         with tempfile.TemporaryDirectory() as temporary:
-            for name in ("viewer-activity.js", "viewer-filters.js", "viewer.js"):
+            for name in (
+                "viewer-activity.js",
+                "viewer-filters.js",
+                "viewer-3d.js",
+                "viewer.js",
+            ):
                 script = Path(temporary) / name
                 script.write_bytes(artifacts[f"assets/{name}"])
                 completed = subprocess.run(
@@ -108,6 +116,51 @@ class ViewerTests(unittest.TestCase):
                     check=False,
                 )
                 self.assertEqual(0, completed.returncode, completed.stderr)
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_webgl_math_projects_camera_target_to_viewport_center(self):
+        script = """
+require(process.argv[1]);
+const math = globalThis.METROPOGITS_WEBGL_MATH;
+const view = math.lookAt([10, 10, 10], [0, 0, 0], [0, 1, 0]);
+const projection = math.perspective(Math.PI / 4, 16 / 9, 0.1, 100);
+const matrix = math.multiply(projection, view);
+const center = math.projectPoint(matrix, [0, 0, 0], 1600, 900);
+process.stdout.write(JSON.stringify({ center, behind: math.projectPoint(matrix, [20, 20, 20], 1600, 900) }));
+"""
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-3d.js"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        result = json.loads(completed.stdout)
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertAlmostEqual(800, result["center"]["x"], places=6)
+        self.assertAlmostEqual(450, result["center"]["y"], places=6)
+        self.assertIsNone(result["behind"])
+
+    def test_webgl_renderer_has_explicit_2d_fallback_boundary(self):
+        artifacts = render_viewer(generate_city(load_fixture()), load_fixture())
+        webgl = artifacts["assets/viewer-3d.js"].decode("utf-8")
+        fallback = artifacts["assets/viewer.js"].decode("utf-8")
+
+        self.assertIn('canvas.getContext("webgl"', webgl)
+        self.assertIn('METROPOGITS_RENDERER = "webgl"', webgl)
+        self.assertIn("restoreCanvasForFallback", webgl)
+        self.assertIn('METROPOGITS_RENDERER === "webgl"', fallback)
+        self.assertIn('METROPOGITS_RENDERER = "canvas-2d"', fallback)
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
     def test_synthetic_activity_is_deterministic_and_path_bounded(self):
