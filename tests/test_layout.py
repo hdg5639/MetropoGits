@@ -271,6 +271,17 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(canonical_json_bytes(cold), canonical_json_bytes(hinted))
         self.assertEqual("LAYOUT_HINT_APPLIED", diagnostics[-1]["code"])
 
+    def test_geometry_compatible_layout_hint_remains_eligible(self):
+        ucg = load_json(FIXTURES / "ucg" / "valid" / "spring-minimal.json")
+        cold = generate_city(ucg)
+        previous = {**cold, "layoutAlgorithm": "hierarchical-paged/1.7"}
+        diagnostics: list[dict] = []
+
+        hinted = generate_city(ucg, previous_scene=previous, diagnostics=diagnostics)
+
+        self.assertEqual(canonical_json_bytes(cold), canonical_json_bytes(hinted))
+        self.assertEqual("LAYOUT_HINT_APPLIED", diagnostics[-1]["code"])
+
     def test_edges_between_districts_are_aggregated_without_losing_ids(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -340,6 +351,73 @@ class LayoutTests(unittest.TestCase):
             network["path"][-1],
         )
 
+    def test_large_city_aggregates_edges_into_stable_routing_zones(self):
+        paths = [
+            f"package-{package}/File{index:02}.java"
+            for package in range(6)
+            for index in range(50)
+        ]
+        scan = ScanResult(
+            files=tuple(
+                ScannedFile(path=path, language="java", size_bytes=4)
+                for path in paths
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/network-zones")
+        files = {entity["path"]: entity["id"] for entity in ucg["entities"]}
+        expected_edge_ids: list[str] = []
+        for package in range(6):
+            target_package = (package + 1) % 6
+            for index in range(50):
+                source_path = f"package-{package}/File{index:02}.java"
+                target_path = f"package-{target_package}/File{index:02}.java"
+                evidence_id = f"zone-evidence-{package}-{index}"
+                edge_id = make_edge_id(
+                    files[source_path],
+                    "REFERENCES",
+                    files[target_path],
+                    "zone-fixture",
+                )
+                expected_edge_ids.append(edge_id)
+                ucg["evidence"].append(
+                    {
+                        "evidenceId": evidence_id,
+                        "extractor": "acceptance-fixture",
+                        "kind": "AST",
+                        "sourcePath": source_path,
+                        "summary": "Verified large-city fixture reference",
+                    }
+                )
+                ucg["edges"].append(
+                    {
+                        "confidence": "RESOLVED",
+                        "evidenceIds": [evidence_id],
+                        "from": files[source_path],
+                        "id": edge_id,
+                        "to": files[target_path],
+                        "type": "REFERENCES",
+                    }
+                )
+        ucg["edges"].sort(key=lambda item: item["id"])
+        ucg["evidence"].sort(key=lambda item: item["evidenceId"])
+
+        scene = generate_city(ucg)
+
+        self.assertEqual(6, len(scene["networks"]))
+        self.assertTrue(
+            all(len(network["edgeIds"]) == 50 for network in scene["networks"])
+        )
+        self.assertEqual(
+            sorted(expected_edge_ids),
+            sorted(
+                edge_id
+                for network in scene["networks"]
+                for edge_id in network["edgeIds"]
+            ),
+        )
+        self.assertEqual([], validate_document(scene, ucg))
+
     def test_top_level_file_uses_synthetic_root_district(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -372,7 +450,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.7", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.8", scene["layoutAlgorithm"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
         siblings: dict[str, list[dict]] = {}

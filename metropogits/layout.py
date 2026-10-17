@@ -20,8 +20,10 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.7"
-HINT_LAYOUT_ALGORITHMS = frozenset({LAYOUT_ALGORITHM})
+LAYOUT_ALGORITHM = "hierarchical-paged/1.8"
+HINT_LAYOUT_ALGORITHMS = frozenset(
+    {"hierarchical-paged/1.7", LAYOUT_ALGORITHM}
+)
 DISTRICT_DEPTH = 64
 DISTRICT_PADDING = 4
 MIN_DISTRICT_SIZE = 14
@@ -34,6 +36,9 @@ BUILDING_OFFSET = 3
 BUILDING_SIZE = 6
 BUILDING_PAGE_CAPACITY = BUILDING_COLUMNS * BUILDING_COLUMNS
 MAX_HINT_ITEMS = 100_000
+NETWORK_ZONE_CITY_THRESHOLD = 256
+NETWORK_ZONE_MIN_BUILDINGS = 20
+NETWORK_ZONE_MAX_BUILDINGS = 64
 
 ROLE_STYLES = {
     "ENTRYPOINT": ("GATE", 18),
@@ -533,6 +538,64 @@ def _network_id(
     return f"network:sha256:{digest}"
 
 
+def _network_zones(
+    districts: list[dict[str, Any]], buildings: list[dict[str, Any]]
+) -> dict[str, str]:
+    if len(buildings) < NETWORK_ZONE_CITY_THRESHOLD:
+        return {item["entityId"]: item["districtId"] for item in buildings}
+
+    children: dict[str, list[str]] = defaultdict(list)
+    direct_entities: dict[str, list[str]] = defaultdict(list)
+    for district in districts:
+        if district["parentId"] is not None:
+            children[district["parentId"]].append(district["id"])
+    for child_ids in children.values():
+        child_ids.sort()
+    for building in buildings:
+        direct_entities[building["districtId"]].append(building["entityId"])
+    for entity_ids in direct_entities.values():
+        entity_ids.sort()
+
+    roots = sorted(
+        district["id"] for district in districts if district["parentId"] is None
+    )
+    subtree_counts: dict[str, int] = {}
+
+    def count(district_id: str) -> int:
+        result = len(direct_entities[district_id]) + sum(
+            count(child_id) for child_id in children[district_id]
+        )
+        subtree_counts[district_id] = result
+        return result
+
+    for root_id in roots:
+        count(root_id)
+
+    result: dict[str, str] = {}
+
+    def assign_subtree(district_id: str, zone_id: str) -> None:
+        for entity_id in direct_entities[district_id]:
+            result[entity_id] = zone_id
+        for child_id in children[district_id]:
+            assign_subtree(child_id, zone_id)
+
+    def partition(district_id: str) -> None:
+        for entity_id in direct_entities[district_id]:
+            result[entity_id] = district_id
+        for child_id in children[district_id]:
+            child_count = subtree_counts[child_id]
+            if child_count < NETWORK_ZONE_MIN_BUILDINGS:
+                assign_subtree(child_id, district_id)
+            elif child_count <= NETWORK_ZONE_MAX_BUILDINGS:
+                assign_subtree(child_id, child_id)
+            else:
+                partition(child_id)
+
+    for root_id in roots:
+        partition(root_id)
+    return result
+
+
 def generate_city(
     ucg: dict[str, Any],
     theme: str = "minimal",
@@ -611,7 +674,6 @@ def generate_city(
     districts_by_id = {item["id"]: item for item in districts}
 
     buildings: list[dict[str, Any]] = []
-    entity_districts: dict[str, str] = {}
     for district_id in sorted(files_by_district):
         district = districts_by_id[district_id]
         entities = files_by_district[district_id]
@@ -641,16 +703,16 @@ def generate_city(
                     ),
                 }
             )
-            entity_districts[entity["id"]] = district_id
     buildings.sort(key=lambda item: item["entityId"])
 
     buildings_by_entity = {item["entityId"]: item for item in buildings}
+    network_zones = _network_zones(districts, buildings)
     grouped_edges: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
     for edge in ucg["edges"]:
         if edge["type"] == "CONTAINS":
             continue
-        source_district = entity_districts.get(edge["from"])
-        target_district = entity_districts.get(edge["to"])
+        source_district = network_zones.get(edge["from"])
+        target_district = network_zones.get(edge["to"])
         if source_district is None or target_district is None:
             continue
         grouped_edges[
