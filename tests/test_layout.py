@@ -15,7 +15,7 @@ from metropogits.scanner import (
     build_structural_ucg,
     scan_repository,
 )
-from scripts.canonical_json import canonical_json_bytes
+from scripts.canonical_json import canonical_json_bytes, loads_strict_json
 from scripts.stable_ids import make_edge_id
 from scripts.validate_city import validate_document
 
@@ -254,6 +254,7 @@ class LayoutTests(unittest.TestCase):
             "hierarchical-paged/1.9",
             "hierarchical-paged/1.10",
             "hierarchical-paged/1.11",
+            "hierarchical-paged/1.12",
         ):
             with self.subTest(version=version):
                 previous = {**cold, "layoutAlgorithm": version}
@@ -462,7 +463,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.12", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.13", scene["layoutAlgorithm"])
         self.assertEqual("city/0.2", scene["schemaVersion"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
@@ -846,6 +847,94 @@ class LayoutTests(unittest.TestCase):
             for right in second
         )
         self.assertGreaterEqual(separation, 3)
+
+    def test_small_leaf_siblings_share_one_compact_rectangular_block(self):
+        paths = (
+            "src/main/features/auth/Login.py",
+            "src/main/features/billing/Invoice.py",
+            "src/main/features/profile/Profile.py",
+        )
+        scan = ScanResult(
+            files=tuple(
+                ScannedFile(path=path, language="python", size_bytes=4)
+                for path in paths
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/compact-leaf-block")
+
+        scene = generate_city(ucg)
+        directory_ids = {
+            item["path"]: item["id"]
+            for item in ucg["entities"]
+            if item["kind"] == "DIRECTORY"
+        }
+        districts = {item["id"]: item for item in scene["districts"]}
+        members = [
+            districts[directory_ids[f"src/main/features/{name}"]]
+            for name in ("auth", "billing", "profile")
+        ]
+        parent = districts[directory_ids["src/main/features"]]
+        buildings = {item["districtId"]: item for item in scene["buildings"]}
+
+        self.assertEqual((14, 14), (parent["width"], parent["depth"]))
+        self.assertEqual(1, len(parent["footprint"]))
+        self.assertTrue(
+            all((member["width"], member["depth"]) == (7, 7) for member in members)
+        )
+        self.assertEqual(
+            4 * FOOTPRINT_CELL_SIZE**2,
+            parent["width"] * parent["depth"],
+        )
+        for member in members:
+            building = buildings[member["id"]]
+            self.assertEqual(member["x"] + 0.5, building["x"])
+            self.assertEqual(member["z"] + 0.5, building["z"])
+
+    def test_compact_leaf_block_hint_preserves_existing_members(self):
+        original_paths = (
+            "src/main/features/auth/Login.py",
+            "src/main/features/billing/Invoice.py",
+            "src/main/features/profile/Profile.py",
+        )
+
+        def graph(paths):
+            return build_structural_ucg(
+                ScanResult(
+                    files=tuple(
+                        ScannedFile(path=path, language="python", size_bytes=4)
+                        for path in paths
+                    ),
+                    diagnostics=(),
+                ),
+                "example/compact-leaf-hint",
+            )
+
+        before = loads_strict_json(
+            canonical_json_bytes(generate_city(graph(original_paths))).decode("utf-8")
+        )
+        diagnostics: list[dict] = []
+        after = generate_city(
+            graph((*original_paths, "src/main/features/reports/Report.py")),
+            previous_scene=before,
+            diagnostics=diagnostics,
+        )
+        before_positions = {
+            item["entityId"]: (item["x"], item["z"])
+            for item in before["buildings"]
+        }
+        after_positions = {
+            item["entityId"]: (item["x"], item["z"])
+            for item in after["buildings"]
+        }
+
+        self.assertEqual(
+            before_positions,
+            {entity_id: after_positions[entity_id] for entity_id in before_positions},
+        )
+        self.assertTrue(
+            any(item["code"] == "LAYOUT_HINT_APPLIED" for item in diagnostics)
+        )
 
     def test_sparse_directory_forest_uses_dense_city_blocks(self):
         scan = ScanResult(

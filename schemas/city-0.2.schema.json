@@ -12,6 +12,7 @@
       "enum": [
         "hierarchical-paged/1.11",
         "hierarchical-paged/1.12",
+        "hierarchical-paged/1.13",
         "metropolis-grid/0.2"
       ]
     },

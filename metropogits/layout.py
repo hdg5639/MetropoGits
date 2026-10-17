@@ -7,6 +7,7 @@ import hashlib
 import math
 import sys
 from collections import defaultdict, deque
+from decimal import Decimal
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -20,7 +21,7 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.12"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.13"
 HINT_LAYOUT_ALGORITHMS = frozenset({LAYOUT_ALGORITHM})
 SCENE_SCHEMA_VERSION = "city/0.2"
 FOOTPRINT_CELL_SIZE = 7
@@ -32,6 +33,8 @@ DISTRICT_EDGE_PADDING = 2
 BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
 BUILDING_OFFSET = 3
+COMPACT_LEAF_BUILDING_OFFSET = 0.5
+COMPACT_LEAF_MAX_FILES = 3
 BUILDING_SIZE = 6
 BUILDING_PAGE_CAPACITY = BUILDING_COLUMNS * BUILDING_COLUMNS
 MAX_HINT_ITEMS = 100_000
@@ -122,11 +125,9 @@ def _layout_diagnostic(code: str, severity: str, message: str) -> dict[str, Any]
 
 
 def _finite_number(value: Any) -> bool:
-    return (
-        isinstance(value, (int, float))
-        and not isinstance(value, bool)
-        and math.isfinite(value)
-    )
+    if isinstance(value, bool) or not isinstance(value, (Decimal, int, float)):
+        return False
+    return value.is_finite() if isinstance(value, Decimal) else math.isfinite(value)
 
 
 def _prepare_layout_hint(
@@ -235,6 +236,7 @@ def _hinted_local_slots(
     files_by_district: dict[str, list[dict[str, Any]]],
     district_hints: dict[str, dict[str, Any]],
     building_hints: dict[str, dict[str, Any]],
+    compact_leaf_ids: set[str],
 ) -> dict[str, dict[str, int]]:
     result: dict[str, dict[str, int]] = {}
     for district_id in sorted(files_by_district):
@@ -250,12 +252,17 @@ def _hinted_local_slots(
                 or building_hint["districtId"] != district_id
             ):
                 continue
-            offset_x = building_hint["x"] - district_hint["x"]
-            offset_z = building_hint["z"] - district_hint["z"]
-            column_value = (offset_x - BUILDING_OFFSET) / BUILDING_SPACING
+            offset_x = float(building_hint["x"]) - float(district_hint["x"])
+            offset_z = float(building_hint["z"]) - float(district_hint["z"])
+            building_offset = (
+                COMPACT_LEAF_BUILDING_OFFSET
+                if district_id in compact_leaf_ids
+                else BUILDING_OFFSET
+            )
+            column_value = (offset_x - building_offset) / BUILDING_SPACING
             page = math.floor(offset_z / DISTRICT_DEPTH)
             page_offset_z = offset_z - page * DISTRICT_DEPTH
-            row_value = (page_offset_z - BUILDING_OFFSET) / BUILDING_SPACING
+            row_value = (page_offset_z - building_offset) / BUILDING_SPACING
             if (
                 page < 0
                 or not float(column_value).is_integer()
@@ -287,6 +294,34 @@ def _ordered_children(
         children_by_parent.get(district_id, []),
         key=lambda child_id: (_hash_integer(child_id), child_id),
     )
+
+
+def _compact_leaf_groups(
+    root_id: str,
+    children_by_parent: dict[str, list[str]],
+    files_by_district: dict[str, list[dict[str, Any]]],
+) -> dict[str, tuple[str, ...]]:
+    result: dict[str, tuple[str, ...]] = {}
+
+    def visit(district_id: str, hierarchy_depth: int) -> None:
+        children = _ordered_children(district_id, children_by_parent)
+        for child_id in children:
+            visit(child_id, hierarchy_depth + 1)
+        if _street_gap_cells(hierarchy_depth) > 0:
+            return
+        candidates = tuple(
+            child_id
+            for child_id in children
+            if not children_by_parent.get(child_id)
+            and 1
+            <= len(files_by_district.get(child_id, ()))
+            <= COMPACT_LEAF_MAX_FILES
+        )
+        if len(candidates) >= 2:
+            result[district_id] = candidates
+
+    visit(root_id, 0)
+    return result
 
 
 def _compact_cold_slots(slots: dict[str, int]) -> dict[str, int]:
@@ -448,6 +483,7 @@ def _pack_shape(
     occupied: set[Cell],
     gap_cells: int,
     preferred: Cell | None = None,
+    prefer_density: bool = False,
 ) -> Cell:
     normalized = _normalized_cells(shape)
     forbidden = _reserved_cells(occupied, gap_cells) if occupied else set()
@@ -459,6 +495,8 @@ def _pack_shape(
 
     if preferred is not None and available(preferred):
         return preferred
+    if not occupied:
+        return (0, 0)
 
     shape_width = max(x for x, _ in normalized) + 1
     shape_depth = max(z for _, z in normalized) + 1
@@ -467,6 +505,7 @@ def _pack_shape(
     limit_x = max(shape_width, occupied_width + shape_width + 2)
     limit_z = max(shape_depth, occupied_depth + shape_depth + 2)
     candidates: list[tuple[tuple[int, ...], Cell]] = []
+    density_candidates: list[tuple[int, int, Cell]] = []
     for z in range(limit_z):
         for x in range(limit_x):
             offset = (x, z)
@@ -474,20 +513,44 @@ def _pack_shape(
                 continue
             width = max(occupied_width, x + shape_width)
             depth = max(occupied_depth, z + shape_depth)
-            score = (max(width, depth), width * depth, abs(width - depth), z, x)
-            candidates.append((score, offset))
+            if prefer_density:
+                density_candidates.append((width, depth, offset))
+            else:
+                score = (max(width, depth), width * depth, abs(width - depth), z, x)
+                candidates.append((score, offset))
+    if prefer_density and density_candidates:
+        shortest_long_side = min(
+            max(width, depth) for width, depth, _ in density_candidates
+        )
+        permitted_long_side = math.ceil(shortest_long_side * 1.12)
+        return min(
+            (
+                (
+                    width * depth,
+                    max(width, depth),
+                    abs(width - depth),
+                    offset[1],
+                    offset[0],
+                ),
+                offset,
+            )
+            for width, depth, offset in density_candidates
+            if max(width, depth) <= permitted_long_side
+        )[1]
     if not candidates:
         raise LayoutError("unable to place district footprint")
     return min(candidates)[1]
 
 
-def _direct_footprint_cells(slots: dict[str, int]) -> set[Cell]:
+def _direct_footprint_cells(
+    slots: dict[str, int], building_offset: float = BUILDING_OFFSET
+) -> set[Cell]:
     cells: set[Cell] = set()
     for slot in slots.values():
         page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
         row, column = divmod(page_slot, BUILDING_COLUMNS)
-        x = BUILDING_OFFSET + column * BUILDING_SPACING
-        z = page * DISTRICT_DEPTH + BUILDING_OFFSET + row * BUILDING_SPACING
+        x = building_offset + column * BUILDING_SPACING
+        z = page * DISTRICT_DEPTH + building_offset + row * BUILDING_SPACING
         start_x = math.floor(x / FOOTPRINT_CELL_SIZE)
         start_z = math.floor(z / FOOTPRINT_CELL_SIZE)
         end_x = math.ceil((x + BUILDING_SIZE) / FOOTPRINT_CELL_SIZE)
@@ -498,6 +561,83 @@ def _direct_footprint_cells(slots: dict[str, int]) -> set[Cell]:
             for cell_x in range(start_x, end_x)
         )
     return cells
+
+
+def _pack_compact_leaf_block(
+    member_ids: tuple[str, ...],
+    footprint_cells: dict[str, set[Cell]],
+    district_hints: dict[str, dict[str, Any]],
+    parent_id: str,
+) -> tuple[set[Cell], dict[str, Cell], Cell | None]:
+    parent_hint = district_hints.get(parent_id)
+    relative_hints: dict[str, Cell] = {}
+    if parent_hint is not None:
+        for member_id in member_ids:
+            member_hint = district_hints.get(member_id)
+            if member_hint is None or member_hint["parentId"] != parent_id:
+                continue
+            relative_x = (
+                float(member_hint["x"]) - float(parent_hint["x"])
+            ) / FOOTPRINT_CELL_SIZE
+            relative_z = (
+                float(member_hint["z"]) - float(parent_hint["z"])
+            ) / FOOTPRINT_CELL_SIZE
+            if float(relative_x).is_integer() and float(relative_z).is_integer():
+                relative_hints[member_id] = (int(relative_x), int(relative_z))
+
+    block_preferred: Cell | None = None
+    internal_hints: dict[str, Cell] = {}
+    if relative_hints:
+        block_preferred = (
+            min(cell[0] for cell in relative_hints.values()),
+            min(cell[1] for cell in relative_hints.values()),
+        )
+        internal_hints = {
+            member_id: (
+                cell[0] - block_preferred[0],
+                cell[1] - block_preferred[1],
+            )
+            for member_id, cell in relative_hints.items()
+        }
+
+    hinted = sorted(
+        internal_hints,
+        key=lambda member_id: (
+            internal_hints[member_id][1],
+            internal_hints[member_id][0],
+            member_id,
+        ),
+    )
+    unhinted = sorted(
+        set(member_ids) - set(hinted),
+        key=lambda member_id: (
+            -len(footprint_cells[member_id]),
+            _hash_integer(member_id),
+            member_id,
+        ),
+    )
+    occupied: set[Cell] = set()
+    offsets: dict[str, Cell] = {}
+    for member_id in hinted + unhinted:
+        offset = _pack_shape(
+            footprint_cells[member_id],
+            occupied,
+            0,
+            internal_hints.get(member_id),
+        )
+        offsets[member_id] = offset
+        occupied.update(
+            _translated_cells(footprint_cells[member_id], offset)
+        )
+
+    width = max(x for x, _ in occupied) + 1
+    depth = max(z for _, z in occupied) + 1
+    block_cells = {
+        (x, z)
+        for z in range(depth)
+        for x in range(width)
+    }
+    return block_cells, offsets, block_preferred
 
 
 def _cells_to_footprint(
@@ -546,6 +686,8 @@ def _measure_districts(
     dimensions: dict[str, tuple[float, float]],
     child_offsets: dict[str, dict[str, tuple[float, float]]],
     footprint_cells: dict[str, set[Cell]],
+    compact_leaf_groups: dict[str, tuple[str, ...]],
+    compact_leaf_ids: set[str],
     hierarchy_depth: int = 0,
 ) -> tuple[float, float]:
     children = _ordered_children(district_id, children_by_parent)
@@ -559,10 +701,17 @@ def _measure_districts(
             dimensions,
             child_offsets,
             footprint_cells,
+            compact_leaf_groups,
+            compact_leaf_ids,
             hierarchy_depth + 1,
         )
     local_slots = allocated_slots.get(district_id, {})
-    direct_cells = _direct_footprint_cells(local_slots)
+    building_offset = (
+        COMPACT_LEAF_BUILDING_OFFSET
+        if district_id in compact_leaf_ids
+        else BUILDING_OFFSET
+    )
+    direct_cells = _direct_footprint_cells(local_slots, building_offset)
     if not direct_cells and not children:
         direct_cells = {(0, 0)}
 
@@ -578,11 +727,19 @@ def _measure_districts(
     hint = district_hints.get(district_id)
     offsets: dict[str, tuple[float, float]] = {}
     occupied = set(direct_cells)
+    compact_members = set(compact_leaf_groups.get(district_id, ()))
+    regular_children = [
+        child_id for child_id in children if child_id not in compact_members
+    ]
     hinted = []
     unhinted = []
-    for child_id in children:
+    for child_id in regular_children:
         child_hint = district_hints.get(child_id)
-        if hint is not None and child_hint is not None and child_hint["parentId"] == district_id:
+        if (
+            hint is not None
+            and child_hint is not None
+            and child_hint["parentId"] == district_id
+        ):
             hinted.append(child_id)
         else:
             unhinted.append(child_id)
@@ -604,7 +761,11 @@ def _measure_districts(
     for child_id in hinted + unhinted:
         preferred: Cell | None = None
         child_hint = district_hints.get(child_id)
-        if hint is not None and child_hint is not None and child_hint["parentId"] == district_id:
+        if (
+            hint is not None
+            and child_hint is not None
+            and child_hint["parentId"] == district_id
+        ):
             relative_x = (child_hint["x"] - hint["x"]) / FOOTPRINT_CELL_SIZE
             relative_z = (child_hint["z"] - hint["z"]) / FOOTPRINT_CELL_SIZE
             if float(relative_x).is_integer() and float(relative_z).is_integer():
@@ -614,12 +775,36 @@ def _measure_districts(
             occupied,
             _street_gap_cells(hierarchy_depth),
             preferred,
+            prefer_density=hierarchy_depth == 0,
         )
         offsets[child_id] = (
             float(offset_cells[0] * FOOTPRINT_CELL_SIZE),
             float(offset_cells[1] * FOOTPRINT_CELL_SIZE),
         )
         occupied.update(_translated_cells(footprint_cells[child_id], offset_cells))
+
+    if compact_members:
+        member_ids = compact_leaf_groups[district_id]
+        block_cells, member_offsets, block_preferred = _pack_compact_leaf_block(
+            member_ids,
+            footprint_cells,
+            district_hints,
+            district_id,
+        )
+        block_offset = _pack_shape(
+            block_cells,
+            occupied,
+            _street_gap_cells(hierarchy_depth),
+            block_preferred,
+            prefer_density=hierarchy_depth == 0,
+        )
+        for member_id in member_ids:
+            member_offset = member_offsets[member_id]
+            offsets[member_id] = (
+                float((block_offset[0] + member_offset[0]) * FOOTPRINT_CELL_SIZE),
+                float((block_offset[1] + member_offset[1]) * FOOTPRINT_CELL_SIZE),
+            )
+        occupied.update(_translated_cells(block_cells, block_offset))
 
     occupied = _fill_enclosed_cells(_connect_local_cells(occupied))
     occupied = _normalized_cells(occupied)
@@ -966,8 +1151,24 @@ def generate_city(
         parent_path = str(PurePosixPath(entity["path"]).parent)
         district_id = directory_ids.get(parent_path, root_id)
         files_by_district[district_id].append(entity)
+
+    children_by_parent: dict[str, list[str]] = defaultdict(list)
+    for entity in directory_entities:
+        parent_id = _district_parent_id(entity["path"], directory_ids, root_id)
+        children_by_parent[parent_id].append(entity["id"])
+    compact_leaf_groups = _compact_leaf_groups(
+        root_id, children_by_parent, files_by_district
+    )
+    compact_leaf_ids = {
+        child_id
+        for member_ids in compact_leaf_groups.values()
+        for child_id in member_ids
+    }
     locked_slots = _hinted_local_slots(
-        files_by_district, district_hints, building_hints
+        files_by_district,
+        district_hints,
+        building_hints,
+        compact_leaf_ids,
     )
     allocated_slots: dict[str, dict[str, int]] = {}
     for district_id, entities in files_by_district.items():
@@ -979,10 +1180,6 @@ def generate_city(
             slots if locked_slots.get(district_id) else _compact_cold_slots(slots)
         )
 
-    children_by_parent: dict[str, list[str]] = defaultdict(list)
-    for entity in directory_entities:
-        parent_id = _district_parent_id(entity["path"], directory_ids, root_id)
-        children_by_parent[parent_id].append(entity["id"])
     dimensions: dict[str, tuple[float, float]] = {}
     child_offsets: dict[str, dict[str, tuple[float, float]]] = {}
     footprint_cells: dict[str, set[Cell]] = {}
@@ -995,6 +1192,8 @@ def generate_city(
         dimensions,
         child_offsets,
         footprint_cells,
+        compact_leaf_groups,
+        compact_leaf_ids,
     )
     districts: list[dict[str, Any]] = []
     _place_districts(
@@ -1016,6 +1215,11 @@ def generate_city(
         district = districts_by_id[district_id]
         entities = files_by_district[district_id]
         local_slots = allocated_slots[district_id]
+        building_offset = (
+            COMPACT_LEAF_BUILDING_OFFSET
+            if district_id in compact_leaf_ids
+            else BUILDING_OFFSET
+        )
         for entity in sorted(entities, key=lambda item: item["id"]):
             slot = local_slots[entity["id"]]
             page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
@@ -1032,11 +1236,11 @@ def generate_city(
                     "height": height,
                     "styleVariant": entity.get("language") or "unknown",
                     "width": BUILDING_SIZE,
-                    "x": district["x"] + BUILDING_OFFSET + column * BUILDING_SPACING,
+                    "x": district["x"] + building_offset + column * BUILDING_SPACING,
                     "z": (
                         district["z"]
                         + page * DISTRICT_DEPTH
-                        + BUILDING_OFFSET
+                        + building_offset
                         + row * BUILDING_SPACING
                     ),
                 }
