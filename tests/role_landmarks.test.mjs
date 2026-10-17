@@ -43,7 +43,7 @@ test('same-role facilities promote in stages, keep exact membership and original
   assert.deepEqual(policy(f).aggregates, p.aggregates);
 });
 
-test('LOD has no duplicate files; partial filtering and selection expose originals', () => {
+test('role facilities persist at all zooms; only explicit expansion exposes originals', () => {
   const f = fixture(), p = policy(f), ids = f.scene.buildings.map(b => b.entityId);
   const a = p.aggregates.find(a => a.role);
   for (const level of ['overview', 'district', 'detail']) {
@@ -52,14 +52,39 @@ test('LOD has no duplicate files; partial filtering and selection expose origina
     assert.equal(new Set(represented).size, represented.length);
     assert.equal(represented.length, ids.length);
   }
-  assert.equal(p.visibility('detail', ids, []).aggregateIds.length, 0);
+  assert.equal(p.visibility('detail', ids, []).aggregateIds.length, p.aggregates.filter(a => a.role).length);
   const partial = p.visibility('overview', [a.memberEntityIds[0]], []);
   assert.deepEqual(partial.buildingIds, [a.memberEntityIds[0]]); assert.equal(partial.aggregateIds.length, 0);
   const selected = p.visibility('overview', ids, [], {kind: 'building', id: a.memberEntityIds[0]});
-  assert.ok(selected.buildingIds.includes(a.memberEntityIds[0])); assert.ok(!selected.aggregateIds.includes(a.id));
+  assert.ok(!selected.buildingIds.includes(a.memberEntityIds[0])); assert.ok(selected.aggregateIds.includes(a.id));
+  assert.equal(p.facilityForEntity(a.memberEntityIds[0]).id, a.id);
+  for (const level of ['overview', 'district', 'detail']) {
+    const expanded = p.visibility(level, ids, [], {kind: 'aggregate', id: a.id}, new Set([a.id]));
+    assert.ok(!expanded.aggregateIds.includes(a.id));
+    assert.ok(a.memberEntityIds.every(id => expanded.buildingIds.includes(id)));
+    const otherRoles = p.aggregates.filter(b => b.role && b.id !== a.id);
+    assert.ok(otherRoles.every(b => expanded.aggregateIds.includes(b.id)));
+    const collapsed = p.visibility(level, ids, [], null, new Set());
+    assert.ok(collapsed.aggregateIds.includes(a.id));
+    assert.ok(a.memberEntityIds.every(id => !collapsed.buildingIds.includes(id)));
+  }
   const pinned = p.visibility('detail', ids, [], {kind: 'aggregate', id: a.id});
   assert.ok(a.memberEntityIds.every(id => !pinned.buildingIds.includes(id)));
   assert.match(engine.aggregateLabel(a, new Map(f.ucg.entities.map(e => [e.id, e]))), /visual aggregate\nsrc\/[\s\S]*click to inspect/);
+});
+
+test('zoom does not flood routes; explicit all-routes and evidenced constituent focus remain available', () => {
+  const f = fixture();
+  f.ucg.edges = [{id: 'related', from: 'f000', to: 'f001'}, {id: 'other', from: 'f200', to: 'f201'}];
+  f.scene.networks = Array.from({length: 100}, (_, i) => ({id: `route${i}`,
+    edgeIds: [i === 99 ? 'related' : 'other'], kind: 'DEPENDENCY_ROAD', path: [[0, 0], [7, 0]]}));
+  const p = policy(f), ids = f.scene.buildings.map(b => b.entityId), routes = f.scene.networks.map(n => n.id);
+  assert.equal(p.visibility('district', ids, routes).networkIds.length, 64);
+  assert.equal(p.visibility('detail', ids, routes).networkIds.length, 64);
+  assert.equal(p.visibility('detail', ids, routes, null, new Set(), true).networkIds.length, 100);
+  assert.deepEqual(p.visibility('detail', ids, routes, {kind: 'building', id: 'f000'}).networkIds, ['route99']);
+  assert.deepEqual(p.visibility('detail', ids, routes, {kind: 'building', id: 'f010'}).networkIds, []);
+  assert.deepEqual(p.visibility('detail', ids, [], {kind: 'building', id: 'f000'}).networkIds, []);
 });
 
 test('unproven gates and generic files never become role landmarks', () => {

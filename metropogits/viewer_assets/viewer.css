@@ -339,3 +339,8 @@ footer a { color: #7dd3fc; }
   overflow-wrap: anywhere;
   max-width: min(440px, 80vw);
 }
+
+[data-action="toggle-routes"][aria-pressed="true"] {
+  border-color: #38bdf8;
+  background: #164e63;
+}

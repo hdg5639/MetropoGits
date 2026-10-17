@@ -125,6 +125,8 @@
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
   const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets, ucg);
+  const expandedAggregateIds = new Set();
+  let showAllNetworks = false;
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -269,7 +271,7 @@
     const selectionKey = state.selected
       ? `${state.selected.kind}:${state.selected.id}`
       : "none";
-    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}`;
+    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${[...expandedAggregateIds].sort().join('|')}`;
     if (nextCacheKey === lodCacheKey) return;
     currentDetailLevel = nextDetailLevel;
     lodCacheKey = nextCacheKey;
@@ -278,6 +280,8 @@
       visibleBuildingIds,
       visibleNetworkIds,
       state.selected,
+      expandedAggregateIds,
+      showAllNetworks,
     );
     renderedAggregateIds = new Set(visible.aggregateIds);
     renderedBuildingIds = new Set(visible.buildingIds);
@@ -302,7 +306,8 @@
       const subject = renderedAggregateIds.size
         ? `${renderedAggregateIds.size} aggregates (${representedFiles} files) + ${renderedBuildingIds.size} buildings`
         : `${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings`;
-      const status = `${label} · ${subject} · ${renderedNetworkIds.size}/${visibleNetworkIds.size} routes`;
+      const routeLabel = state.selected?.kind === "building" && !showAllNetworks ? "related routes" : "routes";
+      const status = `${label} · ${subject} · ${renderedNetworkIds.size}/${visibleNetworkIds.size} ${routeLabel}`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
     }
   }
@@ -715,7 +720,10 @@
   }
 
   function drawAggregateFacility(facility) {
-    const isSelected = selected("aggregate", facility.id);
+    const selectedMember = state.selected?.kind === "building"
+      && facility.memberEntityIds.includes(state.selected.id)
+      ? scene.buildings.find(b => b.entityId === state.selected.id) : null;
+    const isSelected = selected("aggregate", facility.id) || Boolean(selectedMember);
     const outlines = (facility.plots || [facility]).map((plot) => drawVolume(
       { ...plot, height: 2.2 },
       ["#475569", "#263449", "#172033"],
@@ -733,6 +741,14 @@
         isSelected ? 2.8 : 1.4,
       );
       outlines.push(outline);
+    }
+    if (selectedMember) {
+      const b = selectedMember, y = facility.height + 3;
+      polygonPath([project(b.x, b.z, y), project(b.x + b.width, b.z, y),
+        project(b.x + b.width, b.z + b.depth, y), project(b.x, b.z + b.depth, y)]);
+      context.strokeStyle = "#22d3ee";
+      context.lineWidth = 2;
+      context.stroke();
     }
     if (isSelected) {
       const label = `${districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files`;
@@ -917,9 +933,31 @@
     button.type = "button";
     button.addEventListener("click", () => {
       beforeFocus?.();
+      hoverLabel.hidden = true;
       focusWorld(x, z);
     });
     return button;
+  }
+
+  function facilityControls(parent, facility) {
+    const expanded = expandedAggregateIds.has(facility.id);
+    const toggle = element("button", expanded ? "Collapse facility" : "Expand constituent files", "focus-button");
+    toggle.type = "button";
+    toggle.dataset.facilityAction = "toggle";
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.addEventListener("click", () => {
+      if (expandedAggregateIds.has(facility.id)) expandedAggregateIds.delete(facility.id);
+      else expandedAggregateIds.add(facility.id);
+      showSelection({ kind: "aggregate", id: facility.id });
+    });
+    parent.append(toggle);
+    if (state.selected?.kind === "building") {
+      const back = element("button", "Inspect facility", "focus-button");
+      back.type = "button";
+      back.dataset.facilityAction = "inspect";
+      back.addEventListener("click", () => showSelection({ kind: "aggregate", id: facility.id }));
+      parent.append(back);
+    }
   }
 
   function showAggregate(aggregateId) {
@@ -929,7 +967,7 @@
     inspector.append(element("h2", facility.title || districtLabel(districts.get(facility.districtId))));
     inspector.append(element(
       "p",
-      facility.role ? "Nearby files with the same evidenced role, grouped for display only. Not a new service or runtime facility. Zoom in or explore to reveal the original buildings."
+      facility.role ? "Visual compound of evidenced files, not a new service. Zoom keeps this facility intact. Only Expand constituent files reveals individual buildings."
         : "This overview block groups real file buildings and districts. It is not a code entity or inferred service.",
       "aggregate-disclosure",
     ));
@@ -939,6 +977,7 @@
     detailRow(details, "Districts", facility.memberDistrictIds?.length || 0);
     detailRow(details, "Representation", "Deterministic visual block aggregate");
     inspector.append(details);
+    if (facility.role) facilityControls(inspector, facility);
     if (facility.role) factSection(inspector, "GROUPING EVIDENCE", facility.evidenceIds.map(evidenceLabel));
     factSection(
       inspector,
@@ -952,9 +991,9 @@
     inspector.append(focusButton(
       facility.x + facility.width / 2,
       facility.z + facility.depth / 2,
-      "Explore constituent buildings",
+      facility.role ? "Focus facility" : "Explore constituent buildings",
       () => {
-        state.selected = null;
+        if (!facility.role) state.selected = null;
       },
     ));
   }
@@ -971,6 +1010,11 @@
     detailRow(details, "Height", building.height);
     detailRow(details, "District", districtLabel(districts.get(building.districtId)));
     inspector.append(details);
+    const facility = lodPolicy.facilityForEntity(entityId);
+    if (facility) {
+      inspector.append(element("p", `${facility.title}: selected constituent. Cyan outline marks its original footprint above the compound; it is not another building. Routes are aggregates containing this file's actual edges.`, "aggregate-disclosure"));
+      facilityControls(inspector, facility);
+    }
 
     const roles = (entity.roles || []).map((claim) => `${claim.value} · ${claim.confidence}`);
     const technologies = (entity.technologies || []).map(
@@ -1067,6 +1111,7 @@
 
   function showSelection(selection) {
     if (!selection) return;
+    hoverLabel.hidden = true;
     state.selected = { kind: selection.kind, id: selection.id };
     if (selection.kind === "aggregate") showAggregate(selection.id);
     if (selection.kind === "building") showBuilding(selection.id);
@@ -1152,6 +1197,10 @@
   );
 
   function runAction(action) {
+    if (action === "toggle-routes") {
+      showAllNetworks = !showAllNetworks;
+      document.querySelector('[data-action="toggle-routes"]').setAttribute("aria-pressed", String(showAllNetworks));
+    }
     if (action === "rotate-left") state.angle -= Math.PI / 8;
     if (action === "rotate-right") state.angle += Math.PI / 8;
     if (action === "zoom-in") state.zoom = Math.min(5, state.zoom * 1.2);

@@ -65,6 +65,14 @@ export function instrument(source) {
       hitMs: auditHitEnd - auditDrawEnd, labelsMs: ended - auditHitEnd,`);
   return replaceOnce(result, '  new ResizeObserver(resize).observe(canvas);', `
   globalThis.__METRO_AUDIT__ = {
+    roleState(id) {
+      const facility = aggregateFacilities.get(id);
+      return {expanded: expandedAggregateIds.has(id), visible: renderedAggregateIds.has(id),
+        visibleMembers: facility.memberEntityIds.filter(member => renderedBuildingIds.has(member)).length,
+        totalMembers: facility.memberEntityIds.length,
+        visibleRoles: [...renderedAggregateIds].filter(key => aggregateFacilities.get(key).role).length,
+        totalRoles: [...aggregateFacilities.values()].filter(item => item.role).length};
+    },
     roleTargets() {
       return hitRegions.filter(region => region.kind === 'aggregate' && aggregateFacilities.get(region.id)?.role)
         .map(region => ({id: region.id, x: (region.minX + region.maxX) / 2, y: (region.minY + region.maxY) / 2}))
@@ -170,6 +178,15 @@ async function configure(cdp, options) {
   const sequence = await cdp.evaluate(`(() => {
     const sequence = __METRO_AUDIT__.snapshot().sequence;
     __METRO_AUDIT__.configure(${JSON.stringify(options)});
+    return sequence;
+  })()`);
+  return nextDraw(cdp, sequence);
+}
+
+async function activate(cdp, expression) {
+  const sequence = await cdp.evaluate(`(() => {
+    const sequence = __METRO_AUDIT__.snapshot().sequence;
+    ${expression};
     return sequence;
   })()`);
   return nextDraw(cdp, sequence);
@@ -361,10 +378,40 @@ export async function runAudit(browser, output, inputs, samples = 20) {
         if (members.length !== target.members.length) throw new Error('Role inspector membership mismatch');
         const png = await cdp.send('Page.captureScreenshot', {format: 'png'});
         await writeFile(join(directory, 'role-inspector.png'), Buffer.from(png.data, 'base64'));
-        await cdp.evaluate('document.querySelector(".aggregate-members button").click()');
+        await activate(cdp, 'document.querySelector(".aggregate-members button").click()');
         const selectedPath = await cdp.evaluate('document.querySelector(".inspector h2").textContent');
         if (selectedPath !== members[0]) throw new Error('Constituent file navigation failed');
-        result.roleInteraction = {title: target.title, memberCount: members.length, hover, selectedPath};
+        const roleState = () => cdp.evaluate(`__METRO_AUDIT__.roleState(${JSON.stringify(target.id)})`);
+        const selectedMember = await roleState();
+        if (!selectedMember.visible || selectedMember.visibleMembers !== 0) throw new Error('File selection unfolded compound');
+        const memberPng = await cdp.send('Page.captureScreenshot', {format: 'png'});
+        await writeFile(join(directory, 'role-member.png'), Buffer.from(memberPng.data, 'base64'));
+        await activate(cdp, 'document.querySelector("[data-facility-action=inspect]").click()');
+        const focused = await activate(cdp, '[...document.querySelectorAll(".inspector button")].find(b => b.textContent === "Focus facility").click()');
+        const focusedRole = await roleState();
+        if (focused.lod !== 'detail' || !focusedRole.visible || focusedRole.visibleMembers !== 0
+          || focusedRole.visibleRoles !== focusedRole.totalRoles) throw new Error('Detail zoom broke role compounds');
+        const focusedPng = await cdp.send('Page.captureScreenshot', {format: 'png'});
+        await writeFile(join(directory, 'role-focused.png'), Buffer.from(focusedPng.data, 'base64'));
+        await activate(cdp, 'document.querySelector("[data-facility-action=toggle]").click()');
+        const expanded = await roleState();
+        if (!expanded.expanded || expanded.visible || expanded.visibleMembers !== expanded.totalMembers
+          || expanded.visibleRoles !== expanded.totalRoles - 1) throw new Error('Explicit expansion was not local');
+        const expandedPng = await cdp.send('Page.captureScreenshot', {format: 'png'});
+        await writeFile(join(directory, 'role-expanded.png'), Buffer.from(expandedPng.data, 'base64'));
+        await configure(cdp, {zoom: 1});
+        if (!(await roleState()).expanded || (await roleState()).visibleMembers !== expanded.totalMembers) {
+          throw new Error('Zoom reset explicit expansion');
+        }
+        await activate(cdp, 'document.querySelector("[data-facility-action=toggle]").click()');
+        const collapsed = await roleState();
+        if (collapsed.expanded || !collapsed.visible || collapsed.visibleMembers !== 0) throw new Error('Collapse failed');
+        const allRoutes = await activate(cdp, 'document.querySelector("[data-action=toggle-routes]").click()');
+        const totalRoutes = await cdp.evaluate('METROPOGITS_DATA.scene.networks.length');
+        if (allRoutes.counts.networks !== totalRoutes) throw new Error('All routes override failed');
+        await activate(cdp, 'document.querySelector("[data-action=toggle-routes]").click()');
+        result.roleInteraction = {title: target.title, memberCount: members.length, hover, selectedPath,
+          selectedMember, focusedRole, expanded, collapsed, allRoutes: allRoutes.counts.networks};
       } else {
         result.roleInteraction = {status: 'No visible role target at this framing'};
       }

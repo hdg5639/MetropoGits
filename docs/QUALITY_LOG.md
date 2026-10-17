@@ -2355,3 +2355,53 @@
 - Delivery: one feat(viewer) work unit; verified files staged explicitly for
   owner-authorized main. Commit/push outcome is recorded in Git history and the
   handoff, without agent contributor attribution. Pages remains deferred.
+
+## Checkpoint 2026-10-18 — persistent compounds and explicit local expansion
+- Corrected e513619's interaction model after maintainer review: Detail zoom
+  and constituent inspection no longer dissolve role compounds. Explicit
+  Expand constituent files / Collapse facility applies to one facility and
+  survives camera zoom. Focus facility only moves the camera; its fit now
+  includes compound height to avoid the prior overly close framing.
+- Constituent selection keeps the compound and shows a cyan original-footprint
+  overlay, disclosed as selection geometry, not another file building. Exact
+  entity/evidence inspection remains available. Matching route aggregates are
+  selected through their actual UCG edges, without claiming per-file spurs.
+- Route visibility: District and Detail keep a 64-route default budget;
+  Overview retains 24. Explicit All routes overrides at any zoom. File selection
+  shows related routes only unless overridden; no-edge files correctly show
+  zero, not fabricated connectivity. Canonical route geometry is unchanged.
+- Fixtures/artifacts: unchanged validated GJ-Cloud 3d9b53f and GamjaOJ b163acd
+  repackaged to `artifacts/visual/persistent-facilities-r2/{gj,oj}`; fresh full
+  CLI builds of spring-positive and structural-showcase in sibling directories.
+  Browser reports/captures: `persistent-facilities-audit-r1/r2`. No application
+  source, dependencies or build scripts executed.
+- Commands: `python -m unittest discover -s tests -q`; `node --test
+  tests/viewer_audit.test.mjs tests/role_landmarks.test.mjs`; `python -m ruff
+  check metropogits tests scripts`; `git diff --check`; opt-in `node
+  scripts/viewer_audit.mjs <chrome> <new-output> <gj> <oj>`; checksum comparison
+  against role-landmarks-r2. All canonical UCG/City and static SVG bytes match;
+  generated manifest checksums pass, with zero layout/membership churn.
+- Browser verification: real hover/click, file navigation without unfolding,
+  Focus to natural Detail with all 12 GJ / 13 OJ role facilities retained,
+  local expand, zoom-out without collapsing, explicit collapse and All routes
+  restore (135 GJ / 31 OJ) pass. Viewed final GJ page-hall and OJ test-campus
+  focused images, selected-file image, and the first-pass expanded image. The
+  original close-fit clipping was corrected and regenerated. Some neighboring
+  ungrouped gates remain separate; no claim that every role file is aggregated.
+- Tests: 244 Python tests run (243 pass, one expected Windows symlink skip);
+  14 Node tests pass; Ruff/whitespace pass. Updated legacy detail-route count
+  expectation to the explicit budget and added all-routes restoration tests.
+  Canvas shares the tested policy and controls; browser interaction audit is
+  WebGL, not a claim of visually verified Canvas fallback.
+- Performance: final synthetic Detail CPU p95 GJ 0.7 ms / OJ 0.8 ms; zero
+  static geometry rebuilds in sampled animated frames at all three LODs.
+  Headless SwiftShader CPU submission only, not GPU FPS or universal timings.
+- Spec alignment: PASS DEC-005/008/011, AC-002/006/011. ADR-015 now explicitly
+  separates semantic representation from camera LOD. No schema, graph evidence,
+  canonical coordinates, security defaults, dependencies or deployment changes.
+- Remaining limits: filters selecting only part of a compound intentionally
+  show matching original files; spatial role membership and compound meshes
+  are unchanged. True shared access routing, analyzer misses, HTTP/messaging
+  extraction and CPU showcase compound parity remain separate work.
+- Delivery: one fix(viewer) work unit, explicit staging and human attribution;
+  commit/push to owner-authorized main recorded in Git history and handoff.

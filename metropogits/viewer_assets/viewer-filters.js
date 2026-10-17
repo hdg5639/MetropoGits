@@ -687,6 +687,20 @@
       streetData?.rectangles || [],
     );
     const aggregateIds = new Set(aggregates.map((aggregate) => aggregate.id));
+    const roleByMember = new Map(aggregates.filter(a => a.role)
+      .flatMap(a => a.memberEntityIds.map(id => [id, a])));
+    const edges = new Map((ucg?.edges || []).map(edge => [edge.id, edge]));
+    const routesByMember = new Map();
+    for (const network of scene.networks) {
+      for (const edgeId of network.edgeIds) {
+        const edge = edges.get(edgeId);
+        if (!edge) continue;
+        for (const id of [edge.from, edge.to]) {
+          if (!routesByMember.has(id)) routesByMember.set(id, new Set());
+          routesByMember.get(id).add(network.id);
+        }
+      }
+    }
     const districtDepths = new Map();
 
     function districtDepth(districtId) {
@@ -716,7 +730,8 @@
       return districtDepths.get(districtId) <= 2;
     }
 
-    function visibility(level, candidateBuildingIds, candidateNetworkIds, selected = null) {
+    function visibility(level, candidateBuildingIds, candidateNetworkIds, selected = null,
+      expandedAggregateIds = new Set(), showAllNetworks = false) {
       const candidateBuildings = new Set(candidateBuildingIds);
       const candidateNetworks = new Set(candidateNetworkIds);
       let buildingIds = [...candidateBuildings]
@@ -731,9 +746,10 @@
         .sort();
 
       const visibleAggregateIds = aggregates.filter(aggregate =>
-        (level === "overview" || (level === "district" && aggregate.role))
+        (level === "overview" || aggregate.role)
+        && !expandedAggregateIds.has(aggregate.id)
         && aggregate.memberEntityIds.every(id => candidateBuildings.has(id))
-        && !(selected?.kind === "building" && aggregate.memberEntityIds.includes(selected.id)),
+        && !(!aggregate.role && selected?.kind === "building" && aggregate.memberEntityIds.includes(selected.id)),
       ).map(aggregate => aggregate.id);
       // Partial filters must never reintroduce hidden members through an aggregate.
       if (level === "overview") {
@@ -743,6 +759,7 @@
       if (
         selected?.kind === "aggregate"
         && aggregateIds.has(selected.id)
+        && !expandedAggregateIds.has(selected.id)
         && !visibleAggregateIds.includes(selected.id)
         && aggregates.find(a => a.id === selected.id).memberEntityIds.every(id => candidateBuildings.has(id))
       ) {
@@ -752,7 +769,7 @@
       const groupedMembers = new Set(aggregates.filter(a => visibleAggregateIds.includes(a.id)).flatMap(a => a.memberEntityIds));
       buildingIds = buildingIds.filter(id => !groupedMembers.has(id));
 
-      const networkLimit = level === "overview" ? 24 : level === "district" ? 64 : Infinity;
+      const networkLimit = showAllNetworks ? Infinity : level === "overview" ? 24 : 64;
       const rankedNetworks = [...candidateNetworks]
         .map((id) => networks.get(id))
         .filter(Boolean)
@@ -761,7 +778,9 @@
             (right.edgeIds?.length || 0) - (left.edgeIds?.length || 0)
             || left.id.localeCompare(right.id),
         );
-      const networkIds = rankedNetworks.slice(0, networkLimit).map((network) => network.id);
+      const networkIds = selected?.kind === "building" && ucg && !showAllNetworks
+        ? rankedNetworks.filter(network => routesByMember.get(selected.id)?.has(network.id)).map(network => network.id)
+        : rankedNetworks.slice(0, networkLimit).map((network) => network.id);
       if (
         selected?.kind === "network"
         && candidateNetworks.has(selected.id)
@@ -776,6 +795,7 @@
 
     return Object.freeze({
       aggregates,
+      facilityForEntity: id => roleByMember.get(id),
       districtVisible,
       levelForZoom,
       visibility,

@@ -741,7 +741,7 @@ process.stdout.write(JSON.stringify({
         self.assertTrue(result["deterministic"])
         self.assertEqual(["overview", "district", "detail"], result["levels"])
         self.assertEqual("detail", result["forcedLevel"])
-        self.assertEqual([300, 100], result["detailCounts"])
+        self.assertEqual([300, 64], result["detailCounts"])
         self.assertEqual([24, 64], result["networkCounts"])
         self.assertEqual([17, 0], result["aggregateCounts"])
         self.assertEqual(0, result["overviewBuildingCount"])
