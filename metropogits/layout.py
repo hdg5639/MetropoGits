@@ -20,27 +20,28 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.1"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.2"
 DISTRICT_WIDTH = 64
 DISTRICT_DEPTH = 64
 DISTRICT_PADDING = 16
 BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
 BUILDING_OFFSET = 6
+BUILDING_SIZE = 6
 BUILDING_PAGE_CAPACITY = BUILDING_COLUMNS * BUILDING_COLUMNS
 MAX_HINT_ITEMS = 100_000
 
 ROLE_STYLES = {
-    "ENTRYPOINT": ("GATE", 14),
-    "SERVICE": ("SERVICE_OFFICE", 12),
-    "PERSISTENCE_ADAPTER": ("STRUCTURED_WAREHOUSE", 10),
-    "DOCUMENT_PERSISTENCE_ADAPTER": ("DOCUMENT_DEPOT", 10),
-    "CACHE_ADAPTER": ("CACHE_TOWER", 10),
-    "MESSAGE_PRODUCER": ("EXCHANGE", 11),
-    "MESSAGE_ADAPTER": ("EXCHANGE", 11),
-    "HTTP_CLIENT": ("PORT", 11),
-    "CONFIGURATION": ("CONTROL_CENTER", 11),
-    "GENERAL_COMPONENT": ("GENERIC_BUILDING", 8),
+    "ENTRYPOINT": ("GATE", 18),
+    "SERVICE": ("SERVICE_OFFICE", 16),
+    "PERSISTENCE_ADAPTER": ("STRUCTURED_WAREHOUSE", 14),
+    "DOCUMENT_PERSISTENCE_ADAPTER": ("DOCUMENT_DEPOT", 14),
+    "CACHE_ADAPTER": ("CACHE_TOWER", 14),
+    "MESSAGE_PRODUCER": ("EXCHANGE", 15),
+    "MESSAGE_ADAPTER": ("EXCHANGE", 15),
+    "HTTP_CLIENT": ("PORT", 15),
+    "CONFIGURATION": ("CONTROL_CENTER", 15),
+    "GENERAL_COMPONENT": ("GENERIC_BUILDING", 10),
 }
 ROLE_PRIORITY = {
     "ENTRYPOINT": 0,
@@ -460,7 +461,7 @@ def _building_style(entity: dict[str, Any]) -> tuple[str, int, list[str]]:
     roles = entity.get("roles", [])
     recognized = [role for role in roles if role["value"] in ROLE_STYLES]
     if not recognized:
-        return "GENERIC_BUILDING", 8, []
+        return "GENERIC_BUILDING", 10, []
     selected = min(
         recognized,
         key=lambda role: (ROLE_PRIORITY[role["value"]], role["value"]),
@@ -574,13 +575,13 @@ def generate_city(
             buildings.append(
                 {
                     "archetype": archetype,
-                    "depth": 4,
+                    "depth": BUILDING_SIZE,
                     "districtId": district_id,
                     "entityId": entity["id"],
                     "evidenceIds": evidence_ids,
                     "height": height,
                     "styleVariant": entity.get("language") or "unknown",
-                    "width": 4,
+                    "width": BUILDING_SIZE,
                     "x": district["x"] + BUILDING_OFFSET + column * BUILDING_SPACING,
                     "z": (
                         district["z"]

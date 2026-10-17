@@ -414,8 +414,10 @@
 
     const outline = [top[0], top[1], bottom[1], bottom[2], bottom[3], top[3]];
     polygonPath(outline);
-    context.strokeStyle = selected("building", building.entityId) ? "#f8fafc" : "#0f172a";
-    context.lineWidth = selected("building", building.entityId) ? 2.5 : 0.8;
+    context.strokeStyle = selected("building", building.entityId)
+      ? "#f8fafc"
+      : "rgba(203, 213, 225, 0.62)";
+    context.lineWidth = selected("building", building.entityId) ? 2.5 : 1.1;
     context.stroke();
     hitRegions.push({ kind: "building", id: building.entityId, points: outline });
   }

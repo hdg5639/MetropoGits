@@ -300,12 +300,19 @@ def render_preview(
                     f"data-archetype=\"{_escape(building['archetype'])}\">"
                 ),
                 f"      <title>{_escape(title)}</title>",
-                f"      <polygon points=\"{right_points}\" fill=\"{right_color}\"/>",
-                f"      <polygon points=\"{front_points}\" fill=\"{front_color}\"/>",
+                (
+                    f"      <polygon points=\"{right_points}\" fill=\"{right_color}\" "
+                    'stroke="#0f172a" stroke-width="0.75"/>'
+                ),
+                (
+                    f"      <polygon points=\"{front_points}\" fill=\"{front_color}\" "
+                    'stroke="#0f172a" stroke-width="0.75"/>'
+                ),
                 (
                     f"      <rect x=\"{_fmt(top_x)}\" y=\"{_fmt(top_y)}\" "
                     f"width=\"{_fmt(building_width)}\" height=\"{_fmt(building_depth)}\" "
-                    f"rx=\"1\" fill=\"{top_color}\"/>"
+                    f"rx=\"1\" fill=\"{top_color}\" stroke=\"#0f172a\" "
+                    'stroke-width="0.75"/>'
                 ),
                 "    </g>",
             ]
