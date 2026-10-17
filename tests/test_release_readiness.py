@@ -45,7 +45,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             {item["id"] for item in document["acceptanceCriteria"]},
         )
         self.assertEqual(
-            {"FR-003"},
+            set(),
             {
                 item["id"]
                 for item in document["requirements"]
@@ -92,21 +92,19 @@ class ReleaseReadinessTests(unittest.TestCase):
                 "ACCEPTANCE_EVIDENCE",
                 "DECISION_COMPLIANCE",
                 "FRESH_REPOSITORY_PUBLISHING",
-                "P0_REQUIREMENTS",
                 "PROJECT_LICENSE",
             ],
             [item["id"] for item in blocked],
         )
         self.assertTrue(all(item["blocker"] for item in blocked))
 
-    def test_l2_progress_keeps_only_unimplemented_project_detection_blocked(self):
+    def test_l2_project_detection_is_fully_automated(self):
         document = readiness_document()
         requirements = {item["id"]: item for item in document["requirements"]}
 
         project_detection = requirements["FR-003"]
-        self.assertEqual("BLOCKED", project_detection["status"])
-        self.assertIn("lockfile", project_detection["blocker"])
-        self.assertIn("configuration", project_detection["blocker"])
+        self.assertEqual("AUTOMATED", project_detection["status"])
+        self.assertIsNone(project_detection["blocker"])
         self.assertTrue(
             any("test_maven_dependencies" in item for item in project_detection["evidence"])
         )
@@ -115,6 +113,12 @@ class ReleaseReadinessTests(unittest.TestCase):
         )
         self.assertTrue(
             any("test_npm_dependencies" in item for item in project_detection["evidence"])
+        )
+        self.assertTrue(
+            any("test_npm_lockfile" in item for item in project_detection["evidence"])
+        )
+        self.assertTrue(
+            any("test_spring_properties" in item for item in project_detection["evidence"])
         )
 
         technology_typing = requirements["FR-009"]
@@ -135,6 +139,8 @@ class ReleaseReadinessTests(unittest.TestCase):
 
     def test_aggregate_checks_cannot_hide_incomplete_entries(self):
         document = readiness_document()
+        document["requirements"][0]["status"] = "BLOCKED"
+        document["requirements"][0]["blocker"] = "Synthetic test blocker."
         for check_id in (
             "ACCEPTANCE_EVIDENCE",
             "FRESH_REPOSITORY_PUBLISHING",
