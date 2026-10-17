@@ -744,3 +744,54 @@
   the explicit ADR-007 deferral until the maintainer approves publication.
 - Commits created / pushed (and branch): `42ebb20`, `6ec36e5`, and `2a9063c`
   on local `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 — genuine WebGL 3D viewer (`bc8d613`)
+
+- Implemented: a project-authored WebGL renderer with perspective projection,
+  depth-tested extruded buildings, district and grid geometry, evidence-backed
+  road ribbons, deterministic camera fitting, orbit/pan/zoom controls,
+  selection and evidence inspection, category filters, synthetic activity, and
+  collision-aware projected labels. The existing isometric canvas starts
+  automatically when WebGL context or shader initialization fails.
+- Fixture(s) / revision(s): the complete MetropoGits repository at revision
+  `bc8d613`, analyzed twice as `hdg5639/MetropoGits`; the maintained
+  `spring-positive` fixture was also rendered through both browser paths.
+- Commands run: two real end-to-end CLI builds; Edge headless WebGL capture
+  using software SwiftShader; forced `--disable-webgl` fallback capture; SVG
+  capture; `pip check`; Ruff; `compileall`; JavaScript syntax checks;
+  release-readiness validation; the complete unit, integration, contract,
+  security, governance, and regression suite; and Git whitespace checks.
+- Artifacts inspected: the complete 11-file static artifact set plus
+  `viewer-webgl.png`, `viewer-fallback.png`, and `preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-3d-checkpoint-fa88b61ceadd4dfaab310d927a0cc50d`.
+  The self-analysis completed with 76 buildings, 52 districts, 3 networks, 5
+  informational diagnostics, no warnings, and no errors.
+- Visual findings: PASS. The `WEBGL 3D` path visibly provides real perspective,
+  height, face shading, and depth occlusion; the initial camera contains the
+  complete city while filling the available height, roads remain attached to
+  their source-backed buildings, and projected labels avoid collisions. A
+  separate forced capture showed the `2D FALLBACK` badge and the unchanged
+  readable isometric city. The deterministic SVG remains centered and legible.
+- Spec alignment: PASS. Both renderers consume the same `city/0.1` and UCG
+  artifacts, keep exact edge/evidence identity, require no network request or
+  backend, and preserve the GPU-free SVG path. ADR-002 and ADR-005 are now
+  implemented locally; publication remains untouched under ADR-007.
+- Tests / determinism / stability: 187 tests passed; one symlink-boundary test
+  was explicitly skipped because this Windows environment cannot create the
+  required symbolic link. Repeated builds produced identical SHA-256
+  `8feb34a76903cad0112d5904a676dfb9dc99093100eb2d2db5b1e4fd5cc365bd`
+  for `graph.ucg.json`,
+  `384bcbea81670ebb6eb48581f5652b96d0aacc7aa8a3c876cd89dfd4960d82bb`
+  for `city.json`, and
+  `cdd61683c786b14b7b5009928c6a5c6990d8d428e0ca8af4e3549ca01ce2aaf9`
+  for `preview.svg`. Node validates every shipped JavaScript asset; focused
+  matrix projection and fallback-boundary tests also pass.
+- Fixes applied and reverified: a fixed initial camera distance first framed
+  the small fixture well but made the full repository too small. It was
+  replaced with a deterministic viewport-aware fit over actual district ground
+  and building-roof corners, then both fixture shapes were recaptured.
+- Open risks / next actions: add an actual WebGL smoke assertion to the hosted
+  workflow, then update DEC-009 readiness evidence. AC-010 and public release
+  remain blocked solely by the explicit ADR-007 publication deferral.
+- Commits created / pushed (and branch): `02556fe` and `bc8d613` on local
+  `main`; push is scheduled after this checkpoint log commit.
