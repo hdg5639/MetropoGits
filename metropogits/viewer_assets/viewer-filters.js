@@ -16,6 +16,40 @@
     return [...(entity?.roles || []), ...(entity?.technologies || [])];
   }
 
+  function selectNonOverlappingLabels(candidates, viewportWidth, viewportHeight) {
+    const accepted = [];
+    const ordered = [...candidates].sort(
+      (left, right) =>
+        (right.priority || 0) - (left.priority || 0)
+        || String(left.id).localeCompare(String(right.id)),
+    );
+    for (const candidate of ordered) {
+      if (
+        !Number.isFinite(candidate.x)
+        || !Number.isFinite(candidate.y)
+        || !Number.isFinite(candidate.width)
+        || !Number.isFinite(candidate.height)
+        || candidate.width <= 0
+        || candidate.height <= 0
+        || candidate.x < 0
+        || candidate.y < 0
+        || candidate.x + candidate.width > viewportWidth
+        || candidate.y + candidate.height > viewportHeight
+      ) {
+        continue;
+      }
+      const overlaps = accepted.some(
+        (item) =>
+          candidate.x < item.x + item.width + 4
+          && item.x < candidate.x + candidate.width + 4
+          && candidate.y < item.y + item.height + 4
+          && item.y < candidate.y + candidate.height + 4,
+      );
+      if (!overlaps) accepted.push(candidate);
+    }
+    return accepted.map((candidate) => candidate.id);
+  }
+
   function entityMatches(entity, filters, relatedConfidences = []) {
     if (!entity) return false;
     if (filters.language && entity.language !== filters.language) return false;
@@ -124,5 +158,8 @@
     });
   }
 
-  globalThis.METROPOGITS_FILTERS = Object.freeze({ createIndex });
+  globalThis.METROPOGITS_FILTERS = Object.freeze({
+    createIndex,
+    selectNonOverlappingLabels,
+  });
 })();

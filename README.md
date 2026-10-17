@@ -17,7 +17,9 @@ The command writes the graph and scene contracts, a deterministic SVG preview,
 an interactive static viewer, a diagnostic manifest, and a linked README
 snippet. Open `dist/index.html` directly to pan, zoom, rotate, and inspect the
 city. Buildings and links can be filtered by verified role, language,
-technology, and evidence level. The bundled Java analyzer recognizes
+technology, and evidence level. District labels are decluttered at each view so
+deeper, populated districts remain readable while zooming and rotating. The
+bundled Java analyzer recognizes
 evidence-backed local imports, inheritance, declarations, and core Spring
 stereotypes. The JavaScript/TypeScript adapter resolves explicit local ESM and
 CommonJS module references without running repository code; its conservative

@@ -56,6 +56,17 @@
       })
       .map((district) => district.id),
   );
+  const districtDepths = new Map();
+  function districtDepth(districtId) {
+    if (districtDepths.has(districtId)) return districtDepths.get(districtId);
+    const district = districts.get(districtId);
+    const depth = district?.parentId === null
+      ? 0
+      : districtDepth(district.parentId) + 1;
+    districtDepths.set(districtId, depth);
+    return depth;
+  }
+  for (const district of scene.districts) districtDepth(district.id);
   const metropolis = globalThis.METROPOGITS_METROPOLIS;
   const repositoriesByRootDistrict = new Map(
     (metropolis?.repositories || []).map((repository) => [repository.rootDistrictId, repository]),
@@ -100,6 +111,7 @@
     zoom: 1,
   };
   let hitRegions = [];
+  let districtLabelCandidates = [];
   let framePending = false;
   let visibleBuildingIds = new Set(scene.buildings.map((building) => building.entityId));
   let visibleNetworkIds = new Set(scene.networks.map((network) => network.id));
@@ -337,11 +349,44 @@
     context.lineWidth = selected("district", district.id) ? 2.5 : 1;
     context.stroke();
 
-    const labelPoint = project(district.x + 3, district.z + 3);
-    context.fillStyle = "#8292aa";
     context.font = "600 10px ui-sans-serif, system-ui, sans-serif";
-    context.fillText(districtCanvasLabel(district), labelPoint.x, labelPoint.y - 5);
+    const label = districtCanvasLabel(district);
+    const labelPoint = project(district.x + 3, district.z + 3);
+    const textWidth = Math.ceil(context.measureText(label).width);
+    districtLabelCandidates.push({
+      height: 15,
+      id: district.id,
+      label,
+      priority: (districtsWithBuildings.has(district.id) ? 1000 : 0)
+        + districtDepths.get(district.id),
+      textX: labelPoint.x,
+      textY: labelPoint.y - 5,
+      width: textWidth + 6,
+      x: labelPoint.x - 3,
+      y: labelPoint.y - 16,
+    });
     hitRegions.push({ kind: "district", id: district.id, points });
+  }
+
+  function drawDistrictLabels() {
+    const selectedIds = new Set(
+      filterEngine.selectNonOverlappingLabels(
+        districtLabelCandidates,
+        viewportWidth,
+        viewportHeight,
+      ),
+    );
+    context.font = "600 10px ui-sans-serif, system-ui, sans-serif";
+    for (const candidate of districtLabelCandidates) {
+      if (!selectedIds.has(candidate.id)) continue;
+      context.fillStyle = "rgba(7, 11, 20, 0.82)";
+      context.fillRect(candidate.x, candidate.y, candidate.width, candidate.height);
+      context.strokeStyle = "rgba(100, 116, 139, 0.55)";
+      context.lineWidth = 1;
+      context.strokeRect(candidate.x, candidate.y, candidate.width, candidate.height);
+      context.fillStyle = "#a8b5c8";
+      context.fillText(candidate.label, candidate.textX, candidate.textY);
+    }
   }
 
   function drawNetwork(network) {
@@ -425,6 +470,7 @@
   function render(timestamp = 0) {
     framePending = false;
     hitRegions = [];
+    districtLabelCandidates = [];
     context.clearRect(0, 0, viewportWidth, viewportHeight);
     drawGrid();
     for (const district of scene.districts) {
@@ -439,6 +485,7 @@
     for (const building of orderedBuildings) {
       if (visibleBuildingIds.has(building.entityId)) drawBuilding(building);
     }
+    drawDistrictLabels();
     drawSyntheticActivity(timestamp);
     if (state.syntheticActivity && visibleNetworkIds.size > 0) scheduleRender();
   }

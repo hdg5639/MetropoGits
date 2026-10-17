@@ -220,6 +220,39 @@ process.stdout.write(JSON.stringify({
         self.assertEqual(["PERSISTENCE_ADAPTER", "SERVICE"], result["options"]["roles"])
         self.assertEqual(["SPRING_DATA"], result["options"]["technologies"])
 
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_district_labels_are_decluttered_by_priority_and_viewport(self):
+        script = """
+require(process.argv[1]);
+const select = globalThis.METROPOGITS_FILTERS.selectNonOverlappingLabels;
+const candidates = [
+  { id: "low", x: 10, y: 10, width: 80, height: 16, priority: 1 },
+  { id: "high", x: 20, y: 12, width: 80, height: 16, priority: 10 },
+  { id: "separate", x: 150, y: 40, width: 70, height: 16, priority: 1 },
+  { id: "outside", x: 270, y: 40, width: 70, height: 16, priority: 100 },
+];
+process.stdout.write(JSON.stringify(select(candidates, 300, 120)));
+"""
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-filters.js"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual(["high", "separate"], json.loads(completed.stdout))
+
 
 if __name__ == "__main__":
     unittest.main()
