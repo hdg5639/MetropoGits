@@ -647,3 +647,50 @@
   owner-controlled blockers.
 - Commits created / pushed (and branch): `a21e895` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — v1 candidate repository audit (`96340b2`)
+
+- Implemented: collision-aware SVG district labels that prioritize populated
+  deeper districts, fit labels inside their visible bounds, and omit lower
+  priority overlaps without changing canonical graph or scene geometry.
+- Fixture(s) / revision(s): the complete MetropoGits repository at revision
+  `96340b2`, analyzed as `hdg5639/MetropoGits`; a second independent build used
+  the same revision and inputs for byte-for-byte comparison.
+- Commands run: two real end-to-end CLI builds; Edge headless captures of the
+  interactive viewer and generated SVG; `python -m pip check`; Ruff;
+  `compileall`; JavaScript syntax checks; release-readiness validation; the
+  complete unit, integration, contract, security, and regression suite; and
+  Git whitespace checks.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `manifest.json`, `README_SNIPPET.md`, `viewer.png`, and
+  `preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-v1-final-9b500165ac8c4a3caf68815b5b3f0bda`.
+  The build completed with 75 buildings, 52 districts, 3 aggregated networks,
+  5 informational diagnostics, no warnings, and no errors.
+- Visual findings: PASS. The canvas opens with the repository hierarchy framed
+  and separated, role-colored Spring buildings and their attached roads remain
+  legible, and controls plus inspector have adequate contrast. The 1200x630 SVG
+  keeps the city centered and removes the previous district-label pileup;
+  long labels are deliberately truncated within their districts. Thumbnail
+  scale still favors structural composition over reading every directory name.
+- Spec alignment: PASS. The change affects only accessible static-preview label
+  selection, preserves evidence-linked structures and roads, adds no runtime
+  service or repository execution, and leaves the UCG and City contracts intact.
+- Tests / determinism / stability: 182 tests passed; one symlink-boundary test
+  was explicitly skipped because this Windows environment cannot create the
+  required symbolic link. Repeated builds produced identical SHA-256
+  `15b7c110725c2f9e20627e47045f2a57eff048e8d7054ecc7e89b23f01cfbfc8`
+  for `graph.ucg.json`,
+  `be6b5d60fcbb5539399ed3bad1e0c01da86c2172dce79c93e9fd65976f70cc98`
+  for `city.json`, and
+  `4979c6d9cb481b0f516572809b8584c71b67f7f9ed7a8d8337dbfd85d7adbc4a`
+  for `preview.svg`. Dependency, lint, compile, JavaScript, readiness, and
+  whitespace gates also passed.
+- Fixes applied and reverified: SVG label collisions found during the first
+  full-repository visual audit were corrected in `96340b2`; the regenerated
+  SVG and viewer were then captured and inspected again before the full gates.
+- Open risks / next actions: the implementation is a local v1 candidate, not a
+  public v1 release. Owner action remains necessary to resolve DEC-009, choose
+  a project license, and opt into plus verify GitHub Pages publication.
+- Commits created / pushed (and branch): `96340b2` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
