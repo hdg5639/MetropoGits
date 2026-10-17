@@ -85,8 +85,11 @@
     return (hash >>> 0) % count;
   }
 
-  function buildingParts(building) {
+  function buildingParts(building, simplified = false) {
     if (building.aggregateRole) return globalThis.METROPOGITS_FILTERS.roleVolumes(building);
+    if (simplified === true && building.archetype === "GENERIC_BUILDING") {
+      return [{...building, y: 0, shade: 0}];
+    }
     const x = building.x;
     const z = building.z;
     const width = building.width;
@@ -813,7 +816,7 @@
       const selectedColor = selected("building", building.entityId)
         ? lighten(baseColor, 0.62)
         : baseColor;
-      for (const part of buildingParts(building)) {
+      for (const part of buildingParts(building, currentDetailLevel === "district")) {
         box(
           triangles,
           part.x,

@@ -740,8 +740,9 @@
           if (!building) return false;
           if (selected?.kind === "building" && selected.id === id) return true;
           if (level === "overview") return false;
-          if (level === "detail" || building.archetype !== "GENERIC_BUILDING") return true;
-          return stableBucket(id, 3) === 0;
+          // District simplifies meshes, not file coverage. Sampling generic
+          // files here left holes at the same physical scale as Detail.
+          return true;
         })
         .sort();
 

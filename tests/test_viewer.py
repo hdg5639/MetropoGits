@@ -775,7 +775,7 @@ process.stdout.write(JSON.stringify({
             result["overviewNetworks"],
         )
         self.assertGreaterEqual(result["districtCount"], 12)
-        self.assertLess(result["districtCount"], 300)
+        self.assertEqual(result["districtCount"], 300)
         self.assertEqual(
             {
                 "deepAtDetail": True,

@@ -93,6 +93,13 @@ test('unproven gates and generic files never become role landmarks', () => {
   }
 });
 
+test('District retains all files instead of sampling generic buildings', () => {
+  const f = fixture('unknown', 'GENERIC_BUILDING'), p = policy(f);
+  const ids = f.scene.buildings.map(b => b.entityId);
+  assert.deepEqual(p.visibility('district', ids, []).buildingIds, p.visibility('detail', ids, []).buildingIds);
+  assert.equal(p.visibility('district', ids, []).buildingIds.length, 400);
+});
+
 test('page, API and test evidence never mix; module boundaries remain separate', () => {
   const f = fixture();
   f.ucg.evidence.push({evidenceId: 'page', ruleId: 'path.nextjs.app-page'},

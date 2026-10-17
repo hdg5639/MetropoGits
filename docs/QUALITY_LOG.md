@@ -2405,3 +2405,30 @@
   extraction and CPU showcase compound parity remain separate work.
 - Delivery: one fix(viewer) work unit, explicit staging and human attribution;
   commit/push to owner-authorized main recorded in Git history and handoff.
+
+## Checkpoint 2026-10-18 — District coverage without file sampling
+- Implemented: District keeps every filtered file, including persistent role
+  compounds; only generic facade geometry is simplified in WebGL. Detail adds
+  geometry, not previously hidden files. Original footprints/heights remain.
+- Fixtures: unchanged GJ-Cloud 3d9b53f and GamjaOJ b163acd scenes repackaged at
+  `artifacts/visual/district-coverage-r2/{gj,oj}`; full CLI builds of
+  spring-positive and structural-showcase in `district-coverage-r1`.
+- Commands: Python unittest discovery (244 run, 243 pass, one Windows symlink
+  skip); Node role_landmarks/viewer_audit tests (15 pass); Ruff; git diff --check;
+  refresh_for_review.py; viewer_audit.mjs with local Chrome and both projects.
+- Actual captures inspected: district-coverage-audit-r1 case-1/case-2 district.png.
+  District now represents GJ 1255 individual + 69 compound members and OJ 595 +
+  86, instead of sparse generic samples. Shapes are fuller; long-city framing
+  and missing per-file road access are not solved by this change.
+- Reverification: corrected optional geometry argument to accept literal true
+  only, retaining map-callback compatibility; full suite passes. Repackaged and
+  repeated browser audit at district-coverage-audit-r2. District synthetic CPU
+  submission p95 GJ 0.8 ms / OJ 0.5 ms, zero animated static rebuilds; headless
+  SwiftShader measurements, not GPU FPS. Facility focus/expand/collapse and
+  route controls pass at all LODs.
+- Determinism/stability: graph.ucg.json, city.json and preview.svg SHA256 match
+  previous persistent-facilities-r2 for both repositories (zero canonical churn).
+- Spec alignment: PASS; ADR-015 clarified. No new facts, schema or layout change.
+- Next: restore missed configured local imports, distinguish communication
+  presentation from road pavement, then improve shared access routing.
+- Delivery: one fix(viewer) commit, verified milestone pushed to authorized main.
