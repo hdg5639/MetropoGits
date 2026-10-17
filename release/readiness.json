@@ -87,14 +87,16 @@
       "summary": "Malformed and oversized input remains bounded while safe partial results survive."
     },
     {
-      "blocker": "Local contract tests do not prove execution on a fresh GitHub-hosted runner or successful GitHub Pages publication under a repository subpath.",
+      "blocker": "The composite Action succeeds on a standard GitHub-hosted runner, but GitHub Pages is not configured and no repository-subpath deployment URL can be verified.",
       "evidence": [
+        "docs/QUALITY_LOG.md",
+        "tests/test_ci.py::ContinuousIntegrationTests::test_hosted_smoke_job_runs_the_composite_action",
         "tests/test_github_action.py::GithubActionTests::test_action_builds_static_artifacts_and_exports_paths",
         "tests/test_viewer.py::ViewerTests::test_viewer_assets_are_subpath_safe"
       ],
       "id": "AC-010",
       "status": "BLOCKED",
-      "summary": "Local tests cover Action outputs and relative assets but not hosted publication."
+      "summary": "Hosted-runner Action output is proven; owner-enabled Pages publication remains unverified."
     },
     {
       "blocker": null,
@@ -137,8 +139,9 @@
   ],
   "releaseChecks": [
     {
-      "blocker": "AC-010 still requires external hosted-runner and Pages evidence.",
+      "blocker": "AC-010 still requires an owner-enabled GitHub Pages deployment and verified repository-subpath URL.",
       "evidence": [
+        "docs/QUALITY_LOG.md",
         "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
       ],
       "id": "ACCEPTANCE_EVIDENCE",
@@ -158,7 +161,7 @@
       "summary": "Versioned schemas, canonicalization, stable IDs, and baseline fixtures are tested."
     },
     {
-      "blocker": "DEC-009 requires an interactive 3D decision, and DEC-012 was implemented before its documented post-MVP phase.",
+      "blocker": "DEC-009 requires the owner to accept the current isometric canvas as the v1 interactive renderer or require a true 3D implementation.",
       "evidence": [
         "docs/DECISION_AUDIT.md"
       ],
@@ -167,14 +170,16 @@
       "summary": "DEC-001 through DEC-013 are audited against the implementation without hiding deviations."
     },
     {
-      "blocker": "AC-010 requires a successful clean GitHub-hosted Action and Pages deployment before fresh-repository publishing is proven.",
+      "blocker": "The clean GitHub-hosted Action succeeds, but AC-010 still requires an owner-enabled Pages deployment before fresh-repository publishing is fully proven.",
       "evidence": [
+        "docs/QUALITY_LOG.md",
+        "tests/test_ci.py::ContinuousIntegrationTests::test_hosted_smoke_job_runs_the_composite_action",
         "tests/test_github_action.py::GithubActionTests::test_action_builds_static_artifacts_and_exports_paths",
         "tests/test_viewer.py::ViewerTests::test_viewer_assets_are_subpath_safe"
       ],
       "id": "FRESH_REPOSITORY_PUBLISHING",
       "status": "BLOCKED",
-      "summary": "Local checks cover the publishing contract but not an actual hosted deployment."
+      "summary": "A fresh hosted Action build is proven; only the opt-in Pages deployment remains unverified."
     },
     {
       "blocker": null,

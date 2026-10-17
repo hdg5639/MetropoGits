@@ -18,13 +18,14 @@ clearly aligned; it is not silently treated as compliant.
 | DEC-009 — Two render targets, including interactive 3D | Review required | The project has deterministic SVG and an interactive static CPU canvas viewer, but the viewer is isometric 2D rather than a WebGL 3D implementation. The maintainer must either accept this as the v1 interpretation through an ADR/decision amendment or require a true 3D renderer. |
 | DEC-010 — Isolated analyzers behind UCG | Satisfied | Java and JS/TS adapters enrich the same versioned UCG without owning scene geometry. |
 | DEC-011 — Aggregated roads preserve edges | Satisfied | `LayoutTests.test_edges_between_districts_are_aggregated_without_losing_ids`. |
-| DEC-012 — Federation is post-MVP | Review required | Federation is isolated in the `metropolis` command, but it was implemented before the P0 acceptance gaps were closed. No further federation expansion should precede P0 completion. |
+| DEC-012 — Federation is post-MVP | Satisfied with recorded sequencing deviation | Federation remains isolated in the optional `metropolis` command. It was implemented before P0 closed, but P0 requirements are now fully automated and no additional federation expansion occurred during remediation. |
 | DEC-013 — Evidence/test-gated contribution | Satisfied | Versioned declarative catalog fixtures, CI, PR template, and CODEOWNERS. |
 
 ## Required decisions and remediation
 
-DEC-007 is implemented under [`ADR-004`](adr/ADR-004.md). DEC-012 requires no
-owner choice, but P2 work remains paused until the P0 readiness gaps are closed.
+DEC-007 is implemented under [`ADR-004`](adr/ADR-004.md). DEC-012's historical
+sequencing deviation remains recorded here; with all P0 requirements automated,
+it no longer represents an unresolved product-state decision.
 
 DEC-009 remains an owner decision. Resolve it with one of these paths:
 
@@ -33,5 +34,5 @@ DEC-009 remains an owner decision. Resolve it with one of these paths:
 2. Keep DEC-009 unchanged and implement a true interactive 3D viewer with a
    documented non-WebGL fallback.
 
-Until DEC-007 is remediated and one DEC-009 path is selected and recorded,
-`release/readiness.json` must keep `DECISION_COMPLIANCE` in `BLOCKED` state.
+Until one DEC-009 path is selected and recorded, `release/readiness.json` must
+keep `DECISION_COMPLIANCE` in `BLOCKED` state.
