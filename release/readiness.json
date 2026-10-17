@@ -87,16 +87,17 @@
       "summary": "Malformed and oversized input remains bounded while safe partial results survive."
     },
     {
-      "blocker": "The composite Action succeeds on a standard GitHub-hosted runner, but GitHub Pages is not configured and no repository-subpath deployment URL can be verified.",
+      "blocker": "ADR-007 explicitly defers public repository conversion and Pages activation until maintainer approval; no repository-subpath deployment URL may be verified before that approval.",
       "evidence": [
         "docs/QUALITY_LOG.md",
+        "docs/adr/ADR-007.md",
         "tests/test_ci.py::ContinuousIntegrationTests::test_hosted_smoke_job_runs_the_composite_action",
         "tests/test_github_action.py::GithubActionTests::test_action_builds_static_artifacts_and_exports_paths",
         "tests/test_viewer.py::ViewerTests::test_viewer_assets_are_subpath_safe"
       ],
       "id": "AC-010",
       "status": "BLOCKED",
-      "summary": "Hosted-runner Action output is proven; owner-enabled Pages publication remains unverified."
+      "summary": "Hosted-runner Action output is proven; explicitly deferred Pages publication remains unverified."
     },
     {
       "blocker": null,
@@ -139,7 +140,7 @@
   ],
   "releaseChecks": [
     {
-      "blocker": "AC-010 still requires an owner-enabled GitHub Pages deployment and verified repository-subpath URL.",
+      "blocker": "AC-010 remains blocked by the explicit ADR-007 publication deferral and later requires an approved Pages deployment plus verified repository-subpath URL.",
       "evidence": [
         "docs/QUALITY_LOG.md",
         "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
@@ -171,16 +172,17 @@
       "summary": "DEC-001 through DEC-013 are audited; the accepted DEC-009 implementation remains incomplete."
     },
     {
-      "blocker": "The clean GitHub-hosted Action succeeds, but AC-010 still requires an owner-enabled Pages deployment before fresh-repository publishing is fully proven.",
+      "blocker": "The clean GitHub-hosted Action succeeds, but ADR-007 defers Pages activation and public repository conversion until explicit maintainer approval.",
       "evidence": [
         "docs/QUALITY_LOG.md",
+        "docs/adr/ADR-007.md",
         "tests/test_ci.py::ContinuousIntegrationTests::test_hosted_smoke_job_runs_the_composite_action",
         "tests/test_github_action.py::GithubActionTests::test_action_builds_static_artifacts_and_exports_paths",
         "tests/test_viewer.py::ViewerTests::test_viewer_assets_are_subpath_safe"
       ],
       "id": "FRESH_REPOSITORY_PUBLISHING",
       "status": "BLOCKED",
-      "summary": "A fresh hosted Action build is proven; only the opt-in Pages deployment remains unverified."
+      "summary": "A fresh hosted Action build is proven; the deliberately deferred opt-in Pages deployment remains unverified."
     },
     {
       "blocker": null,

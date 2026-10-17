@@ -31,8 +31,10 @@ The following promotion conditions remain intentionally unresolved:
 1. **DEC-009 renderer implementation:** [`ADR-005`](adr/ADR-005.md) requires a
    genuine interactive 3D viewer for stable v1. The current isometric renderer
    remains the deterministic preview and non-WebGL fallback.
-2. **Pages publication:** explicitly opt into GitHub Pages publication and
-   verify the generated viewer at its repository-subpath URL.
+2. **Deferred Pages publication:** [`ADR-007`](adr/ADR-007.md) selects Pages for
+   the eventual public demo but explicitly prohibits enabling it or changing
+   repository visibility until the maintainer approves publication. After that
+   approval, verify the viewer at its repository-subpath URL.
 
 Until both conditions are resolved, the project stays a v1 candidate,
 `release/readiness.json` stays `BLOCKED`, and no `v1.0.0` tag or package-version

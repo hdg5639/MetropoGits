@@ -138,6 +138,17 @@ class GovernanceTests(unittest.TestCase):
         self.assertIn("graceful fallback", decision)
         self.assertIn("existing versioned City Scene and UCG contracts", decision)
 
+    def test_publication_requires_explicit_maintainer_approval(self):
+        decision = (ROOT / "docs" / "adr" / "ADR-007.md").read_text(
+            encoding="utf-8"
+        )
+        active_workflows = list((ROOT / ".github" / "workflows").glob("*.yml"))
+
+        self.assertIn("Status: Accepted", decision)
+        self.assertIn("public repository conversion and Pages activation are deferred", decision)
+        self.assertIn("explicitly approves", decision)
+        self.assertEqual(["ci.yml"], [path.name for path in active_workflows])
+
 
 if __name__ == "__main__":
     unittest.main()
