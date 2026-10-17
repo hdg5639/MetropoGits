@@ -1771,3 +1771,65 @@
   landmark classification is the next approved visual improvement.
 - Commits created / pushed (and branch): `4f9fffb` and `6eb5bb6` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-18 - distributed block massing and path landmarks (`86bafe7`, `5476e42`)
+
+- Implemented: overview representative masses now select usable plots by
+  center proximity and deterministic farthest-point separation instead of
+  taking the largest territory rectangles. A new path-semantics analyzer adds
+  direct `PATH` evidence for exact Next.js App Router pages and handlers plus
+  conventional Java and JavaScript/TypeScript test sources. UI pages render as
+  gates, API handlers as ports, and tests as yellow library facilities with a
+  dedicated form and legend entry.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`; new positive and
+  negative path-convention repositories; the 300-file LOD fixture with a
+  four-corner spread assertion; and all maintained contract fixtures.
+- Commands run: two complete post-change GJ-Cloud builds, canonical hash
+  comparison, Node block-spread and semantic-count measurements, Edge
+  SwiftShader WebGL capture, Ruff, `compileall`, JavaScript syntax checks,
+  whitespace checks, and the complete automated suite.
+- Artifacts inspected: `viewer-webgl.png`, `preview.svg`, and the complete
+  static output under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-spread-landmarks-2`.
+- Visual findings: PASS for the reported upper-left concentration defect and
+  PASS for the first path-derived landmarks. Representative structures occupy
+  the center and separated extents of their polygon blocks rather than the
+  first large rectangles. Pink UI gates and yellow test libraries add a
+  visible Portal and test signature; the legend explicitly distinguishes test
+  facilities from the yellow-orange visual block outline. Overview remains a
+  blueprint massing view rather than a finished showcase renderer.
+- Distribution findings: among the 35 blocks with multiple representative
+  masses, mean normalized X span rises from 15.6 to 54.3 percent and mean Z
+  span from 48.0 to 85.4 percent. Block count, file membership, polygon plots,
+  road selection, and canonical layout positions are unchanged.
+- Semantic findings: GJ-Cloud contains 42 exact `app/**/page.tsx` matches and
+  122 conventional test-source matches, producing 164 `PATH` evidence records.
+  No exact `app/**/route.ts` file exists in this fixture, so API endpoint
+  behavior is verified by the positive fixture instead of claimed for the
+  real repository. Generic buildings fall from 1,184 to 1,020; the scene now
+  contains 91 gates and 122 libraries. Near-match fixtures for `application`,
+  `route.tsx`, `testing`, and Java tests under `src/main` remain unclassified.
+- Spec alignment: PASS for evidence provenance, deterministic enrichment,
+  non-execution, and graceful fallback. Path rules make narrow convention
+  claims only; they do not assert runtime success or traffic. UCG and City
+  schemas, stable IDs, relationships, and layout algorithm remain unchanged.
+- Tests / determinism: 218 tests passed with one expected Windows symlink skip.
+  Ruff, compilation, JavaScript parsing, and whitespace checks passed. Two
+  complete builds produced identical UCG, City, and SVG bytes. Their SHA-256
+  values are UCG
+  `6206f0a3bcee714b19805407b1c35821b6ca485b8a65a408ecbc65b012c101f6`,
+  City
+  `d57f4ba36f0044b3a3012acf66cb78049c045f00bfdc83c18ac0bee0edcc31b8`,
+  and SVG
+  `b2695896fd6abb6ee2b371b9c14072c314e9a39ed1ecb8378766ff757bc309d6`.
+- Fixes applied and reverified: initial overview plot choice ranked by area and
+  repeatedly favored rectangles at one corner. Deterministic spatial
+  separation replaced that ranking. The first semantic capture also exposed
+  a missing test-facility legend; the final artifact includes the disclosure.
+- Open risks / next actions: the 42 Next.js UI files share one gate archetype,
+  so route/page hierarchy and frontend component families still need richer
+  silhouettes. File size and line metrics remain blocked on explicit UCG
+  schema approval. A dedicated README showcase composition is still pending.
+- Commits created / pushed (and branch): `86bafe7` and `5476e42` on local
+  `main`; push is scheduled after this checkpoint log commit.
