@@ -522,3 +522,45 @@
   open.
 - Commits created / pushed (and branch): `5a435f2` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — building-attached networks (`6e86b45`)
+
+- Implemented: layout `hierarchical-paged/1.5`, which starts and ends each
+  network at its contributing file building center. Aggregated logical edges
+  use the deterministic centroid of unique source and target buildings. Version
+  1.4 geometry remains accepted as a hint because district/building placement
+  did not change.
+- Fixture(s) / revision(s): `tests/fixtures/repositories/spring-positive` at
+  synthetic revision `road-check`, plus the three-source aggregation fixture
+  and a 1.4 hint compatibility fixture.
+- Commands run: two identical end-to-end CLI builds; layout, preview,
+  governance, and full 177-test suites; Edge headless viewer and SVG captures;
+  Ruff, `compileall`, dependency consistency, release-readiness validation,
+  JavaScript syntax checks, and Git whitespace checks.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `viewer.png`, and `preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-roads-1cc9c64fc19a4e9d903de7f46e995869`.
+- Visual findings: both dependency roads visibly terminate beneath the source
+  and target buildings in the canvas and SVG. The service-to-repository route
+  now reaches the blue service and green persistence structures instead of
+  stopping at the centers of their district rectangles. Roads remain behind
+  buildings, so endpoints read as attached rather than overpainting roofs.
+- Spec alignment: PASS. Every visible network still preserves its exact UCG
+  `edgeIds`; aggregation changes only deterministic path geometry. ADR-004 and
+  the City schema record 1.5, while 1.4 hints retain zero-churn placement.
+- Tests / determinism / stability: 177 tests passed with one unavailable
+  symlink skip. Repeated builds produced identical SHA-256
+  `407be1003cfa2989b43d7408dd3d0c7caf7be4e99cc37c11d91f05795ac3b69e`
+  for `graph.ucg.json`,
+  `eaae320c80cd36f431d5e1cfebbe4d1efad33d2986a0e2e814c72326681b4be3`
+  for `city.json`, and
+  `f6199218167e0464617e81dd7b7fc97f362b2b87393ab6a87e0b2a348ed9c4fc`
+  for `preview.svg`.
+- Fixes applied and reverified: the deterministic preview snapshot changed as
+  expected with the road geometry and was updated only after endpoint tests,
+  byte-for-byte repeat builds, and both visual captures passed.
+- Open risks / next actions: re-audit release blockers and hosted workflow
+  evidence. Dense SVG labels, DEC-009, hosted runner evidence, and the project
+  license remain open.
+- Commits created / pushed (and branch): `6e86b45` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
