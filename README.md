@@ -33,6 +33,11 @@ treated as active external dependencies. A declaration alone does not claim
 runtime technology usage. Catalog rules may combine the closest enclosing
 manifest declaration with exact code evidence; the resulting claim retains
 both provenance classes.
+
+npm `package-lock.json` v2/v3 files contribute only the root package's direct
+dependency sections. Nested resolved packages are not promoted to direct
+dependencies, and legacy lockfiles without a `packages[""]` entry are rejected
+with a diagnostic instead of being guessed.
 Unsupported source languages still produce generic buildings without guessed
 semantics.
 

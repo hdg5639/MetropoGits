@@ -317,6 +317,47 @@ file('executed.marker').createNewFile()
             [item.coordinate for item in local.manifests[0].dependencies],
         )
 
+    def test_npm_lockfile_uses_only_root_direct_dependencies(self):
+        fixture = Path(__file__).parent / "fixtures" / "repositories" / "npm-lockfile"
+
+        scan = scan_repository(fixture)
+        graph = build_structural_ucg(scan, "example/npm-lock")
+
+        self.assertEqual(["package-lock.json"], [item.path for item in scan.manifests])
+        self.assertEqual("npm-lock", scan.manifests[0].format)
+        self.assertEqual(
+            ["@types/node", "react"],
+            [item.coordinate for item in scan.manifests[0].dependencies],
+        )
+        package_paths = {
+            item["path"]
+            for item in graph["entities"]
+            if item["kind"] == "EXTERNAL_PACKAGE"
+        }
+        self.assertNotIn("npm/transitive-only", package_paths)
+        self.assertEqual({"npm/@types/node", "npm/react"}, package_paths)
+        self.assertEqual([], validate_document(graph))
+
+    def test_legacy_npm_lockfile_is_rejected_without_guessing_dependencies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "index.js").write_text("export {};", encoding="utf-8")
+            (root / "package-lock.json").write_text(
+                '{"lockfileVersion":1,"dependencies":{"redis":{"version":"4"}}}',
+                encoding="utf-8",
+            )
+
+            scan = scan_repository(root)
+
+        self.assertEqual((), scan.manifests)
+        self.assertTrue(
+            any(
+                item["code"] == "MANIFEST_PARSE_FAILED"
+                and item.get("sourcePath") == "package-lock.json"
+                for item in scan.diagnostics
+            )
+        )
+
     def test_maven_parser_ignores_management_plugins_and_interpolation(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

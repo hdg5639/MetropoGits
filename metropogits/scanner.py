@@ -402,14 +402,9 @@ def _parse_gradle_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
     return tuple(DeclaredDependency(item) for item in sorted(dependencies))
 
 
-def _parse_npm_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
-    try:
-        document = loads_strict_json(content.decode("utf-8"))
-    except (UnicodeError, CanonicalJsonError) as error:
-        raise ScannerError("manifest is not valid strict JSON") from error
-    if not isinstance(document, dict):
-        raise ScannerError("npm manifest root must be an object")
-
+def _npm_dependencies_from_sections(
+    document: dict[str, Any]
+) -> tuple[DeclaredDependency, ...]:
     dependencies: set[str] = set()
     for section_name in NPM_DEPENDENCY_SECTIONS:
         if section_name not in document:
@@ -426,6 +421,32 @@ def _parse_npm_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
                 continue
             dependencies.add(package_name)
     return tuple(DeclaredDependency(item) for item in sorted(dependencies))
+
+
+def _parse_npm_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
+    try:
+        document = loads_strict_json(content.decode("utf-8"))
+    except (UnicodeError, CanonicalJsonError) as error:
+        raise ScannerError("manifest is not valid strict JSON") from error
+    if not isinstance(document, dict):
+        raise ScannerError("npm manifest root must be an object")
+    return _npm_dependencies_from_sections(document)
+
+
+def _parse_npm_lockfile(content: bytes) -> tuple[DeclaredDependency, ...]:
+    try:
+        document = loads_strict_json(content.decode("utf-8"))
+    except (UnicodeError, CanonicalJsonError) as error:
+        raise ScannerError("lockfile is not valid strict JSON") from error
+    if not isinstance(document, dict):
+        raise ScannerError("npm lockfile root must be an object")
+    packages = document.get("packages")
+    if not isinstance(packages, dict):
+        raise ScannerError("npm lockfile requires a packages object")
+    root_package = packages.get("")
+    if not isinstance(root_package, dict):
+        raise ScannerError("npm lockfile requires a root package entry")
+    return _npm_dependencies_from_sections(root_package)
 
 
 def _manifest_evidence(
@@ -590,6 +611,7 @@ def scan_repository(
                 "build.gradle": "gradle",
                 "build.gradle.kts": "gradle",
                 "package.json": "npm",
+                "package-lock.json": "npm-lock",
                 "pom.xml": "maven",
             }.get(entry.name)
             if manifest_format is not None:
@@ -623,7 +645,11 @@ def scan_repository(
                         else (
                             _parse_gradle_manifest(content)
                             if manifest_format == "gradle"
-                            else _parse_npm_manifest(content)
+                            else (
+                                _parse_npm_manifest(content)
+                                if manifest_format == "npm"
+                                else _parse_npm_lockfile(content)
+                            )
                         )
                     )
                 except (OSError, UnicodeError, ScannerError):
@@ -640,7 +666,7 @@ def scan_repository(
                     ScannedManifest(
                         relative_path,
                         manifest_format,
-                        "npm" if manifest_format == "npm" else "maven",
+                        "npm" if manifest_format.startswith("npm") else "maven",
                         dependencies,
                     )
                 )
