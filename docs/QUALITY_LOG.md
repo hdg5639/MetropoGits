@@ -795,3 +795,38 @@
   remain blocked solely by the explicit ADR-007 publication deferral.
 - Commits created / pushed (and branch): `02556fe` and `bc8d613` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 — hosted WebGL browser smoke (`a9d9a88`)
+
+- Implemented: the read-only hosted `action-smoke` job now opens the composite
+  Action's generated `index.html` in the Ubuntu runner's Google Chrome through
+  SwiftShader and requires both the rendered `WebGL 3D` mode and the interactive
+  3D canvas accessibility label.
+- Fixture(s) / revision(s): `tests/fixtures/repositories/spring-positive` at
+  synthetic revision `hosted-runner`, built by the composite Action at commit
+  `a9d9a88e06e2b9fd03c74eb4d0a5677a80995894`.
+- Commands run: focused local CI and Action contract suites, Ruff, compile and
+  whitespace checks, followed by the pushed `Quality gates` workflow run
+  `39029488279` on GitHub's `ubuntu-24.04` runner.
+- Artifacts inspected: the hosted job first required the complete graph, scene,
+  SVG, viewer, manifest, and README snippet contract, then inspected Chrome's
+  post-JavaScript DOM for the genuine 3D renderer state.
+- Visual findings: the immediately preceding checkpoint contains local actual
+  WebGL, forced fallback, and SVG captures. This CI-only change did not alter
+  rendered pixels; it proves that the 3D path also initializes outside the
+  development machine.
+- Spec alignment: PASS. The browser smoke uses only generated static files and
+  software WebGL. The job retains `contents: read`, has no deployment or secret
+  permissions, and does not weaken ADR-007's publication deferral.
+- Tests / determinism / stability: hosted `quality` job `117386896985` and
+  `action-smoke` job `117386896818` both completed with `success` at
+  `https://github.com/hdg5639/MetropoGits/actions/runs/39029488279`.
+- Fixes applied and reverified: a local contract assertion initially expected
+  escaped quote characters that are not present in the YAML source; the test
+  expectation was corrected to the literal shell pattern before commit and all
+  focused checks passed.
+- Open risks / next actions: mark DEC-009 implementation compliance automated.
+  AC-010 and public release remain deliberately blocked by ADR-007 until the
+  maintainer approves repository visibility and Pages publication.
+- Commits created / pushed (and branch): `a9d9a88` on `main`, pushed and
+  verified by the hosted workflow above.
