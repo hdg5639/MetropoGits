@@ -96,6 +96,34 @@ class JsTsAnalyzerTests(unittest.TestCase):
         self.assertEqual(4, len(local_import_ids))
         self.assertEqual(local_import_ids, network_edge_ids)
 
+    def test_npm_manifest_and_import_share_package_without_claiming_unused_usage(self):
+        root = FIXTURES / "npm-manifest"
+
+        graph = analyze_repository(root, repository_id="fixture/npm")
+
+        packages = {
+            entity["path"]: entity
+            for entity in graph["entities"]
+            if entity["kind"] == "EXTERNAL_PACKAGE"
+        }
+        self.assertEqual(3, len(packages))
+        react_id = packages["npm/react"]["id"]
+        redis_id = packages["npm/redis"]["id"]
+        react_edges = [
+            edge
+            for edge in graph["edges"]
+            if edge["to"] == react_id
+        ]
+        redis_edges = [
+            edge
+            for edge in graph["edges"]
+            if edge["to"] == redis_id
+        ]
+        self.assertEqual({"DEPENDS_ON", "IMPORTS"}, {edge["type"] for edge in react_edges})
+        self.assertEqual(["DEPENDS_ON"], [edge["type"] for edge in redis_edges])
+        self.assertFalse(any(entity.get("technologies") for entity in graph["entities"]))
+        self.assertEqual([], validate_document(graph))
+
     def test_analysis_is_deterministic_and_never_executes_source(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -18,7 +18,11 @@ from typing import Any
 
 from metropogits import __version__
 from metropogits.catalog import CATALOG_VERSION
-from scripts.canonical_json import canonical_json_bytes
+from scripts.canonical_json import (
+    CanonicalJsonError,
+    canonical_json_bytes,
+    loads_strict_json,
+)
 from scripts.stable_ids import (
     make_edge_id,
     make_entity_id,
@@ -105,6 +109,16 @@ LANGUAGES_BY_EXTENSION = {
     ".zig": "zig",
 }
 MAVEN_COORDINATE_PART = re.compile(r"^[A-Za-z0-9_.-]+$")
+NPM_PACKAGE_NAME = re.compile(
+    r"^(?:@[A-Za-z0-9][A-Za-z0-9._~-]*/)?[A-Za-z0-9][A-Za-z0-9._~-]*$"
+)
+NPM_DEPENDENCY_SECTIONS = (
+    "dependencies",
+    "devDependencies",
+    "optionalDependencies",
+    "peerDependencies",
+)
+NPM_LOCAL_SPECIFIERS = ("file:", "link:", "npm:", "workspace:")
 GRADLE_DEPENDENCY_BLOCK = re.compile(r"\bdependencies\s*\{")
 GRADLE_DEPENDENCY_CALL = re.compile(
     r"""(?:^|[;{])\s*
@@ -388,6 +402,32 @@ def _parse_gradle_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
     return tuple(DeclaredDependency(item) for item in sorted(dependencies))
 
 
+def _parse_npm_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
+    try:
+        document = loads_strict_json(content.decode("utf-8"))
+    except (UnicodeError, CanonicalJsonError) as error:
+        raise ScannerError("manifest is not valid strict JSON") from error
+    if not isinstance(document, dict):
+        raise ScannerError("npm manifest root must be an object")
+
+    dependencies: set[str] = set()
+    for section_name in NPM_DEPENDENCY_SECTIONS:
+        if section_name not in document:
+            continue
+        section = document[section_name]
+        if not isinstance(section, dict):
+            raise ScannerError(f"npm {section_name} must be an object")
+        for package_name, version in section.items():
+            if not isinstance(version, str):
+                raise ScannerError("npm dependency versions must be strings")
+            if not NPM_PACKAGE_NAME.fullmatch(package_name):
+                continue
+            if version.strip().lower().startswith(NPM_LOCAL_SPECIFIERS):
+                continue
+            dependencies.add(package_name)
+    return tuple(DeclaredDependency(item) for item in sorted(dependencies))
+
+
 def _manifest_evidence(
     manifest: ScannedManifest, coordinate: str
 ) -> dict[str, Any]:
@@ -400,7 +440,10 @@ def _manifest_evidence(
         "kind": "MANIFEST",
         "ruleId": rule_id,
         "sourcePath": manifest.path,
-        "summary": f"Declared {manifest.format.title()} dependency {coordinate}",
+        "summary": (
+            f"Declared {'npm' if manifest.format == 'npm' else manifest.format.title()} "
+            f"dependency {coordinate}"
+        ),
     }
 
 
@@ -546,6 +589,7 @@ def scan_repository(
             manifest_format = {
                 "build.gradle": "gradle",
                 "build.gradle.kts": "gradle",
+                "package.json": "npm",
                 "pom.xml": "maven",
             }.get(entry.name)
             if manifest_format is not None:
@@ -576,7 +620,11 @@ def scan_repository(
                     dependencies = (
                         _parse_maven_manifest(content)
                         if manifest_format == "maven"
-                        else _parse_gradle_manifest(content)
+                        else (
+                            _parse_gradle_manifest(content)
+                            if manifest_format == "gradle"
+                            else _parse_npm_manifest(content)
+                        )
                     )
                 except (OSError, UnicodeError, ScannerError):
                     diagnostics.append(
@@ -592,7 +640,7 @@ def scan_repository(
                     ScannedManifest(
                         relative_path,
                         manifest_format,
-                        "maven",
+                        "npm" if manifest_format == "npm" else "maven",
                         dependencies,
                     )
                 )
@@ -746,10 +794,10 @@ def build_structural_ucg(
         )
 
     module_ids: dict[str, str] = {}
-    external_package_ids: dict[str, str] = {}
+    external_package_ids: dict[tuple[str, str], str] = {}
     evidence: list[dict[str, Any]] = []
     for manifest in scan.manifests:
-        if manifest.ecosystem != "maven":
+        if manifest.ecosystem not in {"maven", "npm"}:
             continue
         module_id = make_entity_id(repository_id, "MODULE", manifest.path)
         module_ids[manifest.path] = module_id
@@ -761,15 +809,19 @@ def build_structural_ucg(
             }
         )
         for dependency in manifest.dependencies:
-            group_id, artifact_id = dependency.coordinate.split(":", 1)
-            package_path = (
-                "maven/" + group_id.replace(".", "/") + "/" + artifact_id
-            )
+            if manifest.ecosystem == "maven":
+                group_id, artifact_id = dependency.coordinate.split(":", 1)
+                package_path = (
+                    "maven/" + group_id.replace(".", "/") + "/" + artifact_id
+                )
+            else:
+                package_path = f"npm/{dependency.coordinate}"
+            package_key = (manifest.ecosystem, dependency.coordinate)
             package_id = make_entity_id(
                 repository_id, "EXTERNAL_PACKAGE", package_path
             )
-            if dependency.coordinate not in external_package_ids:
-                external_package_ids[dependency.coordinate] = package_id
+            if package_key not in external_package_ids:
+                external_package_ids[package_key] = package_id
                 entities.append(
                     {
                         "id": package_id,
@@ -828,7 +880,9 @@ def build_structural_ucg(
                 }
             )
         for dependency in manifest.dependencies:
-            package_id = external_package_ids[dependency.coordinate]
+            package_id = external_package_ids[
+                (manifest.ecosystem, dependency.coordinate)
+            ]
             manifest_evidence = _manifest_evidence(manifest, dependency.coordinate)
             edges.append(
                 {

@@ -248,6 +248,75 @@ file('executed.marker').createNewFile()
             [item.coordinate for item in scan.manifests[0].dependencies],
         )
 
+    def test_npm_dependencies_create_manifest_evidenced_edges(self):
+        fixture = Path(__file__).parent / "fixtures" / "repositories" / "npm-manifest"
+
+        scan = scan_repository(fixture)
+        graph = build_structural_ucg(scan, "example/npm")
+
+        self.assertEqual(["package.json"], [item.path for item in scan.manifests])
+        self.assertEqual("npm", scan.manifests[0].format)
+        self.assertEqual(
+            ["@types/node", "react", "redis"],
+            [item.coordinate for item in scan.manifests[0].dependencies],
+        )
+        dependencies = [
+            edge for edge in graph["edges"] if edge["type"] == "DEPENDS_ON"
+        ]
+        self.assertEqual(3, len(dependencies))
+        evidence = {item["evidenceId"]: item for item in graph["evidence"]}
+        self.assertTrue(
+            all(
+                evidence[edge["evidenceIds"][0]]["extractor"]
+                == "manifest.npm/0.1"
+                for edge in dependencies
+            )
+        )
+        package_paths = {
+            item["path"]
+            for item in graph["entities"]
+            if item["kind"] == "EXTERNAL_PACKAGE"
+        }
+        self.assertEqual({"npm/@types/node", "npm/react", "npm/redis"}, package_paths)
+        self.assertEqual([], validate_document(graph))
+
+    def test_npm_parser_rejects_duplicate_keys_and_ignores_local_specifiers(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "index.js").write_text("export {};", encoding="utf-8")
+            (root / "package.json").write_text(
+                '{"dependencies":{"safe":"1"},"dependencies":{"bad":"2"}}',
+                encoding="utf-8",
+            )
+
+            invalid = scan_repository(root)
+
+            (root / "package.json").write_text(
+                """{
+  "dependencies": {
+    "local-file": "file:../local",
+    "local-link": "link:../local",
+    "local-workspace": "workspace:*",
+    "alias": "npm:real-package@1.0.0",
+    "remote": "^1.0.0"
+  }
+}""",
+                encoding="utf-8",
+            )
+            local = scan_repository(root)
+
+        self.assertEqual((), invalid.manifests)
+        self.assertTrue(
+            any(
+                item["code"] == "MANIFEST_PARSE_FAILED"
+                for item in invalid.diagnostics
+            )
+        )
+        self.assertEqual(
+            ["remote"],
+            [item.coordinate for item in local.manifests[0].dependencies],
+        )
+
     def test_maven_parser_ignores_management_plugins_and_interpolation(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

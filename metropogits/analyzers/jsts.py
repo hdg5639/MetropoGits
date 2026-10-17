@@ -441,6 +441,7 @@ def enrich_jsts_graph(
     )
 
     evidence_by_id = {item["evidenceId"]: item for item in document["evidence"]}
+    existing_entity_ids = {item["id"] for item in document["entities"]}
     new_entities: dict[str, dict[str, Any]] = {}
     new_edges: dict[str, dict[str, Any]] = {}
     repository_id = document["repository"]["id"]
@@ -488,11 +489,12 @@ def enrich_jsts_graph(
                     target_id = make_entity_id(
                         repository_id, "EXTERNAL_PACKAGE", external_path
                     )
-                    new_entities[target_id] = {
-                        "id": target_id,
-                        "kind": "EXTERNAL_PACKAGE",
-                        "path": external_path,
-                    }
+                    if target_id not in existing_entity_ids:
+                        new_entities[target_id] = {
+                            "id": target_id,
+                            "kind": "EXTERNAL_PACKAGE",
+                            "path": external_path,
+                        }
                 else:
                     document["diagnostics"].append(
                         _diagnostic(
