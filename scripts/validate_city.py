@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate a MetropoGits City Scene v0.1 document against its UCG."""
+"""Validate a versioned MetropoGits City Scene document against its UCG."""
 
 from __future__ import annotations
 
@@ -31,6 +31,10 @@ else:
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "city-0.1.schema.json"
+SCHEMA_PATHS = {
+    "city/0.1": SCHEMA_PATH,
+    "city/0.2": ROOT / "schemas" / "city-0.2.schema.json",
+}
 MAX_GEOMETRY_COMPARISONS = 1_000_000
 
 
@@ -169,6 +173,98 @@ def _check_district_geometry(
             )
 
 
+def _covered_by_rectangles(
+    item: dict[str, Any], rectangles: list[dict[str, Any]]
+) -> bool:
+    """Return whether a rectangle is completely covered by a rectangle union."""
+
+    x_points = {item["x"], item["x"] + item["width"]}
+    z_points = {item["z"], item["z"] + item["depth"]}
+    for rectangle in rectangles:
+        for value in (rectangle["x"], rectangle["x"] + rectangle["width"]):
+            if item["x"] < value < item["x"] + item["width"]:
+                x_points.add(value)
+        for value in (rectangle["z"], rectangle["z"] + rectangle["depth"]):
+            if item["z"] < value < item["z"] + item["depth"]:
+                z_points.add(value)
+    xs = sorted(x_points)
+    zs = sorted(z_points)
+    return all(
+        any(
+            rectangle["x"] <= left
+            and right <= rectangle["x"] + rectangle["width"]
+            and rectangle["z"] <= top
+            and bottom <= rectangle["z"] + rectangle["depth"]
+            for rectangle in rectangles
+        )
+        for left, right in zip(xs, xs[1:])
+        for top, bottom in zip(zs, zs[1:])
+    )
+
+
+def _check_polygon_district_geometry(
+    errors: list[str],
+    districts: list[dict[str, Any]],
+    districts_by_id: dict[str, dict[str, Any]],
+) -> None:
+    siblings_by_parent: dict[str | None, list[dict[str, Any]]] = {}
+    for district in districts:
+        rectangles = district["footprint"]
+        _check_sorted(
+            errors,
+            f"district {district['id']!r} footprint",
+            rectangles,
+            key=lambda item: (item["z"], item["x"], item["depth"], item["width"]),
+        )
+        overlap, exhausted = _bounded_overlap(rectangles, "x")
+        if overlap is not None:
+            errors.append(f"district {district['id']!r} footprint overlaps itself")
+        elif exhausted:
+            errors.append(
+                f"district {district['id']!r} footprint validation exceeded its comparison limit"
+            )
+        min_x = min(item["x"] for item in rectangles)
+        min_z = min(item["z"] for item in rectangles)
+        max_x = max(item["x"] + item["width"] for item in rectangles)
+        max_z = max(item["z"] + item["depth"] for item in rectangles)
+        if (
+            district["x"] != min_x
+            or district["z"] != min_z
+            or district["width"] != max_x - min_x
+            or district["depth"] != max_z - min_z
+        ):
+            errors.append(
+                f"district {district['id']!r} bounds do not match its footprint"
+            )
+        parent_id = district["parentId"]
+        parent = districts_by_id.get(parent_id) if parent_id is not None else None
+        if parent is not None and any(
+            not _covered_by_rectangles(rectangle, parent["footprint"])
+            for rectangle in rectangles
+        ):
+            errors.append(
+                f"district {district['id']!r} footprint lies outside parent {parent_id!r}"
+            )
+        siblings_by_parent.setdefault(parent_id, []).append(district)
+
+    for parent_id, siblings in sorted(
+        siblings_by_parent.items(), key=lambda item: "" if item[0] is None else item[0]
+    ):
+        rectangles = [
+            {**rectangle, "owner": district["id"]}
+            for district in siblings
+            for rectangle in district["footprint"]
+        ]
+        overlap, exhausted = _bounded_overlap(rectangles, "owner")
+        if overlap is not None and overlap[0]["owner"] != overlap[1]["owner"]:
+            errors.append(
+                f"sibling district footprints {overlap[0]['owner']!r} and {overlap[1]['owner']!r} overlap"
+            )
+        elif exhausted:
+            errors.append(
+                "district footprint overlap validation exceeded its comparison limit for "
+                f"parent {parent_id!r}"
+            )
 def _check_building_geometry(
     errors: list[str],
     buildings: list[dict[str, Any]],
@@ -179,7 +275,12 @@ def _check_building_geometry(
         district = districts_by_id.get(building["districtId"])
         if district is None:
             continue
-        if not _contains(district, building):
+        covered = (
+            _covered_by_rectangles(building, district["footprint"])
+            if "footprint" in district
+            else _contains(district, building)
+        )
+        if not covered:
             errors.append(
                 f"building {building['entityId']!r} lies outside district "
                 f"{building['districtId']!r}"
@@ -211,7 +312,13 @@ def validate_document(scene: Any, ucg: Any) -> list[str]:
     if ucg_errors:
         return [f"ucg: {error}" for error in ucg_errors]
 
-    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    if not isinstance(scene, dict):
+        return ["$: must be an object"]
+    schema_version = scene.get("schemaVersion")
+    schema_path = SCHEMA_PATHS.get(schema_version)
+    if schema_path is None:
+        return [f"$.schemaVersion: unsupported City Scene version {schema_version!r}"]
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
     validator = Draft202012Validator(schema)
     schema_errors = sorted(
         validator.iter_errors(scene),
@@ -263,7 +370,10 @@ def validate_document(scene: Any, ucg: Any) -> list[str]:
                 f"{parent_id!r}"
             )
     _check_district_hierarchy(errors, districts_by_id)
-    _check_district_geometry(errors, districts, districts_by_id)
+    if schema_version == "city/0.2":
+        _check_polygon_district_geometry(errors, districts, districts_by_id)
+    else:
+        _check_district_geometry(errors, districts, districts_by_id)
 
     entities_by_id = {item["id"]: item for item in ucg["entities"]}
     known_evidence = {item["evidenceId"] for item in ucg["evidence"]}

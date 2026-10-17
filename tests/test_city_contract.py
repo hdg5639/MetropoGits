@@ -5,7 +5,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-from scripts.validate_city import SCHEMA_PATH, ucg_digest, validate_document
+from scripts.validate_city import SCHEMA_PATHS, ucg_digest, validate_document
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -23,7 +23,8 @@ class CityContractTests(unittest.TestCase):
         self.scene = load_json(VALID_SCENE)
 
     def test_schema_is_valid_draft_2020_12(self):
-        Draft202012Validator.check_schema(load_json(SCHEMA_PATH))
+        for schema_path in SCHEMA_PATHS.values():
+            Draft202012Validator.check_schema(load_json(schema_path))
 
     def test_valid_fixture_satisfies_contract(self):
         self.assertEqual([], validate_document(self.scene, self.ucg))
@@ -150,6 +151,60 @@ class CityContractTests(unittest.TestCase):
         errors = validate_document(scene, self.ucg)
 
         self.assertTrue(any("sibling districts" in error for error in errors))
+
+    def test_polygon_scene_allows_overlapping_bounds_with_disjoint_land(self):
+        scene = {
+            "buildings": [],
+            "decorations": [],
+            "districts": [
+                {
+                    "depth": 14,
+                    "footprint": [{"depth": 14, "width": 21, "x": 0, "z": 0}],
+                    "id": "root",
+                    "parentId": None,
+                    "width": 21,
+                    "x": 0,
+                    "z": 0,
+                },
+                {
+                    "depth": 14,
+                    "footprint": [
+                        {"depth": 7, "width": 14, "x": 0, "z": 0},
+                        {"depth": 7, "width": 7, "x": 0, "z": 7},
+                    ],
+                    "id": "root/alpha",
+                    "parentId": "root",
+                    "width": 14,
+                    "x": 0,
+                    "z": 0,
+                },
+                {
+                    "depth": 14,
+                    "footprint": [
+                        {"depth": 7, "width": 7, "x": 14, "z": 0},
+                        {"depth": 7, "width": 14, "x": 7, "z": 7},
+                    ],
+                    "id": "root/beta",
+                    "parentId": "root",
+                    "width": 14,
+                    "x": 7,
+                    "z": 0,
+                },
+            ],
+            "layoutAlgorithm": "hierarchical-paged/1.11",
+            "networks": [],
+            "schemaVersion": "city/0.2",
+            "theme": "minimal",
+            "ucgDigest": ucg_digest(self.ucg),
+        }
+
+        self.assertEqual([], validate_document(scene, self.ucg))
+
+        overlapping = deepcopy(scene)
+        overlapping["districts"][2]["footprint"][0]["x"] = 7
+        errors = validate_document(overlapping, self.ucg)
+
+        self.assertTrue(any("footprints" in error for error in errors), errors)
 
 
 if __name__ == "__main__":

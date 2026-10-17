@@ -207,6 +207,19 @@ def build_metropolis(
             cloned = copy.deepcopy(district)
             cloned["x"] += shift_x
             cloned["z"] += shift_z
+            if "footprint" in cloned:
+                for rectangle in cloned["footprint"]:
+                    rectangle["x"] += shift_x
+                    rectangle["z"] += shift_z
+            else:
+                cloned["footprint"] = [
+                    {
+                        "depth": cloned["depth"],
+                        "width": cloned["width"],
+                        "x": cloned["x"],
+                        "z": cloned["z"],
+                    }
+                ]
             merged_districts.append(cloned)
         for building in member.scene["buildings"]:
             cloned = copy.deepcopy(building)
@@ -313,9 +326,9 @@ def build_metropolis(
         "buildings": sorted(merged_buildings, key=lambda item: item["entityId"]),
         "decorations": [],
         "districts": sorted(merged_districts, key=lambda item: item["id"]),
-        "layoutAlgorithm": "anchored-directory/0.1",
+        "layoutAlgorithm": "metropolis-grid/0.2",
         "networks": sorted(merged_networks, key=lambda item: item["id"]),
-        "schemaVersion": "city/0.1",
+        "schemaVersion": "city/0.2",
         "theme": "metropolis",
         "ucgDigest": sha256_digest(merged_ucg),
     }

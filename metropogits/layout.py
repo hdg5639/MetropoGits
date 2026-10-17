@@ -20,8 +20,10 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.10"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.11"
 HINT_LAYOUT_ALGORITHMS = frozenset({LAYOUT_ALGORITHM})
+SCENE_SCHEMA_VERSION = "city/0.2"
+FOOTPRINT_CELL_SIZE = 7
 DISTRICT_DEPTH = 64
 DISTRICT_PADDING = 4
 MIN_DISTRICT_SIZE = 14
@@ -135,7 +137,7 @@ def _prepare_layout_hint(
         return {}, {}, False
 
     reason: str | None = None
-    if previous_scene.get("schemaVersion") != "city/0.1":
+    if previous_scene.get("schemaVersion") != SCENE_SCHEMA_VERSION:
         reason = "unsupported or missing scene schema"
     elif previous_scene.get("layoutAlgorithm") not in HINT_LAYOUT_ALGORITHMS:
         reason = "unsupported layout algorithm family"
@@ -319,18 +321,202 @@ def _compact_cold_slots(slots: dict[str, int]) -> dict[str, int]:
     return compacted
 
 
-def _local_rectangles_overlap(
-    first: tuple[float, float, float, float],
-    second: tuple[float, float, float, float],
-) -> bool:
-    first_x, first_z, first_width, first_depth = first
-    second_x, second_z, second_width, second_depth = second
-    return (
-        first_x < second_x + second_width
-        and second_x < first_x + first_width
-        and first_z < second_z + second_depth
-        and second_z < first_z + first_depth
+Cell = tuple[int, int]
+
+
+def _cell_components(cells: set[Cell]) -> list[set[Cell]]:
+    unseen = set(cells)
+    result: list[set[Cell]] = []
+    while unseen:
+        pending = [min(unseen, key=lambda cell: (cell[1], cell[0]))]
+        component = {pending[0]}
+        unseen.remove(pending[0])
+        while pending:
+            x, z = pending.pop(0)
+            for neighbor in ((x + 1, z), (x, z + 1), (x - 1, z), (x, z - 1)):
+                if neighbor in unseen:
+                    unseen.remove(neighbor)
+                    component.add(neighbor)
+                    pending.append(neighbor)
+        result.append(component)
+    return sorted(
+        result,
+        key=lambda component: (
+            -len(component),
+            min((cell[1], cell[0]) for cell in component),
+        ),
     )
+
+
+def _connect_local_cells(cells: set[Cell]) -> set[Cell]:
+    """Connect an orthogonal cell union with deterministic shortest corridors."""
+
+    result = set(cells)
+    while True:
+        components = _cell_components(result)
+        if len(components) <= 1:
+            return result
+        source = components[0]
+        target_cells = set().union(*components[1:])
+        source_cell, target_cell = min(
+            (
+                (first, second)
+                for first in source
+                for second in target_cells
+            ),
+            key=lambda pair: (
+                abs(pair[0][0] - pair[1][0]) + abs(pair[0][1] - pair[1][1]),
+                pair[0][1],
+                pair[0][0],
+                pair[1][1],
+                pair[1][0],
+            ),
+        )
+        x, z = source_cell
+        target_x, target_z = target_cell
+        step_x = 1 if target_x > x else -1
+        while x != target_x:
+            x += step_x
+            result.add((x, z))
+        step_z = 1 if target_z > z else -1
+        while z != target_z:
+            z += step_z
+            result.add((x, z))
+
+
+def _fill_enclosed_cells(cells: set[Cell]) -> set[Cell]:
+    """Fill internal voids while preserving concave exterior boundaries."""
+
+    max_x = max(x for x, _ in cells)
+    max_z = max(z for _, z in cells)
+    exterior: set[Cell] = set()
+    pending = [
+        (x, z)
+        for z in range(max_z + 1)
+        for x in range(max_x + 1)
+        if (x in {0, max_x} or z in {0, max_z}) and (x, z) not in cells
+    ]
+    exterior.update(pending)
+    while pending:
+        x, z = pending.pop()
+        for neighbor in ((x + 1, z), (x, z + 1), (x - 1, z), (x, z - 1)):
+            if (
+                0 <= neighbor[0] <= max_x
+                and 0 <= neighbor[1] <= max_z
+                and neighbor not in cells
+                and neighbor not in exterior
+            ):
+                exterior.add(neighbor)
+                pending.append(neighbor)
+    return cells | {
+        (x, z)
+        for z in range(max_z + 1)
+        for x in range(max_x + 1)
+        if (x, z) not in exterior
+    }
+def _reserved_cells(cells: set[Cell]) -> set[Cell]:
+    return set(cells)
+
+
+def _translated_cells(cells: set[Cell], offset: Cell) -> set[Cell]:
+    return {(x + offset[0], z + offset[1]) for x, z in cells}
+
+
+def _normalized_cells(cells: set[Cell]) -> set[Cell]:
+    min_x = min(x for x, _ in cells)
+    min_z = min(z for _, z in cells)
+    return {(x - min_x, z - min_z) for x, z in cells}
+
+
+def _pack_shape(
+    shape: set[Cell], occupied: set[Cell], preferred: Cell | None = None
+) -> Cell:
+    normalized = _normalized_cells(shape)
+    forbidden = _reserved_cells(occupied) if occupied else set()
+
+    def available(offset: Cell) -> bool:
+        return offset[0] >= 0 and offset[1] >= 0 and not any(
+            (x + offset[0], z + offset[1]) in forbidden for x, z in normalized
+        )
+
+    if preferred is not None and available(preferred):
+        return preferred
+
+    shape_width = max(x for x, _ in normalized) + 1
+    shape_depth = max(z for _, z in normalized) + 1
+    occupied_width = max((x for x, _ in occupied), default=-1) + 1
+    occupied_depth = max((z for _, z in occupied), default=-1) + 1
+    limit_x = max(shape_width, occupied_width + shape_width + 2)
+    limit_z = max(shape_depth, occupied_depth + shape_depth + 2)
+    candidates: list[tuple[tuple[int, ...], Cell]] = []
+    for z in range(limit_z):
+        for x in range(limit_x):
+            offset = (x, z)
+            if not available(offset):
+                continue
+            width = max(occupied_width, x + shape_width)
+            depth = max(occupied_depth, z + shape_depth)
+            score = (max(width, depth), width * depth, abs(width - depth), z, x)
+            candidates.append((score, offset))
+    if not candidates:
+        raise LayoutError("unable to place district footprint")
+    return min(candidates)[1]
+
+
+def _direct_footprint_cells(slots: dict[str, int]) -> set[Cell]:
+    cells: set[Cell] = set()
+    for slot in slots.values():
+        page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
+        row, column = divmod(page_slot, BUILDING_COLUMNS)
+        x = BUILDING_OFFSET + column * BUILDING_SPACING
+        z = page * DISTRICT_DEPTH + BUILDING_OFFSET + row * BUILDING_SPACING
+        start_x = math.floor(x / FOOTPRINT_CELL_SIZE)
+        start_z = math.floor(z / FOOTPRINT_CELL_SIZE)
+        end_x = math.ceil((x + BUILDING_SIZE) / FOOTPRINT_CELL_SIZE)
+        end_z = math.ceil((z + BUILDING_SIZE) / FOOTPRINT_CELL_SIZE)
+        cells.update(
+            (cell_x, cell_z)
+            for cell_z in range(start_z, end_z)
+            for cell_x in range(start_x, end_x)
+        )
+    return cells
+
+
+def _cells_to_footprint(
+    cells: set[Cell], origin_x: float, origin_z: float
+) -> list[dict[str, float]]:
+    rows: dict[int, list[int]] = defaultdict(list)
+    for x, z in cells:
+        rows[z].append(x)
+    active: dict[tuple[int, int], tuple[int, int]] = {}
+    merged: list[tuple[int, int, int, int]] = []
+    for z in range(max(rows) + 1):
+        runs: list[tuple[int, int]] = []
+        for x in sorted(rows.get(z, [])):
+            if runs and x == runs[-1][1]:
+                runs[-1] = (runs[-1][0], x + 1)
+            else:
+                runs.append((x, x + 1))
+        current = set(runs)
+        for run in sorted(set(active) - current):
+            start_z, end_z = active.pop(run)
+            merged.append((run[0], start_z, run[1], end_z))
+        for run in runs:
+            active[run] = (active[run][0], z + 1) if run in active else (z, z + 1)
+    for run in sorted(active):
+        start_z, end_z = active[run]
+        merged.append((run[0], start_z, run[1], end_z))
+    return [
+        {
+            "depth": float((end_z - start_z) * FOOTPRINT_CELL_SIZE),
+            "width": float((end_x - start_x) * FOOTPRINT_CELL_SIZE),
+            "x": float(origin_x + start_x * FOOTPRINT_CELL_SIZE),
+            "z": float(origin_z + start_z * FOOTPRINT_CELL_SIZE),
+        }
+        for start_x, start_z, end_x, end_z in sorted(
+            merged, key=lambda item: (item[1], item[0], item[3], item[2])
+        )
+    ]
 
 
 def _measure_districts(
@@ -339,9 +525,10 @@ def _measure_districts(
     files_by_district: dict[str, list[dict[str, Any]]],
     district_hints: dict[str, dict[str, Any]],
     allocated_slots: dict[str, dict[str, int]],
-    dimensions: dict[str, tuple[float, float, int]],
+    dimensions: dict[str, tuple[float, float]],
     child_offsets: dict[str, dict[str, tuple[float, float]]],
-) -> tuple[float, float, int]:
+    footprint_cells: dict[str, set[Cell]],
+) -> tuple[float, float]:
     children = _ordered_children(district_id, children_by_parent)
     for child_id in children:
         _measure_districts(
@@ -352,34 +539,12 @@ def _measure_districts(
             allocated_slots,
             dimensions,
             child_offsets,
+            footprint_cells,
         )
     local_slots = allocated_slots.get(district_id, {})
-    direct_width = 0
-    direct_depth = 0
-    for slot in local_slots.values():
-        page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
-        row, column = divmod(page_slot, BUILDING_COLUMNS)
-        direct_width = max(
-            direct_width,
-            BUILDING_OFFSET
-            + column * BUILDING_SPACING
-            + BUILDING_SIZE
-            + DISTRICT_EDGE_PADDING,
-        )
-        direct_depth = max(
-            direct_depth,
-            page * DISTRICT_DEPTH
-            + BUILDING_OFFSET
-            + row * BUILDING_SPACING
-            + BUILDING_SIZE
-            + DISTRICT_EDGE_PADDING,
-        )
-    if local_slots:
-        direct_width = max(MIN_DISTRICT_SIZE, direct_width)
-        direct_depth = max(MIN_DISTRICT_SIZE, direct_depth)
-    elif not children:
-        direct_width = EMPTY_DISTRICT_SIZE
-        direct_depth = EMPTY_DISTRICT_SIZE
+    direct_cells = _direct_footprint_cells(local_slots)
+    if not direct_cells and not children:
+        direct_cells = {(0, 0)}
 
     # Empty directory chains carry hierarchy but need no dedicated city block.
     # Sharing the child's footprint keeps the full parent graph without turning
@@ -388,98 +553,56 @@ def _measure_districts(
         child_id = children[0]
         child_offsets[district_id] = {child_id: (0, 0)}
         dimensions[district_id] = dimensions[child_id]
+        footprint_cells[district_id] = set(footprint_cells[child_id])
         return dimensions[district_id]
-
     hint = district_hints.get(district_id)
-    width = max(direct_width, hint["width"] if hint is not None else 0)
-    depth = direct_depth
-    if hint is not None:
-        depth = max(depth, hint["depth"])
-
     offsets: dict[str, tuple[float, float]] = {}
-    occupied: list[tuple[float, float, float, float]] = []
-    hinted_children: list[tuple[float, float, str]] = []
+    occupied = set(direct_cells)
+    hinted = []
+    unhinted = []
     for child_id in children:
         child_hint = district_hints.get(child_id)
-        if hint is None or child_hint is None or child_hint["parentId"] != district_id:
-            continue
-        hinted_children.append(
-            (
-                child_hint["z"] - hint["z"],
-                child_hint["x"] - hint["x"],
-                child_id,
-            )
-        )
-    for offset_z, offset_x, child_id in sorted(hinted_children):
-        child_width, child_depth, _ = dimensions[child_id]
-        rectangle = (offset_x, offset_z, child_width, child_depth)
-        if (
-            offset_x < DISTRICT_PADDING
-            or offset_z < direct_depth + DISTRICT_PADDING
-            or any(_local_rectangles_overlap(rectangle, item) for item in occupied)
-        ):
-            continue
-        offsets[child_id] = (offset_x, offset_z)
-        occupied.append(rectangle)
-
-    unplaced = sorted(
-        (child_id for child_id in children if child_id not in offsets),
+        if hint is not None and child_hint is not None and child_hint["parentId"] == district_id:
+            hinted.append(child_id)
+        else:
+            unhinted.append(child_id)
+    hinted.sort(
         key=lambda child_id: (
-            -(dimensions[child_id][0] * dimensions[child_id][1]),
-            -max(dimensions[child_id][0], dimensions[child_id][1]),
+            district_hints[child_id]["z"] - hint["z"],
+            district_hints[child_id]["x"] - hint["x"],
+            child_id,
+        )
+    )
+    unhinted.sort(
+        key=lambda child_id: (
+            -len(footprint_cells[child_id]),
+            -max(dimensions[child_id]),
             _hash_integer(child_id),
             child_id,
         ),
     )
-    for child_id in unplaced:
-        child_width, child_depth, _ = dimensions[child_id]
-        candidate_xs = {DISTRICT_PADDING}
-        candidate_zs = {direct_depth + DISTRICT_PADDING}
-        for occupied_x, occupied_z, occupied_width, occupied_depth in occupied:
-            candidate_xs.add(occupied_x + occupied_width + DISTRICT_PADDING)
-            candidate_zs.add(occupied_z + occupied_depth + DISTRICT_PADDING)
-        candidates: list[tuple[tuple[float, ...], tuple[float, float]]] = []
-        for candidate_z in sorted(candidate_zs):
-            for candidate_x in sorted(candidate_xs):
-                rectangle = (
-                    candidate_x,
-                    candidate_z,
-                    child_width,
-                    child_depth,
-                )
-                if any(
-                    _local_rectangles_overlap(rectangle, item)
-                    for item in occupied
-                ):
-                    continue
-                content_width = max(
-                    direct_width,
-                    candidate_x + child_width + DISTRICT_PADDING,
-                    *(x + item_width + DISTRICT_PADDING for x, _, item_width, _ in occupied),
-                )
-                content_depth = max(
-                    direct_depth,
-                    candidate_z + child_depth + DISTRICT_PADDING,
-                    *(z + item_depth + DISTRICT_PADDING for _, z, _, item_depth in occupied),
-                )
-                score = (
-                    max(content_width, content_depth),
-                    content_width * content_depth,
-                    abs(content_width - content_depth),
-                    candidate_z,
-                    candidate_x,
-                )
-                candidates.append((score, (candidate_x, candidate_z)))
-        _, offset = min(candidates)
-        offsets[child_id] = offset
-        occupied.append((offset[0], offset[1], child_width, child_depth))
+    for child_id in hinted + unhinted:
+        preferred: Cell | None = None
+        child_hint = district_hints.get(child_id)
+        if hint is not None and child_hint is not None and child_hint["parentId"] == district_id:
+            relative_x = (child_hint["x"] - hint["x"]) / FOOTPRINT_CELL_SIZE
+            relative_z = (child_hint["z"] - hint["z"]) / FOOTPRINT_CELL_SIZE
+            if float(relative_x).is_integer() and float(relative_z).is_integer():
+                preferred = (int(relative_x), int(relative_z))
+        offset_cells = _pack_shape(footprint_cells[child_id], occupied, preferred)
+        offsets[child_id] = (
+            float(offset_cells[0] * FOOTPRINT_CELL_SIZE),
+            float(offset_cells[1] * FOOTPRINT_CELL_SIZE),
+        )
+        occupied.update(_translated_cells(footprint_cells[child_id], offset_cells))
 
-    for child_id, (offset_x, offset_z) in offsets.items():
-        child_width, child_depth, _ = dimensions[child_id]
-        width = max(width, offset_x + child_width + DISTRICT_PADDING)
-        depth = max(depth, offset_z + child_depth + DISTRICT_PADDING)
+    occupied = _fill_enclosed_cells(_connect_local_cells(occupied))
+    occupied = _normalized_cells(occupied)
+    width = float((max(x for x, _ in occupied) + 1) * FOOTPRINT_CELL_SIZE)
+    depth = float((max(z for _, z in occupied) + 1) * FOOTPRINT_CELL_SIZE)
     child_offsets[district_id] = offsets
-    dimensions[district_id] = (width, depth, direct_depth)
+    footprint_cells[district_id] = occupied
+    dimensions[district_id] = (width, depth)
     return dimensions[district_id]
 
 
@@ -489,14 +612,16 @@ def _place_districts(
     x: float,
     z: float,
     children_by_parent: dict[str, list[str]],
-    dimensions: dict[str, tuple[float, float, int]],
+    dimensions: dict[str, tuple[float, float]],
     child_offsets: dict[str, dict[str, tuple[float, float]]],
+    footprint_cells: dict[str, set[Cell]],
     districts: list[dict[str, Any]],
 ) -> None:
-    width, depth, direct_depth = dimensions[district_id]
+    width, depth = dimensions[district_id]
     districts.append(
         {
             "depth": depth,
+            "footprint": _cells_to_footprint(footprint_cells[district_id], x, z),
             "id": district_id,
             "parentId": parent_id,
             "width": width,
@@ -514,6 +639,7 @@ def _place_districts(
             children_by_parent,
             dimensions,
             child_offsets,
+            footprint_cells,
             districts,
         )
 
@@ -660,8 +786,9 @@ def generate_city(
     for entity in directory_entities:
         parent_id = _district_parent_id(entity["path"], directory_ids, root_id)
         children_by_parent[parent_id].append(entity["id"])
-    dimensions: dict[str, tuple[float, float, int]] = {}
+    dimensions: dict[str, tuple[float, float]] = {}
     child_offsets: dict[str, dict[str, tuple[float, float]]] = {}
+    footprint_cells: dict[str, set[Cell]] = {}
     _measure_districts(
         root_id,
         children_by_parent,
@@ -670,6 +797,7 @@ def generate_city(
         allocated_slots,
         dimensions,
         child_offsets,
+        footprint_cells,
     )
     districts: list[dict[str, Any]] = []
     _place_districts(
@@ -680,6 +808,7 @@ def generate_city(
         children_by_parent,
         dimensions,
         child_offsets,
+        footprint_cells,
         districts,
     )
     districts.sort(key=lambda item: item["id"])
@@ -779,7 +908,7 @@ def generate_city(
         "districts": districts,
         "layoutAlgorithm": LAYOUT_ALGORITHM,
         "networks": networks,
-        "schemaVersion": "city/0.1",
+        "schemaVersion": SCENE_SCHEMA_VERSION,
         "theme": theme,
         "ucgDigest": sha256_digest(ucg),
     }

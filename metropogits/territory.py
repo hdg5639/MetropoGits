@@ -8,6 +8,7 @@ from typing import Any
 
 
 TERRITORY_CELL_SIZE = 14
+CANONICAL_FOOTPRINT_CELL_SIZE = 7
 _NEIGHBORS = ((1, 0), (0, 1), (-1, 0), (0, -1))
 
 
@@ -263,22 +264,43 @@ def derive_district_territories(scene: dict[str, Any]) -> dict[str, Any]:
     territories: list[dict[str, Any]] = []
     for district_id in sorted(districts):
         district = districts[district_id]
-        columns = max(1, math.ceil(float(district["width"]) / TERRITORY_CELL_SIZE))
-        rows = max(1, math.ceil(float(district["depth"]) / TERRITORY_CELL_SIZE))
+        canonical_footprint = district.get("footprint")
+        cell_size = (
+            CANONICAL_FOOTPRINT_CELL_SIZE
+            if canonical_footprint is not None
+            else TERRITORY_CELL_SIZE
+        )
+        columns = max(1, math.ceil(float(district["width"]) / cell_size))
+        rows = max(1, math.ceil(float(district["depth"]) / cell_size))
         cells: set[Cell] = set()
-        for building in collect(district_id):
+        if canonical_footprint is not None:
+            for rectangle in canonical_footprint:
+                start_column = round(
+                    (float(rectangle["x"]) - float(district["x"])) / cell_size
+                )
+                start_row = round(
+                    (float(rectangle["z"]) - float(district["z"])) / cell_size
+                )
+                end_column = start_column + round(float(rectangle["width"]) / cell_size)
+                end_row = start_row + round(float(rectangle["depth"]) / cell_size)
+                cells.update(
+                    (column, row)
+                    for row in range(start_row, end_row)
+                    for column in range(start_column, end_column)
+                )
+        for building in (() if canonical_footprint is not None else collect(district_id)):
             start_column = max(
                 0,
                 math.floor(
                     (float(building["x"]) - float(district["x"]))
-                    / TERRITORY_CELL_SIZE
+                    / cell_size
                 ),
             )
             start_row = max(
                 0,
                 math.floor(
                     (float(building["z"]) - float(district["z"]))
-                    / TERRITORY_CELL_SIZE
+                    / cell_size
                 ),
             )
             end_column = min(
@@ -291,7 +313,7 @@ def derive_district_territories(scene: dict[str, Any]) -> dict[str, Any]:
                             + float(building["width"])
                             - float(district["x"])
                         )
-                        / TERRITORY_CELL_SIZE
+                        / cell_size
                     ),
                 ),
             )
@@ -305,7 +327,7 @@ def derive_district_territories(scene: dict[str, Any]) -> dict[str, Any]:
                             + float(building["depth"])
                             - float(district["z"])
                         )
-                        / TERRITORY_CELL_SIZE
+                        / cell_size
                     ),
                 ),
             )
@@ -328,13 +350,19 @@ def derive_district_territories(scene: dict[str, Any]) -> dict[str, Any]:
                 [[rectangles[0]["x"], rectangles[0]["z"] + rectangles[0]["depth"]], [rectangles[0]["x"], rectangles[0]["z"]]],
             ]
             landmark_plot = rectangles[0]
+        elif canonical_footprint is not None:
+            rectangles = [dict(item) for item in canonical_footprint]
+            boundary = _boundary_segments(district, cells, cell_size)
+            landmark_plot = _landmark_plot(
+                district, cells, columns, rows, cell_size
+            )
         else:
             cells = _connect_cells(cells, columns, rows)
             cells = _dilate_cells(cells, columns, rows)
-            rectangles = _merged_rectangles(district, cells, TERRITORY_CELL_SIZE)
-            boundary = _boundary_segments(district, cells, TERRITORY_CELL_SIZE)
+            rectangles = _merged_rectangles(district, cells, cell_size)
+            boundary = _boundary_segments(district, cells, cell_size)
             landmark_plot = _landmark_plot(
-                district, cells, columns, rows, TERRITORY_CELL_SIZE
+                district, cells, columns, rows, cell_size
             )
         min_x = min(item["x"] for item in rectangles)
         min_z = min(item["z"] for item in rectangles)
@@ -355,4 +383,11 @@ def derive_district_territories(scene: dict[str, Any]) -> dict[str, Any]:
                 "rectangles": rectangles,
             }
         )
-    return {"cellSize": TERRITORY_CELL_SIZE, "districts": territories}
+    return {
+        "cellSize": (
+            CANONICAL_FOOTPRINT_CELL_SIZE
+            if scene.get("schemaVersion") == "city/0.2"
+            else TERRITORY_CELL_SIZE
+        ),
+        "districts": territories,
+    }

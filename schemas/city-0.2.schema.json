@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metropogits.dev/schemas/city-0.2.schema.json",
+  "title": "MetropoGits City Scene v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "ucgDigest", "layoutAlgorithm", "theme", "districts", "buildings", "networks", "decorations"],
+  "properties": {
+    "schemaVersion": {"const": "city/0.2"},
+    "ucgDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "layoutAlgorithm": {
+      "enum": ["hierarchical-paged/1.11", "metropolis-grid/0.2"]
+    },
+    "theme": {"$ref": "#/$defs/nonEmptyString"},
+    "districts": {"type": "array", "items": {"$ref": "#/$defs/district"}},
+    "buildings": {"type": "array", "items": {"$ref": "#/$defs/building"}},
+    "networks": {"type": "array", "items": {"$ref": "#/$defs/network"}},
+    "decorations": {"type": "array", "items": {"$ref": "#/$defs/decoration"}}
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "coordinate": {"type": "number"},
+    "positiveDimension": {"type": "number", "exclusiveMinimum": 0},
+    "idList": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/nonEmptyString"},
+      "uniqueItems": true
+    },
+    "rectangle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "z", "width", "depth"],
+      "properties": {
+        "x": {"$ref": "#/$defs/coordinate"},
+        "z": {"$ref": "#/$defs/coordinate"},
+        "width": {"$ref": "#/$defs/positiveDimension"},
+        "depth": {"$ref": "#/$defs/positiveDimension"}
+      }
+    },
+    "district": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "parentId", "x", "z", "width", "depth", "footprint"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "parentId": {
+          "anyOf": [
+            {"$ref": "#/$defs/nonEmptyString"},
+            {"type": "null"}
+          ]
+        },
+        "x": {"$ref": "#/$defs/coordinate"},
+        "z": {"$ref": "#/$defs/coordinate"},
+        "width": {"$ref": "#/$defs/positiveDimension"},
+        "depth": {"$ref": "#/$defs/positiveDimension"},
+        "footprint": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/rectangle"},
+          "minItems": 1
+        }
+      }
+    },
+    "building": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entityId", "districtId", "x", "z", "width", "depth", "height", "archetype", "styleVariant", "evidenceIds"],
+      "properties": {
+        "entityId": {"$ref": "#/$defs/nonEmptyString"},
+        "districtId": {"$ref": "#/$defs/nonEmptyString"},
+        "x": {"$ref": "#/$defs/coordinate"},
+        "z": {"$ref": "#/$defs/coordinate"},
+        "width": {"$ref": "#/$defs/positiveDimension"},
+        "depth": {"$ref": "#/$defs/positiveDimension"},
+        "height": {"$ref": "#/$defs/positiveDimension"},
+        "archetype": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
+        "styleVariant": {"$ref": "#/$defs/nonEmptyString"},
+        "evidenceIds": {"$ref": "#/$defs/idList"}
+      }
+    },
+    "point": {
+      "type": "array",
+      "prefixItems": [
+        {"$ref": "#/$defs/coordinate"},
+        {"$ref": "#/$defs/coordinate"}
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "edgeIds", "path"],
+      "properties": {
+        "id": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
+        "edgeIds": {"allOf": [{"$ref": "#/$defs/idList"}, {"minItems": 1}]},
+        "path": {"type": "array", "items": {"$ref": "#/$defs/point"}, "minItems": 2}
+      }
+    },
+    "decoration": {
+      "type": "object",
+      "required": ["semantic"],
+      "properties": {"semantic": {"const": false}}
+    }
+  }
+}

@@ -538,7 +538,7 @@ def _run(args: argparse.Namespace) -> CommandResult:
     schema_version = document.get("schemaVersion")
     if schema_version == "ucg/0.1":
         errors = validate_ucg_document(document)
-    elif schema_version == "city/0.1":
+    elif schema_version in {"city/0.1", "city/0.2"}:
         if args.ucg is None:
             raise CliError("--ucg is required when validating a City Scene")
         graph = _load_json(args.ucg, "UCG")

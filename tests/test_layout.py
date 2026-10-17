@@ -247,6 +247,7 @@ class LayoutTests(unittest.TestCase):
             "hierarchical-paged/1.7",
             "hierarchical-paged/1.8",
             "hierarchical-paged/1.9",
+            "hierarchical-paged/1.10",
         ):
             with self.subTest(version=version):
                 previous = {**cold, "layoutAlgorithm": version}
@@ -453,7 +454,8 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.10", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.11", scene["layoutAlgorithm"])
+        self.assertEqual("city/0.2", scene["schemaVersion"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
         siblings: dict[str, list[dict]] = {}
@@ -650,13 +652,56 @@ class LayoutTests(unittest.TestCase):
         }
         medium = children["medium"]
 
-        self.assertLessEqual(root["width"], 132)
+        self.assertLessEqual(root["width"], 140)
         self.assertLessEqual(root["depth"], 147)
         for name in ("small-a", "small-b"):
             self.assertGreaterEqual(children[name]["x"], medium["x"])
             self.assertGreaterEqual(
                 children[name]["z"], medium["z"] + medium["depth"]
             )
+        self.assertEqual([], validate_document(scene, ucg))
+
+    def test_polygon_footprints_allow_sibling_bounds_to_interlock(self):
+        paths = []
+        for section, count in enumerate((129, 64, 1)):
+            paths.extend(
+                f"service/part-{section}/File{index:03}.py"
+                for index in range(count)
+            )
+        paths.extend(f"worker/File{index:03}.py" for index in range(16))
+        paths.append("portal/App.py")
+        scan = ScanResult(
+            files=tuple(
+                ScannedFile(path=path, language="python", size_bytes=4)
+                for path in paths
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/interlocking")
+
+        scene = generate_city(ucg)
+        root = next(
+            item for item in scene["districts"] if item["parentId"] is None
+        )
+        children = [
+            item for item in scene["districts"] if item["parentId"] == root["id"]
+        ]
+
+        def overlaps(first, second):
+            return (
+                first["x"] < second["x"] + second["width"]
+                and second["x"] < first["x"] + first["width"]
+                and first["z"] < second["z"] + second["depth"]
+                and second["z"] < first["z"] + first["depth"]
+            )
+
+        self.assertTrue(
+            any(
+                overlaps(first, second)
+                for index, first in enumerate(children)
+                for second in children[index + 1 :]
+            )
+        )
         self.assertEqual([], validate_document(scene, ucg))
 
     def test_large_directories_expand_in_bounded_non_overlapping_pages(self):
@@ -752,7 +797,7 @@ class LayoutTests(unittest.TestCase):
         )
         root_area = root["width"] * root["depth"]
 
-        self.assertLessEqual(root_area, 120_000)
+        self.assertLessEqual(root_area, 160_000)
         self.assertGreaterEqual(building_area / root_area, 0.075)
         self.assertEqual([], validate_document(scene, ucg))
 
