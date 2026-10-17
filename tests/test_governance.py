@@ -128,6 +128,16 @@ class GovernanceTests(unittest.TestCase):
             self.assertIn(required_text, adr)
         self.assertRegex(adr, r"moves zero existing\s+buildings")
 
+    def test_browser_native_webgl_runtime_is_recorded(self):
+        decision = (ROOT / "docs" / "adr" / "ADR-002.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("Status: Accepted", decision)
+        self.assertIn("browser-native JavaScript", decision)
+        self.assertIn("automatic fallback", decision)
+        self.assertIn("performs no network request", decision)
+
     def test_stable_v1_requires_genuine_3d_with_a_fallback(self):
         decision = (ROOT / "docs" / "adr" / "ADR-005.md").read_text(
             encoding="utf-8"
