@@ -26,12 +26,11 @@ or license grant. The machine-readable source of truth remains
 
 ## Conditions for public v1 promotion
 
-The following owner-controlled conditions remain intentionally unresolved:
+The following promotion conditions remain intentionally unresolved:
 
-1. **DEC-009 renderer decision:** either accept the current interactive
-   isometric canvas as the v1 renderer through a recorded decision amendment,
-   or retain the true-3D requirement and implement it. See
-   [`DECISION_AUDIT.md`](DECISION_AUDIT.md).
+1. **DEC-009 renderer implementation:** [`ADR-005`](adr/ADR-005.md) requires a
+   genuine interactive 3D viewer for stable v1. The current isometric renderer
+   remains the deterministic preview and non-WebGL fallback.
 2. **Project license:** select and add an explicit project license before a
    public release or external contributions are invited.
 3. **Pages publication:** explicitly opt into GitHub Pages publication and

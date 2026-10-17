@@ -15,7 +15,7 @@ clearly aligned; it is not silently treated as compliant.
 | DEC-006 — Reproducible fixed inputs | Satisfied | Canonical JSON, stable ID, deterministic layout, preview, CLI, history, and metropolis tests. |
 | DEC-007 — Directory-first geography | Satisfied | [`ADR-004`](adr/ADR-004.md) drives nested, bounded, non-overlapping district geometry; previous-scene hints preserve unaffected anchors, and fixture gates measure cold and hinted churn. |
 | DEC-008 — File as base building | Satisfied | Scene contract and layout tests map file entities to buildings and directories to districts. |
-| DEC-009 — Two render targets, including interactive 3D | Review required | The project has deterministic SVG and an interactive static CPU canvas viewer, but the viewer is isometric 2D rather than a WebGL 3D implementation. The maintainer must either accept this as the v1 interpretation through an ADR/decision amendment or require a true 3D renderer. |
+| DEC-009 — Two render targets, including interactive 3D | Accepted; implementation pending | [`ADR-005`](adr/ADR-005.md) retains deterministic SVG and the current isometric renderer as preview/fallback paths and requires a genuine interactive 3D viewer for stable v1. |
 | DEC-010 — Isolated analyzers behind UCG | Satisfied | Java and JS/TS adapters enrich the same versioned UCG without owning scene geometry. |
 | DEC-011 — Aggregated roads preserve edges | Satisfied | `LayoutTests.test_edges_between_districts_are_aggregated_without_losing_ids`. |
 | DEC-012 — Federation is post-MVP | Satisfied with recorded sequencing deviation | Federation remains isolated in the optional `metropolis` command. It was implemented before P0 closed, but P0 requirements are now fully automated and no additional federation expansion occurred during remediation. |
@@ -27,12 +27,8 @@ DEC-007 is implemented under [`ADR-004`](adr/ADR-004.md). DEC-012's historical
 sequencing deviation remains recorded here; with all P0 requirements automated,
 it no longer represents an unresolved product-state decision.
 
-DEC-009 remains an owner decision. Resolve it with one of these paths:
-
-1. Amend DEC-009 to define the current interactive isometric canvas as the v1
-   viewer, retaining SVG as the deterministic preview.
-2. Keep DEC-009 unchanged and implement a true interactive 3D viewer with a
-   documented non-WebGL fallback.
-
-Until one DEC-009 path is selected and recorded, `release/readiness.json` must
-keep `DECISION_COMPLIANCE` in `BLOCKED` state.
+DEC-009 is resolved by [`ADR-005`](adr/ADR-005.md): stable v1 keeps the existing
+deterministic preview/fallback and requires a genuine interactive 3D viewer.
+`release/readiness.json` keeps `DECISION_COMPLIANCE` in `BLOCKED` state until
+that 3D path, its evidence inspector, and its non-WebGL fallback are implemented
+and verified.

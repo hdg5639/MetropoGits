@@ -161,13 +161,14 @@
       "summary": "Versioned schemas, canonicalization, stable IDs, and baseline fixtures are tested."
     },
     {
-      "blocker": "DEC-009 requires the owner to accept the current isometric canvas as the v1 interactive renderer or require a true 3D implementation.",
+      "blocker": "ADR-005 requires the genuine interactive 3D viewer, evidence inspection, and non-WebGL fallback to be implemented and verified before stable v1.",
       "evidence": [
-        "docs/DECISION_AUDIT.md"
+        "docs/DECISION_AUDIT.md",
+        "docs/adr/ADR-005.md"
       ],
       "id": "DECISION_COMPLIANCE",
       "status": "BLOCKED",
-      "summary": "DEC-001 through DEC-013 are audited against the implementation without hiding deviations."
+      "summary": "DEC-001 through DEC-013 are audited; the accepted DEC-009 implementation remains incomplete."
     },
     {
       "blocker": "The clean GitHub-hosted Action succeeds, but AC-010 still requires an owner-enabled Pages deployment before fresh-repository publishing is fully proven.",

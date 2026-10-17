@@ -130,6 +130,16 @@ class GovernanceTests(unittest.TestCase):
             self.assertIn(required_text, adr)
         self.assertRegex(adr, r"moves zero existing\s+buildings")
 
+    def test_stable_v1_requires_genuine_3d_with_a_fallback(self):
+        decision = (ROOT / "docs" / "adr" / "ADR-005.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("Status: Accepted", decision)
+        self.assertIn("genuine interactive 3D viewer", decision)
+        self.assertIn("graceful fallback", decision)
+        self.assertIn("existing versioned City Scene and UCG contracts", decision)
+
 
 if __name__ == "__main__":
     unittest.main()
