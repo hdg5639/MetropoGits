@@ -6,6 +6,7 @@ from pathlib import Path
 from metropogits.layout import generate_city
 from metropogits.scanner import build_structural_ucg, scan_repository
 from scripts.canonical_json import canonical_json_bytes
+from scripts.stable_ids import make_edge_id
 from scripts.validate_city import validate_document
 
 
@@ -94,6 +95,54 @@ class LayoutTests(unittest.TestCase):
         }
         for entity_id, position in before_buildings.items():
             self.assertEqual(position, after_buildings[entity_id])
+
+    def test_edges_between_districts_are_aggregated_without_losing_ids(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "api").mkdir()
+            (root / "data").mkdir()
+            for name in ("First.py", "Second.py", "Third.py"):
+                (root / "api" / name).write_text("pass", encoding="utf-8")
+            (root / "data" / "Store.py").write_text("pass", encoding="utf-8")
+            ucg = build_structural_ucg(scan_repository(root), "example/repo")
+
+        files = {entity["path"]: entity["id"] for entity in ucg["entities"]}
+        target_id = files["data/Store.py"]
+        edge_ids: list[str] = []
+        for index, source_path in enumerate(
+            ("api/First.py", "api/Second.py", "api/Third.py"), start=1
+        ):
+            evidence_id = f"aggregate-evidence-{index}"
+            edge_id = make_edge_id(
+                files[source_path], "REFERENCES", target_id, "aggregate-fixture"
+            )
+            edge_ids.append(edge_id)
+            ucg["evidence"].append(
+                {
+                    "evidenceId": evidence_id,
+                    "extractor": "acceptance-fixture",
+                    "kind": "AST",
+                    "sourcePath": source_path,
+                    "summary": "Verified fixture reference",
+                }
+            )
+            ucg["edges"].append(
+                {
+                    "confidence": "RESOLVED",
+                    "evidenceIds": [evidence_id],
+                    "from": files[source_path],
+                    "id": edge_id,
+                    "to": target_id,
+                    "type": "REFERENCES",
+                }
+            )
+        ucg["edges"].sort(key=lambda item: item["id"])
+        ucg["evidence"].sort(key=lambda item: item["evidenceId"])
+
+        scene = generate_city(ucg)
+
+        self.assertEqual(1, len(scene["networks"]))
+        self.assertEqual(sorted(edge_ids), scene["networks"][0]["edgeIds"])
 
     def test_top_level_file_uses_synthetic_root_district(self):
         with tempfile.TemporaryDirectory() as temporary:

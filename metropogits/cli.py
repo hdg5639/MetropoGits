@@ -44,6 +44,9 @@ from scripts.validate_history import validate_document as validate_history_docum
 from scripts.validate_metropolis import (
     validate_document as validate_metropolis_document,
 )
+from scripts.validate_release_readiness import (
+    validate_document as validate_release_readiness_document,
+)
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
@@ -513,6 +516,8 @@ def _run(args: argparse.Namespace) -> CommandResult:
         errors = validate_history_document(document)
     elif schema_version in {"metropolis-links/0.1", "metropolis/0.1"}:
         errors = validate_metropolis_document(document)
+    elif schema_version == "release-readiness/0.1":
+        errors = validate_release_readiness_document(document)
     else:
         raise CliError(f"unsupported schemaVersion: {schema_version!r}")
     if errors:

@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metropogits.dev/schemas/release-readiness-0.1.schema.json",
+  "title": "MetropoGits Release Readiness Evidence v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "releaseState",
+    "requirements",
+    "acceptanceCriteria",
+    "releaseChecks"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "release-readiness/0.1"
+    },
+    "releaseState": {
+      "enum": [
+        "BLOCKED",
+        "READY"
+      ]
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 16,
+      "maxItems": 16,
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/evidenceEntry"
+          },
+          {
+            "type": "object",
+            "required": [
+              "priority"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^FR-[0-9]{3}$"
+              },
+              "priority": {
+                "const": "P0"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "minItems": 14,
+      "maxItems": 14,
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/evidenceEntry"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "pattern": "^AC-[0-9]{3}$"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "releaseChecks": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/evidenceEntry"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "pattern": "^[A-Z][A-Z0-9_]*$"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "nullableString": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidenceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status",
+        "summary",
+        "evidence",
+        "blocker"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "enum": [
+            "AUTOMATED",
+            "BLOCKED",
+            "DOCUMENTED"
+          ]
+        },
+        "summary": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "blocker": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "priority": {
+          "const": "P0"
+        }
+      }
+    }
+  }
+}

@@ -56,6 +56,15 @@ The same lint, compile, JavaScript parse, dependency consistency, and full test
 gates run automatically on pull requests and pushes to `main` through the
 least-privilege [quality workflow](.github/workflows/ci.yml).
 
+Validate the versioned P0 and acceptance evidence map:
+
+```powershell
+python -m metropogits validate --input release/readiness.json
+```
+
+The document remains `BLOCKED` while any release check is unresolved; automated
+requirement coverage alone never declares a release ready.
+
 Security reporting, contribution gates, and the reviewed direct/transitive
 dependency list are documented in [SECURITY.md](SECURITY.md),
 [CONTRIBUTING.md](CONTRIBUTING.md), and the

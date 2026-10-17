@@ -1,0 +1,404 @@
+{
+  "acceptanceCriteria": [
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_layout.py::LayoutTests::test_unknown_languages_receive_generic_buildings"
+      ],
+      "id": "AC-001",
+      "status": "AUTOMATED",
+      "summary": "Unknown source languages retain structural districts and generic buildings."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_cli.py::CliTests::test_build_repository_creates_deterministic_artifact_set",
+        "tests/test_preview.py::PreviewTests::test_preview_is_deterministic_valid_svg"
+      ],
+      "id": "AC-002",
+      "status": "AUTOMATED",
+      "summary": "Repeated builds and previews produce identical deterministic artifacts."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_layout.py::LayoutTests::test_small_change_preserves_existing_positions"
+      ],
+      "id": "AC-003",
+      "status": "AUTOMATED",
+      "summary": "Adding one file preserves unrelated district and building anchors."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_spring_roles_use_verified_annotations_and_specific_precedence"
+      ],
+      "id": "AC-004",
+      "status": "AUTOMATED",
+      "summary": "Real Spring annotations produce five evidence-backed core roles."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_negative_near_matches_do_not_create_spring_roles"
+      ],
+      "id": "AC-005",
+      "status": "AUTOMATED",
+      "summary": "Lookalikes, suffixes, and JPA-only evidence do not fabricate roles or PostgreSQL."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_layout.py::LayoutTests::test_edges_between_districts_are_aggregated_without_losing_ids"
+      ],
+      "id": "AC-006",
+      "status": "AUTOMATED",
+      "summary": "Three verified relations aggregate into one route retaining every edge ID."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_ambiguous_and_escaping_relative_imports_stay_unresolved"
+      ],
+      "id": "AC-007",
+      "status": "AUTOMATED",
+      "summary": "Ambiguous or unavailable targets remain unresolved without fabricated files."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_analysis_is_deterministic_and_never_executes_source",
+        "tests/test_scanner.py::ScannerTests::test_scanner_never_executes_source_file"
+      ],
+      "id": "AC-008",
+      "status": "AUTOMATED",
+      "summary": "Scanning and language analysis never execute repository source."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_malformed_file_is_skipped_without_losing_safe_files",
+        "tests/test_scanner.py::ScannerTests::test_file_limit_returns_bounded_partial_result",
+        "tests/test_scanner.py::ScannerTests::test_oversized_file_is_skipped_with_diagnostic"
+      ],
+      "id": "AC-009",
+      "status": "AUTOMATED",
+      "summary": "Malformed and oversized input remains bounded while safe partial results survive."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_github_action.py::GithubActionTests::test_action_builds_static_artifacts_and_exports_paths",
+        "tests/test_viewer.py::ViewerTests::test_viewer_assets_are_subpath_safe"
+      ],
+      "id": "AC-010",
+      "status": "AUTOMATED",
+      "summary": "The Action emits CPU/static artifacts with relative viewer paths for subpath hosting."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_local_imports_create_evidenced_file_edges_and_city_networks",
+        "tests/test_viewer.py::ViewerTests::test_untrusted_graph_text_is_encoded_as_javascript_data"
+      ],
+      "id": "AC-011",
+      "status": "AUTOMATED",
+      "summary": "Inspector inputs retain exact evidence identity and safely encode hostile labels."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_mixed_repository_discloses_structural_only_coverage"
+      ],
+      "id": "AC-012",
+      "status": "AUTOMATED",
+      "summary": "Mixed-language analysis discloses partial semantic coverage."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_catalog.py::CatalogContractTests::test_negative_fixture_that_matches_is_rejected"
+      ],
+      "id": "AC-013",
+      "status": "AUTOMATED",
+      "summary": "Catalog contribution validation rejects a negative fixture that matches its rule."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_city_contract.py::CityContractTests::test_orphan_references_are_rejected",
+        "tests/test_viewer.py::ViewerTests::test_invalid_scene_is_rejected"
+      ],
+      "id": "AC-014",
+      "status": "AUTOMATED",
+      "summary": "Invalid scene references are rejected by both contract and viewer boundaries."
+    }
+  ],
+  "releaseChecks": [
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
+      ],
+      "id": "ACCEPTANCE_EVIDENCE",
+      "status": "AUTOMATED",
+      "summary": "Every currently required acceptance criterion has an automated evidence selector."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_canonical_json.py::CanonicalJsonTests::test_digest_is_stable_across_key_order",
+        "tests/test_city_contract.py::CityContractTests::test_valid_fixture_satisfies_contract",
+        "tests/test_stable_ids.py::StableIdTests::test_ucg_fixture_uses_stable_entity_and_edge_ids",
+        "tests/test_ucg_contract.py::UcgContractTests::test_valid_fixtures_satisfy_contract"
+      ],
+      "id": "CONTRACT_BASELINES",
+      "status": "AUTOMATED",
+      "summary": "Versioned schemas, canonicalization, stable IDs, and baseline fixtures are tested."
+    },
+    {
+      "blocker": "DEC-009 requires maintainer resolution: accept the CPU isometric viewer or require a WebGL 3D implementation.",
+      "evidence": [
+        "docs/DECISION_AUDIT.md"
+      ],
+      "id": "DECISION_COMPLIANCE",
+      "status": "BLOCKED",
+      "summary": "DEC-001 through DEC-013 are audited against the implementation without hiding deviations."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_github_action.py::GithubActionTests::test_action_builds_static_artifacts_and_exports_paths",
+        "tests/test_viewer.py::ViewerTests::test_viewer_assets_are_subpath_safe"
+      ],
+      "id": "FRESH_REPOSITORY_PUBLISHING",
+      "status": "AUTOMATED",
+      "summary": "The Action and relative viewer assets cover fresh-repository static publishing."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_governance.py::GovernanceTests::test_dependency_inventory_matches_the_python_311_lock",
+        "tests/test_governance.py::GovernanceTests::test_security_and_pull_request_policies_cover_release_boundaries"
+      ],
+      "id": "GOVERNANCE_REVIEW",
+      "status": "AUTOMATED",
+      "summary": "Security, contribution, ownership, and dependency review policies are tested."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_local_imports_create_evidenced_file_edges_and_city_networks",
+        "tests/test_viewer.py::ViewerTests::test_untrusted_graph_text_is_encoded_as_javascript_data"
+      ],
+      "id": "INSPECTOR_INTEGRITY",
+      "status": "AUTOMATED",
+      "summary": "Inspector inputs retain evidence identity and safely encode repository-controlled text."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_analysis_is_deterministic_and_never_executes_source",
+        "tests/test_scanner.py::ScannerTests::test_scanner_never_executes_source_file"
+      ],
+      "id": "LOCAL_ONLY_PIPELINE",
+      "status": "AUTOMATED",
+      "summary": "The pipeline runs locally without executing or uploading target repository code."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
+      ],
+      "id": "P0_REQUIREMENTS",
+      "status": "AUTOMATED",
+      "summary": "Every P0 requirement FR-001 through FR-016 has an automated evidence selector."
+    },
+    {
+      "blocker": "The project owner must select and publish a project license.",
+      "evidence": [
+        "CONTRIBUTING.md",
+        "docs/DEPENDENCY_INVENTORY.md"
+      ],
+      "id": "PROJECT_LICENSE",
+      "status": "BLOCKED",
+      "summary": "Public release and external contributions require explicit project licensing."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_cli.py::CliTests::test_build_repository_creates_deterministic_artifact_set"
+      ],
+      "id": "REPRODUCIBLE_ARTIFACTS",
+      "status": "AUTOMATED",
+      "summary": "A maintainer can reproduce byte-identical artifacts for fixed input."
+    }
+  ],
+  "releaseState": "BLOCKED",
+  "requirements": [
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_scanner.py::ScannerTests::test_scan_builds_deterministic_structural_ucg"
+      ],
+      "id": "FR-001",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Bounded local repository scanning produces structural facts and diagnostics."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_layout.py::LayoutTests::test_unknown_languages_receive_generic_buildings"
+      ],
+      "id": "FR-002",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Unsupported source languages retain generic file buildings."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_cli_analysis_runs_java_adapter",
+        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_cli_composes_jsts_adapter_and_city_networks"
+      ],
+      "id": "FR-003",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Supported Java and JavaScript/TypeScript files route through isolated analyzers."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_explicit_module_forms_create_evidenced_edges"
+      ],
+      "id": "FR-004",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Only resolved source relationships create evidenced local graph edges."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_ucg_contract.py::UcgContractTests::test_valid_fixtures_satisfy_contract"
+      ],
+      "id": "FR-005",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Universal Code Graph fixtures satisfy the versioned evidence contract."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_layout.py::LayoutTests::test_small_change_preserves_existing_positions"
+      ],
+      "id": "FR-006",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Directory-first layout preserves stable anchors across small changes."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_layout.py::LayoutTests::test_edges_between_districts_are_aggregated_without_losing_ids"
+      ],
+      "id": "FR-007",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Visual routes aggregate relationships without losing contributing edge IDs."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_spring_roles_use_verified_annotations_and_specific_precedence"
+      ],
+      "id": "FR-008",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Five core Spring roles require exact annotation evidence."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_negative_near_matches_do_not_create_spring_roles"
+      ],
+      "id": "FR-009",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Technology claims distinguish declarations, usage, and concrete products."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_ambiguous_and_escaping_relative_imports_stay_unresolved"
+      ],
+      "id": "FR-010",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Unknown relationships remain unresolved instead of gaining invented semantics."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_preview.py::PreviewTests::test_preview_is_deterministic_valid_svg"
+      ],
+      "id": "FR-011",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "The CPU-only SVG preview is deterministic and valid."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_viewer.py::ViewerTests::test_viewer_is_deterministic_and_file_protocol_compatible"
+      ],
+      "id": "FR-012",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "The static viewer supports offline interaction and evidence inspection."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_cli.py::CliTests::test_module_cli_runs_end_to_end_build"
+      ],
+      "id": "FR-013",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "One local CLI command builds the complete artifact set."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_github_action.py::GithubActionTests::test_action_builds_static_artifacts_and_exports_paths"
+      ],
+      "id": "FR-014",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "The composite Action produces static publishing artifacts with explicit outputs."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_cli.py::CliTests::test_json_build_reports_resource_limited_partial_artifacts",
+        "tests/test_scanner.py::ScannerTests::test_file_limit_returns_bounded_partial_result"
+      ],
+      "id": "FR-015",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Limits and partial outcomes produce explicit diagnostics and stable exit status."
+    },
+    {
+      "blocker": null,
+      "evidence": [
+        "tests/test_scanner.py::ScannerTests::test_scanner_never_executes_source_file",
+        "tests/test_viewer.py::ViewerTests::test_untrusted_graph_text_is_encoded_as_javascript_data"
+      ],
+      "id": "FR-016",
+      "priority": "P0",
+      "status": "AUTOMATED",
+      "summary": "Default processing neither executes source nor embeds unsafe raw repository text."
+    }
+  ],
+  "schemaVersion": "release-readiness/0.1"
+}

@@ -52,6 +52,17 @@ class ViewerTests(unittest.TestCase):
         self.assertNotIn("https://", html)
         self.assertNotIn("fetch(", first["assets/viewer.js"].decode("utf-8"))
 
+    def test_viewer_assets_are_subpath_safe(self):
+        graph = load_fixture()
+        html = render_viewer(generate_city(graph), graph)["index.html"].decode(
+            "utf-8"
+        )
+
+        self.assertNotRegex(html, r'''(?:href|src)=["']/''')
+        self.assertIn('href="assets/viewer.css"', html)
+        self.assertIn('src="assets/viewer.js"', html)
+        self.assertIn('href="preview.svg"', html)
+
     def test_untrusted_graph_text_is_encoded_as_javascript_data(self):
         graph = copy.deepcopy(load_fixture())
         graph["repository"]["sourceUrl"] = "</script><img src=x onerror=alert(1)>"
