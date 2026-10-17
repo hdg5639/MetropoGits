@@ -694,3 +694,53 @@
   a project license, and opt into plus verify GitHub Pages publication.
 - Commits created / pushed (and branch): `96340b2` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — owner decisions and publication deferral (`2a9063c`)
+
+- Implemented: ADR-005 requires genuine interactive 3D for stable v1 while
+  preserving the deterministic 2D preview/fallback; ADR-006 adopts Apache-2.0
+  with package and contribution metadata; ADR-007 selects Pages for the future
+  public demo but prohibits repository visibility or deployment changes until
+  explicit maintainer approval.
+- Fixture(s) / revision(s): the complete MetropoGits repository at revision
+  `2a9063c5b5b7a6f05845958fe2e451f3bffbb11f`, analyzed twice as
+  `hdg5639/MetropoGits`.
+- Commands run: two real end-to-end CLI builds; Edge headless viewer and SVG
+  captures; official Apache License 2.0 text comparison; `pip check`; Ruff;
+  `compileall`; JavaScript syntax checks; release-readiness validation; the
+  complete unit, integration, contract, security, governance, and regression
+  suite; and Git whitespace checks.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `manifest.json`, `README_SNIPPET.md`, `viewer.png`, and
+  `preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-decisions-92741a946c5f4af393bafce9aa09ad79`.
+  The build completed with 75 buildings, 52 districts, 3 networks, 5
+  informational diagnostics, no warnings, and no errors.
+- Visual findings: PASS with no renderer change. The full-repository isometric
+  viewer remains framed, separated, and inspectable; the SVG remains centered
+  with bounded, non-overlapping district labels. The image also confirms why
+  ADR-005 treats this renderer as a preview/fallback rather than genuine 3D.
+- Spec alignment: PASS. DEC-009 now follows its original true-3D wording,
+  Apache-2.0 resolves the license choice without changing visibility, and the
+  explicit publication gate reinforces private-data opt-in requirements. No
+  public repository setting, Pages setting, or active deployment workflow was
+  changed.
+- Tests / determinism / stability: 184 tests passed; one symlink-boundary test
+  was explicitly skipped because this Windows environment cannot create the
+  required symbolic link. Repeated builds produced identical SHA-256
+  `acece0e32d01b5119ebbc4486ae7d70e6b066abf8fd6d509b969f41941070155`
+  for `graph.ucg.json`,
+  `c5d8b7d684a4882e61a58cae48136daa37fc0fb60e33438e3be9998aa41ece5a`
+  for `city.json`, and
+  `4979c6d9cb481b0f516572809b8584c71b67f7f9ed7a8d8337dbfd85d7adbc4a`
+  for `preview.svg`. The local `LICENSE` matched the trimmed official Apache
+  Foundation text fetched over HTTPS.
+- Fixes applied and reverified: the release map now distinguishes the resolved
+  license decision, accepted-but-unimplemented 3D decision, and intentionally
+  deferred deployment. Governance tests require the three boundaries and
+  confirm that `ci.yml` is the only active workflow.
+- Open risks / next actions: implement and visually validate the genuine 3D
+  renderer plus non-WebGL fallback. AC-010 and public release remain blocked by
+  the explicit ADR-007 deferral until the maintainer approves publication.
+- Commits created / pushed (and branch): `42ebb20`, `6ec36e5`, and `2a9063c`
+  on local `main`; push is scheduled after this checkpoint log commit.
