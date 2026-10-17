@@ -2057,3 +2057,63 @@
 - Commits / push: `0c64bb1` is the independent preview fix; showcase plus its
   build/Action integration is the following feature commit. Both use the
   configured human identity, with delivery to the maintainer-authorized main.
+
+## Checkpoint 2026-10-18 — VIS-06 controlled WebGL audit
+
+- Implemented: local Node/CDP comparison harness with isolated instrumented
+  viewer copies, fixed camera/viewport, natural three-level LOD, common-distance
+  overview, trusted mouse inputs, render-stage timings, raw JSON and HTML gallery.
+  Normal viewer assets and product dependencies are unchanged. Five browser-free
+  Node regression cases run through one Python suite test.
+- Fixtures / revisions: unchanged full GJ-Cloud and GamjaOJ builds from
+  `showcase-20261018`, source revisions and environment in `VIEWER_BENCHMARK.md`.
+  Fresh small Spring and unsupported Go/Rust/Elixir pipeline builds use this
+  checkout's fixtures with explicit `checkpoint` revision labels.
+- Commands: `node scripts/viewer_audit.mjs <chrome> <new-output> <gj> <oj>`
+  and a second run reversing input order (full paths in benchmark guide);
+  `python -m unittest discover -s tests -q`; `node --test
+  tests/viewer_audit.test.mjs`; `node --check scripts/viewer_audit.mjs`;
+  `python -m ruff check metropogits scripts tests`; `python -m compileall -q
+  metropogits scripts tests`; `python -m pip check`; `python
+  scripts/validate_release_readiness.py release/readiness.json`; `git diff --check`.
+  Fresh builds: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --repo-id fixture/visual-audit
+  --revision checkpoint --out ../artifacts/visual/comparison-20261018-fixture`
+  and the same command with `structural-showcase`, `fixture/visual-audit-unknown`,
+  and `comparison-20261018-unknown` respectively.
+- Artifacts inspected: eight WebGL PNGs and the gallery screenshot in workspace
+  `artifacts/visual/comparison-20261018-r2`; raw reports there and in
+  `comparison-20261018-reverse`; fresh Spring/unknown showcase SVG captures.
+  Generated samples, browser profiles and reports remain outside the Git repo.
+- Visual findings: same camera/scale preserves different city morphology;
+  both fitted overviews lose foreground content under the legend. OJ has
+  duplicate tests labels. Circuit-like relation lines and generic silhouettes
+  remain, while block membership and major service groupings remain legible.
+  Small fixture forms retain their role differences; unsupported sources remain
+  generic without invented roads. No claim that visual defects were fixed here.
+- Performance findings: software SwiftShader, 20 measured inputs after five
+  warm-ups per interaction/LOD. GJ Detail orbit CPU median 54.9–55.3 ms,
+  p95 87.3–98.5 ms; geometry-preparation p95 78.2–90.8 ms. First-draw latency
+  is highly order-sensitive. These are draw-submission CPU timings, not native
+  GPU FPS or physical input-to-display measurements; no universal SLA asserted.
+- Tests / determinism / stability: 230 tests run, 229 pass, one expected Windows
+  symlink skip; all five Node audit cases pass. Lint, syntax, compile, dependency,
+  readiness and whitespace checks pass. Rechecked all original input hashes in
+  both audit reports and checksums/sizes of both fresh build manifests. No
+  canonical geometry/graph changes or layout churn. Existing deterministic
+  pipeline and source-evidence tests remain green.
+- Fixes applied and reverified: Node test output needs explicit UTF-8 decoding
+  under Windows Python; the initial cp949 subprocess reader failure was fixed
+  and the complete suite rerun successfully. CDP failures/disconnects fail closed.
+- Spec alignment: PASS — TECH sections 7/8/10/11, FR-012, NF-008/009 and
+  product DEC-005/006/008/009/011. Audit code executes only locally prepared viewer
+  assets; neither input application nor its dependency/build scripts is executed.
+  No schema change, publishing, LLM, or product backend introduced.
+- Open risks / next actions: cache static render geometry with tested state
+  invalidation; reserve legend space; then road hierarchy, existing silhouette
+  readability and contextual labels. Hardware GPU/display timing, larger sample
+  statistics and broader corpus remain unverified. Pages stays deferred/BLOCKED.
+- Commit / push: this harness, regression cases and measured baseline form one
+  `test(viewer)` work unit, delivered to the explicitly authorized owner main
+  using the existing human identity. Previous showcase CI `dc10c1a` succeeded;
+  new commit CI is checked separately after push.
