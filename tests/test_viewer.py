@@ -423,6 +423,49 @@ process.stdout.write(JSON.stringify(select(candidates, 300, 120)));
         self.assertEqual(["high", "separate"], json.loads(completed.stdout))
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_major_districts_follow_large_structural_branches(self):
+        script = """
+require(process.argv[1]);
+const districts = [
+  { id: "root", parentId: null },
+  { id: "backend", parentId: "root" },
+  { id: "frontend", parentId: "root" },
+  { id: "tiny", parentId: "root" },
+  { id: "auth", parentId: "backend" },
+  { id: "ops", parentId: "backend" },
+  { id: "portal", parentId: "frontend" },
+];
+const buildings = [
+  ...Array.from({ length: 80 }, (_, index) => ({ districtId: "auth", entityId: `auth-${index}` })),
+  ...Array.from({ length: 200 }, (_, index) => ({ districtId: "ops", entityId: `ops-${index}` })),
+  ...Array.from({ length: 100 }, (_, index) => ({ districtId: "portal", entityId: `portal-${index}` })),
+  { districtId: "tiny", entityId: "tiny-0" },
+];
+process.stdout.write(JSON.stringify(
+  globalThis.METROPOGITS_FILTERS.majorDistrictIds({ buildings, districts }),
+));
+"""
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-filters.js"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual(["auth", "ops", "portal"], json.loads(completed.stdout))
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
     def test_nearest_manifest_dependencies_are_labeled_as_declarations(self):
         graph = {
             "edges": [

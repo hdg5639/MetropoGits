@@ -50,6 +50,70 @@
     return accepted.map((candidate) => candidate.id);
   }
 
+  function majorDistrictIds(scene) {
+    const districts = new Map(scene.districts.map((district) => [district.id, district]));
+    const children = new Map(scene.districts.map((district) => [district.id, []]));
+    const directBuildings = new Map();
+    for (const district of scene.districts) {
+      if (district.parentId !== null && children.has(district.parentId)) {
+        children.get(district.parentId).push(district.id);
+      }
+    }
+    for (const childIds of children.values()) childIds.sort();
+    for (const building of scene.buildings) {
+      directBuildings.set(
+        building.districtId,
+        (directBuildings.get(building.districtId) || 0) + 1,
+      );
+    }
+
+    const subtreeBuildings = new Map();
+    function count(districtId) {
+      if (subtreeBuildings.has(districtId)) return subtreeBuildings.get(districtId);
+      const total = (directBuildings.get(districtId) || 0)
+        + (children.get(districtId) || []).reduce(
+          (sum, childId) => sum + count(childId),
+          0,
+        );
+      subtreeBuildings.set(districtId, total);
+      return total;
+    }
+    const roots = scene.districts
+      .filter((district) => district.parentId === null)
+      .map((district) => district.id)
+      .sort();
+    for (const rootId of roots) count(rootId);
+
+    const minimum = scene.buildings.length >= 256
+      ? Math.max(20, Math.ceil(scene.buildings.length * 0.02))
+      : Math.max(1, Math.ceil(scene.buildings.length * 0.1));
+    const selected = new Set();
+    for (const rootId of roots) {
+      const rootChildren = (children.get(rootId) || [])
+        .filter((districtId) => count(districtId) >= minimum);
+      for (const branchId of rootChildren) {
+        const significantChildren = (children.get(branchId) || [])
+          .filter((districtId) => count(districtId) >= minimum);
+        if (
+          significantChildren.length === 1
+          && (directBuildings.get(branchId) || 0) < minimum
+        ) {
+          selected.add(significantChildren[0]);
+        } else if (significantChildren.length >= 2) {
+          for (const districtId of significantChildren) selected.add(districtId);
+        } else {
+          selected.add(branchId);
+        }
+      }
+    }
+    if (!selected.size) {
+      for (const rootId of roots) {
+        for (const districtId of children.get(rootId) || []) selected.add(districtId);
+      }
+    }
+    return [...selected].filter((districtId) => districts.has(districtId)).sort();
+  }
+
   function entityMatches(entity, filters, relatedConfidences = []) {
     if (!entity) return false;
     if (filters.language && entity.language !== filters.language) return false;
@@ -217,6 +281,7 @@
   globalThis.METROPOGITS_FILTERS = Object.freeze({
     createIndex,
     declaredDependenciesForEntity,
+    majorDistrictIds,
     selectNonOverlappingLabels,
   });
 })();

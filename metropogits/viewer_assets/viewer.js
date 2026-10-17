@@ -95,6 +95,20 @@
     (metropolis?.repositories || []).map((repository) => [repository.rootDistrictId, repository]),
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
+  const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
+  const majorDistrictColors = [
+    [24, 50, 74],
+    [45, 40, 74],
+    [24, 61, 55],
+    [59, 43, 32],
+    [53, 36, 63],
+  ];
+  const majorDistrictColorById = new Map(
+    [...majorDistrictIds].sort().map((districtId, index) => [
+      districtId,
+      majorDistrictColors[index % majorDistrictColors.length],
+    ]),
+  );
 
   const colors = {
     CACHE_TOWER: ["#facc15", "#ca8a04", "#713f12"],
@@ -378,23 +392,44 @@
     context.lineWidth = selected("district", district.id) ? 2.5 : 1;
     context.stroke();
 
-    context.font = "600 10px ui-sans-serif, system-ui, sans-serif";
+    const major = majorDistrictIds.has(district.id);
+    context.font = major
+      ? "800 12px ui-sans-serif, system-ui, sans-serif"
+      : "600 10px ui-sans-serif, system-ui, sans-serif";
     const label = districtCanvasLabel(district);
     const labelPoint = project(district.x + 3, district.z + 3);
     const textWidth = Math.ceil(context.measureText(label).width);
     districtLabelCandidates.push({
-      height: 15,
+      height: major ? 19 : 15,
       id: district.id,
       label,
-      priority: (districtsWithBuildings.has(district.id) ? 1000 : 0)
+      major,
+      priority: (major ? 10000 : 0)
+        + (districtsWithBuildings.has(district.id) ? 1000 : 0)
         + districtDepths.get(district.id),
       textX: labelPoint.x,
       textY: labelPoint.y - 5,
-      width: textWidth + 6,
+      width: textWidth + (major ? 16 : 6),
       x: labelPoint.x - 3,
-      y: labelPoint.y - 16,
+      y: labelPoint.y - (major ? 19 : 16),
     });
     hitRegions.push({ kind: "district", id: district.id, points });
+  }
+
+  function drawMajorDistrict(district) {
+    const points = [
+      project(district.x, district.z, 0.04),
+      project(district.x + district.width, district.z, 0.04),
+      project(district.x + district.width, district.z + district.depth, 0.04),
+      project(district.x, district.z + district.depth, 0.04),
+    ];
+    const channels = majorDistrictColorById.get(district.id) || [24, 50, 74];
+    polygonPath(points);
+    context.fillStyle = `rgba(${channels.join(", ")}, 0.24)`;
+    context.fill();
+    context.strokeStyle = `rgba(${channels.map((value) => Math.min(255, value + 90)).join(", ")}, 0.95)`;
+    context.lineWidth = 3;
+    context.stroke();
   }
 
   function drawDistrictLabels() {
@@ -408,12 +443,17 @@
     context.font = "600 10px ui-sans-serif, system-ui, sans-serif";
     for (const candidate of districtLabelCandidates) {
       if (!selectedIds.has(candidate.id)) continue;
-      context.fillStyle = "rgba(7, 11, 20, 0.82)";
+      context.font = candidate.major
+        ? "800 12px ui-sans-serif, system-ui, sans-serif"
+        : "600 10px ui-sans-serif, system-ui, sans-serif";
+      context.fillStyle = candidate.major
+        ? "rgba(8, 18, 32, 0.94)"
+        : "rgba(7, 11, 20, 0.82)";
       context.fillRect(candidate.x, candidate.y, candidate.width, candidate.height);
-      context.strokeStyle = "rgba(100, 116, 139, 0.55)";
-      context.lineWidth = 1;
+      context.strokeStyle = candidate.major ? "#38bdf8" : "rgba(100, 116, 139, 0.55)";
+      context.lineWidth = candidate.major ? 2 : 1;
       context.strokeRect(candidate.x, candidate.y, candidate.width, candidate.height);
-      context.fillStyle = "#a8b5c8";
+      context.fillStyle = candidate.major ? "#e0f2fe" : "#a8b5c8";
       context.fillText(candidate.label, candidate.textX, candidate.textY);
     }
   }
@@ -537,6 +577,10 @@
     drawGrid();
     for (const district of scene.districts) {
       if (drawableDistrictIds.has(district.id)) drawDistrict(district);
+    }
+    for (const districtId of [...majorDistrictIds].sort()) {
+      const district = districts.get(districtId);
+      if (district) drawMajorDistrict(district);
     }
     for (const block of civicBlocks) drawCivicBlock(block);
     for (const network of scene.networks) {

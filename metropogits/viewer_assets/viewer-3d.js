@@ -373,6 +373,14 @@
     ]),
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
+  const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
+  const majorDistrictColors = ["#18324a", "#2d284a", "#183d37", "#3b2b20", "#35243f"];
+  const majorDistrictColorById = new Map(
+    [...majorDistrictIds].sort().map((districtId, index) => [
+      districtId,
+      majorDistrictColors[index % majorDistrictColors.length],
+    ]),
+  );
   const worldBounds = scene.districts.reduce(
     (bounds, district) => ({
       maxX: Math.max(bounds.maxX, district.x + district.width),
@@ -577,6 +585,33 @@
     }
     for (let z = worldBounds.minZ; z <= worldBounds.maxZ; z += gridStep) {
       line(lines, [worldBounds.minX, 0.02, z], [worldBounds.maxX, 0.02, z], gridColor);
+    }
+
+    for (const districtId of [...majorDistrictIds].sort()) {
+      const district = districts.get(districtId);
+      if (!district) continue;
+      const districtColor = color(majorDistrictColorById.get(districtId));
+      box(
+        triangles,
+        district.x + 0.5,
+        -0.03,
+        district.z + 0.5,
+        Math.max(0.5, district.width - 1),
+        0.12,
+        Math.max(0.5, district.depth - 1),
+        districtColor,
+      );
+      const borderColor = lighten(districtColor, 0.48);
+      const corners = [
+        [district.x, district.z],
+        [district.x + district.width, district.z],
+        [district.x + district.width, district.z + district.depth],
+        [district.x, district.z + district.depth],
+        [district.x, district.z],
+      ];
+      for (let index = 1; index < corners.length; index += 1) {
+        roadSegment(triangles, corners[index - 1], corners[index], 1.2, 0.09, borderColor);
+      }
     }
 
     for (const block of civicBlocks) {
@@ -887,12 +922,16 @@
       if (!anchor || anchor.depth < -1 || anchor.depth > 1) continue;
       const label = districtCanvasLabel(district);
       candidates.push({
-        height: 17,
+        height: majorDistrictIds.has(district.id) ? 20 : 17,
         id: district.id,
         label,
-        priority: (districtsWithBuildings.has(district.id) ? 1000 : 0)
+        major: majorDistrictIds.has(district.id),
+        priority: (majorDistrictIds.has(district.id) ? 10000 : 0)
+          + (districtsWithBuildings.has(district.id) ? 1000 : 0)
           + (districtDepths.get(district.id) || 0),
-        width: Math.min(180, Math.max(24, label.length * 6 + 10)),
+        width: majorDistrictIds.has(district.id)
+          ? Math.min(220, Math.max(54, label.length * 8 + 18))
+          : Math.min(180, Math.max(24, label.length * 6 + 10)),
         x: anchor.x,
         y: anchor.y - 18,
       });
@@ -904,7 +943,7 @@
       .filter((candidate) => visibleIds.has(candidate.id))
       .map((candidate) => {
         const node = document.createElement("span");
-        node.className = "scene-label";
+        node.className = candidate.major ? "scene-label major" : "scene-label";
         node.style.left = `${candidate.x}px`;
         node.style.top = `${candidate.y}px`;
         node.style.maxWidth = `${candidate.width}px`;

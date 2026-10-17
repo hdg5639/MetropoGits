@@ -9,6 +9,7 @@ from metropogits.layout import generate_city
 from metropogits.preview import (
     PreviewError,
     _district_label_candidates,
+    _major_district_ids,
     render_preview,
 )
 from metropogits.scanner import ScanResult, ScannedFile, build_structural_ucg
@@ -34,7 +35,7 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            "d30d152debb47f42295518d43c7ef4dd6f590e6480bf1fb79e3914550fe11644",
+            "09ccb0bda14ca036c294299a0535efb52ceaa328f870354c0f4e6c9354af9ace",
             hashlib.sha256(first).hexdigest(),
         )
 
@@ -149,6 +150,43 @@ class PreviewTests(unittest.TestCase):
         )
 
         self.assertEqual({"child": "ch…"}, selected)
+
+    def test_major_districts_follow_large_structural_branches(self):
+        districts = [
+            {"id": "root", "parentId": None},
+            {"id": "backend", "parentId": "root"},
+            {"id": "frontend", "parentId": "root"},
+            {"id": "tiny", "parentId": "root"},
+            {"id": "auth", "parentId": "backend"},
+            {"id": "ops", "parentId": "backend"},
+            {"id": "portal", "parentId": "frontend"},
+        ]
+        buildings = [
+            {"districtId": district_id, "entityId": f"{district_id}-{index}"}
+            for district_id, count in (("auth", 80), ("ops", 200), ("portal", 100))
+            for index in range(count)
+        ] + [{"districtId": "tiny", "entityId": "tiny-0"}]
+
+        self.assertEqual(
+            {"auth", "ops", "portal"},
+            _major_district_ids({"buildings": buildings, "districts": districts}),
+        )
+
+    def test_preview_marks_major_structural_districts(self):
+        scan = ScanResult(
+            files=(
+                ScannedFile(path="api/App.py", language="python", size_bytes=4),
+                ScannedFile(path="web/App.py", language="python", size_bytes=4),
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/major-districts")
+        scene = generate_city(ucg)
+
+        preview = render_preview(scene, ucg).decode("utf-8")
+
+        self.assertIn('id="major-districts"', preview)
+        self.assertEqual(2, preview.count("Major structural district"))
 
     def test_untrusted_labels_are_xml_escaped(self):
         ucg = copy.deepcopy(self.ucg)

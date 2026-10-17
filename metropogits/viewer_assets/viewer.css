@@ -208,6 +208,15 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.scene-label.major {
+  background: rgba(8, 18, 32, 0.94);
+  border-color: #38bdf8;
+  color: #e0f2fe;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  padding: 0 5px;
+}
 
 .inspector {
   overflow: auto;
@@ -253,6 +262,7 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
 .swatch.persistence { background: #34d399; }
 .line { width: 0.85rem; height: 2px; }
 .block { width: 0.65rem; height: 0.5rem; }
+.block.major { border: 2px solid #38bdf8; background: #18324a; }
 .block.civic { border: 1px solid #52637b; background: #243248; }
 .line.dependency { border-top: 2px solid #a8b5c8; border-bottom: 2px solid #18202d; }
 .line.http { border-top: 2px solid #f97316; border-bottom: 2px solid #2b211d; }

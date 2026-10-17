@@ -40,6 +40,7 @@ NETWORK_STYLES = {
     "HTTP_HIGHWAY": {"marking": 2.2, "shoulder": 10.0, "surface": 7.0},
     "MESSAGING_PATH": {"marking": 1.8, "shoulder": 6.0, "surface": 3.6},
 }
+MAJOR_DISTRICT_COLORS = ("#18324a", "#2d284a", "#183d37", "#3b2b20", "#35243f")
 
 
 class PreviewError(ValueError):
@@ -186,6 +187,73 @@ def _drawable_district_ids(scene: dict[str, Any]) -> set[str]:
     return result
 
 
+def _major_district_ids(scene: dict[str, Any]) -> set[str]:
+    districts = {item["id"]: item for item in scene["districts"]}
+    children: dict[str, list[str]] = {district_id: [] for district_id in districts}
+    direct_buildings: dict[str, int] = {}
+    for district in scene["districts"]:
+        parent_id = district["parentId"]
+        if parent_id is not None and parent_id in children:
+            children[parent_id].append(district["id"])
+    for child_ids in children.values():
+        child_ids.sort()
+    for building in scene["buildings"]:
+        district_id = building["districtId"]
+        direct_buildings[district_id] = direct_buildings.get(district_id, 0) + 1
+
+    subtree_buildings: dict[str, int] = {}
+
+    def count(district_id: str) -> int:
+        if district_id in subtree_buildings:
+            return subtree_buildings[district_id]
+        total = direct_buildings.get(district_id, 0) + sum(
+            count(child_id) for child_id in children[district_id]
+        )
+        subtree_buildings[district_id] = total
+        return total
+
+    roots = sorted(
+        district["id"]
+        for district in scene["districts"]
+        if district["parentId"] is None
+    )
+    for root_id in roots:
+        count(root_id)
+
+    building_count = len(scene["buildings"])
+    minimum = (
+        max(20, (building_count + 49) // 50)
+        if building_count >= 256
+        else max(1, (building_count + 9) // 10)
+    )
+    selected: set[str] = set()
+    for root_id in roots:
+        root_children = [
+            district_id
+            for district_id in children[root_id]
+            if count(district_id) >= minimum
+        ]
+        for branch_id in root_children:
+            significant_children = [
+                district_id
+                for district_id in children[branch_id]
+                if count(district_id) >= minimum
+            ]
+            if (
+                len(significant_children) == 1
+                and direct_buildings.get(branch_id, 0) < minimum
+            ):
+                selected.add(significant_children[0])
+            elif len(significant_children) >= 2:
+                selected.update(significant_children)
+            else:
+                selected.add(branch_id)
+    if not selected:
+        for root_id in roots:
+            selected.update(children[root_id])
+    return selected & districts.keys()
+
+
 def _district_label_candidates(
     scene: dict[str, Any],
     drawable_ids: set[str],
@@ -195,6 +263,7 @@ def _district_label_candidates(
     project: Any,
     width: int,
     height: int,
+    major_ids: set[str] | None = None,
 ) -> dict[str, str]:
     districts = {item["id"]: item for item in scene["districts"]}
     depths: dict[str, int] = {}
@@ -210,7 +279,7 @@ def _district_label_candidates(
     populated = {item["districtId"] for item in scene["buildings"]}
     candidates: list[dict[str, Any]] = []
     for district in scene["districts"]:
-        if district["id"] not in drawable_ids:
+        if district["id"] not in drawable_ids or district["id"] in (major_ids or set()):
             continue
         x, y = project(district["x"], district["z"])
         right, bottom = project(
@@ -328,6 +397,7 @@ def render_preview(
     }
     repository_id = ucg["repository"]["id"]
     drawable_district_ids = _drawable_district_ids(scene)
+    major_district_ids = _major_district_ids(scene)
     visible_district_labels = _district_label_candidates(
         scene,
         drawable_district_ids,
@@ -337,6 +407,7 @@ def render_preview(
         project,
         width,
         height,
+        major_district_ids,
     )
 
     lines = [
@@ -411,6 +482,35 @@ def render_preview(
                 f"font-size=\"10\">{_escape(canvas_label)}</text>"
             )
         lines.append("    </g>")
+    lines.append("  </g>")
+
+    major_color_by_id = {
+        district_id: MAJOR_DISTRICT_COLORS[index % len(MAJOR_DISTRICT_COLORS)]
+        for index, district_id in enumerate(sorted(major_district_ids))
+    }
+    lines.append('  <g id="major-districts">')
+    for district_id in sorted(major_district_ids):
+        district = next(
+            item for item in scene["districts"] if item["id"] == district_id
+        )
+        x, y = project(district["x"], district["z"])
+        district_width = max(float(district["width"]) * scale, 1.0)
+        district_depth = max(float(district["depth"]) * scale, 1.0)
+        full_label = district_labels.get(district_id, district_id)
+        color = major_color_by_id[district_id]
+        lines.extend(
+            [
+                f'    <g data-major-district="{_escape(district_id)}">',
+                f"      <title>Major structural district: {_escape(full_label)}</title>",
+                (
+                    f'      <rect x="{_fmt(x)}" y="{_fmt(y)}" '
+                    f'width="{_fmt(district_width)}" height="{_fmt(district_depth)}" '
+                    f'rx="5" fill="{color}" fill-opacity="0.12" stroke="#38bdf8" '
+                    'stroke-opacity="0.88" stroke-width="3"/>'
+                ),
+                "    </g>",
+            ]
+        )
     lines.append("  </g>")
 
     buildings_by_district: dict[str, list[dict[str, Any]]] = {}
@@ -555,6 +655,22 @@ def render_preview(
             )
         )
         lines.append("    </g>")
+    lines.append("  </g>")
+    lines.append('  <g id="major-district-labels">')
+    for district_id in sorted(major_district_ids):
+        district = next(
+            item for item in scene["districts"] if item["id"] == district_id
+        )
+        x, y = project(district["x"], district["z"])
+        full_label = district_labels.get(district_id, district_id)
+        label = full_label.rsplit("/", 1)[-1] or full_label
+        lines.append(
+            f'    <text data-major-label="{_escape(district_id)}" '
+            f'x="{_fmt(x + 8)}" y="{_fmt(y + 20)}" fill="#e0f2fe" '
+            'stroke="#081220" stroke-width="4" paint-order="stroke" '
+            'font-family="system-ui, sans-serif" font-size="13" '
+            f'font-weight="800">{_escape(label)}</text>'
+        )
     lines.extend(["  </g>", "</svg>"])
     return ("\n".join(lines) + "\n").encode("utf-8")
 
