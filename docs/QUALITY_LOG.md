@@ -1204,3 +1204,54 @@
   and a distinct README showcase composition remain the next visual priorities.
 - Commits created / pushed (and branch): `9feedc5` on local `main`; push is
   scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - progressive large-city detail (`70ea174`)
+
+- Implemented: large cities now use one deterministic LOD policy in both the
+  WebGL and 2D renderers. The initial overview retains all evidence-backed
+  semantic archetypes, a stable sample of generic buildings, the 24
+  highest-volume routes, root boundaries, and major structural districts.
+  Zooming reveals a district stage and then the complete city. Active filters
+  force full detail, selected elements remain rendered, and the toolbar states
+  the current level and rendered/eligible counts.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at exact revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`, plus a
+  synthetic 300-building, 100-network policy fixture.
+- Commands run: two complete matching CLI builds; Chrome SwiftShader WebGL,
+  forced 2D fallback, and CPU SVG captures; `pip check`; Ruff; `compileall`;
+  JavaScript syntax checks; release-readiness validation; the full automated
+  suite; whitespace checks; and SHA-256 comparisons across graph, scene,
+  preview, manifest, HTML, and changed viewer assets.
+- Artifacts inspected: `viewer-webgl.png`, `viewer-fallback.png`, `preview.png`,
+  and the generated static artifacts under
+  `D:\Code\MetroPoGits\.visual-gj-cloud-lod-2`.
+- Visual findings: PASS for the interactive overview. Both renderers state
+  `Overview · 265/1324 buildings · 24/135 routes`; `Auth`, `Ops`, `User`, `Vm`,
+  and `portal` remain immediately distinguishable while the initial road and
+  boundary load is materially lower. The static SVG remains complete and
+  intentionally unchanged; a separate README showcase composition is still
+  required.
+- Spec alignment: PASS. LOD changes only rendering visibility and never alters
+  UCG or City Scene facts. Specialized buildings are never sampled out,
+  generic sampling uses stable IDs, route priority uses observed edge counts,
+  and the interface discloses every reduction instead of presenting it as the
+  complete visible set.
+- Tests / determinism / stability: 202 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. Matching builds produced
+  identical SHA-256
+  `265744be3ab128404eee37cbb9a8b8f048ce0babc44fb239a36792189df50859`
+  for `graph.ucg.json`,
+  `d8ea9667648f818abe84ac4c31d14486bc6903a56db2a344fc6717ea3a0dcb5c`
+  for `city.json`,
+  `ce7b780f2ff2aadb9ba1cfe92c9fc94189a458b5ca8e808eb5a122575b010f84`
+  for `preview.svg`, and matching HTML, manifest, and viewer assets.
+- Fixes applied and reverified: LOD computation was cached by level, filter
+  revision, and selection so synthetic activity does not repeatedly sort the
+  complete scene or retrigger the live status region on every animation frame.
+- Open risks / next actions: the README SVG still renders the complete
+  architecture graph and remains visually dense. A truthful showcase
+  composition and tighter initial camera framing are the next visual
+  priorities. Public repository conversion and Pages activation remain
+  explicitly deferred by ADR-007 until maintainer approval.
+- Commits created / pushed (and branch): `70ea174` on local `main`; push is
+  scheduled after this checkpoint log commit.
