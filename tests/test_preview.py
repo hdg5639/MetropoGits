@@ -35,7 +35,7 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            "09ccb0bda14ca036c294299a0535efb52ceaa328f870354c0f4e6c9354af9ace",
+            "e63a3070d28c6eb0e9d8a5aecda6f07d1598a76e8766d5311e2679e2116c6a11",
             hashlib.sha256(first).hexdigest(),
         )
 

@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from metropogits.layout import generate_city
+from metropogits.layout import BUILDING_OFFSET, BUILDING_SPACING, generate_city
 from metropogits.scanner import (
     ScanResult,
     ScannedFile,
@@ -244,6 +244,8 @@ class LayoutTests(unittest.TestCase):
             "hierarchical-paged/1.4",
             "hierarchical-paged/1.5",
             "hierarchical-paged/1.6",
+            "hierarchical-paged/1.7",
+            "hierarchical-paged/1.8",
         ):
             with self.subTest(version=version):
                 previous = {**cold, "layoutAlgorithm": version}
@@ -271,16 +273,16 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(canonical_json_bytes(cold), canonical_json_bytes(hinted))
         self.assertEqual("LAYOUT_HINT_APPLIED", diagnostics[-1]["code"])
 
-    def test_geometry_compatible_layout_hint_remains_eligible(self):
+    def test_previous_geometry_is_repacked_for_dense_cold_layout(self):
         ucg = load_json(FIXTURES / "ucg" / "valid" / "spring-minimal.json")
         cold = generate_city(ucg)
-        previous = {**cold, "layoutAlgorithm": "hierarchical-paged/1.7"}
+        previous = {**cold, "layoutAlgorithm": "hierarchical-paged/1.8"}
         diagnostics: list[dict] = []
 
         hinted = generate_city(ucg, previous_scene=previous, diagnostics=diagnostics)
 
         self.assertEqual(canonical_json_bytes(cold), canonical_json_bytes(hinted))
-        self.assertEqual("LAYOUT_HINT_APPLIED", diagnostics[-1]["code"])
+        self.assertEqual("LAYOUT_HINT_IGNORED", diagnostics[-1]["code"])
 
     def test_edges_between_districts_are_aggregated_without_losing_ids(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -450,7 +452,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.8", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.9", scene["layoutAlgorithm"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
         siblings: dict[str, list[dict]] = {}
@@ -505,6 +507,44 @@ class LayoutTests(unittest.TestCase):
                 and item["height"] >= 10
                 for item in scene["buildings"]
             )
+        )
+        self.assertEqual([], validate_document(scene, ucg))
+
+    def test_cold_layout_removes_internal_empty_rows_and_columns(self):
+        scan = ScanResult(
+            files=tuple(
+                ScannedFile(
+                    path=f"src/File{index:02}.py",
+                    language="python",
+                    size_bytes=4,
+                )
+                for index in range(8)
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/compact-cells")
+
+        scene = generate_city(ucg)
+        district = next(
+            item
+            for item in scene["districts"]
+            if item["id"] == "example/compact-cells:directory:src"
+        )
+        buildings = [
+            item
+            for item in scene["buildings"]
+            if item["districtId"] == district["id"]
+        ]
+        columns = sorted({item["x"] - district["x"] for item in buildings})
+        rows = sorted({item["z"] - district["z"] for item in buildings})
+
+        self.assertEqual(
+            [BUILDING_OFFSET + index * BUILDING_SPACING for index in range(len(columns))],
+            columns,
+        )
+        self.assertEqual(
+            [BUILDING_OFFSET + index * BUILDING_SPACING for index in range(len(rows))],
+            rows,
         )
         self.assertEqual([], validate_document(scene, ucg))
 
@@ -678,8 +718,8 @@ class LayoutTests(unittest.TestCase):
         )
         root_area = root["width"] * root["depth"]
 
-        self.assertLessEqual(root_area, 160_000)
-        self.assertGreaterEqual(building_area / root_area, 0.055)
+        self.assertLessEqual(root_area, 120_000)
+        self.assertGreaterEqual(building_area / root_area, 0.075)
         self.assertEqual([], validate_document(scene, ucg))
 
     def test_sparse_directory_forest_uses_dense_city_blocks(self):

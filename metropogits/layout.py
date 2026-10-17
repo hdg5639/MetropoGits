@@ -20,10 +20,8 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.8"
-HINT_LAYOUT_ALGORITHMS = frozenset(
-    {"hierarchical-paged/1.7", LAYOUT_ALGORITHM}
-)
+LAYOUT_ALGORITHM = "hierarchical-paged/1.9"
+HINT_LAYOUT_ALGORITHMS = frozenset({LAYOUT_ALGORITHM})
 DISTRICT_DEPTH = 64
 DISTRICT_PADDING = 4
 MIN_DISTRICT_SIZE = 14
@@ -291,25 +289,33 @@ def _ordered_children(
 
 
 def _compact_cold_slots(slots: dict[str, int]) -> dict[str, int]:
-    """Remove unused leading rows and columns without changing relative cells."""
+    """Remove unused rows and columns without changing their relative order."""
 
-    page_origins: dict[int, tuple[int, int]] = {}
+    page_rows: dict[int, set[int]] = defaultdict(set)
+    page_columns: dict[int, set[int]] = defaultdict(set)
     for slot in slots.values():
         page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
         row, column = divmod(page_slot, BUILDING_COLUMNS)
-        previous = page_origins.get(page, (row, column))
-        page_origins[page] = (min(previous[0], row), min(previous[1], column))
+        page_rows[page].add(row)
+        page_columns[page].add(column)
+
+    row_ranks = {
+        page: {row: rank for rank, row in enumerate(sorted(rows))}
+        for page, rows in page_rows.items()
+    }
+    column_ranks = {
+        page: {column: rank for rank, column in enumerate(sorted(columns))}
+        for page, columns in page_columns.items()
+    }
 
     compacted: dict[str, int] = {}
     for entity_id, slot in slots.items():
         page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
         row, column = divmod(page_slot, BUILDING_COLUMNS)
-        origin_row, origin_column = page_origins[page]
         compacted[entity_id] = (
             page * BUILDING_PAGE_CAPACITY
-            + (row - origin_row) * BUILDING_COLUMNS
-            + column
-            - origin_column
+            + row_ranks[page][row] * BUILDING_COLUMNS
+            + column_ranks[page][column]
         )
     return compacted
 
