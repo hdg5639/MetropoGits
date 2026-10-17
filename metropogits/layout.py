@@ -6,7 +6,7 @@ import argparse
 import hashlib
 import math
 import sys
-from collections import defaultdict
+from collections import defaultdict, deque
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -20,7 +20,7 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.11"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.12"
 HINT_LAYOUT_ALGORITHMS = frozenset({LAYOUT_ALGORITHM})
 SCENE_SCHEMA_VERSION = "city/0.2"
 FOOTPRINT_CELL_SIZE = 7
@@ -414,8 +414,23 @@ def _fill_enclosed_cells(cells: set[Cell]) -> set[Cell]:
         for x in range(max_x + 1)
         if (x, z) not in exterior
     }
-def _reserved_cells(cells: set[Cell]) -> set[Cell]:
-    return set(cells)
+
+
+def _street_gap_cells(parent_depth: int) -> int:
+    if parent_depth == 0:
+        return 2
+    if parent_depth <= 2:
+        return 1
+    return 0
+
+
+def _reserved_cells(cells: set[Cell], gap_cells: int) -> set[Cell]:
+    return {
+        (x + dx, z + dz)
+        for x, z in cells
+        for dx in range(-gap_cells, gap_cells + 1)
+        for dz in range(-gap_cells, gap_cells + 1)
+    }
 
 
 def _translated_cells(cells: set[Cell], offset: Cell) -> set[Cell]:
@@ -429,10 +444,13 @@ def _normalized_cells(cells: set[Cell]) -> set[Cell]:
 
 
 def _pack_shape(
-    shape: set[Cell], occupied: set[Cell], preferred: Cell | None = None
+    shape: set[Cell],
+    occupied: set[Cell],
+    gap_cells: int,
+    preferred: Cell | None = None,
 ) -> Cell:
     normalized = _normalized_cells(shape)
-    forbidden = _reserved_cells(occupied) if occupied else set()
+    forbidden = _reserved_cells(occupied, gap_cells) if occupied else set()
 
     def available(offset: Cell) -> bool:
         return offset[0] >= 0 and offset[1] >= 0 and not any(
@@ -528,6 +546,7 @@ def _measure_districts(
     dimensions: dict[str, tuple[float, float]],
     child_offsets: dict[str, dict[str, tuple[float, float]]],
     footprint_cells: dict[str, set[Cell]],
+    hierarchy_depth: int = 0,
 ) -> tuple[float, float]:
     children = _ordered_children(district_id, children_by_parent)
     for child_id in children:
@@ -540,6 +559,7 @@ def _measure_districts(
             dimensions,
             child_offsets,
             footprint_cells,
+            hierarchy_depth + 1,
         )
     local_slots = allocated_slots.get(district_id, {})
     direct_cells = _direct_footprint_cells(local_slots)
@@ -589,7 +609,12 @@ def _measure_districts(
             relative_z = (child_hint["z"] - hint["z"]) / FOOTPRINT_CELL_SIZE
             if float(relative_x).is_integer() and float(relative_z).is_integer():
                 preferred = (int(relative_x), int(relative_z))
-        offset_cells = _pack_shape(footprint_cells[child_id], occupied, preferred)
+        offset_cells = _pack_shape(
+            footprint_cells[child_id],
+            occupied,
+            _street_gap_cells(hierarchy_depth),
+            preferred,
+        )
         offsets[child_id] = (
             float(offset_cells[0] * FOOTPRINT_CELL_SIZE),
             float(offset_cells[1] * FOOTPRINT_CELL_SIZE),
@@ -734,6 +759,178 @@ def _network_zones(
     return result
 
 
+def _network_walkable_cells(
+    districts: list[dict[str, Any]], buildings: list[dict[str, Any]]
+) -> set[Cell]:
+    min_x = math.floor(min(item["x"] for item in districts) / FOOTPRINT_CELL_SIZE) - 3
+    min_z = math.floor(min(item["z"] for item in districts) / FOOTPRINT_CELL_SIZE) - 3
+    max_x = (
+        math.ceil(
+            max(item["x"] + item["width"] for item in districts)
+            / FOOTPRINT_CELL_SIZE
+        )
+        + 3
+    )
+    max_z = (
+        math.ceil(
+            max(item["z"] + item["depth"] for item in districts)
+            / FOOTPRINT_CELL_SIZE
+        )
+        + 3
+    )
+    blocked: set[Cell] = set()
+    for building in buildings:
+        start_x = math.floor(float(building["x"]) / FOOTPRINT_CELL_SIZE)
+        start_z = math.floor(float(building["z"]) / FOOTPRINT_CELL_SIZE)
+        end_x = math.ceil(
+            (float(building["x"]) + float(building["width"]))
+            / FOOTPRINT_CELL_SIZE
+        )
+        end_z = math.ceil(
+            (float(building["z"]) + float(building["depth"]))
+            / FOOTPRINT_CELL_SIZE
+        )
+        blocked.update(
+            (x, z)
+            for z in range(start_z, end_z)
+            for x in range(start_x, end_x)
+        )
+    available = {
+        (x, z)
+        for z in range(min_z, max_z + 1)
+        for x in range(min_x, max_x + 1)
+        if (x, z) not in blocked
+    }
+    boundary = deque(
+        sorted(
+            (
+                cell
+                for cell in available
+                if cell[0] in {min_x, max_x} or cell[1] in {min_z, max_z}
+            ),
+            key=lambda cell: (cell[1], cell[0]),
+        )
+    )
+    exterior = set(boundary)
+    while boundary:
+        x, z = boundary.popleft()
+        for neighbor in ((x + 1, z), (x, z + 1), (x - 1, z), (x, z - 1)):
+            if neighbor in available and neighbor not in exterior:
+                exterior.add(neighbor)
+                boundary.append(neighbor)
+    return exterior
+
+
+def _mean_building_center(items: dict[str, dict[str, Any]]) -> tuple[float, float]:
+    ordered = [items[entity_id] for entity_id in sorted(items)]
+    return (
+        sum(float(item["x"]) + float(item["width"]) / 2 for item in ordered)
+        / len(ordered),
+        sum(float(item["z"]) + float(item["depth"]) / 2 for item in ordered)
+        / len(ordered),
+    )
+
+
+def _nearest_walkable_cell(cells: set[Cell], point: tuple[float, float]) -> Cell:
+    target_x = (point[0] - FOOTPRINT_CELL_SIZE / 2) / FOOTPRINT_CELL_SIZE
+    target_z = (point[1] - FOOTPRINT_CELL_SIZE / 2) / FOOTPRINT_CELL_SIZE
+    return min(
+        cells,
+        key=lambda cell: (
+            abs(cell[0] - target_x) + abs(cell[1] - target_z),
+            (cell[0] - target_x) ** 2 + (cell[1] - target_z) ** 2,
+            cell[1],
+            cell[0],
+        ),
+    )
+
+
+def _shortest_cell_path(cells: set[Cell], start: Cell, end: Cell) -> list[Cell]:
+    if start == end:
+        neighbor = min(
+            (
+                cell
+                for cell in (
+                    (start[0] + 1, start[1]),
+                    (start[0], start[1] + 1),
+                    (start[0] - 1, start[1]),
+                    (start[0], start[1] - 1),
+                )
+                if cell in cells
+            ),
+            key=lambda cell: (cell[1], cell[0]),
+        )
+        return [start, neighbor]
+    pending = deque([start])
+    previous: dict[Cell, Cell | None] = {start: None}
+    while pending:
+        current = pending.popleft()
+        neighbors = (
+            (current[0] + 1, current[1]),
+            (current[0], current[1] + 1),
+            (current[0] - 1, current[1]),
+            (current[0], current[1] - 1),
+        )
+        for neighbor in neighbors:
+            if neighbor not in cells or neighbor in previous:
+                continue
+            previous[neighbor] = current
+            if neighbor == end:
+                pending.clear()
+                break
+            pending.append(neighbor)
+    if end not in previous:
+        raise LayoutError("unable to route dependency through the street grid")
+    path = []
+    current: Cell | None = end
+    while current is not None:
+        path.append(current)
+        current = previous[current]
+    return list(reversed(path))
+
+
+def _simplify_cell_path(path: list[Cell]) -> list[Cell]:
+    if len(path) <= 2:
+        return path
+    result = [path[0]]
+    previous_direction = (
+        path[1][0] - path[0][0],
+        path[1][1] - path[0][1],
+    )
+    for index in range(1, len(path) - 1):
+        direction = (
+            path[index + 1][0] - path[index][0],
+            path[index + 1][1] - path[index][1],
+        )
+        if direction != previous_direction:
+            result.append(path[index])
+        previous_direction = direction
+    result.append(path[-1])
+    return result
+
+
+def _route_network(
+    walkable: set[Cell],
+    source_buildings: dict[str, dict[str, Any]],
+    target_buildings: dict[str, dict[str, Any]],
+) -> list[list[float]]:
+    start = _nearest_walkable_cell(
+        walkable, _mean_building_center(source_buildings)
+    )
+    end = _nearest_walkable_cell(
+        walkable, _mean_building_center(target_buildings)
+    )
+    return [
+        [
+            float(cell[0] * FOOTPRINT_CELL_SIZE + FOOTPRINT_CELL_SIZE / 2),
+            float(cell[1] * FOOTPRINT_CELL_SIZE + FOOTPRINT_CELL_SIZE / 2),
+        ]
+        for cell in _simplify_cell_path(
+            _shortest_cell_path(walkable, start, end)
+        )
+    ]
+
+
 def generate_city(
     ucg: dict[str, Any],
     theme: str = "minimal",
@@ -847,6 +1044,7 @@ def generate_city(
     buildings.sort(key=lambda item: item["entityId"])
 
     buildings_by_entity = {item["entityId"]: item for item in buildings}
+    network_walkable = _network_walkable_cells(districts, buildings)
     network_zones = _network_zones(districts, buildings)
     grouped_edges: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
     for edge in ucg["edges"]:
@@ -872,26 +1070,9 @@ def generate_city(
             for edge in grouped
         }
 
-        def center(items: dict[str, dict[str, Any]]) -> list[float]:
-            ordered = [items[entity_id] for entity_id in sorted(items)]
-            return [
-                sum(item["x"] + item["width"] / 2 for item in ordered)
-                / len(ordered),
-                sum(item["z"] + item["depth"] / 2 for item in ordered)
-                / len(ordered),
-            ]
-
-        start = center(source_buildings)
-        end = center(target_buildings)
-        if start == end:
-            path = [
-                start,
-                [start[0] + 12, start[1]],
-                [start[0] + 12, start[1] + 12],
-                [start[0], start[1] + 12],
-            ]
-        else:
-            path = [start, [end[0], start[1]], end]
+        path = _route_network(
+            network_walkable, source_buildings, target_buildings
+        )
         networks.append(
             {
                 "edgeIds": edge_ids,

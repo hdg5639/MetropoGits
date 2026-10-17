@@ -9,7 +9,11 @@
     "schemaVersion": {"const": "city/0.2"},
     "ucgDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
     "layoutAlgorithm": {
-      "enum": ["hierarchical-paged/1.11", "metropolis-grid/0.2"]
+      "enum": [
+        "hierarchical-paged/1.11",
+        "hierarchical-paged/1.12",
+        "metropolis-grid/0.2"
+      ]
     },
     "theme": {"$ref": "#/$defs/nonEmptyString"},
     "districts": {"type": "array", "items": {"$ref": "#/$defs/district"}},

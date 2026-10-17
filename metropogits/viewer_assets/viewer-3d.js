@@ -185,9 +185,9 @@
   }
 
   const networkProfiles = Object.freeze({
-    DEPENDENCY_ROAD: Object.freeze({ marking: 0.2, shoulder: 2.1, surface: 1.35 }),
-    HTTP_HIGHWAY: Object.freeze({ marking: 0.34, shoulder: 3.0, surface: 2.15 }),
-    MESSAGING_PATH: Object.freeze({ marking: 0.42, shoulder: 1.55, surface: 0.9 }),
+    DEPENDENCY_ROAD: Object.freeze({ marking: 0.16, shoulder: 1.6, surface: 0.9 }),
+    HTTP_HIGHWAY: Object.freeze({ marking: 0.3, shoulder: 2.5, surface: 1.6 }),
+    MESSAGING_PATH: Object.freeze({ marking: 0.32, shoulder: 1.3, surface: 0.65 }),
   });
   const cameraPolicy = Object.freeze({
     fieldOfView: Math.PI / 4,
@@ -321,6 +321,7 @@
   const districtTerritories = new Map(
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
+  const streetRectangles = data.streets?.rectangles || [];
   function districtTerritory(district) {
     return districtTerritories.get(district.id) || {
       boundary: [
@@ -664,6 +665,25 @@
       }
     }
 
+    const streetColors = {
+      ALLEY: "#263447",
+      BOULEVARD: "#0b1320",
+      ROUTE_ACCESS: "#1c293b",
+      STREET: "#172437",
+    };
+    for (const rectangle of streetRectangles) {
+      box(
+        triangles,
+        rectangle.x,
+        0.08,
+        rectangle.z,
+        rectangle.width,
+        0.035,
+        rectangle.depth,
+        color(streetColors[rectangle.tier] || streetColors.STREET),
+      );
+    }
+
     if (currentDetailLevel === "detail") {
       for (const block of civicBlocks) {
         const blockColor = color("#243248");
@@ -727,7 +747,8 @@
         ? color("#f8fafc")
         : color(networkColors[network.kind] || networkColors.DEPENDENCY_ROAD);
       const profile = networkProfiles[network.kind] || networkProfiles.DEPENDENCY_ROAD;
-      const selectionScale = selected("network", network.id) ? 1.28 : 1;
+      const weightScale = 1 + Math.min(0.8, Math.log2(network.edgeIds.length + 1) * 0.12);
+      const selectionScale = weightScale * (selected("network", network.id) ? 1.28 : 1);
       for (let index = 1; index < network.path.length; index += 1) {
         roadSegment(
           triangles,
@@ -751,19 +772,6 @@
           network.path[index],
           profile.marking * selectionScale,
           0.18,
-          roadColor,
-        );
-      }
-      for (const point of network.path) {
-        const junctionSize = profile.surface * selectionScale;
-        box(
-          triangles,
-          point[0] - junctionSize / 2,
-          0.1,
-          point[1] - junctionSize / 2,
-          junctionSize,
-          0.09,
-          junctionSize,
           roadColor,
         );
       }

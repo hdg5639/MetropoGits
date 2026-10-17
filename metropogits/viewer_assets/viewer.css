@@ -291,6 +291,7 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
 .block { width: 0.65rem; height: 0.5rem; }
 .block.major { border: 2px solid #38bdf8; background: #18324a; }
 .block.civic { border: 1px solid #52637b; background: #243248; }
+.block.street { border: 1px solid #52637b; background: #0b1320; }
 .line.dependency { border-top: 2px solid #a8b5c8; border-bottom: 2px solid #18202d; }
 .line.http { border-top: 2px solid #f97316; border-bottom: 2px solid #2b211d; }
 .line.messaging { border-top: 2px dashed #a855f7; }

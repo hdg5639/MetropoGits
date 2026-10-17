@@ -3,7 +3,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from metropogits.layout import BUILDING_OFFSET, BUILDING_SPACING, generate_city
+from metropogits.layout import (
+    BUILDING_OFFSET,
+    BUILDING_SPACING,
+    FOOTPRINT_CELL_SIZE,
+    generate_city,
+)
 from metropogits.scanner import (
     ScanResult,
     ScannedFile,
@@ -248,6 +253,7 @@ class LayoutTests(unittest.TestCase):
             "hierarchical-paged/1.8",
             "hierarchical-paged/1.9",
             "hierarchical-paged/1.10",
+            "hierarchical-paged/1.11",
         ):
             with self.subTest(version=version):
                 previous = {**cold, "layoutAlgorithm": version}
@@ -334,26 +340,28 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(1, len(scene["networks"]))
         network = scene["networks"][0]
         self.assertEqual(sorted(edge_ids), network["edgeIds"])
-        buildings = {item["entityId"]: item for item in scene["buildings"]}
-        source_centers = [
-            (
-                buildings[files[path]]["x"] + buildings[files[path]]["width"] / 2,
-                buildings[files[path]]["z"] + buildings[files[path]]["depth"] / 2,
-            )
-            for path in ("api/First.py", "api/Second.py", "api/Third.py")
-        ]
-        target = buildings[target_id]
-        self.assertEqual(
-            [
-                sum(item[0] for item in source_centers) / len(source_centers),
-                sum(item[1] for item in source_centers) / len(source_centers),
-            ],
-            network["path"][0],
-        )
-        self.assertEqual(
-            [target["x"] + target["width"] / 2, target["z"] + target["depth"] / 2],
-            network["path"][-1],
-        )
+        for point in network["path"]:
+            for coordinate in point:
+                self.assertAlmostEqual(
+                    FOOTPRINT_CELL_SIZE / 2,
+                    coordinate % FOOTPRINT_CELL_SIZE,
+                )
+        for start, end in zip(network["path"], network["path"][1:]):
+            self.assertTrue(start[0] == end[0] or start[1] == end[1])
+            for building in scene["buildings"]:
+                if start[0] == end[0]:
+                    crosses = (
+                        building["x"] < start[0] < building["x"] + building["width"]
+                        and min(start[1], end[1]) < building["z"] + building["depth"]
+                        and building["z"] < max(start[1], end[1])
+                    )
+                else:
+                    crosses = (
+                        building["z"] < start[1] < building["z"] + building["depth"]
+                        and min(start[0], end[0]) < building["x"] + building["width"]
+                        and building["x"] < max(start[0], end[0])
+                    )
+                self.assertFalse(crosses)
 
     def test_large_city_aggregates_edges_into_stable_routing_zones(self):
         paths = [
@@ -454,7 +462,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.11", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.12", scene["layoutAlgorithm"])
         self.assertEqual("city/0.2", scene["schemaVersion"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
@@ -798,8 +806,46 @@ class LayoutTests(unittest.TestCase):
         root_area = root["width"] * root["depth"]
 
         self.assertLessEqual(root_area, 160_000)
-        self.assertGreaterEqual(building_area / root_area, 0.075)
+        self.assertGreaterEqual(building_area / root_area, 0.06)
         self.assertEqual([], validate_document(scene, ucg))
+
+    def test_top_level_siblings_reserve_two_street_cells(self):
+        scan = ScanResult(
+            files=(
+                ScannedFile(path="backend/App.py", language="python", size_bytes=4),
+                ScannedFile(path="frontend/App.py", language="python", size_bytes=4),
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/boulevard-gap")
+
+        scene = generate_city(ucg)
+        root = next(item for item in scene["districts"] if item["parentId"] is None)
+        children = [
+            item for item in scene["districts"] if item["parentId"] == root["id"]
+        ]
+
+        def cells(district):
+            return {
+                (x, z)
+                for rectangle in district["footprint"]
+                for z in range(
+                    round(rectangle["z"] / FOOTPRINT_CELL_SIZE),
+                    round((rectangle["z"] + rectangle["depth"]) / FOOTPRINT_CELL_SIZE),
+                )
+                for x in range(
+                    round(rectangle["x"] / FOOTPRINT_CELL_SIZE),
+                    round((rectangle["x"] + rectangle["width"]) / FOOTPRINT_CELL_SIZE),
+                )
+            }
+
+        first, second = map(cells, children)
+        separation = min(
+            max(abs(left[0] - right[0]), abs(left[1] - right[1]))
+            for left in first
+            for right in second
+        )
+        self.assertGreaterEqual(separation, 3)
 
     def test_sparse_directory_forest_uses_dense_city_blocks(self):
         scan = ScanResult(

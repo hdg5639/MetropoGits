@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import argparse
 import html
+import math
 import sys
 from pathlib import Path
 from typing import Any
 
 from metropogits.territory import derive_district_territories
+from metropogits.streets import derive_street_grid
 from scripts.canonical_json import CanonicalJsonError, loads_strict_json
 from scripts.validate_city import validate_document as validate_city_document
 
@@ -37,9 +39,9 @@ NETWORK_COLORS = {
     "MESSAGING_PATH": "#a855f7",
 }
 NETWORK_STYLES = {
-    "DEPENDENCY_ROAD": {"marking": 1.4, "shoulder": 7.5, "surface": 5.0},
-    "HTTP_HIGHWAY": {"marking": 2.2, "shoulder": 10.0, "surface": 7.0},
-    "MESSAGING_PATH": {"marking": 1.8, "shoulder": 6.0, "surface": 3.6},
+    "DEPENDENCY_ROAD": {"marking": 0.7, "shoulder": 3.0, "surface": 2.0},
+    "HTTP_HIGHWAY": {"marking": 1.2, "shoulder": 5.0, "surface": 3.5},
+    "MESSAGING_PATH": {"marking": 0.8, "shoulder": 2.4, "surface": 1.2},
 }
 MAJOR_DISTRICT_COLORS = ("#18324a", "#2d284a", "#183d37", "#3b2b20", "#35243f")
 
@@ -373,6 +375,7 @@ def render_preview(
 
     palette = _palette(scene["theme"])
     territory_data = derive_district_territories(scene)
+    street_data = derive_street_grid(scene)
     territories = {
         item["id"]: item for item in territory_data["districts"]
     }
@@ -541,6 +544,25 @@ def render_preview(
         )
     lines.append("  </g>")
 
+    street_colors = {
+        "ALLEY": "#263447",
+        "BOULEVARD": "#0b1320",
+        "ROUTE_ACCESS": "#1c293b",
+        "STREET": "#172437",
+    }
+    lines.append(
+        '  <g id="structural-streets" aria-label="Visual street infrastructure; not dependency evidence">'
+    )
+    for rectangle in street_data["rectangles"]:
+        x, y = project(rectangle["x"], rectangle["z"])
+        lines.append(
+            f'    <rect x="{_fmt(x)}" y="{_fmt(y)}" '
+            f'width="{_fmt(max(float(rectangle["width"]) * scale, 1.0))}" '
+            f'height="{_fmt(max(float(rectangle["depth"]) * scale, 1.0))}" '
+            f'fill="{street_colors[rectangle["tier"]]}"/>'
+        )
+    lines.append("  </g>")
+
     buildings_by_district: dict[str, list[dict[str, Any]]] = {}
     for building in scene["buildings"]:
         buildings_by_district.setdefault(building["districtId"], []).append(
@@ -584,6 +606,7 @@ def render_preview(
         style = NETWORK_STYLES.get(
             network["kind"], NETWORK_STYLES["DEPENDENCY_ROAD"]
         )
+        weight_scale = 1 + min(0.8, math.log2(len(network["edgeIds"]) + 1) * 0.12)
         edge_summary = ", ".join(network["edgeIds"])
         surface_color = "#4b3a31" if network["kind"] == "HTTP_HIGHWAY" else "#354256"
         dash = ' stroke-dasharray="6 4"' if network["kind"] == "MESSAGING_PATH" else ""
@@ -592,18 +615,18 @@ def render_preview(
                 (
                     f"    <polyline data-network-id=\"{_escape(network['id'])}\" "
                     f"points=\"{points}\" stroke=\"#080d16\" "
-                    f"stroke-width=\"{_fmt(style['shoulder'])}\" "
+                    f"stroke-width=\"{_fmt(style['shoulder'] * weight_scale)}\" "
                     "stroke-linejoin=\"round\" stroke-linecap=\"round\" "
                     "opacity=\"0.92\"/>"
                 ),
                 (
                     f"    <polyline points=\"{points}\" stroke=\"{surface_color}\" "
-                    f"stroke-width=\"{_fmt(style['surface'])}\" "
+                    f"stroke-width=\"{_fmt(style['surface'] * weight_scale)}\" "
                     "stroke-linejoin=\"round\" stroke-linecap=\"round\"/>"
                 ),
                 (
                     f"    <polyline points=\"{points}\" stroke=\"{color}\" "
-                    f"stroke-width=\"{_fmt(style['marking'])}\"{dash} "
+                    f"stroke-width=\"{_fmt(style['marking'] * weight_scale)}\"{dash} "
                     "stroke-linejoin=\"round\" "
                     "stroke-linecap=\"round\"><title>"
                     f"{_escape(network['kind'])}: {_escape(edge_summary)}"
@@ -611,11 +634,6 @@ def render_preview(
                 ),
             ]
         )
-        for junction_x, junction_y in projected:
-            lines.append(
-                f'    <circle cx="{_fmt(junction_x)}" cy="{_fmt(junction_y)}" '
-                f'r="{_fmt(style["surface"] * 0.36)}" fill="{color}"/>'
-            )
     lines.append("  </g>")
 
     lines.append("  <g id=\"buildings\">")

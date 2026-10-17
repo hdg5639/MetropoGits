@@ -54,6 +54,8 @@ class ViewerTests(unittest.TestCase):
         self.assertNotIn("https://", html)
         self.assertNotIn("fetch(", first["assets/viewer.js"].decode("utf-8"))
         self.assertIn('"territories":{"cellSize":7,"districts":[', viewer_data)
+        self.assertIn('"streets":{"cellSize":7,"rectangles":[', viewer_data)
+        self.assertIn("Street grid (visual)", html)
 
     def test_viewer_assets_are_subpath_safe(self):
         graph = load_fixture()

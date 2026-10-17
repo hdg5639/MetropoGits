@@ -44,6 +44,7 @@
   const districtTerritories = new Map(
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
+  const streetRectangles = data.streets?.rectangles || [];
   function districtTerritory(district) {
     return districtTerritories.get(district.id) || {
       boundary: [
@@ -158,9 +159,9 @@
     MESSAGING_PATH: "#a855f7",
   };
   const networkProfiles = {
-    DEPENDENCY_ROAD: { marking: 2, shoulder: 10, surface: 7 },
-    HTTP_HIGHWAY: { marking: 3, shoulder: 14, surface: 10 },
-    MESSAGING_PATH: { marking: 2.5, shoulder: 8, surface: 5 },
+    DEPENDENCY_ROAD: { marking: 1.2, shoulder: 5, surface: 3 },
+    HTTP_HIGHWAY: { marking: 2, shoulder: 8, surface: 5.5 },
+    MESSAGING_PATH: { marking: 1.5, shoulder: 4, surface: 2.2 },
   };
 
   const state = {
@@ -594,6 +595,24 @@
     context.stroke();
   }
 
+  function drawStructuralStreet(rectangle) {
+    const colors = {
+      ALLEY: "#263447",
+      BOULEVARD: "#0b1320",
+      ROUTE_ACCESS: "#1c293b",
+      STREET: "#172437",
+    };
+    const points = [
+      project(rectangle.x, rectangle.z, 0.09),
+      project(rectangle.x + rectangle.width, rectangle.z, 0.09),
+      project(rectangle.x + rectangle.width, rectangle.z + rectangle.depth, 0.09),
+      project(rectangle.x, rectangle.z + rectangle.depth, 0.09),
+    ];
+    polygonPath(points);
+    context.fillStyle = colors[rectangle.tier] || colors.STREET;
+    context.fill();
+  }
+
   function drawNetwork(network) {
     const points = network.path.map((point) => project(point[0], point[1], 0.5));
     const trace = () => {
@@ -602,7 +621,8 @@
       for (const point of points.slice(1)) context.lineTo(point.x, point.y);
     };
     const profile = networkProfiles[network.kind] || networkProfiles.DEPENDENCY_ROAD;
-    const selectionScale = selected("network", network.id) ? 1.24 : 1;
+    const weightScale = 1 + Math.min(0.8, Math.log2(network.edgeIds.length + 1) * 0.12);
+    const selectionScale = weightScale * (selected("network", network.id) ? 1.24 : 1);
     context.lineJoin = "round";
     context.lineCap = "round";
     trace();
@@ -619,12 +639,6 @@
     context.setLineDash(network.kind === "MESSAGING_PATH" ? [6, 4] : []);
     context.stroke();
     context.setLineDash([]);
-    for (const point of points) {
-      context.beginPath();
-      context.arc(point.x, point.y, profile.surface * 0.42 * selectionScale, 0, Math.PI * 2);
-      context.fillStyle = networkColors[network.kind] || networkColors.DEPENDENCY_ROAD;
-      context.fill();
-    }
     hitRegions.push({ kind: "network", id: network.id, points });
   }
 
@@ -753,6 +767,7 @@
       const district = districts.get(districtId);
       if (district) drawMajorDistrict(district);
     }
+    for (const rectangle of streetRectangles) drawStructuralStreet(rectangle);
     if (currentDetailLevel === "detail") {
       for (const block of civicBlocks) drawCivicBlock(block);
     }

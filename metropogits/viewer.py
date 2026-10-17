@@ -6,6 +6,7 @@ from importlib.resources import files
 from typing import Any
 
 from metropogits.territory import derive_district_territories
+from metropogits.streets import derive_street_grid
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
@@ -38,6 +39,7 @@ def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any]) -> bytes:
         "METROPOGITS_DATA",
         {
             "scene": scene,
+            "streets": derive_street_grid(scene),
             "territories": derive_district_territories(scene),
             "ucg": ucg,
         },
@@ -97,6 +99,7 @@ def render_history_viewer(
             {
                 "revision": frame["revision"],
                 "scene": scene,
+                "streets": derive_street_grid(scene),
                 "territories": derive_district_territories(scene),
                 "ucg": ucg,
             }

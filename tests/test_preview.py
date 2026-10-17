@@ -35,7 +35,7 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            "14595b63715a05b9d72d55ad216626fa54cba7b41960f29daac1064b3bce08e2",
+            "8df58281ae8ac50bba7e36fb3b654b913c2ee87f155b35f63c2b53bf980685d8",
             hashlib.sha256(first).hexdigest(),
         )
 
@@ -62,6 +62,8 @@ class PreviewTests(unittest.TestCase):
         }
 
         self.assertIn('id="civic-blocks"', preview)
+        self.assertIn('id="structural-streets"', preview)
+        self.assertIn("Visual street infrastructure; not dependency evidence", preview)
         self.assertIn("Visual civic block; no dependency claim", preview)
         self.assertEqual(
             len(occupied_districts), preview.count("data-civic-district=")
