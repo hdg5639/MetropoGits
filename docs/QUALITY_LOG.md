@@ -378,3 +378,54 @@
   open.
 - Commits created / pushed (and branch): `78f7fe6` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — safe configuration evidence (`ffd4276`)
+
+- Implemented: bounded UTF-8 parsing of Spring `application*.properties`, an
+  allowlist that emits only the non-secret PostgreSQL driver signature, nearest
+  module scoping, and catalog `0.4.0` classification that requires the exact
+  driver dependency, verified `JpaRepository` inheritance, and configuration
+  signature together.
+- Fixture(s) / revision(s):
+  `tests/fixtures/repositories/postgresql-config` at synthetic revision
+  `quality-check`. The fixture includes a password value specifically to prove
+  that raw secret keys and values never enter generated graph data.
+- Commands run: two identical `python -m metropogits build --repo
+  tests/fixtures/repositories/postgresql-config --repo-id fixture/postgresql
+  --revision quality-check --out <artifact-dir> --json` builds; UCG claim and
+  evidence inspection; Edge headless viewer and SVG captures; Ruff,
+  `compileall`, the 174-test full suite, dependency consistency, catalog and
+  release-readiness validation, JavaScript syntax checks, and Git whitespace
+  checks.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `viewer.png`, and `preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-config-3d41730f67c045b189995344af4e8452`.
+  The repository building exposes `POSTGRESQL`, `RELATIONAL_DB`, and
+  `PERSISTENCE_ADAPTER` with CONFIG, INHERITANCE, and MANIFEST evidence. The
+  password key and value are absent.
+- Visual findings: the persistence building uses the expected green archetype
+  in both render targets. The one-building fixture also confirms the known
+  sparse-layout defect: its district consumes most of the viewport and the
+  viewer projection makes the lone building disproportionately tall.
+- Spec alignment: PASS for the scanner/config/catalog slice. Configuration is
+  bounded and non-executing, evidence summaries contain no raw values, and JPA
+  or a PostgreSQL declaration alone cannot establish the engine. FR-003
+  readiness still needs a dedicated traceability update after this checkpoint.
+- Tests / determinism / stability: 174 tests passed with one unavailable
+  symlink skip. Repeated builds produced identical SHA-256
+  `7c8ea3610dd3a28c92aabe522db2bb462f966ae8def8b6de8edd260c84a2f007`
+  for `graph.ucg.json`,
+  `a7dbcd432a18fe80961aa9b7b3bdc885c5ed8c50b2046cd8efa25a7322e39b30`
+  for `city.json`, and
+  `ee0d542eac58d17298ee1d6c3336562659af0ac5d88a4996a622534881e87772`
+  for `preview.svg`.
+- Fixes applied and reverified: the initial configuration scope followed the
+  physical `src/main/resources` directory and therefore could not reach Java
+  sources under `src/main/java`; scoping now maps the conventional resource
+  directory back to its module root, and the focused and full suites pass.
+- Open risks / next actions: update FR-003 readiness, then fix the confirmed
+  sparse-layout defect. Declared-dependency inspector visibility, dense SVG
+  labels, road endpoints, DEC-009, hosted runner evidence, and the project
+  license remain open.
+- Commits created / pushed (and branch): `ffd4276` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
