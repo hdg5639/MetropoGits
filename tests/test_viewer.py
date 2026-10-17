@@ -235,6 +235,38 @@ process.stdout.write(JSON.stringify(globalThis.METROPOGITS_NETWORK_STYLES));
             self.assertGreater(profile["shoulder"], profile["surface"])
             self.assertGreater(profile["surface"], profile["marking"])
 
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_webgl_camera_policy_favors_city_scale_composition(self):
+        script = """
+require(process.argv[1]);
+process.stdout.write(JSON.stringify(globalThis.METROPOGITS_CAMERA_POLICY));
+"""
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-3d.js"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        policy = json.loads(completed.stdout)
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertGreater(policy["horizontalMargin"], 0.9)
+        self.assertGreater(policy["verticalMargin"], 0.9)
+        self.assertGreater(policy["pitch"], 0.5)
+        self.assertLess(policy["pitch"], 0.7)
+        self.assertLess(policy["yaw"], -0.5)
+        self.assertGreater(policy["yaw"], -0.8)
+
     def test_webgl_renderer_has_explicit_2d_fallback_boundary(self):
         artifacts = render_viewer(generate_city(load_fixture()), load_fixture())
         webgl = artifacts["assets/viewer-3d.js"].decode("utf-8")

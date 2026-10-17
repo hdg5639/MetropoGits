@@ -189,6 +189,13 @@
     HTTP_HIGHWAY: Object.freeze({ marking: 0.34, shoulder: 3.0, surface: 2.15 }),
     MESSAGING_PATH: Object.freeze({ marking: 0.42, shoulder: 1.55, surface: 0.9 }),
   });
+  const cameraPolicy = Object.freeze({
+    fieldOfView: Math.PI / 4,
+    horizontalMargin: 0.94,
+    pitch: 0.62,
+    verticalMargin: 0.92,
+    yaw: -0.68,
+  });
 
   globalThis.METROPOGITS_WEBGL_MATH = Object.freeze({
     lookAt,
@@ -201,6 +208,7 @@
     partsFor: buildingParts,
   });
   globalThis.METROPOGITS_NETWORK_STYLES = networkProfiles;
+  globalThis.METROPOGITS_CAMERA_POLICY = cameraPolicy;
 
   if (typeof document === "undefined") return;
 
@@ -386,11 +394,11 @@
   const tallestBuilding = Math.max(8, ...scene.buildings.map((building) => building.height));
   const initialCamera = {
     distance: Math.max(worldSpan * 1.35, worldDiagonal * 1.05, tallestBuilding * 4),
-    pitch: 0.72,
+    pitch: cameraPolicy.pitch,
     targetX: (worldBounds.minX + worldBounds.maxX) / 2,
-    targetY: -worldSpan * 0.08,
+    targetY: tallestBuilding * 0.12,
     targetZ: (worldBounds.minZ + worldBounds.maxZ) / 2,
-    yaw: -0.78,
+    yaw: cameraPolicy.yaw,
   };
   const state = {
     ...initialCamera,
@@ -494,7 +502,7 @@
     ];
     const view = lookAt(eye, [state.targetX, state.targetY, state.targetZ], [0, 1, 0]);
     const projection = perspective(
-      Math.PI / 4,
+      cameraPolicy.fieldOfView,
       Math.max(0.1, viewportWidth / viewportHeight),
       Math.max(0.1, distance / 250),
       distance * 10 + tallestBuilding * 4,
@@ -529,8 +537,8 @@
       return points.every((point) => {
         const clip = transformPoint(matrix, point);
         if (clip[3] <= 0) return false;
-        return Math.abs(clip[0] / clip[3]) <= 0.9
-          && Math.abs(clip[1] / clip[3]) <= 0.88;
+        return Math.abs(clip[0] / clip[3]) <= cameraPolicy.horizontalMargin
+          && Math.abs(clip[1] / clip[3]) <= cameraPolicy.verticalMargin;
       });
     }
     let low = Math.max(8, tallestBuilding);
@@ -541,7 +549,7 @@
       if (fits(middle)) high = middle;
       else low = middle;
     }
-    return high * 1.03;
+    return high * 1.01;
   }
 
   function selected(kind, id) {
@@ -609,6 +617,25 @@
       line(lines, [x1, y, district.z], [x1, y, z1], districtColor);
       line(lines, [x1, y, z1], [district.x, y, z1], districtColor);
       line(lines, [district.x, y, z1], [district.x, y, district.z], districtColor);
+      if (selected("district", district.id)) {
+        const corners = [
+          [district.x, district.z],
+          [x1, district.z],
+          [x1, z1],
+          [district.x, z1],
+          [district.x, district.z],
+        ];
+        for (let index = 1; index < corners.length; index += 1) {
+          roadSegment(
+            triangles,
+            corners[index - 1],
+            corners[index],
+            0.5,
+            y + 0.02,
+            color("#38bdf8"),
+          );
+        }
+      }
     }
 
     for (const network of scene.networks) {
@@ -676,6 +703,29 @@
           part.depth,
           part.shade ? lighten(selectedColor, part.shade) : selectedColor,
         );
+      }
+      if (selected("building", building.entityId)) {
+        const x0 = building.x - 0.45;
+        const x1 = building.x + building.width + 0.45;
+        const z0 = building.z - 0.45;
+        const z1 = building.z + building.depth + 0.45;
+        const y0 = 0.24;
+        const y1 = building.height + 0.65;
+        const highlight = color("#f8fafc");
+        for (const [start, end] of [
+          [[x0, y0, z0], [x1, y0, z0]],
+          [[x1, y0, z0], [x1, y0, z1]],
+          [[x1, y0, z1], [x0, y0, z1]],
+          [[x0, y0, z1], [x0, y0, z0]],
+          [[x0, y1, z0], [x1, y1, z0]],
+          [[x1, y1, z0], [x1, y1, z1]],
+          [[x1, y1, z1], [x0, y1, z1]],
+          [[x0, y1, z1], [x0, y1, z0]],
+          [[x0, y0, z0], [x0, y1, z0]],
+          [[x1, y0, z0], [x1, y1, z0]],
+          [[x1, y0, z1], [x1, y1, z1]],
+          [[x0, y0, z1], [x0, y1, z1]],
+        ]) line(lines, start, end, highlight);
       }
     }
 
@@ -1027,14 +1077,14 @@
     }
   }
 
-  function focusButton(x, y, z, label) {
+  function focusButton(x, y, z, distance, label) {
     const button = element("button", label, "focus-button");
     button.type = "button";
     button.addEventListener("click", () => {
       state.targetX = x;
       state.targetY = y;
       state.targetZ = z;
-      state.distance = Math.min(state.distance, Math.max(28, tallestBuilding * 3));
+      state.distance = distance;
       scheduleRender();
     });
     return button;
@@ -1079,6 +1129,7 @@
       building.x + building.width / 2,
       building.height / 2,
       building.z + building.depth / 2,
+      Math.max(22, building.height * 2.4),
       "Focus building",
     ));
   }
@@ -1101,6 +1152,7 @@
       district.x + district.width / 2,
       tallestBuilding * 0.12,
       district.z + district.depth / 2,
+      Math.max(32, Math.hypot(district.width, district.depth) * 1.15),
       "Focus district",
     ));
   }
@@ -1123,7 +1175,17 @@
       return (edge?.evidenceIds || []).map(evidenceLabel);
     }));
     const middle = network.path[Math.floor(network.path.length / 2)];
-    inspector.append(focusButton(middle[0], 1, middle[1], "Focus network"));
+    const networkWidth = Math.max(...network.path.map((point) => point[0]))
+      - Math.min(...network.path.map((point) => point[0]));
+    const networkDepth = Math.max(...network.path.map((point) => point[1]))
+      - Math.min(...network.path.map((point) => point[1]));
+    inspector.append(focusButton(
+      middle[0],
+      1,
+      middle[1],
+      Math.max(28, Math.hypot(networkWidth, networkDepth) * 1.25),
+      "Focus network",
+    ));
   }
 
   function showSelection(selection) {
