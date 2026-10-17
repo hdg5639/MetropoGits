@@ -1102,3 +1102,53 @@
   Pages activation remain deferred by ADR-007.
 - Commits created / pushed (and branch): `000769c` on local `main`; push is
   scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - GJ-Cloud large-city recovery (`8c96e22`)
+
+- Implemented: Java local-type reference extraction now indexes declared types
+  and searches only source-body identifiers; hierarchical layout padding is
+  bounded for large repository trees; and cities with at least 256 buildings
+  aggregate logical roads through stable directory routing zones. Small-city
+  routing and 1.7 geometry hints remain compatible.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at exact revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`, plus the
+  maintained Java and layout fixtures.
+- Commands run: timed analyzer-only runs before and after indexing; multiple
+  complete CLI builds with explicit matching repository identity and revision;
+  Edge SwiftShader WebGL and forced 2D fallback captures; CPU SVG rendering;
+  exact Java edge-set and scene edge-membership audits; `pip check`; Ruff;
+  `compileall`; JavaScript syntax; release-readiness validation; the full
+  automated suite; and whitespace checks.
+- Artifacts inspected: `viewer-webgl.png`, `viewer-fallback.png`, and
+  `preview.png` under
+  `D:\Code\MetroPoGits\.visual-gj-cloud-network-zones`, plus both exact
+  repeated builds under the adjacent `repeat-exact` directories.
+- Visual findings: PASS. The 1.7 packing reduces the root footprint from
+  1924x2943 to 1680x1913, a 43 percent area reduction. WebGL now exposes the
+  major backend and frontend clusters in one centered overview; the fallback
+  and SVG retain readable module blocks without the previous thousand-road
+  washout.
+- Spec alignment: PASS. The scene retains 1,324 file buildings and 506 nested
+  districts. Network grouping falls from 1,064 leaf-level routes to 135
+  evidence routes while preserving all 5,670 logical edge IDs exactly once:
+  no missing or duplicated edge membership was found. No repository code,
+  package script, or build script was executed.
+- Tests / determinism / stability: 198 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. Two complete builds with
+  identical provenance produced identical SHA-256
+  `265744be3ab128404eee37cbb9a8b8f048ce0babc44fb239a36792189df50859`
+  for `graph.ucg.json`,
+  `d8ea9667648f818abe84ac4c31d14486bc6903a56db2a344fc6717ea3a0dcb5c`
+  for `city.json`, and
+  `672a8a15fde28a2194054cb3b13d7043a629dd480a2d0aea849c7f38846377ec`
+  for the default-size `preview.svg`.
+- Fixes applied and reverified: analyzer-only time fell from 188.099 seconds to
+  13.419 seconds, about 14 times faster, with the same 9,721 Java-origin edge
+  IDs. The first SVG comparison used mismatched render dimensions; rerunning
+  two complete builds with the same inputs confirmed byte-identical output.
+- Open risks / next actions: very large scenes still prioritize a complete-city
+  overview over individual building detail, so deeper inspection requires zoom
+  and filters. Public repository conversion and Pages activation remain
+  explicitly deferred by ADR-007 until maintainer approval.
+- Commits created / pushed (and branch): `b800094`, `eac434f`, and `8c96e22`
+  on local `main`; push is scheduled after this checkpoint log commit.
