@@ -106,6 +106,22 @@ class GovernanceTests(unittest.TestCase):
             self.assertIn("has not selected a project license", contributing)
             self.assertIn("currently has no `LICENSE`", inventory)
 
+    def test_stable_spatial_allocator_decision_is_recorded(self):
+        adr = (ROOT / "docs" / "adr" / "ADR-004.md").read_text(
+            encoding="utf-8"
+        )
+
+        for required_text in (
+            "Status: Accepted",
+            "hierarchical-paged/1.0",
+            "previous scene as a hint, never authority",
+            "child district outside its parent district",
+            "65, 100, and at least 1,000 files",
+            "cold-layout collision fixture",
+        ):
+            self.assertIn(required_text, adr)
+        self.assertRegex(adr, r"moves zero existing\s+buildings")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -13,7 +13,7 @@ clearly aligned; it is not silently treated as compliant.
 | DEC-004 — Unknowns degrade gracefully | Satisfied | `LayoutTests.test_unknown_languages_receive_generic_buildings`. |
 | DEC-005 — Evidence-backed claims | Satisfied | UCG claim/edge validation and positive/negative analyzer fixtures. |
 | DEC-006 — Reproducible fixed inputs | Satisfied | Canonical JSON, stable ID, deterministic layout, preview, CLI, history, and metropolis tests. |
-| DEC-007 — Directory-first geography | Review required | The current flat global grid records logical `parentId` values but does not spatially nest districts. Sorted linear probing can move existing districts or buildings after an insertion, large districts can overflow their bounds, and previous-scene hints are unsupported. |
+| DEC-007 — Directory-first geography | Review required | [`ADR-004`](adr/ADR-004.md) selects a hierarchical paged allocator, but the current flat global grid still lacks spatial nesting, bounded capacity, and previous-scene hints. |
 | DEC-008 — File as base building | Satisfied | Scene contract and layout tests map file entities to buildings and directories to districts. |
 | DEC-009 — Two render targets, including interactive 3D | Review required | The project has deterministic SVG and an interactive static CPU canvas viewer, but the viewer is isometric 2D rather than a WebGL 3D implementation. The maintainer must either accept this as the v1 interpretation through an ADR/decision amendment or require a true 3D renderer. |
 | DEC-010 — Isolated analyzers behind UCG | Satisfied | Java and JS/TS adapters enrich the same versioned UCG without owning scene geometry. |
@@ -23,9 +23,10 @@ clearly aligned; it is not silently treated as compliant.
 
 ## Required decisions and remediation
 
-DEC-007 requires ADR-004 and a stable, bounded, hierarchical spatial allocator
-with fixture-based churn measurements. DEC-012 requires no owner choice, but P2
-work remains paused until the P0 readiness gaps are closed.
+DEC-007 has an accepted design in [`ADR-004`](adr/ADR-004.md), but remains
+blocked until the stable, bounded, hierarchical allocator and its churn gates
+are implemented. DEC-012 requires no owner choice, but P2 work remains paused
+until the P0 readiness gaps are closed.
 
 DEC-009 remains an owner decision. Resolve it with one of these paths:
 
