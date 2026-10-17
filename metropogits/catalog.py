@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from scripts.canonical_json import loads_strict_json
@@ -110,3 +110,52 @@ def resolve_catalog_claims(
             }
         )
     return result
+
+
+def manifest_catalog_facts(
+    graph: dict[str, Any], source_path: str
+) -> tuple[CatalogFact, ...]:
+    """Return manifest facts from the closest module scope containing a source."""
+
+    entities = {item["id"]: item for item in graph["entities"]}
+    evidence = {item["evidenceId"]: item for item in graph["evidence"]}
+    source = PurePosixPath(source_path)
+    candidates: list[tuple[int, CatalogFact]] = []
+    for edge in graph["edges"]:
+        if edge["type"] != "DEPENDS_ON":
+            continue
+        module = entities.get(edge["from"])
+        package = entities.get(edge["to"])
+        if not module or module["kind"] != "MODULE" or not package:
+            continue
+        if package["kind"] != "EXTERNAL_PACKAGE":
+            continue
+        module_directory = PurePosixPath(module["path"]).parent
+        if module_directory != PurePosixPath("."):
+            try:
+                source.relative_to(module_directory)
+            except ValueError:
+                continue
+        package_path = package.get("path", "")
+        if package_path.startswith("maven/"):
+            segments = package_path.removeprefix("maven/").split("/")
+            if len(segments) < 2:
+                continue
+            coordinate = f"{'.'.join(segments[:-1])}:{segments[-1]}"
+        elif package_path.startswith("npm/"):
+            coordinate = package_path.removeprefix("npm/")
+        else:
+            continue
+        depth = 0 if module_directory == PurePosixPath(".") else len(module_directory.parts)
+        for evidence_id in edge["evidenceIds"]:
+            item = evidence.get(evidence_id)
+            if item and item["kind"] == "MANIFEST":
+                candidates.append(
+                    (depth, CatalogFact("MANIFEST", coordinate, evidence_id))
+                )
+    if not candidates:
+        return ()
+    closest_depth = max(item[0] for item in candidates)
+    return tuple(
+        sorted({fact for depth, fact in candidates if depth == closest_depth})
+    )

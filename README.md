@@ -30,7 +30,9 @@ Direct dependencies in Maven `pom.xml`, Gradle `build.gradle` or
 management entries, Maven plugin dependencies, Gradle project/file references,
 dynamic JVM coordinates, and npm local/workspace/alias specifiers are not
 treated as active external dependencies. A declaration alone does not claim
-runtime technology usage.
+runtime technology usage. Catalog rules may combine the closest enclosing
+manifest declaration with exact code evidence; the resulting claim retains
+both provenance classes.
 Unsupported source languages still produce generic buildings without guessed
 semantics.
 

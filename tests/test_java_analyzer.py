@@ -157,6 +157,50 @@ class JavaAnalyzerTests(unittest.TestCase):
             self.assertEqual([], entity.get("capabilities", []))
             self.assertEqual([], entity.get("technologies", []))
 
+    def test_catalog_intersects_nearest_manifest_and_code_evidence(self):
+        graph = analyze(FIXTURES / "spring-manifest-usage")
+        service = files_by_name(graph)["CatalogService.java"]
+        evidence = {item["evidenceId"]: item for item in graph["evidence"]}
+
+        self.assertEqual(["SERVICE"], [item["value"] for item in service["roles"]])
+        self.assertEqual(
+            ["SPRING_FRAMEWORK"],
+            [item["value"] for item in service["technologies"]],
+        )
+        for field in ("roles", "technologies"):
+            claim = service[field][0]
+            self.assertEqual(
+                {"ANNOTATION", "IMPORT", "MANIFEST"},
+                {evidence[item]["kind"] for item in claim["evidenceIds"]},
+            )
+        self.assertEqual([], validate_document(graph))
+
+    def test_catalog_does_not_borrow_manifest_from_sibling_directory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "declared").mkdir()
+            (root / "declared" / "pom.xml").write_text(
+                """<project><dependencies><dependency>
+<groupId>org.springframework</groupId><artifactId>spring-context</artifactId>
+</dependency></dependencies></project>""",
+                encoding="utf-8",
+            )
+            (root / "source").mkdir()
+            (root / "source" / "SiblingService.java").write_text(
+                "import org.springframework.stereotype.Service;\n"
+                "@Service public class SiblingService {}\n",
+                encoding="utf-8",
+            )
+
+            graph = analyze(root)
+
+        service = files_by_name(graph)["SiblingService.java"]
+        evidence = {item["evidenceId"]: item for item in graph["evidence"]}
+        claim_evidence = {
+            evidence[item]["kind"] for item in service["roles"][0]["evidenceIds"]
+        }
+        self.assertEqual({"ANNOTATION"}, claim_evidence)
+
     def test_local_imports_create_evidenced_file_edges_and_city_networks(self):
         graph = analyze(FIXTURES / "spring-positive")
         local_imports = [

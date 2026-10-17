@@ -12,7 +12,11 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from metropogits.catalog import CatalogFact, resolve_catalog_claims
+from metropogits.catalog import (
+    CatalogFact,
+    manifest_catalog_facts,
+    resolve_catalog_claims,
+)
 from metropogits.scanner import ScanLimits, ScanResult, ScannedFile
 from scripts.canonical_json import canonical_json_bytes
 from scripts.stable_ids import make_edge_id, make_entity_id
@@ -414,15 +418,28 @@ def _claim(value: str, evidence_id: str) -> dict[str, Any]:
 
 def _add_claim(entity: dict[str, Any], field: str, claim: dict[str, Any]) -> None:
     claims = entity.setdefault(field, [])
-    if claim not in claims:
+    existing = next(
+        (
+            item
+            for item in claims
+            if item["value"] == claim["value"]
+            and item["confidence"] == claim["confidence"]
+        ),
+        None,
+    )
+    if existing is None:
         claims.append(claim)
-        claims.sort(
-            key=lambda item: (
-                item["value"],
-                item["confidence"],
-                item["evidenceIds"],
-            )
+    else:
+        existing["evidenceIds"] = sorted(
+            set(existing["evidenceIds"]) | set(claim["evidenceIds"])
         )
+    claims.sort(
+        key=lambda item: (
+            item["value"],
+            item["confidence"],
+            item["evidenceIds"],
+        )
+    )
 
 
 def _resolve_local_type(
@@ -522,7 +539,7 @@ def enrich_java_graph(
 
     for unit in units:
         file_entity = entities_by_path[unit.path]
-        catalog_facts: list[CatalogFact] = []
+        catalog_facts = list(manifest_catalog_facts(document, unit.path))
         exact_imports = {
             item.name.rsplit(".", 1)[-1]: item.name
             for item in unit.imports
@@ -649,6 +666,9 @@ def enrich_java_graph(
                     rule_id,
                 )
                 annotation_evidence_id = remember_evidence(annotation_evidence)
+                catalog_facts.append(
+                    CatalogFact("ANNOTATION", identity, annotation_evidence_id)
+                )
                 role_candidates.append(
                     (
                         priority,
