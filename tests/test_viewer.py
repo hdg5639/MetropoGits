@@ -253,6 +253,83 @@ process.stdout.write(JSON.stringify(select(candidates, 300, 120)));
         self.assertEqual(0, completed.returncode, completed.stderr)
         self.assertEqual(["high", "separate"], json.loads(completed.stdout))
 
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_nearest_manifest_dependencies_are_labeled_as_declarations(self):
+        graph = {
+            "edges": [
+                {
+                    "evidenceIds": ["root-evidence"],
+                    "from": "root-module",
+                    "to": "root-package",
+                    "type": "DEPENDS_ON",
+                },
+                {
+                    "evidenceIds": ["nested-evidence"],
+                    "from": "nested-module",
+                    "to": "nested-package",
+                    "type": "DEPENDS_ON",
+                },
+            ],
+            "entities": [
+                {"id": "file", "kind": "FILE", "path": "apps/web/src/App.java"},
+                {"id": "root-module", "kind": "MODULE", "path": "pom.xml"},
+                {
+                    "id": "nested-module",
+                    "kind": "MODULE",
+                    "path": "apps/web/pom.xml",
+                },
+                {
+                    "id": "root-package",
+                    "kind": "EXTERNAL_PACKAGE",
+                    "path": "maven/example/root",
+                },
+                {
+                    "id": "nested-package",
+                    "kind": "EXTERNAL_PACKAGE",
+                    "path": "maven/org/postgresql/postgresql",
+                },
+            ],
+        }
+        script = """
+require(process.argv[1]);
+const fs = require("fs");
+const graph = JSON.parse(fs.readFileSync(0, "utf8"));
+const result = globalThis.METROPOGITS_FILTERS.declaredDependenciesForEntity(
+  graph,
+  "file",
+);
+process.stdout.write(JSON.stringify(result));
+"""
+        completed = subprocess.run(
+            [
+                "node",
+                "-e",
+                script,
+                str(
+                    Path(__file__).parents[1]
+                    / "metropogits"
+                    / "viewer_assets"
+                    / "viewer-filters.js"
+                ),
+            ],
+            input=json.dumps(graph),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual(
+            [
+                {
+                    "coordinate": "org.postgresql:postgresql",
+                    "ecosystem": "MAVEN",
+                    "evidenceIds": ["nested-evidence"],
+                }
+            ],
+            json.loads(completed.stdout),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

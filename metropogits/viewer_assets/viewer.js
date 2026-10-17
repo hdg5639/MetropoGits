@@ -609,14 +609,26 @@
     const capabilities = (entity.capabilities || []).map(
       (claim) => `${claim.value} · ${claim.confidence}`,
     );
+    const declaredDependencies = filterEngine.declaredDependenciesForEntity(
+      ucg,
+      entityId,
+    );
     factSection(inspector, "VERIFIED ROLES", roles);
     factSection(inspector, "TECHNOLOGIES", technologies);
     factSection(inspector, "CAPABILITIES", capabilities);
+    factSection(
+      inspector,
+      "DECLARED DEPENDENCIES (NOT USAGE)",
+      declaredDependencies.map(
+        (dependency) => `${dependency.coordinate} · ${dependency.ecosystem} · DECLARED`,
+      ),
+    );
     const evidenceIds = new Set([
       ...(building.evidenceIds || []),
       ...(entity.roles || []).flatMap((claim) => claim.evidenceIds),
       ...(entity.technologies || []).flatMap((claim) => claim.evidenceIds),
       ...(entity.capabilities || []).flatMap((claim) => claim.evidenceIds),
+      ...declaredDependencies.flatMap((dependency) => dependency.evidenceIds),
     ]);
     factSection(
       inspector,

@@ -158,8 +158,65 @@
     });
   }
 
+  function declaredDependenciesForEntity(ucg, entityId) {
+    const entities = new Map(ucg.entities.map((entity) => [entity.id, entity]));
+    const entity = entities.get(entityId);
+    if (entity?.kind !== "FILE" || !entity.path) return [];
+
+    const candidates = ucg.entities
+      .filter((item) => item.kind === "MODULE" && item.path)
+      .map((module) => {
+        const separator = module.path.lastIndexOf("/");
+        const directory = separator < 0 ? "" : module.path.slice(0, separator);
+        return {
+          contains: !directory || entity.path.startsWith(`${directory}/`),
+          depth: directory ? directory.split("/").length : 0,
+          id: module.id,
+        };
+      })
+      .filter((item) => item.contains);
+    if (!candidates.length) return [];
+
+    const closestDepth = Math.max(...candidates.map((item) => item.depth));
+    const moduleIds = new Set(
+      candidates.filter((item) => item.depth === closestDepth).map((item) => item.id),
+    );
+    const dependencies = new Map();
+    for (const edge of ucg.edges) {
+      if (edge.type !== "DEPENDS_ON" || !moduleIds.has(edge.from)) continue;
+      const target = entities.get(edge.to);
+      if (target?.kind !== "EXTERNAL_PACKAGE" || !target.path) continue;
+      let ecosystem = "PACKAGE";
+      let coordinate = target.path;
+      if (target.path.startsWith("npm/")) {
+        ecosystem = "NPM";
+        coordinate = target.path.slice(4);
+      } else if (target.path.startsWith("maven/")) {
+        ecosystem = "MAVEN";
+        const parts = target.path.slice(6).split("/");
+        coordinate = parts.length > 1
+          ? `${parts.slice(0, -1).join(".")}:${parts.at(-1)}`
+          : target.path.slice(6);
+      }
+      const key = `${ecosystem}\u0000${coordinate}`;
+      const record = dependencies.get(key) || {
+        coordinate,
+        ecosystem,
+        evidenceIds: [],
+      };
+      record.evidenceIds = [...new Set([...record.evidenceIds, ...edge.evidenceIds])].sort();
+      dependencies.set(key, record);
+    }
+    return [...dependencies.values()].sort(
+      (left, right) =>
+        left.ecosystem.localeCompare(right.ecosystem)
+        || left.coordinate.localeCompare(right.coordinate),
+    );
+  }
+
   globalThis.METROPOGITS_FILTERS = Object.freeze({
     createIndex,
+    declaredDependenciesForEntity,
     selectNonOverlappingLabels,
   });
 })();
