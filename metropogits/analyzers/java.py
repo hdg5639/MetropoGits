@@ -46,6 +46,10 @@ TYPE_PATTERN = re.compile(
     rf"(?P<name>{IDENTIFIER})(?P<tail>[^{{}};]*)\{{"
 )
 ANNOTATION_PATTERN = re.compile(rf"@(?P<name>{QUALIFIED_NAME})")
+IDENTIFIER_PATTERN = re.compile(rf"\b{IDENTIFIER}\b")
+QUALIFIED_REFERENCE_PATTERN = re.compile(
+    rf"\b{IDENTIFIER}(?:\.{IDENTIFIER})+\b"
+)
 RELATION_PATTERN = {
     "EXTENDS": re.compile(
         r"\bextends\s+(?P<types>.*?)(?=\bimplements\b|\bpermits\b|$)",
@@ -134,6 +138,13 @@ class JavaUnit:
     imports: tuple[JavaImport, ...]
     types: tuple[JavaType, ...]
     masked_source: str
+
+
+@dataclass(frozen=True)
+class LocalTypeIndex:
+    unique_files: dict[str, str]
+    by_simple_name: dict[str, tuple[str, ...]]
+    by_package_and_simple: dict[tuple[str, str], tuple[str, ...]]
 
 
 def _mask_non_code(source: str) -> str:
@@ -471,8 +482,33 @@ def _resolve_local_type(
     return None
 
 
+def _local_type_index(qualified_files: dict[str, list[str]]) -> LocalTypeIndex:
+    unique_files = {
+        qualified_name: file_ids[0]
+        for qualified_name, file_ids in qualified_files.items()
+        if len(file_ids) == 1
+    }
+    by_simple_name: dict[str, list[str]] = {}
+    by_package_and_simple: dict[tuple[str, str], list[str]] = {}
+    for qualified_name in sorted(unique_files):
+        package, _, simple_name = qualified_name.rpartition(".")
+        by_simple_name.setdefault(simple_name, []).append(qualified_name)
+        by_package_and_simple.setdefault((package, simple_name), []).append(
+            qualified_name
+        )
+    return LocalTypeIndex(
+        unique_files=unique_files,
+        by_simple_name={
+            name: tuple(values) for name, values in by_simple_name.items()
+        },
+        by_package_and_simple={
+            key: tuple(values) for key, values in by_package_and_simple.items()
+        },
+    )
+
+
 def _local_type_references(
-    unit: JavaUnit, qualified_files: dict[str, list[str]]
+    unit: JavaUnit, type_index: LocalTypeIndex
 ) -> tuple[tuple[str, str, int], ...]:
     """Return uniquely bound local type uses outside imports and type headers."""
 
@@ -499,51 +535,63 @@ def _local_type_references(
         for item in unit.imports
         if not item.is_static and item.name.endswith(".*")
     }
-    simple_names = {name.rsplit(".", 1)[-1] for name in qualified_files}
+    identifier_positions: dict[str, int] = {}
+    for match in IDENTIFIER_PATTERN.finditer(body):
+        identifier_positions.setdefault(match.group(0), match.start())
+
     simple_bindings: dict[str, str] = {}
-    for simple_name in simple_names:
+    for simple_name in sorted(identifier_positions):
+        if simple_name not in type_index.by_simple_name:
+            continue
         exact = exact_imports.get(simple_name)
-        if exact in qualified_files and len(qualified_files[exact]) == 1:
+        if exact in type_index.unique_files:
             simple_bindings[simple_name] = exact
             continue
-        same_package = [
-            name
-            for name in qualified_files
-            if name.rpartition(".")[0] == unit.package
-            and name.rsplit(".", 1)[-1] == simple_name
-            and len(qualified_files[name]) == 1
-        ]
+        same_package = type_index.by_package_and_simple.get(
+            (unit.package, simple_name), ()
+        )
         if len(same_package) == 1:
             simple_bindings[simple_name] = same_package[0]
             continue
         wildcard = [
             name
-            for name in qualified_files
+            for name in type_index.by_simple_name[simple_name]
             if name.rpartition(".")[0] in wildcard_packages
-            and name.rsplit(".", 1)[-1] == simple_name
-            and len(qualified_files[name]) == 1
         ]
         if len(wildcard) == 1:
             simple_bindings[simple_name] = wildcard[0]
+
+    reference_positions: dict[str, int] = {}
+    for simple_name, qualified_name in simple_bindings.items():
+        reference_positions[qualified_name] = identifier_positions[simple_name]
+
+    for match in QUALIFIED_REFERENCE_PATTERN.finditer(body):
+        parts = match.group(0).split(".")
+        for start in range(len(parts)):
+            prefix_length = sum(len(part) + 1 for part in parts[:start])
+            for end in range(start + 2, len(parts) + 1):
+                candidate = ".".join(parts[start:end])
+                if candidate not in type_index.unique_files:
+                    continue
+                position = match.start() + prefix_length
+                reference_positions[candidate] = min(
+                    reference_positions.get(candidate, position), position
+                )
+
+    line_breaks = [
+        index for index, character in enumerate(body) if character == "\n"
+    ]
     references: list[tuple[str, str, int]] = []
-    for qualified_name in sorted(qualified_files):
-        targets = qualified_files[qualified_name]
-        if len(targets) != 1 or targets[0] == unit.file_id:
+    for qualified_name in sorted(reference_positions):
+        target_id = type_index.unique_files[qualified_name]
+        if target_id == unit.file_id:
             continue
-        simple_name = qualified_name.rsplit(".", 1)[-1]
-        bound_by_simple_name = simple_bindings.get(simple_name) == qualified_name
-        patterns = [re.compile(rf"\b{re.escape(qualified_name)}\b")]
-        if bound_by_simple_name:
-            patterns.append(re.compile(rf"\b{re.escape(simple_name)}\b"))
-        matches = [match for pattern in patterns for match in pattern.finditer(body)]
-        if not matches:
-            continue
-        first = min(matches, key=lambda match: match.start())
+        position = reference_positions[qualified_name]
         references.append(
             (
                 qualified_name,
-                targets[0],
-                body.count("\n", 0, first.start()) + 1,
+                target_id,
+                bisect_right(line_breaks, position) + 1,
             )
         )
     return tuple(references)
@@ -653,6 +701,7 @@ def enrich_java_graph(
             )
     for file_ids in qualified_files.values():
         file_ids.sort()
+    local_type_index = _local_type_index(qualified_files)
 
     evidence_by_id = {item["evidenceId"]: item for item in document["evidence"]}
     new_entities: dict[str, dict[str, Any]] = {}
@@ -743,7 +792,7 @@ def enrich_java_graph(
                 }
 
         for qualified_name, target_id, line in _local_type_references(
-            unit, qualified_files
+            unit, local_type_index
         ):
             reference_evidence = _evidence(
                 unit.path,
