@@ -494,6 +494,7 @@ const networkIds = networks.map((network) => network.id);
 const overview = policy.visibility("overview", buildingIds, networkIds);
 const district = policy.visibility("district", buildingIds, networkIds);
 const detail = policy.visibility("detail", buildingIds, networkIds);
+const aggregate = policy.aggregates[0];
 process.stdout.write(JSON.stringify({
   deterministic: JSON.stringify(overview) === JSON.stringify(
     policy.visibility("overview", buildingIds, networkIds),
@@ -511,7 +512,19 @@ process.stdout.write(JSON.stringify({
     policy.levelForZoom(1.5),
     policy.levelForZoom(2.5),
   ],
-  overviewBuildings: overview.buildingIds,
+  aggregate: {
+    archetypeCounts: aggregate.archetypeCounts,
+    memberCount: aggregate.memberEntityIds.length,
+    membersAreUnique: new Set(aggregate.memberEntityIds).size === buildingIds.length,
+  },
+  aggregateCounts: [overview.aggregateIds.length, district.aggregateIds.length],
+  selectedAggregate: policy.visibility(
+    "district",
+    buildingIds,
+    networkIds,
+    { id: aggregate.id, kind: "aggregate" },
+  ).aggregateIds,
+  overviewBuildingCount: overview.buildingIds.length,
   overviewNetworks: overview.networkIds,
   detailCounts: [detail.buildingIds.length, detail.networkIds.length],
   networkCounts: [overview.networkIds.length, district.networkIds.length],
@@ -541,16 +554,23 @@ process.stdout.write(JSON.stringify({
         self.assertEqual("detail", result["forcedLevel"])
         self.assertEqual([300, 100], result["detailCounts"])
         self.assertEqual([24, 64], result["networkCounts"])
+        self.assertEqual([1, 0], result["aggregateCounts"])
+        self.assertEqual(0, result["overviewBuildingCount"])
+        self.assertEqual(300, result["aggregate"]["memberCount"])
+        self.assertTrue(result["aggregate"]["membersAreUnique"])
+        self.assertEqual(
+            [
+                {"archetype": "GENERIC_BUILDING", "count": 288},
+                {"archetype": "SERVICE_OFFICE", "count": 12},
+            ],
+            result["aggregate"]["archetypeCounts"],
+        )
+        self.assertEqual(1, len(result["selectedAggregate"]))
         self.assertEqual(
             [f"network-{index:03d}" for index in range(24)],
             result["overviewNetworks"],
         )
-        self.assertTrue(
-            {f"building-{index}" for index in range(12)}.issubset(
-                result["overviewBuildings"]
-            )
-        )
-        self.assertLess(len(result["overviewBuildings"]), result["districtCount"])
+        self.assertGreaterEqual(result["districtCount"], 12)
         self.assertLess(result["districtCount"], 300)
         self.assertEqual(
             {

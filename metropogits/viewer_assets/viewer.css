@@ -224,6 +224,15 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
   line-height: 18px;
   padding: 0 5px;
 }
+.scene-label.aggregate {
+  background: rgba(37, 26, 8, 0.94);
+  border-color: #fbbf24;
+  color: #fef3c7;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  padding: 0 5px;
+}
 
 .inspector {
   overflow: auto;
@@ -240,6 +249,16 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
 .section-title { margin: 1.2rem 0 0.55rem; font-size: 0.76rem; letter-spacing: 0.08em; color: #cbd5e1; }
 .fact-list { margin: 0; padding-left: 1.15rem; color: #dbeafe; font-size: 0.8rem; }
 .fact-list li { margin-bottom: 0.45rem; overflow-wrap: anywhere; }
+.aggregate-disclosure {
+  border-left: 3px solid #fbbf24;
+  color: #fde68a;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  padding-left: 0.65rem;
+}
+.aggregate-members { margin-top: 1rem; }
+.aggregate-members summary { color: #fde68a; cursor: pointer; font-size: 0.78rem; }
+.aggregate-members .fact-list { margin-top: 0.7rem; }
 .badge { display: inline-block; margin: 0.25rem 0.25rem 0 0; padding: 0.24rem 0.42rem; border-radius: 0.35rem; background: #1e293b; color: #cbd5e1; font-size: 0.7rem; }
 .source-link { display: inline-block; margin-top: 0.75rem; color: #7dd3fc; }
 .focus-button { width: 100%; margin-top: 0.5rem; }
@@ -267,6 +286,7 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
 .swatch.service { background: #60a5fa; }
 .swatch.entry { background: #f472b6; }
 .swatch.persistence { background: #34d399; }
+.swatch.aggregate { background: #fbbf24; border: 1px solid #fef3c7; }
 .line { width: 0.85rem; height: 2px; }
 .block { width: 0.65rem; height: 0.5rem; }
 .block.major { border: 2px solid #38bdf8; background: #18324a; }

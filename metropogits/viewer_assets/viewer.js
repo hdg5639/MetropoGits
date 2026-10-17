@@ -98,6 +98,9 @@
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
   const lodPolicy = filterEngine.createLodPolicy(scene);
+  const aggregateFacilities = new Map(
+    lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
+  );
   const majorDistrictColors = [
     [24, 50, 74],
     [45, 40, 74],
@@ -159,6 +162,7 @@
   let framePending = false;
   let visibleBuildingIds = new Set(scene.buildings.map((building) => building.entityId));
   let visibleNetworkIds = new Set(scene.networks.map((network) => network.id));
+  let renderedAggregateIds = new Set();
   let renderedBuildingIds = new Set(visibleBuildingIds);
   let renderedDistrictIds = new Set(drawableDistrictIds);
   let renderedNetworkIds = new Set(visibleNetworkIds);
@@ -241,6 +245,7 @@
       visibleNetworkIds,
       state.selected,
     );
+    renderedAggregateIds = new Set(visible.aggregateIds);
     renderedBuildingIds = new Set(visible.buildingIds);
     renderedNetworkIds = new Set(visible.networkIds);
     renderedDistrictIds = new Set(
@@ -256,20 +261,30 @@
       const label = filtered
         ? "Filtered detail"
         : `${currentDetailLevel[0].toUpperCase()}${currentDetailLevel.slice(1)}`;
-      const status = `${label} · ${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings · ${renderedNetworkIds.size}/${visibleNetworkIds.size} routes`;
+      const representedFiles = [...renderedAggregateIds].reduce(
+        (sum, id) => sum + aggregateFacilities.get(id).memberEntityIds.length,
+        0,
+      );
+      const subject = renderedAggregateIds.size
+        ? `${renderedAggregateIds.size} aggregate facilities / ${representedFiles} files`
+        : `${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings`;
+      const status = `${label} · ${subject} · ${renderedNetworkIds.size}/${visibleNetworkIds.size} routes`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
     }
   }
 
   function selectionIsVisible() {
     if (!state.selected || state.selected.kind === "district") return true;
+    if (state.selected.kind === "aggregate") {
+      return activeFilterCount() === 0 && aggregateFacilities.has(state.selected.id);
+    }
     if (state.selected.kind === "building") {
       return visibleBuildingIds.has(state.selected.id);
     }
     return visibleNetworkIds.has(state.selected.id);
   }
 
-  function resetInspector(message = "Choose a building, district, or network to inspect the repository facts behind it.") {
+  function resetInspector(message = "Choose a building, aggregate facility, district, or network to inspect the repository facts behind it.") {
     inspector.replaceChildren();
     inspector.append(element("p", "INSPECTOR", "eyebrow"));
     inspector.append(element("h2", "Select a city element"));
@@ -488,17 +503,27 @@
     context.font = "600 10px ui-sans-serif, system-ui, sans-serif";
     for (const candidate of districtLabelCandidates) {
       if (!selectedIds.has(candidate.id)) continue;
-      context.font = candidate.major
+      context.font = candidate.major || candidate.aggregate
         ? "800 12px ui-sans-serif, system-ui, sans-serif"
         : "600 10px ui-sans-serif, system-ui, sans-serif";
-      context.fillStyle = candidate.major
+      context.fillStyle = candidate.aggregate
+        ? "rgba(37, 26, 8, 0.94)"
+        : candidate.major
         ? "rgba(8, 18, 32, 0.94)"
         : "rgba(7, 11, 20, 0.82)";
       context.fillRect(candidate.x, candidate.y, candidate.width, candidate.height);
-      context.strokeStyle = candidate.major ? "#38bdf8" : "rgba(100, 116, 139, 0.55)";
-      context.lineWidth = candidate.major ? 2 : 1;
+      context.strokeStyle = candidate.aggregate
+        ? "#fbbf24"
+        : candidate.major
+          ? "#38bdf8"
+          : "rgba(100, 116, 139, 0.55)";
+      context.lineWidth = candidate.major || candidate.aggregate ? 2 : 1;
       context.strokeRect(candidate.x, candidate.y, candidate.width, candidate.height);
-      context.fillStyle = candidate.major ? "#e0f2fe" : "#a8b5c8";
+      context.fillStyle = candidate.aggregate
+        ? "#fef3c7"
+        : candidate.major
+          ? "#e0f2fe"
+          : "#a8b5c8";
       context.fillText(candidate.label, candidate.textX, candidate.textY);
     }
   }
@@ -579,7 +604,7 @@
     return rotated.x + rotated.z;
   }
 
-  function drawBuilding(building) {
+  function drawVolume(building, palette, outlineColor, lineWidth) {
     const bottom = [
       project(building.x, building.z),
       project(building.x + building.width, building.z),
@@ -592,8 +617,6 @@
       project(building.x + building.width, building.z + building.depth, building.height),
       project(building.x, building.z + building.depth, building.height),
     ];
-    const palette = colors[building.archetype] || colors.GENERIC_BUILDING;
-
     polygonPath([top[1], bottom[1], bottom[2], top[2]]);
     context.fillStyle = palette[1];
     context.fill();
@@ -606,12 +629,85 @@
 
     const outline = [top[0], top[1], bottom[1], bottom[2], bottom[3], top[3]];
     polygonPath(outline);
-    context.strokeStyle = selected("building", building.entityId)
-      ? "#f8fafc"
-      : "rgba(203, 213, 225, 0.62)";
-    context.lineWidth = selected("building", building.entityId) ? 2.5 : 1.1;
+    context.strokeStyle = outlineColor;
+    context.lineWidth = lineWidth;
     context.stroke();
+    return outline;
+  }
+
+  function drawBuilding(building) {
+    const outline = drawVolume(
+      building,
+      colors[building.archetype] || colors.GENERIC_BUILDING,
+      selected("building", building.entityId)
+        ? "#f8fafc"
+        : "rgba(203, 213, 225, 0.62)",
+      selected("building", building.entityId) ? 2.5 : 1.1,
+    );
     hitRegions.push({ kind: "building", id: building.entityId, points: outline });
+  }
+
+  function aggregateParts(facility) {
+    const slots = [
+      [0.34, 0.29, 0.32, 0.42],
+      [0.08, 0.1, 0.22, 0.28],
+      [0.7, 0.1, 0.22, 0.28],
+      [0.08, 0.62, 0.22, 0.28],
+      [0.7, 0.62, 0.22, 0.28],
+    ];
+    const largest = facility.archetypeCounts[0]?.count || 1;
+    return facility.archetypeCounts.slice(0, slots.length).map((item, index) => {
+      const [x, z, width, depth] = slots[index];
+      return {
+        archetype: item.archetype,
+        depth: facility.depth * depth,
+        height: facility.height * (0.45 + item.count / largest * 0.55),
+        width: facility.width * width,
+        x: facility.x + facility.width * x,
+        z: facility.z + facility.depth * z,
+      };
+    });
+  }
+
+  function drawAggregateFacility(facility) {
+    const isSelected = selected("aggregate", facility.id);
+    const outline = drawVolume(
+      { ...facility, height: 2.2 },
+      ["#475569", "#263449", "#172033"],
+      isSelected ? "#f8fafc" : "#fbbf24",
+      isSelected ? 3.2 : 2.2,
+    );
+    for (const part of aggregateParts(facility).sort(
+      (left, right) => buildingDepth(left) - buildingDepth(right),
+    )) {
+      drawVolume(
+        part,
+        colors[part.archetype] || colors.GENERIC_BUILDING,
+        isSelected ? "#f8fafc" : "rgba(226, 232, 240, 0.8)",
+        isSelected ? 2.8 : 1.4,
+      );
+    }
+    const label = `${districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files`;
+    const labelPoint = project(
+      facility.x + facility.width / 2,
+      facility.z + facility.depth / 2,
+      facility.height + 4,
+    );
+    context.font = "800 12px ui-sans-serif, system-ui, sans-serif";
+    const labelWidth = Math.min(240, Math.ceil(context.measureText(label).width) + 16);
+    districtLabelCandidates.push({
+      aggregate: true,
+      height: 20,
+      id: facility.id,
+      label,
+      priority: 20000,
+      textX: labelPoint.x,
+      textY: labelPoint.y - 5,
+      width: labelWidth,
+      x: labelPoint.x - labelWidth / 2,
+      y: labelPoint.y - 20,
+    });
+    hitRegions.push({ kind: "aggregate", id: facility.id, points: outline });
   }
 
   function render(timestamp = 0) {
@@ -639,6 +735,9 @@
     );
     for (const building of orderedBuildings) {
       if (renderedBuildingIds.has(building.entityId)) drawBuilding(building);
+    }
+    for (const aggregateId of [...renderedAggregateIds].sort()) {
+      drawAggregateFacility(aggregateFacilities.get(aggregateId));
     }
     drawDistrictLabels();
     drawSyntheticActivity(timestamp);
@@ -696,6 +795,21 @@
     parent.append(list);
   }
 
+  function aggregateMembersSection(parent, facility) {
+    const details = element("details", undefined, "aggregate-members");
+    details.append(element(
+      "summary",
+      `Constituent files (${facility.memberEntityIds.length})`,
+    ));
+    const list = element("ul", undefined, "fact-list");
+    const paths = facility.memberEntityIds
+      .map((entityId) => entities.get(entityId)?.path || entityId)
+      .sort();
+    for (const path of paths) list.append(element("li", path));
+    details.append(list);
+    parent.append(details);
+  }
+
   function evidenceLabel(evidenceId) {
     const item = evidence.get(evidenceId);
     if (!item) return evidenceId;
@@ -735,11 +849,47 @@
     scheduleRender();
   }
 
-  function focusButton(x, z, label) {
+  function focusButton(x, z, label, beforeFocus = null) {
     const button = element("button", label, "focus-button");
     button.type = "button";
-    button.addEventListener("click", () => focusWorld(x, z));
+    button.addEventListener("click", () => {
+      beforeFocus?.();
+      focusWorld(x, z);
+    });
     return button;
+  }
+
+  function showAggregate(aggregateId) {
+    const facility = aggregateFacilities.get(aggregateId);
+    inspector.replaceChildren();
+    inspector.append(element("p", "AGGREGATE FACILITY · VISUAL", "eyebrow"));
+    inspector.append(element("h2", districtLabel(districts.get(facility.districtId))));
+    inspector.append(element(
+      "p",
+      "This overview structure groups real file buildings. It is not a code entity or inferred service.",
+      "aggregate-disclosure",
+    ));
+    const details = element("dl", undefined, "detail-list");
+    detailRow(details, "Files", facility.memberEntityIds.length);
+    detailRow(details, "District", districtLabel(districts.get(facility.districtId)));
+    detailRow(details, "Representation", "Deterministic visual aggregate");
+    inspector.append(details);
+    factSection(
+      inspector,
+      "ARCHETYPE COMPOSITION",
+      facility.archetypeCounts.map(
+        (item) => `${displayValue(item.archetype)} · ${item.count} files`,
+      ),
+    );
+    aggregateMembersSection(inspector, facility);
+    inspector.append(focusButton(
+      facility.x + facility.width / 2,
+      facility.z + facility.depth / 2,
+      "Explore constituent buildings",
+      () => {
+        state.selected = null;
+      },
+    ));
   }
 
   function showBuilding(entityId) {
@@ -851,6 +1001,7 @@
   function showSelection(selection) {
     if (!selection) return;
     state.selected = { kind: selection.kind, id: selection.id };
+    if (selection.kind === "aggregate") showAggregate(selection.id);
     if (selection.kind === "building") showBuilding(selection.id);
     if (selection.kind === "district") showDistrict(selection.id);
     if (selection.kind === "network") showNetwork(selection.id);
@@ -858,6 +1009,10 @@
   }
 
   function labelFor(selection) {
+    if (selection.kind === "aggregate") {
+      const facility = aggregateFacilities.get(selection.id);
+      return `${districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files · visual aggregate`;
+    }
     if (selection.kind === "building") {
       const entity = entities.get(selection.id);
       const building = scene.buildings.find((item) => item.entityId === selection.id);

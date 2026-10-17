@@ -123,6 +123,90 @@
     return (hash >>> 0) % bucketCount;
   }
 
+  function aggregateFacilities(scene, majorIds, districts) {
+    const groups = new Map();
+
+    function aggregateDistrictId(districtId) {
+      const ancestry = [];
+      let current = districts.get(districtId);
+      while (current) {
+        ancestry.push(current.id);
+        if (majorIds.has(current.id)) return current.id;
+        current = current.parentId === null ? null : districts.get(current.parentId);
+      }
+      return ancestry.length > 1 ? ancestry.at(-2) : ancestry.at(-1);
+    }
+
+    for (const building of scene.buildings) {
+      const districtId = aggregateDistrictId(building.districtId);
+      if (!districtId) continue;
+      const members = groups.get(districtId) || [];
+      members.push(building);
+      groups.set(districtId, members);
+    }
+
+    return [...groups.entries()].map(([districtId, members]) => {
+      members.sort((left, right) => left.entityId.localeCompare(right.entityId));
+      const district = districts.get(districtId);
+      const centerX = members.reduce(
+        (sum, building) => sum + building.x + building.width / 2,
+        0,
+      ) / members.length;
+      const centerZ = members.reduce(
+        (sum, building) => sum + building.z + building.depth / 2,
+        0,
+      ) / members.length;
+      const margin = Math.min(2, district.width * 0.05, district.depth * 0.05);
+      const maxWidth = Math.max(2, district.width - margin * 2);
+      const maxDepth = Math.max(2, district.depth - margin * 2);
+      const footprint = Math.max(
+        8,
+        Math.sqrt(members.length) * 2.8,
+        Math.min(district.width, district.depth) * 0.28,
+      );
+      const width = Math.min(maxWidth, footprint);
+      const depth = Math.min(maxDepth, footprint * 0.78);
+      const x = Math.max(
+        district.x + margin,
+        Math.min(centerX - width / 2, district.x + district.width - margin - width),
+      );
+      const z = Math.max(
+        district.z + margin,
+        Math.min(centerZ - depth / 2, district.z + district.depth - margin - depth),
+      );
+      const archetypeCounts = new Map();
+      for (const building of members) {
+        archetypeCounts.set(
+          building.archetype,
+          (archetypeCounts.get(building.archetype) || 0) + 1,
+        );
+      }
+      return {
+        archetypeCounts: [...archetypeCounts]
+          .map(([archetype, count]) => ({ archetype, count }))
+          .sort(
+            (left, right) =>
+              right.count - left.count
+              || left.archetype.localeCompare(right.archetype),
+          ),
+        depth,
+        districtId,
+        height: Math.min(
+          120,
+          Math.max(
+            18 + Math.log2(members.length + 1) * 4,
+            footprint * 0.38,
+          ),
+        ),
+        id: `visual:aggregate:${districtId}`,
+        memberEntityIds: members.map((building) => building.entityId),
+        width,
+        x,
+        z,
+      };
+    }).sort((left, right) => left.id.localeCompare(right.id));
+  }
+
   function createLodPolicy(scene) {
     const buildings = new Map(
       scene.buildings.map((building) => [building.entityId, building]),
@@ -130,6 +214,8 @@
     const networks = new Map(scene.networks.map((network) => [network.id, network]));
     const districts = new Map(scene.districts.map((district) => [district.id, district]));
     const majorIds = new Set(majorDistrictIds(scene));
+    const aggregates = aggregateFacilities(scene, majorIds, districts);
+    const aggregateIds = new Set(aggregates.map((aggregate) => aggregate.id));
     const districtDepths = new Map();
 
     function districtDepth(districtId) {
@@ -167,10 +253,23 @@
           const building = buildings.get(id);
           if (!building) return false;
           if (selected?.kind === "building" && selected.id === id) return true;
+          if (level === "overview") return false;
           if (level === "detail" || building.archetype !== "GENERIC_BUILDING") return true;
-          return stableBucket(id, level === "overview" ? 8 : 3) === 0;
+          return stableBucket(id, 3) === 0;
         })
         .sort();
+
+      const visibleAggregateIds = level === "overview"
+        ? [...aggregateIds]
+        : [];
+      if (
+        selected?.kind === "aggregate"
+        && aggregateIds.has(selected.id)
+        && !visibleAggregateIds.includes(selected.id)
+      ) {
+        visibleAggregateIds.push(selected.id);
+      }
+      visibleAggregateIds.sort();
 
       const networkLimit = level === "overview" ? 24 : level === "district" ? 64 : Infinity;
       const rankedNetworks = [...candidateNetworks]
@@ -191,10 +290,11 @@
         networkIds.sort();
       }
 
-      return { buildingIds, networkIds };
+      return { aggregateIds: visibleAggregateIds, buildingIds, networkIds };
     }
 
     return Object.freeze({
+      aggregates,
       districtVisible,
       levelForZoom,
       visibility,

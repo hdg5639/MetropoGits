@@ -376,6 +376,9 @@
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
   const lodPolicy = filterEngine.createLodPolicy(scene);
+  const aggregateFacilities = new Map(
+    lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
+  );
   const majorDistrictColors = ["#18324a", "#2d284a", "#183d37", "#3b2b20", "#35243f"];
   const majorDistrictColorById = new Map(
     [...majorDistrictIds].sort().map((districtId, index) => [
@@ -437,6 +440,7 @@
   let viewportHeight = 1;
   let visibleBuildingIds = new Set(scene.buildings.map((building) => building.entityId));
   let visibleNetworkIds = new Set(scene.networks.map((network) => network.id));
+  let renderedAggregateIds = new Set();
   let renderedBuildingIds = new Set(visibleBuildingIds);
   let renderedDistrictIds = new Set(drawableDistrictIds);
   let renderedNetworkIds = new Set(visibleNetworkIds);
@@ -548,6 +552,16 @@
         [building.x, building.height, building.z + building.depth],
       );
     }
+    if (scene.buildings.length >= 256) {
+      for (const facility of aggregateFacilities.values()) {
+        points.push(
+          [facility.x, facility.height + 2.4, facility.z],
+          [facility.x + facility.width, facility.height + 2.4, facility.z],
+          [facility.x + facility.width, facility.height + 2.4, facility.z + facility.depth],
+          [facility.x, facility.height + 2.4, facility.z + facility.depth],
+        );
+      }
+    }
     function fits(distance) {
       const matrix = cameraMatrixAtDistance(distance);
       return points.every((point) => {
@@ -570,6 +584,29 @@
 
   function selected(kind, id) {
     return state.selected?.kind === kind && state.selected.id === id;
+  }
+
+  function aggregateParts(facility) {
+    const slots = [
+      [0.34, 0.29, 0.32, 0.42],
+      [0.08, 0.1, 0.22, 0.28],
+      [0.7, 0.1, 0.22, 0.28],
+      [0.08, 0.62, 0.22, 0.28],
+      [0.7, 0.62, 0.22, 0.28],
+    ];
+    const largest = facility.archetypeCounts[0]?.count || 1;
+    return facility.archetypeCounts.slice(0, slots.length).map((item, index) => {
+      const [x, z, width, depth] = slots[index];
+      return {
+        archetype: item.archetype,
+        depth: facility.depth * depth,
+        entityId: `${facility.id}:${item.archetype}`,
+        height: facility.height * (0.45 + item.count / largest * 0.55),
+        width: facility.width * width,
+        x: facility.x + facility.width * x,
+        z: facility.z + facility.depth * z,
+      };
+    });
   }
 
   function buildGeometry(timestamp) {
@@ -773,6 +810,49 @@
         ]) line(lines, start, end, highlight);
       }
     }
+    for (const aggregateId of [...renderedAggregateIds].sort()) {
+      const facility = aggregateFacilities.get(aggregateId);
+      const isSelected = selected("aggregate", facility.id);
+      box(
+        triangles,
+        facility.x,
+        0.16,
+        facility.z,
+        facility.width,
+        2.2,
+        facility.depth,
+        color(isSelected ? "#f8fafc" : "#475569"),
+      );
+      for (const aggregatePart of aggregateParts(facility)) {
+        const baseColor = color(
+          colors[aggregatePart.archetype] || colors.GENERIC_BUILDING,
+        );
+        const partColor = isSelected ? lighten(baseColor, 0.45) : baseColor;
+        for (const part of buildingParts(aggregatePart)) {
+          box(
+            triangles,
+            part.x,
+            2.4 + part.y,
+            part.z,
+            part.width,
+            part.height,
+            part.depth,
+            part.shade ? lighten(partColor, part.shade) : partColor,
+          );
+        }
+      }
+      const x0 = facility.x - 0.55;
+      const x1 = facility.x + facility.width + 0.55;
+      const z0 = facility.z - 0.55;
+      const z1 = facility.z + facility.depth + 0.55;
+      const borderColor = color(isSelected ? "#f8fafc" : "#fbbf24");
+      for (const [start, end] of [
+        [[x0, 0.2, z0], [x1, 0.2, z0]],
+        [[x1, 0.2, z0], [x1, 0.2, z1]],
+        [[x1, 0.2, z1], [x0, 0.2, z1]],
+        [[x0, 0.2, z1], [x0, 0.2, z0]],
+      ]) line(lines, start, end, borderColor);
+    }
 
     if (state.syntheticActivity && activityEngine) {
       const elapsed = Math.max(0, timestamp - state.activityEpoch);
@@ -877,6 +957,30 @@
         });
       }
     }
+    for (const aggregateId of renderedAggregateIds) {
+      const facility = aggregateFacilities.get(aggregateId);
+      const corners = [];
+      for (const x of [facility.x, facility.x + facility.width]) {
+        for (const y of [0.2, facility.height + 2.4]) {
+          for (const z of [facility.z, facility.z + facility.depth]) {
+            const point = projected([x, y, z]);
+            if (point) corners.push(point);
+          }
+        }
+      }
+      if (corners.length === 8) {
+        regions.push({
+          depth: Math.min(...corners.map((point) => point.depth)),
+          id: facility.id,
+          kind: "aggregate",
+          maxX: Math.max(...corners.map((point) => point.x)),
+          maxY: Math.max(...corners.map((point) => point.y)),
+          minX: Math.min(...corners.map((point) => point.x)),
+          minY: Math.min(...corners.map((point) => point.y)),
+          priority: 250,
+        });
+      }
+    }
     return regions.sort((left, right) => right.priority - left.priority || left.depth - right.depth);
   }
 
@@ -910,7 +1014,7 @@
 
   function hitTest(x, y) {
     for (const region of hitRegions) {
-      if (region.kind === "building") {
+      if (region.kind === "building" || region.kind === "aggregate") {
         if (x >= region.minX && x <= region.maxX && y >= region.minY && y <= region.maxY) return region;
       } else if (region.kind === "network") {
         for (let index = 1; index < region.points.length; index += 1) {
@@ -946,6 +1050,26 @@
         y: anchor.y - 18,
       });
     }
+    for (const aggregateId of renderedAggregateIds) {
+      const facility = aggregateFacilities.get(aggregateId);
+      const anchor = projected([
+        facility.x + facility.width / 2,
+        facility.height + 5,
+        facility.z + facility.depth / 2,
+      ]);
+      if (!anchor || anchor.depth < -1 || anchor.depth > 1) continue;
+      const label = `${districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files`;
+      candidates.push({
+        aggregate: true,
+        height: 20,
+        id: facility.id,
+        label,
+        priority: 20000,
+        width: Math.min(240, Math.max(90, label.length * 7 + 18)),
+        x: anchor.x - Math.min(240, Math.max(90, label.length * 7 + 18)) / 2,
+        y: anchor.y - 18,
+      });
+    }
     const visibleIds = new Set(
       filterEngine.selectNonOverlappingLabels(candidates, viewportWidth, viewportHeight),
     );
@@ -953,7 +1077,11 @@
       .filter((candidate) => visibleIds.has(candidate.id))
       .map((candidate) => {
         const node = document.createElement("span");
-        node.className = candidate.major ? "scene-label major" : "scene-label";
+        node.className = candidate.aggregate
+          ? "scene-label aggregate"
+          : candidate.major
+            ? "scene-label major"
+            : "scene-label";
         node.style.left = `${candidate.x}px`;
         node.style.top = `${candidate.y}px`;
         node.style.maxWidth = `${candidate.width}px`;
@@ -1061,6 +1189,7 @@
       visibleNetworkIds,
       state.selected,
     );
+    renderedAggregateIds = new Set(visible.aggregateIds);
     renderedBuildingIds = new Set(visible.buildingIds);
     renderedNetworkIds = new Set(visible.networkIds);
     renderedDistrictIds = new Set(
@@ -1076,12 +1205,19 @@
       const label = filtered
         ? "Filtered detail"
         : `${currentDetailLevel[0].toUpperCase()}${currentDetailLevel.slice(1)}`;
-      const status = `${label} · ${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings · ${renderedNetworkIds.size}/${visibleNetworkIds.size} routes`;
+      const representedFiles = [...renderedAggregateIds].reduce(
+        (sum, id) => sum + aggregateFacilities.get(id).memberEntityIds.length,
+        0,
+      );
+      const subject = renderedAggregateIds.size
+        ? `${renderedAggregateIds.size} aggregate facilities / ${representedFiles} files`
+        : `${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings`;
+      const status = `${label} · ${subject} · ${renderedNetworkIds.size}/${visibleNetworkIds.size} routes`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
     }
   }
 
-  function resetInspector(message = "Choose a building, district, or network to inspect the repository facts behind it.") {
+  function resetInspector(message = "Choose a building, aggregate facility, district, or network to inspect the repository facts behind it.") {
     inspector.replaceChildren();
     inspector.append(element("p", "INSPECTOR", "eyebrow"));
     inspector.append(element("h2", "Select a city element"));
@@ -1090,6 +1226,9 @@
 
   function selectionIsVisible() {
     if (!state.selected || state.selected.kind === "district") return true;
+    if (state.selected.kind === "aggregate") {
+      return activeFilterCount() === 0 && aggregateFacilities.has(state.selected.id);
+    }
     return state.selected.kind === "building"
       ? visibleBuildingIds.has(state.selected.id)
       : visibleNetworkIds.has(state.selected.id);
@@ -1134,6 +1273,21 @@
     parent.append(list);
   }
 
+  function aggregateMembersSection(parent, facility) {
+    const details = element("details", undefined, "aggregate-members");
+    details.append(element(
+      "summary",
+      `Constituent files (${facility.memberEntityIds.length})`,
+    ));
+    const list = element("ul", undefined, "fact-list");
+    const paths = facility.memberEntityIds
+      .map((entityId) => entities.get(entityId)?.path || entityId)
+      .sort();
+    for (const path of paths) list.append(element("li", path));
+    details.append(list);
+    parent.append(details);
+  }
+
   function evidenceLabel(evidenceId) {
     const item = evidence.get(evidenceId);
     if (!item) return evidenceId;
@@ -1165,10 +1319,11 @@
     }
   }
 
-  function focusButton(x, y, z, distance, label) {
+  function focusButton(x, y, z, distance, label, beforeFocus = null) {
     const button = element("button", label, "focus-button");
     button.type = "button";
     button.addEventListener("click", () => {
+      beforeFocus?.();
       state.targetX = x;
       state.targetY = y;
       state.targetZ = z;
@@ -1176,6 +1331,44 @@
       scheduleRender();
     });
     return button;
+  }
+
+  function showAggregate(aggregateId) {
+    const facility = aggregateFacilities.get(aggregateId);
+    inspector.replaceChildren();
+    inspector.append(element("p", "AGGREGATE FACILITY · VISUAL", "eyebrow"));
+    inspector.append(element("h2", districtLabel(districts.get(facility.districtId))));
+    inspector.append(element(
+      "p",
+      "This overview structure groups real file buildings. It is not a code entity or inferred service.",
+      "aggregate-disclosure",
+    ));
+    const details = element("dl", undefined, "detail-list");
+    detailRow(details, "Files", facility.memberEntityIds.length);
+    detailRow(details, "District", districtLabel(districts.get(facility.districtId)));
+    detailRow(details, "Representation", "Deterministic visual aggregate");
+    inspector.append(details);
+    factSection(
+      inspector,
+      "ARCHETYPE COMPOSITION",
+      facility.archetypeCounts.map(
+        (item) => `${displayValue(item.archetype)} · ${item.count} files`,
+      ),
+    );
+    aggregateMembersSection(inspector, facility);
+    inspector.append(focusButton(
+      facility.x + facility.width / 2,
+      facility.height / 2,
+      facility.z + facility.depth / 2,
+      Math.min(
+        Math.max(26, Math.hypot(facility.width, facility.depth) * 1.1),
+        initialCamera.distance / 2.6,
+      ),
+      "Explore constituent buildings",
+      () => {
+        state.selected = null;
+      },
+    ));
   }
 
   function showBuilding(entityId) {
@@ -1279,6 +1472,7 @@
   function showSelection(selection) {
     if (!selection) return;
     state.selected = { id: selection.id, kind: selection.kind };
+    if (selection.kind === "aggregate") showAggregate(selection.id);
     if (selection.kind === "building") showBuilding(selection.id);
     if (selection.kind === "district") showDistrict(selection.id);
     if (selection.kind === "network") showNetwork(selection.id);
@@ -1286,6 +1480,10 @@
   }
 
   function labelFor(selection) {
+    if (selection.kind === "aggregate") {
+      const facility = aggregateFacilities.get(selection.id);
+      return `${districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files · visual aggregate`;
+    }
     if (selection.kind === "building") {
       const entity = entities.get(selection.id);
       const building = scene.buildings.find((item) => item.entityId === selection.id);
