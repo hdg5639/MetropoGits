@@ -876,3 +876,46 @@
   can change. No `v1.0.0` tag or version promotion is authorized yet.
 - Commits created / pushed (and branch): `1ba3f7f` and `87f4d2e` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 — dense city blocks (`8e26d08`)
+
+- Implemented: layout `hierarchical-paged/1.6` reduces sparse and empty
+  directory lots, building setbacks, and sibling padding while preserving the
+  complete directory hierarchy and one source file per semantic building.
+- Fixture(s) / revision(s): the complete MetropoGits repository at revision
+  `8e26d08`, analyzed twice as `hdg5639/MetropoGits`; sparse, nested, hinted,
+  and 1,000-file layout fixtures were also exercised.
+- Commands run: two real CLI builds; Edge SwiftShader WebGL and CPU SVG
+  captures; `pip check`; Ruff; `compileall`; JavaScript syntax checks;
+  release-readiness validation; all unit, integration, contract, security,
+  governance, and regression tests; and Git whitespace checks.
+- Artifacts inspected: baseline captures under
+  `D:\Code\MetroPoGits\.visual-recovery-baseline` and improved artifacts under
+  `D:\Code\MetroPoGits\.visual-recovery-density-checkpoint`.
+- Visual findings: PASS for the density slice. With the same 76 buildings and
+  52 districts, the city changes from a long 318 by 649 footprint to a balanced
+  338 by 321 footprint. Root area falls from 206,382 to 108,498 world units
+  (47.4% smaller), and building footprint density rises from 1.33% to 2.52%.
+  Buildings are visibly larger in the initial frame and clustered into clearer
+  neighborhoods. Archetype silhouettes and road treatment still need the next
+  recovery slices.
+- Spec alignment: PASS. Directory IDs, parent hierarchy, file-to-building
+  mappings, evidence-backed networks, and `city/0.1` remain intact. No
+  decorative building or unsupported semantic fact was introduced.
+- Tests / determinism / stability: 189 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. Repeated builds produced
+  identical SHA-256 `bbd49df21bccc1ffa51b9dd16590c0f76b8c9f4a44b03bea1335b263c8d10f9a`
+  for `graph.ucg.json`,
+  `bdda98df59c6df8eb18f134446ea0eb3886b4acbfa44b3cc656eb344d582af93`
+  for `city.json`, and
+  `f61e4e12b6d8b25e8914108a08c719e9f1b0123fa2f3e2050625cfc0dfca91b1`
+  for `preview.svg`. Current-version hints preserve anchors; older geometry is
+  rejected as a hint; containment and non-overlap validations pass.
+- Fixes applied and reverified: the first full run exposed the intentionally
+  changed preview golden hash. The checked-in deterministic SVG expectation was
+  updated to the inspected layout-1.6 output and the full gate was rerun.
+- Open risks / next actions: replace uniform cuboids with evidence-backed
+  archetype silhouettes, then upgrade road hierarchy and camera emphasis.
+  Public repository and Pages activation remain deferred by ADR-007.
+- Commits created / pushed (and branch): `8e26d08` on local `main`; push is
+  scheduled after this checkpoint log commit.
