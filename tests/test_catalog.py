@@ -33,14 +33,16 @@ class CatalogContractTests(unittest.TestCase):
     def test_bundled_catalog_and_fixtures_are_valid(self):
         self.assertEqual([], validate_document(self.catalog, FIXTURE_ROOT))
 
-    def test_previous_catalog_release_remains_valid(self):
-        release = ROOT / "catalog" / "0.1.0"
-        self.assertEqual(
-            [],
-            validate_document(
-                load_json(release / "catalog.json"), release / "fixtures"
-            ),
-        )
+    def test_previous_catalog_releases_remain_valid(self):
+        for version in ("0.1.0", "0.2.0"):
+            with self.subTest(version=version):
+                release = ROOT / "catalog" / version
+                self.assertEqual(
+                    [],
+                    validate_document(
+                        load_json(release / "catalog.json"), release / "fixtures"
+                    ),
+                )
 
     def test_specialized_semantics_require_direct_signatures(self):
         catalog = copy.deepcopy(self.catalog)

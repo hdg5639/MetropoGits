@@ -1,0 +1,17 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "org.springframework.stereotype.Service"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "org.springframework.stereotype.Service"
+    },
+    {
+      "kind": "MANIFEST",
+      "value": "org.springframework:spring-context"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

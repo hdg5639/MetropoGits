@@ -11,7 +11,7 @@ from scripts.canonical_json import loads_strict_json
 from scripts.validate_catalog import validate_document as validate_catalog_document
 
 
-CATALOG_VERSION = "0.2.0"
+CATALOG_VERSION = "0.3.0"
 CATALOG_PATH = (
     Path(__file__).resolve().parents[1]
     / "catalog"

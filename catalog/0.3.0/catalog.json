@@ -1,0 +1,308 @@
+{
+  "catalogVersion": "0.3.0",
+  "rules": [
+    {
+      "changeSummary": "Require the Spring Web declaration with an exact RestClient import.",
+      "ecosystem": "maven",
+      "fixtures": {
+        "negative": [
+          "http/rest-client-lookalike"
+        ],
+        "positive": [
+          "http/rest-client"
+        ]
+      },
+      "id": "http.rest-client",
+      "match": {
+        "codeSignatures": [
+          {
+            "kind": "IMPORT",
+            "value": "org.springframework.web.client.RestClient"
+          }
+        ],
+        "configSignatures": [],
+        "packageCoordinates": [
+          "org.springframework:spring-web"
+        ]
+      },
+      "negativePredicates": [],
+      "produces": {
+        "archetypeFamily": "PORT",
+        "capabilities": [
+          "API"
+        ],
+        "roles": [
+          "HTTP_CLIENT"
+        ],
+        "technology": "SPRING_REST_CLIENT",
+        "usage": "DIRECT"
+      },
+      "references": [
+        {
+          "license": "Apache-2.0",
+          "title": "Spring Framework REST Clients documentation",
+          "url": "https://docs.spring.io/spring-framework/reference/integration/rest-clients.html"
+        }
+      ],
+      "requiredEvidence": [
+        "IMPORT",
+        "MANIFEST"
+      ],
+      "version": "1.1.0"
+    },
+    {
+      "changeSummary": "Require the Spring Kafka declaration with an exact KafkaTemplate import.",
+      "ecosystem": "maven",
+      "fixtures": {
+        "negative": [
+          "messaging/kafka-template-lookalike"
+        ],
+        "positive": [
+          "messaging/kafka-template"
+        ]
+      },
+      "id": "kafka.template",
+      "match": {
+        "codeSignatures": [
+          {
+            "kind": "IMPORT",
+            "value": "org.springframework.kafka.core.KafkaTemplate"
+          }
+        ],
+        "configSignatures": [],
+        "packageCoordinates": [
+          "org.springframework.kafka:spring-kafka"
+        ]
+      },
+      "negativePredicates": [],
+      "produces": {
+        "archetypeFamily": "EXCHANGE",
+        "capabilities": [
+          "STREAM"
+        ],
+        "roles": [
+          "MESSAGE_PRODUCER"
+        ],
+        "technology": "APACHE_KAFKA",
+        "usage": "DIRECT"
+      },
+      "references": [
+        {
+          "license": "Apache-2.0",
+          "title": "Spring for Apache Kafka documentation",
+          "url": "https://docs.spring.io/spring-kafka/reference/kafka.html"
+        }
+      ],
+      "requiredEvidence": [
+        "IMPORT",
+        "MANIFEST"
+      ],
+      "version": "1.1.0"
+    },
+    {
+      "changeSummary": "Require the Spring Data MongoDB declaration with an exact MongoRepository import.",
+      "ecosystem": "maven",
+      "fixtures": {
+        "negative": [
+          "data/mongo-repository-lookalike"
+        ],
+        "positive": [
+          "data/mongo-repository"
+        ]
+      },
+      "id": "mongodb.repository",
+      "match": {
+        "codeSignatures": [
+          {
+            "kind": "IMPORT",
+            "value": "org.springframework.data.mongodb.repository.MongoRepository"
+          }
+        ],
+        "configSignatures": [],
+        "packageCoordinates": [
+          "org.springframework.data:spring-data-mongodb"
+        ]
+      },
+      "negativePredicates": [],
+      "produces": {
+        "archetypeFamily": "DOCUMENT_DEPOT",
+        "capabilities": [
+          "DOCUMENT_DB"
+        ],
+        "roles": [
+          "DOCUMENT_PERSISTENCE_ADAPTER"
+        ],
+        "technology": "MONGODB",
+        "usage": "DIRECT"
+      },
+      "references": [
+        {
+          "license": "Apache-2.0",
+          "title": "Spring Data MongoDB repositories documentation",
+          "url": "https://docs.spring.io/spring-data/mongodb/reference/repositories.html"
+        }
+      ],
+      "requiredEvidence": [
+        "IMPORT",
+        "MANIFEST"
+      ],
+      "version": "1.1.0"
+    },
+    {
+      "changeSummary": "Require the Spring Rabbit declaration with an exact RabbitTemplate import.",
+      "ecosystem": "maven",
+      "fixtures": {
+        "negative": [
+          "messaging/rabbit-template-lookalike"
+        ],
+        "positive": [
+          "messaging/rabbit-template"
+        ]
+      },
+      "id": "rabbitmq.template",
+      "match": {
+        "codeSignatures": [
+          {
+            "kind": "IMPORT",
+            "value": "org.springframework.amqp.rabbit.core.RabbitTemplate"
+          }
+        ],
+        "configSignatures": [],
+        "packageCoordinates": [
+          "org.springframework.amqp:spring-rabbit"
+        ]
+      },
+      "negativePredicates": [],
+      "produces": {
+        "archetypeFamily": "EXCHANGE",
+        "capabilities": [
+          "QUEUE"
+        ],
+        "roles": [
+          "MESSAGE_ADAPTER"
+        ],
+        "technology": "RABBITMQ",
+        "usage": "DIRECT"
+      },
+      "references": [
+        {
+          "license": "Apache-2.0",
+          "title": "Spring AMQP template documentation",
+          "url": "https://docs.spring.io/spring-amqp/reference/amqp/template.html"
+        }
+      ],
+      "requiredEvidence": [
+        "IMPORT",
+        "MANIFEST"
+      ],
+      "version": "1.1.0"
+    },
+    {
+      "changeSummary": "Require the Spring Data Redis declaration with an exact RedisTemplate import.",
+      "ecosystem": "maven",
+      "fixtures": {
+        "negative": [
+          "data/redis-template-lookalike"
+        ],
+        "positive": [
+          "data/redis-template"
+        ]
+      },
+      "id": "redis.template",
+      "match": {
+        "codeSignatures": [
+          {
+            "kind": "IMPORT",
+            "value": "org.springframework.data.redis.core.RedisTemplate"
+          }
+        ],
+        "configSignatures": [],
+        "packageCoordinates": [
+          "org.springframework.data:spring-data-redis"
+        ]
+      },
+      "negativePredicates": [],
+      "produces": {
+        "archetypeFamily": "CACHE_TOWER",
+        "capabilities": [
+          "CACHE"
+        ],
+        "roles": [
+          "CACHE_ADAPTER"
+        ],
+        "technology": "REDIS",
+        "usage": "DIRECT"
+      },
+      "references": [
+        {
+          "license": "Apache-2.0",
+          "title": "Spring Data Redis template documentation",
+          "url": "https://docs.spring.io/spring-data/redis/reference/redis/template.html"
+        }
+      ],
+      "requiredEvidence": [
+        "IMPORT",
+        "MANIFEST"
+      ],
+      "version": "1.1.0"
+    },
+    {
+      "changeSummary": "Carry forward verified Spring Service annotation classification.",
+      "ecosystem": "maven",
+      "fixtures": {
+        "negative": [
+          "spring/service-lookalike"
+        ],
+        "positive": [
+          "spring/service"
+        ]
+      },
+      "id": "spring.service",
+      "match": {
+        "codeSignatures": [
+          {
+            "kind": "ANNOTATION",
+            "value": "org.springframework.stereotype.Service"
+          },
+          {
+            "kind": "IMPORT",
+            "value": "org.springframework.stereotype.Service"
+          }
+        ],
+        "configSignatures": [],
+        "packageCoordinates": [
+          "org.springframework:spring-context"
+        ]
+      },
+      "negativePredicates": [
+        {
+          "kind": "ANNOTATION",
+          "value": "com.example.Service"
+        }
+      ],
+      "produces": {
+        "archetypeFamily": "SERVICE_OFFICE",
+        "capabilities": [],
+        "roles": [
+          "SERVICE"
+        ],
+        "technology": "SPRING_FRAMEWORK",
+        "usage": "DIRECT"
+      },
+      "references": [
+        {
+          "license": "Apache-2.0",
+          "title": "Spring Framework classpath scanning documentation",
+          "url": "https://docs.spring.io/spring-framework/reference/core/beans/classpath-scanning.html"
+        }
+      ],
+      "requiredEvidence": [
+        "ANNOTATION",
+        "IMPORT",
+        "MANIFEST"
+      ],
+      "version": "1.0.0"
+    }
+  ],
+  "schemaVersion": "catalog/0.1"
+}

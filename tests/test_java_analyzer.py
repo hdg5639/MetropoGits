@@ -134,7 +134,7 @@ class JavaAnalyzerTests(unittest.TestCase):
             if building["entityId"] == entity["id"]
         }
 
-        self.assertEqual("0.2.0", graph["generator"]["catalogVersion"])
+        self.assertEqual("0.3.0", graph["generator"]["catalogVersion"])
         for name, (technology, capability, role, archetype) in expected.items():
             entity = files[name]
             self.assertEqual([technology], [item["value"] for item in entity["technologies"]])
@@ -145,8 +145,9 @@ class JavaAnalyzerTests(unittest.TestCase):
                 claim = entity[field][0]
                 self.assertEqual("DIRECT", claim["confidence"])
                 self.assertTrue(claim["evidenceIds"])
-                self.assertTrue(
-                    all(evidence[item]["kind"] == "IMPORT" for item in claim["evidenceIds"])
+                self.assertEqual(
+                    {"IMPORT", "MANIFEST"},
+                    {evidence[item]["kind"] for item in claim["evidenceIds"]},
                 )
 
     def test_catalog_near_match_imports_remain_unclassified(self):
@@ -156,6 +157,15 @@ class JavaAnalyzerTests(unittest.TestCase):
             self.assertEqual([], entity["roles"])
             self.assertEqual([], entity.get("capabilities", []))
             self.assertEqual([], entity.get("technologies", []))
+
+    def test_declared_technology_without_code_usage_remains_unclassified(self):
+        graph = analyze(FIXTURES / "technology-declared-only")
+
+        for entity in files_by_name(graph).values():
+            self.assertEqual([], entity["roles"])
+            self.assertEqual([], entity.get("capabilities", []))
+            self.assertEqual([], entity.get("technologies", []))
+        self.assertTrue(any(edge["type"] == "DEPENDS_ON" for edge in graph["edges"]))
 
     def test_catalog_intersects_nearest_manifest_and_code_evidence(self):
         graph = analyze(FIXTURES / "spring-manifest-usage")
