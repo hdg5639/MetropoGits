@@ -429,3 +429,51 @@
   license remain open.
 - Commits created / pushed (and branch): `ffd4276` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — sparse city layout (`445a254`)
+
+- Implemented: layout `hierarchical-paged/1.4`, which compacts unused leading
+  rows and columns in cold building pages, sizes the final occupied area with a
+  24 by 24 minimum district, preserves positions from valid 1.4 hints, and caps
+  the viewer's initial fit scale for very small cities.
+- Fixture(s) / revision(s):
+  `tests/fixtures/repositories/postgresql-config` at synthetic revision
+  `sparse-check`, plus generated 1, 65, 100, and 1,000-file layout fixtures and
+  the existing collision/hint stability fixtures.
+- Commands run: two identical end-to-end CLI builds; layout, viewer, governance,
+  preview, and full test suites; UCG/City validation through the build; Edge
+  headless viewer and SVG captures; Ruff, `compileall`, dependency consistency,
+  release-readiness validation, JavaScript syntax checks, and Git whitespace
+  checks.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `viewer.png`, and `preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-sparse-final-7c203071908647db828e97582b3d4da4`.
+  The single occupied district is now 24 by 24 with the building at local
+  coordinates 6,6; the prior checkpoint used a 64 by 64 lot.
+- Visual findings: the viewer now presents a centered, legible small lot and
+  building instead of a viewport-filling empty district and oversized tower.
+  The SVG preserves a larger README-safe projection, where the building takes
+  one quarter of the lot width. The district label remains close to the tower
+  in this deliberately minimal case but does not obscure its silhouette.
+- Spec alignment: PASS. The change is recorded in ADR-004, increments the
+  layout algorithm because persisted geometry changed, rejects earlier layout
+  versions as hints, retains directory hierarchy, and passes containment,
+  overlap, capacity, determinism, and hinted churn gates.
+- Tests / determinism / stability: 175 tests passed with one unavailable
+  symlink skip. Repeated builds produced identical SHA-256
+  `075236a5fe1c74d53a43eed685445f5a32419150fb5eff5511baaf857b3ee2b6`
+  for `graph.ucg.json`,
+  `0139123e262c3bc3111fa3a037f4498d8848994bce09e88f0eef611b75501c75`
+  for `city.json`, and
+  `97ad5966fba936c547086ad6f9e07499b67e59cd479dfe7176e6f7a74fc14910`
+  for `preview.svg`.
+- Fixes applied and reverified: the first viewer scale cap of 7 made the city
+  too small in the captured viewport; it was adjusted to 11 and the viewer
+  suite, syntax check, end-to-end build, screenshots, and full gates were rerun.
+  The intentional SVG snapshot change was updated only after byte determinism
+  and visual inspection.
+- Open risks / next actions: expose declared dependency evidence in the
+  inspector and improve network endpoint readability. Dense SVG labels,
+  DEC-009, hosted runner evidence, and the project license remain open.
+- Commits created / pushed (and branch): `445a254` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
