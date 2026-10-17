@@ -56,6 +56,17 @@ or schema versions; aggregate route anchors are not per-file doorways.
 
 ## Functional scope and open work
 
+JS/TS configured-path resolution reads bounded `tsconfig.json`/`jsconfig.json`
+without executing plugins. Exact and single-wildcard `compilerOptions.paths`
+use the declared baseUrl (or config directory), longest-prefix matching and
+ordered fallbacks, following the [TypeScript reference](https://www.typescriptlang.org/docs/handbook/modules/reference.html#paths).
+Only unique already-scanned local sources resolve; IMPORT and CONFIG provenance
+are both retained. Nearest-directory config scopes are a conservative subset,
+not a full compiler project graph. Strict JSON is supported; JSONC, extends,
+package exports and implicit baseUrl-only imports remain unsupported. Invalid
+configs block outer aliases and report diagnostics. Aliases with missing,
+ambiguous or excluded targets never become invented external dependencies.
+
 P0 FR-001 through FR-016 are mapped to automated evidence in
 [`release/readiness.json`](../../release/readiness.json). AC-010 still needs
 authorized Pages deployment and an actual repository-subpath check. The public

@@ -8,6 +8,7 @@ import os
 import stat
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+from metropogits.module_paths import alias_targets, config_for_file, safe_relative
 from typing import Any
 
 from metropogits.scanner import ScanLimits, ScanResult, ScannedFile
@@ -373,7 +374,7 @@ def _local_candidates(
 def _external_package_path(specifier: str) -> str | None:
     if (
         not specifier
-        or specifier.startswith((".", "/", "#"))
+        or specifier.startswith((".", "/", "#", "@/"))
         or "://" in specifier
         or "\\" in specifier
     ):
@@ -454,7 +455,7 @@ def enrich_jsts_graph(
             "INFO",
             (
                 f"JavaScript/TypeScript static module analysis processed "
-                f"{len(references_by_path)} file(s); capabilities=staticImports"
+                f"{len(references_by_path)} file(s); capabilities=staticImports,configuredPaths"
             ),
         )
     )
@@ -476,11 +477,33 @@ def enrich_jsts_graph(
 
     for path, references in sorted(references_by_path.items()):
         source_id = files_by_path[path]
+        config = config_for_file(path, scan.module_paths)
         for reference in references:
             target_id: str | None = None
             confidence = "DIRECT"
-            if reference.specifier.startswith(("./", "../")):
-                candidates = _local_candidates(path, reference.specifier, files_by_path)
+            config_evidence = None
+            relative = reference.specifier.startswith(("./", "../"))
+            alias = alias_targets(config, reference.specifier) if (
+                config and config.supported and not relative and safe_relative(reference.specifier)
+            ) else None
+            blocked = config is not None and not config.supported and not relative
+            if relative or alias or blocked:
+                candidates = []
+                if relative:
+                    candidates = _local_candidates(path, reference.specifier, files_by_path)
+                elif alias:
+                    pattern, targets = alias
+                    for target in targets:
+                        if not safe_relative(target):
+                            continue
+                        candidates = _local_candidates(config.path, f"./{config.base}/{target}", files_by_path)
+                        if candidates:
+                            break
+                    identity = [config.path, config.base, pattern, list(dict(config.mappings)[pattern])]
+                    digest = hashlib.sha256(canonical_json_bytes(identity)).hexdigest()
+                    config_evidence = dict(evidenceId=f"evidence:sha256:{digest}", kind="CONFIG",
+                                           extractor="jsts-paths/0.1", sourcePath=config.path,
+                                           ruleId="jsts.configured-path", summary=f"Explicit compilerOptions.paths mapping: {pattern}")
                 if len(candidates) == 1:
                     target_id = files_by_path[candidates[0]]
                     confidence = "RESOLVED"
@@ -489,7 +512,7 @@ def enrich_jsts_graph(
                         _diagnostic(
                             "JSTS_IMPORT_AMBIGUOUS",
                             "WARNING",
-                            "Relative module reference matches multiple local files",
+                            "Local module reference matches multiple scanned files",
                             path,
                         )
                     )
@@ -498,7 +521,7 @@ def enrich_jsts_graph(
                         _diagnostic(
                             "JSTS_IMPORT_UNRESOLVED",
                             "INFO",
-                            "Relative module reference could not be resolved locally",
+                            "Local module reference could not be resolved from supported configuration and scanned files",
                             path,
                         )
                     )
@@ -527,6 +550,10 @@ def enrich_jsts_graph(
                 continue
             evidence = _evidence(path, reference)
             evidence_by_id[evidence["evidenceId"]] = evidence
+            edge_evidence_ids = [evidence["evidenceId"]]
+            if config_evidence:
+                evidence_by_id[config_evidence["evidenceId"]] = config_evidence
+                edge_evidence_ids.append(config_evidence["evidenceId"])
             edge_id = make_edge_id(
                 source_id,
                 "IMPORTS",
@@ -536,7 +563,7 @@ def enrich_jsts_graph(
             remember_edge(
                 {
                     "confidence": confidence,
-                    "evidenceIds": [evidence["evidenceId"]],
+                    "evidenceIds": sorted(edge_evidence_ids),
                     "from": source_id,
                     "id": edge_id,
                     "to": target_id,

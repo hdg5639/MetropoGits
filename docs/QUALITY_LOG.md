@@ -2432,3 +2432,40 @@
 - Next: restore missed configured local imports, distinguish communication
   presentation from road pavement, then improve shared access routing.
 - Delivery: one fix(viewer) commit, verified milestone pushed to authorized main.
+
+## Checkpoint 2026-10-18 — Recover configured local module relationships
+- Implemented: bounded non-executing tsconfig/jsconfig paths resolution. Exact,
+  single-wildcard, base-relative mappings and ordered fallback targets bind only
+  unique scanned sources. Import and config evidence accompany each resolved
+  edge. Missing/ambiguous aliases no longer masquerade as npm dependencies.
+  Invalid/nested/oversized configs block ancestor mappings; absolute/URL imports
+  cannot be reinterpreted by catch-all patterns. Unsupported JSONC/inheritance
+  remains diagnostic, not guessed resolution.
+- Commands: Python unittest discovery; Ruff; diff --check; full CLI builds of
+  maintained jsts-aliases, structural-showcase, GJ-Cloud and GamjaOJ; browser
+  viewer_audit.mjs with Chrome; compare_relations.mjs (local audit helper).
+  Artifacts: `artifacts/visual/relations-alias-r2/{gj,oj,aliases,unknown}`;
+  browser report/captures `relations-alias-audit-r2`.
+- Measurements: GJ local file relationships 5670 -> 6157, with 487 recovered
+  imports from 131 files. Connected files 1207 -> 1273; isolated 117 -> 51.
+  Four bogus npm/@ packages removed; network aggregates 135 -> 152; all 6157
+  eligible edges represented. OJ remains 2243 edges / 400 connected / 281
+  isolated / 31 networks. No HTTP or messaging edges manufactured.
+- Stability/determinism: previous-scene hints preserve all building coordinates
+  in both large projects (0 moved). Repeat analysis is byte-identical in each
+  alias regression fixture; unchanged inputs retain source identities. Graph
+  and road differences are the expected recovery, not layout resampling.
+- Visual check: inspected GJ overview and preview PNGs from the real browser
+  audit. Portal has additional dependency corridors; individual access branches
+  are still absent in some parcels. District retains full file coverage.
+  Browser facility/selection/expansion controls pass for both repositories.
+  Synthetic District CPU submission p95 0.9 ms GJ / 0.5 ms OJ, with zero static
+  rebuilds (headless SwiftShader, not GPU FPS).
+- Tests: 251 Python tests run, 250 pass and one expected Windows symlink skip;
+  seven alias tests include maintained positive/negative fixtures, deterministic
+  output, scope isolation, ambiguity, exclusions, path escape and resource limits.
+- Spec alignment: PASS; no UCG/City contract change, untrusted execution or
+  dependency installation. Supported subset and TypeScript reference documented
+  in CURRENT_BASELINE. Full TS compiler resolution and Java nested imports remain
+  open. Connectivity counts are not an estimate of overall analyzer accuracy.
+- Delivery: one fix(analyzer) work unit, human attribution, authorized main push.

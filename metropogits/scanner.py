@@ -18,6 +18,7 @@ from typing import Any
 
 from metropogits import __version__
 from metropogits.catalog import CATALOG_VERSION
+from metropogits.module_paths import ModulePaths, parse_module_paths
 from scripts.canonical_json import (
     CanonicalJsonError,
     canonical_json_bytes,
@@ -209,6 +210,7 @@ class ScanResult:
     diagnostics: tuple[dict[str, Any], ...]
     manifests: tuple[ScannedManifest, ...] = ()
     configurations: tuple[ScannedConfiguration, ...] = ()
+    module_paths: tuple[ModulePaths, ...] = ()
 
 
 def _is_sensitive_file(name: str) -> bool:
@@ -586,6 +588,7 @@ def scan_repository(
     files: list[ScannedFile] = []
     manifests: list[ScannedManifest] = []
     configurations: list[ScannedConfiguration] = []
+    module_paths: list[ModulePaths] = []
     diagnostics: list[dict[str, Any]] = []
     excluded: Counter[str] = Counter()
     entry_count = 0
@@ -646,6 +649,10 @@ def scan_repository(
                 )
                 continue
 
+            is_module_config = entry.name in {"tsconfig.json", "jsconfig.json"}
+            if is_module_config:
+                # Even an unreadable/linked/oversized config blocks outer aliases.
+                module_paths.append(ModulePaths(relative_path, supported=False))
             if entry.is_symlink() or _is_reparse_point(entry_stat):
                 diagnostics.append(
                     _diagnostic(
@@ -748,7 +755,7 @@ def scan_repository(
                 total_bytes += entry_stat.st_size
                 continue
 
-            if SPRING_PROPERTIES_NAME.fullmatch(entry.name):
+            if is_module_config or SPRING_PROPERTIES_NAME.fullmatch(entry.name):
                 if entry_stat.st_size > limits.max_file_bytes:
                     diagnostics.append(
                         _diagnostic(
@@ -773,13 +780,18 @@ def scan_repository(
                     content = _read_prefix_safely(
                         Path(entry.path), entry_stat, limits.max_file_bytes + 1
                     )
+                    if is_module_config:
+                        total_bytes += entry_stat.st_size
+                        module_paths[-1] = parse_module_paths(relative_path, content)
+                        continue
                     facts = _parse_spring_properties(content)
-                except (OSError, UnicodeError, ScannerError):
+                except (OSError, UnicodeError, ScannerError, ValueError, RecursionError):
                     diagnostics.append(
                         _diagnostic(
                             "CONFIG_PARSE_FAILED",
                             "WARNING",
-                            "Spring properties could not be parsed safely",
+                            "Module paths config unsupported or invalid (strict JSON, no extends)"
+                            if is_module_config else "Spring properties could not be parsed safely",
                             relative_path,
                         )
                     )
@@ -899,6 +911,7 @@ def scan_repository(
         tuple(diagnostics),
         tuple(manifests),
         tuple(configurations),
+        tuple(sorted(module_paths, key=lambda item: item.path)),
     )
 
 
