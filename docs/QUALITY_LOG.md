@@ -1366,3 +1366,63 @@
   road hierarchy remain the next highest-impact visual work.
 - Commits created / pushed (and branch): `45593a3` on local `main`; push is
   scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - balanced campuses and corner-fit districts (`c90c496`, `a1a9d6a`)
+
+- Implemented: overview aggregates now render as deterministic campuses of up
+  to 12 representative buildings instead of one undersized block, preserving
+  the full member count and observed archetype mix. Layout
+  `hierarchical-paged/1.10` replaces shelf rows with deterministic corner-fit
+  packing so smaller sibling districts fill usable gaps beside larger ones.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at exact revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`, the maintained
+  Spring preview fixture, and synthetic aggregate-coverage and corner-fit
+  regression fixtures.
+- Commands run: two complete matching cold CLI builds; one complete build using
+  the new City Scene as a previous-scene hint; Chrome SwiftShader WebGL, forced
+  2D fallback, and CPU SVG captures; `pip check`; Ruff; `compileall`;
+  JavaScript syntax checks; release-readiness validation; the full automated
+  suite; whitespace checks; and recursive SHA-256 comparisons across generated
+  non-image artifacts.
+- Artifacts inspected: `viewer-webgl.png`, `viewer-fallback.png`, `preview.png`,
+  and the complete static output under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-balanced-final`.
+- Visual findings: PASS for the balanced-overview objective. The Auth, User, VM,
+  Ops, and portal aggregates now read as campuses with 5, 6, 7, 12, and 11
+  representative buildings respectively, rather than isolated blocks on large
+  parcels. The service districts form a compact block arrangement instead of
+  the previous long shelf/L-shaped composition, while both WebGL and 2D expose
+  the same aggregate membership and counts.
+- Density findings: the GJ-Cloud root changes from 1,583 by 1,359 world units in
+  layout 1.9 to 967 by 1,367 in layout 1.10. Root footprint density rises from
+  2.216 to 3.606 percent. Backend area falls by 37.8 percent, Ops by 43.0
+  percent, Auth by 24.3 percent, User by 10.5 percent, VM by 16.0 percent, and
+  portal by 40.0 percent without removing canonical buildings or districts.
+- Spec alignment: PASS. Campuses remain viewer-only projections over canonical
+  file buildings and expose the files each part represents; they do not create
+  graph entities or inferred dependencies. Corner-fit packing preserves the
+  directory hierarchy, containment, deterministic ordering, and exact City
+  counts. ADR-004 records the 1.10 geometry migration boundary.
+- Tests / determinism / stability: 204 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. All 12 generated
+  non-image artifacts matched across cold builds, including SHA-256
+  `8382dbb2beb4fa888ba0a5d5caffa113c9671e2b2e94a446f457e10e8a8c65cf`
+  for `graph.ucg.json`,
+  `8f9161dd3ffd6c99f99d40572aa62d3678ef9f185b3203c92c01201bb3fe2893`
+  for `city.json`, and
+  `6dcf92d43b065e661b013c429dbf4a20b0c6a6c4205e681df96ca5058429a68e`
+  for `preview.svg`. A 1.10 hinted rebuild produced the same City hash.
+- Fixes applied and reverified: aggregate sizing was expanded from a narrow
+  center marker to a centered district-scale campus after inspection showed
+  that the first multi-building version remained visually undersized. The
+  shared part generator is now used by both renderers, and regressions require
+  exact member allocation, containment, archetype retention, and compact
+  sibling placement.
+- Open risks / next actions: evidence routes still resemble circuit traces in
+  the complete view, portal's 466 files remain semantically generic, and strict
+  hierarchy still reserves some open space around nested parcels. Road
+  hierarchy and evidence-backed JavaScript/TypeScript archetypes are the next
+  highest-impact visual work; the README showcase should remain a separate
+  renderer over the same City Scene rather than fabricated geometry.
+- Commits created / pushed (and branch): `c90c496` and `a1a9d6a` on local
+  `main`; push is scheduled after this checkpoint log commit.
