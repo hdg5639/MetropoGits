@@ -1833,3 +1833,67 @@
   schema approval. A dedicated README showcase composition is still pending.
 - Commits created / pushed (and branch): `86bafe7` and `5476e42` on local
   `main`; push is scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-18 - centered overview massing and GamjaOJ cross-check (`08948d9`, `329b40b`)
+
+- Implemented: overview blocks now render a bounded square-root population of
+  representative masses, balance plot selection around both block axes, and
+  center incomplete rows. Nested major-district territory is subtracted from
+  residual parent blocks so two aggregate layers cannot paint the same land.
+- Fixture(s) / revision(s): external `visual_test_proj/GJ-Cloud` at revision
+  `3d9b53f9dac9af1187ac9754cb3066b27e43b766` and the newly added external
+  `visual_test_proj/GamjaOJ` at revision
+  `b163acd2b5fe41edfc1e7fc7d367362851241896`; a synthetic nested-major-district
+  regression scene; and all maintained contract and viewer fixtures.
+- Commands run: complete builds for GJ-Cloud and two complete post-fix GamjaOJ
+  builds; Node geometry, membership, and distribution audits; Edge SwiftShader
+  WebGL and CPU SVG captures; `python -m pip check`; Ruff; `compileall`;
+  JavaScript syntax checks; release-readiness validation; whitespace checks;
+  and the complete automated suite.
+- Artifacts inspected: GJ-Cloud WebGL and SVG output under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-centered-overview-1`;
+  GamjaOJ `viewer-webgl.png`, `preview-browser.png`, and complete static output
+  under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gamja-oj-overlap-fixed-1`.
+- Visual findings: PASS for the reported upper-left overview concentration.
+  GJ-Cloud increases from 128 to 235 representative masses across the same 37
+  traceable blocks; their mean normalized center changes from X 32.4%, Z 47.9%
+  to X 49.7%, Z 50.2%. The inspected overview fills formerly empty block land
+  while preserving readable service campuses and distinct semantic colors.
+- Cross-repository findings: GamjaOJ produces 681 buildings, 117 districts,
+  and 31 evidence networks from 322 Java, 160 JavaScript, 106 Python, 79 SQL,
+  13 shell, and one C++ file. Its overview contains 30 blocks, 148
+  representative masses, and 198 polygon plots. All 681 canonical files occur
+  exactly once; mean normalized mass center is X 49.8%, Z 50.3%. Backend source,
+  frontend app, frontend tests, repository tests, and scripts remain visually
+  distinct instead of inheriting the GJ-Cloud service arrangement.
+- Traceability and evidence findings: GamjaOJ analysis completes with 1,251
+  entities, 5,130 relations, and 4,605 evidence records. Diagnostics disclose
+  seven unresolved Java relations, ten unavailable Java types, and thirteen
+  unresolved JavaScript imports without fabricating targets. No target code,
+  package manager, or build script was executed.
+- Spec alignment: PASS under DEC-008, ADR-012, FR-002, and the renderer-only
+  LOD boundary. The change modifies only visual aggregate projection; UCG,
+  City Scene, canonical file positions, stable IDs, evidence, and network edge
+  membership remain unchanged. Aggregate structures remain explicitly visual
+  and traceable to their complete member lists.
+- Tests / determinism / stability: 218 tests passed with one expected Windows
+  symlink skip. Ruff, compilation, JavaScript parsing, dependency consistency,
+  release readiness, and whitespace checks passed. The two GamjaOJ builds are
+  byte-identical across every generated artifact. Canonical SHA-256 values are
+  UCG `596ea09876c85509966337e74fabe8b01205146a8abb8028d94d14bac2dc7518`,
+  City `623591c0bf8c5f35ada1aeae9b21bed0fa510aa01f68a620cde9e9a206d6559c`,
+  and SVG `e269643073771c9630862580909cccb1ab822cfe271f18d249436b8b0a96fee3`.
+- Fixes applied and reverified: the first GamjaOJ audit found three physical
+  overlaps between residual `frontend` block floors and nested `frontend/app`
+  floors. Subtracting nested major territory reduces GamjaOJ overlap from three
+  to zero; GJ-Cloud remains at zero. A synthetic hierarchy now locks this case
+  independently of either external fixture.
+- Open risks / next actions: two unrelated major districts whose final path
+  segment is `tests` currently receive the same short visible label; selection
+  and inspector identity are correct, but path-aware duplicate-label
+  disambiguation would improve overview legibility. README SVG still uses the
+  detailed renderer rather than a dedicated showcase composition, and file
+  size/line metrics still require explicit schema approval.
+- Commits created / pushed (and branch): `08948d9` and `329b40b` on local
+  `main`; push is scheduled after this checkpoint log commit.
