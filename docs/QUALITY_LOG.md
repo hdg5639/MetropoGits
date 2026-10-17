@@ -222,3 +222,57 @@
   hosted-runner, and license risks remain open.
 - Commits created / pushed (and branch): `aea2d34` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — catalog evidence intersection (`b404ff6`)
+
+- Implemented: conversion of manifest dependency edges into catalog facts for
+  the closest enclosing module; Java annotation facts supplied to the catalog;
+  deterministic merging of identical claims so code and manifest provenance
+  remain on one role or technology claim.
+- Fixture(s) / revision(s):
+  `tests/fixtures/repositories/spring-manifest-usage` at synthetic revision
+  `fixture-1`, containing a root Maven declaration and one exact Spring
+  `@Service` usage. A temporary sibling-directory fixture verifies that a
+  manifest outside the source hierarchy is not borrowed.
+- Commands run: two identical `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-manifest-usage --repo-id
+  fixture/spring-manifest-usage --revision fixture-1 --source-url
+  https://github.com/example/spring-manifest-usage/tree/fixture-1 --out
+  <artifact-dir>` builds; graph claim/evidence inspection; UCG and City
+  validation; Chrome headless viewer and SVG captures; lint, compilation,
+  168-test full suite, dependency consistency, readiness validation, and
+  JavaScript syntax checks.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `catalog-viewer.png`, and `catalog-preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-catalog-5d38f2531e1349cfa91a8057fa137216`.
+  The service has one `SERVICE` role and one `SPRING_FRAMEWORK` technology
+  claim; each references exact `ANNOTATION`, `IMPORT`, and `MANIFEST` evidence.
+- Visual findings: both render targets show the verified service color and
+  height without clipping or invented network roads. As in the other one-file
+  fixtures, the district remains much larger than its content; the sparse
+  layout correction remains warranted.
+- Spec alignment: DEVIATION. The implementation now enforces the specified
+  manifest-plus-code catalog intersection for the Spring service rule and
+  preserves closer-module scope, stable evidence, and declaration-only
+  fallback. Most catalog rules still lack package coordinates, configuration
+  facts are absent, and declared-only status is not exposed in the viewer, so
+  FR-009 remains blocked.
+- Tests / determinism / stability: 168 tests passed with one unavailable
+  symlink skip. Repeated builds produced SHA-256
+  `6021f00cf6d1155924f8908e14c1a1320f4dfd406d674b664905c998e1f27642`
+  for `graph.ucg.json`,
+  `51c40ce6954ffa9f88b55e85ee17f73c8ed9296f5adcb01e4a1a4346d8b5b2cf`
+  for `city.json`, and
+  `b3e71c539d108bb91eecaa8a4af23db85cec067cfe60defb47ec08a12795ece8`
+  for `preview.svg`. All contract and auxiliary gates passed.
+- Fixes applied and reverified: identical hard-coded and catalog Spring claims
+  now merge evidence IDs instead of producing duplicate semantic claims. The
+  closest-manifest scope and sibling exclusion have dedicated passing tests.
+- Open risks / next actions: add exact package coordinates to eligible catalog
+  rules with updated positive/negative fixtures, keeping declared-only Redis
+  from becoming an active cache facility. Then implement bounded configuration
+  facts and expose dependency evidence in the inspector. The sparse layout,
+  dense SVG labels, road endpoints, 2D-versus-3D decision, hosted runner, and
+  project license remain open.
+- Commits created / pushed (and branch): `b404ff6` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
