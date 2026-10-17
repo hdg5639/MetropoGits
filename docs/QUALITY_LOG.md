@@ -1309,3 +1309,60 @@
   should remain separate evidence-backed work units.
 - Commits created / pushed (and branch): `1434e9b` on local `main`; push is
   scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - cold-page urban density (`45593a3`)
+
+- Implemented: layout `hierarchical-paged/1.9` removes unused internal rows
+  and columns from each occupied cold-layout building page while preserving
+  hashed row/column order, building size, occupied-cell spacing, directory
+  hierarchy, and page capacity. Current 1.9 scenes remain eligible as layout
+  hints; 1.8 and earlier geometry is deliberately repacked once.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at exact revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`, the maintained
+  Spring preview fixture, and the synthetic layout density, containment,
+  capacity, and small-change fixtures.
+- Commands run: two complete matching cold CLI builds; one complete build using
+  the new City Scene as a previous-scene hint; Chrome SwiftShader WebGL, forced
+  2D fallback, large CPU SVG, and small golden SVG captures; graph/scene metric
+  audits; `pip check`; Ruff; `compileall`; JavaScript syntax checks;
+  release-readiness validation; the full automated suite; whitespace checks;
+  and recursive SHA-256 comparisons across generated artifacts.
+- Artifacts inspected: `viewer-webgl.png`, `viewer-fallback.png`, `preview.png`,
+  and the complete static output under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-density-final`, plus
+  the small Spring preview under
+  `D:\Code\MetroPoGits\artifacts\verification\layout-1.9-spring`.
+- Visual findings: PASS for the density objective. The GJ-Cloud root changes
+  from 1,474 by 2,512 to 1,583 by 1,359 world units, reducing canonical area
+  by 41.90 percent and producing a balanced overview. File-building footprint
+  density rises from 1.287 to 2.216 percent. WebGL and 2D retain the seven
+  traceable aggregate facilities, and the complete SVG fits the service blocks
+  into a materially smaller canvas region without clipping or overlap.
+- Spec alignment: PASS. The graph is byte-identical, and the scene still has
+  exactly 1,324 file buildings, 506 directory districts, and 135 evidenced
+  networks. Compaction changes geometry only; it does not remove hierarchy,
+  invent semantics, or alter network edge membership. The City 0.1 schema now
+  explicitly permits the audited 1.9 layout identifier.
+- Tests / determinism / stability: 203 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. All 12 generated
+  non-image artifacts matched across cold builds, including SHA-256
+  `8382dbb2beb4fa888ba0a5d5caffa113c9671e2b2e94a446f457e10e8a8c65cf`
+  for `graph.ucg.json`,
+  `a868a17370d1fe26dbea2d486fd5d8a95d862ed2cc141d57a42611b96228854b`
+  for `city.json`, and
+  `93f578fb5486ff3575afc3f37d8c94442fa145611e22c4f26613c0a89fb2f845`
+  for `preview.svg`. Rebuilding with the 1.9 scene hint produced the same City
+  hash and a `LAYOUT_HINT_APPLIED` diagnostic.
+- Fixes applied and reverified: the first full suite correctly rejected the old
+  Spring preview golden hash after the intentional geometry migration. The new
+  SVG was rendered and visually inspected before updating its hash; the full
+  suite then passed. A dedicated regression now requires internal occupied rows
+  and columns to be contiguous and raises the modular-fixture density floor.
+- Open risks / next actions: migration from 1.8 changes 1,307 building anchors
+  and geometry for 496 districts once; this is why older hints are rejected
+  explicitly. Subsequent 1.9 hinted builds are stable. Nested directory parcels
+  still reserve visible open areas, dependency routes remain circuit-like, and
+  all 466 portal files remain generic. Evidence-backed JS/TS archetypes and
+  road hierarchy remain the next highest-impact visual work.
+- Commits created / pushed (and branch): `45593a3` on local `main`; push is
+  scheduled after this checkpoint log commit.
