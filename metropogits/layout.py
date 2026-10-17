@@ -20,14 +20,13 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.9"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.10"
 HINT_LAYOUT_ALGORITHMS = frozenset({LAYOUT_ALGORITHM})
 DISTRICT_DEPTH = 64
 DISTRICT_PADDING = 4
 MIN_DISTRICT_SIZE = 14
 EMPTY_DISTRICT_SIZE = 8
 DISTRICT_EDGE_PADDING = 2
-CHILD_PACKING_WIDTH_BIAS = 1.16
 BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
 BUILDING_OFFSET = 3
@@ -423,50 +422,57 @@ def _measure_districts(
         offsets[child_id] = (offset_x, offset_z)
         occupied.append(rectangle)
 
-    child_z = max(
-        direct_depth + DISTRICT_PADDING,
-        max(
-            (
-                z + child_depth + DISTRICT_PADDING
-                for _, z, _, child_depth in occupied
-            ),
-            default=0,
+    unplaced = sorted(
+        (child_id for child_id in children if child_id not in offsets),
+        key=lambda child_id: (
+            -(dimensions[child_id][0] * dimensions[child_id][1]),
+            -max(dimensions[child_id][0], dimensions[child_id][1]),
+            _hash_integer(child_id),
+            child_id,
         ),
     )
-    unplaced = [child_id for child_id in children if child_id not in offsets]
-    packed_width = max(
-        (
-            max(dimensions[child_id][0] for child_id in unplaced)
-            if unplaced
-            else MIN_DISTRICT_SIZE
-        ),
-        math.sqrt(
-            sum(
-                (dimensions[child_id][0] + DISTRICT_PADDING)
-                * (dimensions[child_id][1] + DISTRICT_PADDING)
-                for child_id in unplaced
-            )
-        )
-        * CHILD_PACKING_WIDTH_BIAS,
-    )
-    child_x = DISTRICT_PADDING
-    row_depth = 0.0
-    for child_id in children:
-        if child_id in offsets:
-            continue
+    for child_id in unplaced:
         child_width, child_depth, _ = dimensions[child_id]
-        if (
-            child_x > DISTRICT_PADDING
-            and child_x + child_width > DISTRICT_PADDING + packed_width
-        ):
-            child_x = DISTRICT_PADDING
-            child_z += row_depth + DISTRICT_PADDING
-            row_depth = 0
-        offset = (child_x, child_z)
+        candidate_xs = {DISTRICT_PADDING}
+        candidate_zs = {direct_depth + DISTRICT_PADDING}
+        for occupied_x, occupied_z, occupied_width, occupied_depth in occupied:
+            candidate_xs.add(occupied_x + occupied_width + DISTRICT_PADDING)
+            candidate_zs.add(occupied_z + occupied_depth + DISTRICT_PADDING)
+        candidates: list[tuple[tuple[float, ...], tuple[float, float]]] = []
+        for candidate_z in sorted(candidate_zs):
+            for candidate_x in sorted(candidate_xs):
+                rectangle = (
+                    candidate_x,
+                    candidate_z,
+                    child_width,
+                    child_depth,
+                )
+                if any(
+                    _local_rectangles_overlap(rectangle, item)
+                    for item in occupied
+                ):
+                    continue
+                content_width = max(
+                    direct_width,
+                    candidate_x + child_width + DISTRICT_PADDING,
+                    *(x + item_width + DISTRICT_PADDING for x, _, item_width, _ in occupied),
+                )
+                content_depth = max(
+                    direct_depth,
+                    candidate_z + child_depth + DISTRICT_PADDING,
+                    *(z + item_depth + DISTRICT_PADDING for _, z, _, item_depth in occupied),
+                )
+                score = (
+                    max(content_width, content_depth),
+                    content_width * content_depth,
+                    abs(content_width - content_depth),
+                    candidate_z,
+                    candidate_x,
+                )
+                candidates.append((score, (candidate_x, candidate_z)))
+        _, offset = min(candidates)
         offsets[child_id] = offset
         occupied.append((offset[0], offset[1], child_width, child_depth))
-        child_x += child_width + DISTRICT_PADDING
-        row_depth = max(row_depth, child_depth)
 
     for child_id, (offset_x, offset_z) in offsets.items():
         child_width, child_depth, _ = dimensions[child_id]

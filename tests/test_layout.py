@@ -246,6 +246,7 @@ class LayoutTests(unittest.TestCase):
             "hierarchical-paged/1.6",
             "hierarchical-paged/1.7",
             "hierarchical-paged/1.8",
+            "hierarchical-paged/1.9",
         ):
             with self.subTest(version=version):
                 previous = {**cold, "layoutAlgorithm": version}
@@ -276,7 +277,7 @@ class LayoutTests(unittest.TestCase):
     def test_previous_geometry_is_repacked_for_dense_cold_layout(self):
         ucg = load_json(FIXTURES / "ucg" / "valid" / "spring-minimal.json")
         cold = generate_city(ucg)
-        previous = {**cold, "layoutAlgorithm": "hierarchical-paged/1.8"}
+        previous = {**cold, "layoutAlgorithm": "hierarchical-paged/1.9"}
         diagnostics: list[dict] = []
 
         hinted = generate_city(ucg, previous_scene=previous, diagnostics=diagnostics)
@@ -452,7 +453,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.9", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.10", scene["layoutAlgorithm"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
         siblings: dict[str, list[dict]] = {}
@@ -623,6 +624,39 @@ class LayoutTests(unittest.TestCase):
             / min(root["width"], root["depth"]),
             1.5,
         )
+        self.assertEqual([], validate_document(scene, ucg))
+
+    def test_corner_fit_places_small_siblings_in_large_sibling_gap(self):
+        paths = [f"large/File{index:03}.py" for index in range(129)]
+        paths += [f"medium/File{index:03}.py" for index in range(64)]
+        paths += ["small-a/App.py", "small-b/App.py"]
+        scan = ScanResult(
+            files=tuple(
+                ScannedFile(path=path, language="python", size_bytes=4)
+                for path in paths
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/corner-fit")
+
+        scene = generate_city(ucg)
+        root = next(
+            item for item in scene["districts"] if item["parentId"] is None
+        )
+        children = {
+            item["id"].rsplit(":directory:", 1)[-1]: item
+            for item in scene["districts"]
+            if item["parentId"] == root["id"]
+        }
+        medium = children["medium"]
+
+        self.assertLessEqual(root["width"], 132)
+        self.assertLessEqual(root["depth"], 147)
+        for name in ("small-a", "small-b"):
+            self.assertGreaterEqual(children[name]["x"], medium["x"])
+            self.assertGreaterEqual(
+                children[name]["z"], medium["z"] + medium["depth"]
+            )
         self.assertEqual([], validate_document(scene, ucg))
 
     def test_large_directories_expand_in_bounded_non_overlapping_pages(self):
