@@ -15,7 +15,7 @@ clearly aligned; it is not silently treated as compliant.
 | DEC-006 — Reproducible fixed inputs | Satisfied | Canonical JSON, stable ID, deterministic layout, preview, CLI, history, and metropolis tests. |
 | DEC-007 — Directory-first geography | Satisfied | [`ADR-004`](adr/ADR-004.md) drives nested, bounded, non-overlapping district geometry; previous-scene hints preserve unaffected anchors, and fixture gates measure cold and hinted churn. |
 | DEC-008 — File as base building | Satisfied | Scene contract and layout tests map file entities to buildings and directories to districts. |
-| DEC-009 — Two render targets, including interactive 3D | Accepted; implementation pending | [`ADR-005`](adr/ADR-005.md) retains deterministic SVG and the current isometric renderer as preview/fallback paths and requires a genuine interactive 3D viewer for stable v1. |
+| DEC-009 — Two render targets, including interactive 3D | Satisfied | [`ADR-002`](adr/ADR-002.md) and [`ADR-005`](adr/ADR-005.md) drive a genuine WebGL viewer plus deterministic SVG and automatic isometric fallback. Viewer contracts and the hosted Chrome smoke verify both boundaries. |
 | DEC-010 — Isolated analyzers behind UCG | Satisfied | Java and JS/TS adapters enrich the same versioned UCG without owning scene geometry. |
 | DEC-011 — Aggregated roads preserve edges | Satisfied | `LayoutTests.test_edges_between_districts_are_aggregated_without_losing_ids`. |
 | DEC-012 — Federation is post-MVP | Satisfied with recorded sequencing deviation | Federation remains isolated in the optional `metropolis` command. It was implemented before P0 closed, but P0 requirements are now fully automated and no additional federation expansion occurred during remediation. |
@@ -29,6 +29,6 @@ it no longer represents an unresolved product-state decision.
 
 DEC-009 is resolved by [`ADR-005`](adr/ADR-005.md): stable v1 keeps the existing
 deterministic preview/fallback and requires a genuine interactive 3D viewer.
-`release/readiness.json` keeps `DECISION_COMPLIANCE` in `BLOCKED` state until
-that 3D path, its evidence inspector, and its non-WebGL fallback are implemented
-and verified.
+That viewer, its evidence inspector, automatic non-WebGL fallback, and hosted
+Chrome initialization are now implemented and verified, so DEC-009 no longer
+blocks `DECISION_COMPLIANCE`.

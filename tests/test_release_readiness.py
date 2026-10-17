@@ -90,12 +90,30 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertEqual(
             [
                 "ACCEPTANCE_EVIDENCE",
-                "DECISION_COMPLIANCE",
                 "FRESH_REPOSITORY_PUBLISHING",
             ],
             [item["id"] for item in blocked],
         )
         self.assertTrue(all(item["blocker"] for item in blocked))
+
+    def test_decision_compliance_includes_verified_3d_and_fallback(self):
+        document = readiness_document()
+        decision = next(
+            item
+            for item in document["releaseChecks"]
+            if item["id"] == "DECISION_COMPLIANCE"
+        )
+
+        self.assertEqual("AUTOMATED", decision["status"])
+        self.assertIsNone(decision["blocker"])
+        self.assertIn("docs/adr/ADR-002.md", decision["evidence"])
+        self.assertIn("docs/adr/ADR-005.md", decision["evidence"])
+        self.assertTrue(
+            any("test_hosted_smoke_job" in item for item in decision["evidence"])
+        )
+        self.assertTrue(
+            any("test_webgl_renderer" in item for item in decision["evidence"])
+        )
 
     def test_l2_project_detection_is_fully_automated(self):
         document = readiness_document()

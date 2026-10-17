@@ -162,14 +162,18 @@
       "summary": "Versioned schemas, canonicalization, stable IDs, and baseline fixtures are tested."
     },
     {
-      "blocker": "ADR-005 requires the genuine interactive 3D viewer, evidence inspection, and non-WebGL fallback to be implemented and verified before stable v1.",
+      "blocker": null,
       "evidence": [
         "docs/DECISION_AUDIT.md",
-        "docs/adr/ADR-005.md"
+        "docs/QUALITY_LOG.md",
+        "docs/adr/ADR-002.md",
+        "docs/adr/ADR-005.md",
+        "tests/test_ci.py::ContinuousIntegrationTests::test_hosted_smoke_job_runs_the_composite_action",
+        "tests/test_viewer.py::ViewerTests::test_webgl_renderer_has_explicit_2d_fallback_boundary"
       ],
       "id": "DECISION_COMPLIANCE",
-      "status": "BLOCKED",
-      "summary": "DEC-001 through DEC-013 are audited; the accepted DEC-009 implementation remains incomplete."
+      "status": "AUTOMATED",
+      "summary": "DEC-001 through DEC-013 are audited, including genuine WebGL 3D and deterministic non-WebGL rendering paths."
     },
     {
       "blocker": "The clean GitHub-hosted Action succeeds, but ADR-007 defers Pages activation and public repository conversion until explicit maintainer approval.",

@@ -19,6 +19,9 @@ deployment. The machine-readable source of truth remains
   regression tests.
 - The composite GitHub Action succeeds on a clean GitHub-hosted runner with
   read-only repository permission.
+- The primary viewer renders genuine perspective WebGL geometry with orbit,
+  zoom, selection, evidence inspection, and filters. WebGL failure starts the
+  isometric 2D fallback from the same static artifact.
 - The final repository audit passed 182 tests with one environment-specific
   symlink skip, repeated deterministic builds, and visual inspection of both
   render targets. Exact evidence is recorded in
@@ -26,16 +29,13 @@ deployment. The machine-readable source of truth remains
 
 ## Conditions for public v1 promotion
 
-The following promotion conditions remain intentionally unresolved:
+The following promotion condition remains intentionally unresolved:
 
-1. **DEC-009 renderer implementation:** [`ADR-005`](adr/ADR-005.md) requires a
-   genuine interactive 3D viewer for stable v1. The current isometric renderer
-   remains the deterministic preview and non-WebGL fallback.
-2. **Deferred Pages publication:** [`ADR-007`](adr/ADR-007.md) selects Pages for
+1. **Deferred Pages publication:** [`ADR-007`](adr/ADR-007.md) selects Pages for
    the eventual public demo but explicitly prohibits enabling it or changing
    repository visibility until the maintainer approves publication. After that
    approval, verify the viewer at its repository-subpath URL.
 
-Until both conditions are resolved, the project stays a v1 candidate,
+Until that condition is resolved, the project stays a v1 candidate,
 `release/readiness.json` stays `BLOCKED`, and no `v1.0.0` tag or package-version
 promotion should be created.
