@@ -919,3 +919,47 @@
   Public repository and Pages activation remain deferred by ADR-007.
 - Commits created / pushed (and branch): `8e26d08` on local `main`; push is
   scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 — semantic building forms (`cc07c73`)
+
+- Implemented: the WebGL renderer now composes distinct bounded meshes for
+  gate, service office, structured warehouse, document depot, cache tower,
+  exchange, port, and control-center archetypes. Generic buildings use four
+  stable entity-ID variants. The CPU SVG adds matching roof signatures.
+- Fixture(s) / revision(s): the complete MetropoGits repository at revision
+  `cc07c73`, analyzed twice as `hdg5639/MetropoGits`; the Spring role fixture
+  exercises service and persistence forms in both renderers.
+- Commands run: two real CLI builds; Edge SwiftShader WebGL and CPU SVG
+  captures; `pip check`; Ruff; `compileall`; JavaScript syntax checks;
+  release-readiness validation; the full automated suite; and whitespace
+  checks.
+- Artifacts inspected: `viewer-webgl.png`, `preview.png`, and the complete
+  static artifact set under
+  `D:\Code\MetroPoGits\.visual-recovery-archetype-checkpoint`.
+- Visual findings: PASS. The actual repository capture shows stepped offices,
+  low ribbed warehouses, stacked depots and caches, bridged exchanges, gates,
+  ports, command spires, and varied generic masses instead of one repeated
+  cuboid. All forms remain legible inside their original six-unit parcels; the
+  README preview exposes high-contrast roof marks at thumbnail scale.
+- Spec alignment: PASS. Forms are selected only from the existing
+  evidence-backed `archetype` field. Generic variation is explicitly visual,
+  deterministic, and tied to an existing entity ID; it adds neither entities
+  nor semantic claims.
+- Tests / determinism / stability: 191 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. A Node geometry test
+  proves all eight semantic forms are distinct, positive, and bounded by their
+  scene building. Repeated builds produced identical SHA-256
+  `e064fb0044999eec8a446c5754de16f45688ffd89c5e97d875d8b3017e27d8b8`
+  for `graph.ucg.json`,
+  `ab2b46a0a3ff77c6e88a1d1c60e2c1a8820572b926b94da736b10fc2c461acf4`
+  for `city.json`, and
+  `d6880852962a690ab71b0bf68fbd760174d7a081d5bbee1dac175967abc60f81`
+  for `preview.svg`.
+- Fixes applied and reverified: the preview golden digest was updated to the
+  inspected deterministic roof-signature output before the complete gate.
+- Open risks / next actions: the three evidence networks still read as thin
+  graph strokes. Add layered roads, junctions, and category identity without
+  changing their exact edge membership, then refine camera and selection focus.
+  Publication remains deferred by ADR-007.
+- Commits created / pushed (and branch): `cc07c73` on local `main`; push is
+  scheduled after this checkpoint log commit.
