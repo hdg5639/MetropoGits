@@ -134,6 +134,14 @@ def _roof_signature(
                 f'        <circle cx="{_fmt(x + width * 0.5)}" cy="{_fmt(y + depth * 0.5)}" r="{_fmt(min(width, depth) * 0.09)}" stroke="{stroke}"/>',
             ]
         )
+    elif archetype == "LIBRARY":
+        lines.extend(
+            [
+                f'        <rect x="{_fmt(x + width * 0.08)}" y="{_fmt(y + depth * 0.16)}" width="{_fmt(width * 0.3)}" height="{_fmt(depth * 0.68)}" stroke="{stroke}"/>',
+                f'        <rect x="{_fmt(x + width * 0.62)}" y="{_fmt(y + depth * 0.16)}" width="{_fmt(width * 0.3)}" height="{_fmt(depth * 0.68)}" stroke="{stroke}"/>',
+                f'        <path d="M {_fmt(x + width * 0.38)} {_fmt(y + depth * 0.5)} H {_fmt(x + width * 0.62)}" stroke="{stroke}"/>',
+            ]
+        )
     else:
         variant = sum(ord(character) for character in entity_id) % 4
         if variant % 2:

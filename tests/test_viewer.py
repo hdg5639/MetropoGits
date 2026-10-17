@@ -162,7 +162,7 @@ require(process.argv[1]);
 const forms = globalThis.METROPOGITS_BUILDING_FORMS;
 const archetypes = [
   "GATE", "SERVICE_OFFICE", "STRUCTURED_WAREHOUSE", "DOCUMENT_DEPOT",
-  "CACHE_TOWER", "EXCHANGE", "PORT", "CONTROL_CENTER",
+  "CACHE_TOWER", "EXCHANGE", "PORT", "CONTROL_CENTER", "LIBRARY",
 ];
 const result = Object.fromEntries(archetypes.map((archetype) => {
   const building = { archetype, depth: 6, entityId: `demo:${archetype}`, height: 18, width: 6, x: 10, z: 20 };
@@ -189,7 +189,7 @@ process.stdout.write(JSON.stringify(result));
         forms = json.loads(completed.stdout)
 
         self.assertEqual(0, completed.returncode, completed.stderr)
-        self.assertEqual(8, len({json.dumps(parts, sort_keys=True) for parts in forms.values()}))
+        self.assertEqual(9, len({json.dumps(parts, sort_keys=True) for parts in forms.values()}))
         for parts in forms.values():
             self.assertGreaterEqual(len(parts), 3)
             for part in parts:

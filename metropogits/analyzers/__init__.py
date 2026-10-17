@@ -8,6 +8,7 @@ from typing import Any
 from metropogits.analyzers.java import enrich_java_graph
 from metropogits.analyzers.jsts import LANGUAGES as JSTS_LANGUAGES
 from metropogits.analyzers.jsts import enrich_jsts_graph
+from metropogits.analyzers.path_semantics import enrich_path_semantics
 from metropogits.scanner import ScanLimits, ScanResult
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
@@ -22,6 +23,7 @@ def enrich_graph(
 
     document = enrich_java_graph(root, scan, graph, limits)
     document = enrich_jsts_graph(root, scan, document, limits)
+    document = enrich_path_semantics(document)
     skipped_paths = {
         item["sourcePath"]
         for item in document["diagnostics"]

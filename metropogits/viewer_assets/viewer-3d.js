@@ -155,6 +155,12 @@
           part(width * 0.2, height * 0.26, depth * 0.2, width * 0.6, height * 0.5, depth * 0.6, 0.12),
           part(width * 0.44, height * 0.76, depth * 0.44, width * 0.12, height * 0.24, depth * 0.12, 0.36),
         ];
+      case "LIBRARY":
+        return [
+          part(0, 0, depth * 0.08, width * 0.38, height * 0.58, depth * 0.84),
+          part(width * 0.62, 0, depth * 0.08, width * 0.38, height * 0.58, depth * 0.84, 0.08),
+          part(width * 0.32, height * 0.58, depth * 0.3, width * 0.36, height * 0.2, depth * 0.4, 0.28),
+        ];
       default: {
         const variant = stableVariant(building.entityId, 4);
         if (variant === 1) {
@@ -488,6 +494,7 @@
     EXCHANGE: "#2dd4bf",
     GATE: "#f472b6",
     GENERIC_BUILDING: "#94a3b8",
+    LIBRARY: "#facc15",
     PORT: "#38bdf8",
     SERVICE_OFFICE: "#60a5fa",
     STRUCTURED_WAREHOUSE: "#34d399",

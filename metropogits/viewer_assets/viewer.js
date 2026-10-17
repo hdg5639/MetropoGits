@@ -149,6 +149,7 @@
     EXCHANGE: ["#2dd4bf", "#0f766e", "#134e4a"],
     GATE: ["#f472b6", "#be185d", "#831843"],
     GENERIC_BUILDING: ["#94a3b8", "#475569", "#334155"],
+    LIBRARY: ["#facc15", "#a16207", "#713f12"],
     PORT: ["#38bdf8", "#0369a1", "#0c4a6e"],
     SERVICE_OFFICE: ["#60a5fa", "#1d4ed8", "#1e3a8a"],
     STRUCTURED_WAREHOUSE: ["#34d399", "#047857", "#064e3b"],
