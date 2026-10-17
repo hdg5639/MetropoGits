@@ -20,10 +20,10 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.6"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.7"
 HINT_LAYOUT_ALGORITHMS = frozenset({LAYOUT_ALGORITHM})
 DISTRICT_DEPTH = 64
-DISTRICT_PADDING = 8
+DISTRICT_PADDING = 4
 MIN_DISTRICT_SIZE = 14
 EMPTY_DISTRICT_SIZE = 8
 DISTRICT_EDGE_PADDING = 2

@@ -243,6 +243,7 @@ class LayoutTests(unittest.TestCase):
             "hierarchical-paged/1.3",
             "hierarchical-paged/1.4",
             "hierarchical-paged/1.5",
+            "hierarchical-paged/1.6",
         ):
             with self.subTest(version=version):
                 previous = {**cold, "layoutAlgorithm": version}
@@ -371,7 +372,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.6", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.7", scene["layoutAlgorithm"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
         siblings: dict[str, list[dict]] = {}
@@ -569,6 +570,38 @@ class LayoutTests(unittest.TestCase):
 
         self.assertEqual((14, 14), (district["width"], district["depth"]))
         self.assertEqual((3, 3), (building["x"], building["z"]))
+        self.assertEqual([], validate_document(scene, ucg))
+
+    def test_large_modular_hierarchy_limits_recursive_padding(self):
+        scan = ScanResult(
+            files=tuple(
+                ScannedFile(
+                    path=(
+                        f"module-{module}/src/main/java/app/"
+                        f"domain-{domain}/File{index}.java"
+                    ),
+                    language="java",
+                    size_bytes=4,
+                )
+                for module in range(4)
+                for domain in range(8)
+                for index in range(8)
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/large-modular")
+
+        scene = generate_city(ucg)
+        root = next(
+            item for item in scene["districts"] if item["parentId"] is None
+        )
+        building_area = sum(
+            item["width"] * item["depth"] for item in scene["buildings"]
+        )
+        root_area = root["width"] * root["depth"]
+
+        self.assertLessEqual(root_area, 160_000)
+        self.assertGreaterEqual(building_area / root_area, 0.055)
         self.assertEqual([], validate_document(scene, ucg))
 
     def test_sparse_directory_forest_uses_dense_city_blocks(self):
