@@ -117,6 +117,7 @@ class GovernanceTests(unittest.TestCase):
             "hierarchical-paged/1.1",
             "hierarchical-paged/1.2",
             "hierarchical-paged/1.3",
+            "hierarchical-paged/1.4",
             "empty directory with exactly one child shares that child's footprint",
             "4 by 4 footprint to 6 by 6",
             "small width bias",

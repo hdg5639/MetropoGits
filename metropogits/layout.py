@@ -20,10 +20,11 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.3"
-DISTRICT_WIDTH = 64
+LAYOUT_ALGORITHM = "hierarchical-paged/1.4"
 DISTRICT_DEPTH = 64
 DISTRICT_PADDING = 16
+MIN_DISTRICT_SIZE = 24
+DISTRICT_EDGE_PADDING = 3
 CHILD_PACKING_WIDTH_BIAS = 1.16
 BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
@@ -282,8 +283,28 @@ def _ordered_children(
     )
 
 
-def _building_page_count(file_count: int) -> int:
-    return (file_count + BUILDING_PAGE_CAPACITY - 1) // BUILDING_PAGE_CAPACITY
+def _compact_cold_slots(slots: dict[str, int]) -> dict[str, int]:
+    """Remove unused leading rows and columns without changing relative cells."""
+
+    page_origins: dict[int, tuple[int, int]] = {}
+    for slot in slots.values():
+        page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
+        row, column = divmod(page_slot, BUILDING_COLUMNS)
+        previous = page_origins.get(page, (row, column))
+        page_origins[page] = (min(previous[0], row), min(previous[1], column))
+
+    compacted: dict[str, int] = {}
+    for entity_id, slot in slots.items():
+        page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
+        row, column = divmod(page_slot, BUILDING_COLUMNS)
+        origin_row, origin_column = page_origins[page]
+        compacted[entity_id] = (
+            page * BUILDING_PAGE_CAPACITY
+            + (row - origin_row) * BUILDING_COLUMNS
+            + column
+            - origin_column
+        )
+    return compacted
 
 
 def _local_rectangles_overlap(
@@ -305,7 +326,7 @@ def _measure_districts(
     children_by_parent: dict[str, list[str]],
     files_by_district: dict[str, list[dict[str, Any]]],
     district_hints: dict[str, dict[str, Any]],
-    locked_slots: dict[str, dict[str, int]],
+    allocated_slots: dict[str, dict[str, int]],
     dimensions: dict[str, tuple[float, float, int]],
     child_offsets: dict[str, dict[str, tuple[float, float]]],
 ) -> tuple[float, float, int]:
@@ -316,30 +337,49 @@ def _measure_districts(
             children_by_parent,
             files_by_district,
             district_hints,
-            locked_slots,
+            allocated_slots,
             dimensions,
             child_offsets,
         )
-    highest_locked_slot = max(locked_slots.get(district_id, {}).values(), default=-1)
-    direct_pages = max(
-        _building_page_count(len(files_by_district.get(district_id, []))),
-        highest_locked_slot // BUILDING_PAGE_CAPACITY + 1,
-    )
-    if direct_pages == 0 and not children:
-        direct_pages = 1
-    direct_depth = DISTRICT_DEPTH * direct_pages
+    local_slots = allocated_slots.get(district_id, {})
+    direct_width = 0
+    direct_depth = 0
+    for slot in local_slots.values():
+        page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)
+        row, column = divmod(page_slot, BUILDING_COLUMNS)
+        direct_width = max(
+            direct_width,
+            BUILDING_OFFSET
+            + column * BUILDING_SPACING
+            + BUILDING_SIZE
+            + DISTRICT_EDGE_PADDING,
+        )
+        direct_depth = max(
+            direct_depth,
+            page * DISTRICT_DEPTH
+            + BUILDING_OFFSET
+            + row * BUILDING_SPACING
+            + BUILDING_SIZE
+            + DISTRICT_EDGE_PADDING,
+        )
+    if local_slots:
+        direct_width = max(MIN_DISTRICT_SIZE, direct_width)
+        direct_depth = max(MIN_DISTRICT_SIZE, direct_depth)
+    elif not children:
+        direct_width = MIN_DISTRICT_SIZE
+        direct_depth = MIN_DISTRICT_SIZE
 
     # Empty directory chains carry hierarchy but need no dedicated city block.
     # Sharing the child's footprint keeps the full parent graph without turning
     # paths such as src/main/java/com/example into a diagonal runway.
-    if direct_pages == 0 and len(children) == 1:
+    if not local_slots and len(children) == 1:
         child_id = children[0]
         child_offsets[district_id] = {child_id: (0, 0)}
         dimensions[district_id] = dimensions[child_id]
         return dimensions[district_id]
 
     hint = district_hints.get(district_id)
-    width = max(DISTRICT_WIDTH, hint["width"] if hint is not None else 0)
+    width = max(direct_width, hint["width"] if hint is not None else 0)
     depth = direct_depth
     if hint is not None:
         depth = max(depth, hint["depth"])
@@ -385,7 +425,7 @@ def _measure_districts(
         (
             max(dimensions[child_id][0] for child_id in unplaced)
             if unplaced
-            else DISTRICT_WIDTH
+            else MIN_DISTRICT_SIZE
         ),
         math.sqrt(
             sum(
@@ -529,6 +569,15 @@ def generate_city(
     locked_slots = _hinted_local_slots(
         files_by_district, district_hints, building_hints
     )
+    allocated_slots: dict[str, dict[str, int]] = {}
+    for district_id, entities in files_by_district.items():
+        slots = _allocate_local_slots(
+            [entity["id"] for entity in entities],
+            locked_slots.get(district_id),
+        )
+        allocated_slots[district_id] = (
+            slots if locked_slots.get(district_id) else _compact_cold_slots(slots)
+        )
 
     children_by_parent: dict[str, list[str]] = defaultdict(list)
     for entity in directory_entities:
@@ -541,7 +590,7 @@ def generate_city(
         children_by_parent,
         files_by_district,
         district_hints,
-        locked_slots,
+        allocated_slots,
         dimensions,
         child_offsets,
     )
@@ -564,10 +613,7 @@ def generate_city(
     for district_id in sorted(files_by_district):
         district = districts_by_id[district_id]
         entities = files_by_district[district_id]
-        local_slots = _allocate_local_slots(
-            [entity["id"] for entity in entities],
-            locked_slots.get(district_id),
-        )
+        local_slots = allocated_slots[district_id]
         for entity in sorted(entities, key=lambda item: item["id"]):
             slot = local_slots[entity["id"]]
             page, page_slot = divmod(slot, BUILDING_PAGE_CAPACITY)

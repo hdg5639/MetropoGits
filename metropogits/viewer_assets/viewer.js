@@ -14,6 +14,7 @@
   const activityToggle = document.getElementById("synthetic-activity");
   const activityNote = document.getElementById("synthetic-activity-note");
   const activityEngine = globalThis.METROPOGITS_ACTIVITY;
+  const MAX_INITIAL_SCALE = 11;
   const filterControls = new Map(
     [...document.querySelectorAll("[data-filter]")].map((control) => [
       control.dataset.filter,
@@ -234,6 +235,7 @@
     return Math.max(
       0.45,
       Math.min(
+        MAX_INITIAL_SCALE,
         Math.max(1, viewportWidth - 100) / spanX,
         Math.max(1, viewportHeight - 120) / (spanY + tallestBuilding * 0.72),
       ),

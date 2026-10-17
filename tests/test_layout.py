@@ -240,6 +240,7 @@ class LayoutTests(unittest.TestCase):
             "hierarchical-paged/1.0",
             "hierarchical-paged/1.1",
             "hierarchical-paged/1.2",
+            "hierarchical-paged/1.3",
         ):
             with self.subTest(version=version):
                 previous = {**cold, "layoutAlgorithm": version}
@@ -337,7 +338,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.3", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.4", scene["layoutAlgorithm"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
         siblings: dict[str, list[dict]] = {}
@@ -414,7 +415,10 @@ class LayoutTests(unittest.TestCase):
             for item in scene["districts"]
         }
 
-        self.assertEqual({(0, 0, 64, 64)}, footprints)
+        self.assertEqual(1, len(footprints))
+        width, depth = next((width, depth) for _, _, width, depth in footprints)
+        self.assertLessEqual(width, 64)
+        self.assertLessEqual(depth, 64)
         self.assertEqual([], validate_document(scene, ucg))
 
     def test_sibling_districts_are_packed_into_a_bounded_grid(self):
@@ -494,8 +498,8 @@ class LayoutTests(unittest.TestCase):
                     if item["id"] == "example/large:directory:src"
                 )
                 expected_pages = (file_count + 63) // 64
-                self.assertEqual(64, district["width"])
-                self.assertEqual(expected_pages * 64, district["depth"])
+                self.assertLessEqual(district["width"], 64)
+                self.assertLessEqual(district["depth"], expected_pages * 64)
                 positions = {
                     (building["x"], building["z"])
                     for building in scene["buildings"]
@@ -512,6 +516,27 @@ class LayoutTests(unittest.TestCase):
                         building["z"] + building["depth"],
                         district["z"] + district["depth"],
                     )
+
+    def test_sparse_district_uses_a_compact_cold_footprint(self):
+        scan = ScanResult(
+            files=(
+                ScannedFile(path="src/Only.py", language="python", size_bytes=4),
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/sparse")
+
+        scene = generate_city(ucg)
+        district = next(
+            item
+            for item in scene["districts"]
+            if item["id"] == "example/sparse:directory:src"
+        )
+        building = scene["buildings"][0]
+
+        self.assertEqual((24, 24), (district["width"], district["depth"]))
+        self.assertEqual((6, 6), (building["x"], building["z"]))
+        self.assertEqual([], validate_document(scene, ucg))
 
 
 if __name__ == "__main__":
