@@ -133,6 +133,7 @@ class JavaUnit:
     package: str
     imports: tuple[JavaImport, ...]
     types: tuple[JavaType, ...]
+    masked_source: str
 
 
 def _mask_non_code(source: str) -> str:
@@ -321,7 +322,7 @@ def _parse_unit(path: str, file_id: str, source: str) -> JavaUnit:
             )
         )
 
-    return JavaUnit(path, file_id, package, imports, tuple(types))
+    return JavaUnit(path, file_id, package, imports, tuple(types), masked)
 
 
 def _read_source(root: Path, scanned: ScannedFile, limit: int) -> str:
@@ -470,6 +471,84 @@ def _resolve_local_type(
     return None
 
 
+def _local_type_references(
+    unit: JavaUnit, qualified_files: dict[str, list[str]]
+) -> tuple[tuple[str, str, int], ...]:
+    """Return uniquely bound local type uses outside imports and type headers."""
+
+    searchable = list(unit.masked_source)
+    spans = []
+    package_match = PACKAGE_PATTERN.search(unit.masked_source)
+    if package_match is not None:
+        spans.append(package_match.span())
+    spans.extend(match.span() for match in IMPORT_PATTERN.finditer(unit.masked_source))
+    spans.extend(match.span() for match in TYPE_PATTERN.finditer(unit.masked_source))
+    for start, end in spans:
+        for index in range(start, end):
+            if searchable[index] not in "\r\n":
+                searchable[index] = " "
+    body = "".join(searchable)
+
+    exact_imports = {
+        item.name.rsplit(".", 1)[-1]: item.name
+        for item in unit.imports
+        if not item.is_static and not item.name.endswith(".*")
+    }
+    wildcard_packages = {
+        item.name[:-2]
+        for item in unit.imports
+        if not item.is_static and item.name.endswith(".*")
+    }
+    simple_names = {name.rsplit(".", 1)[-1] for name in qualified_files}
+    simple_bindings: dict[str, str] = {}
+    for simple_name in simple_names:
+        exact = exact_imports.get(simple_name)
+        if exact in qualified_files and len(qualified_files[exact]) == 1:
+            simple_bindings[simple_name] = exact
+            continue
+        same_package = [
+            name
+            for name in qualified_files
+            if name.rpartition(".")[0] == unit.package
+            and name.rsplit(".", 1)[-1] == simple_name
+            and len(qualified_files[name]) == 1
+        ]
+        if len(same_package) == 1:
+            simple_bindings[simple_name] = same_package[0]
+            continue
+        wildcard = [
+            name
+            for name in qualified_files
+            if name.rpartition(".")[0] in wildcard_packages
+            and name.rsplit(".", 1)[-1] == simple_name
+            and len(qualified_files[name]) == 1
+        ]
+        if len(wildcard) == 1:
+            simple_bindings[simple_name] = wildcard[0]
+    references: list[tuple[str, str, int]] = []
+    for qualified_name in sorted(qualified_files):
+        targets = qualified_files[qualified_name]
+        if len(targets) != 1 or targets[0] == unit.file_id:
+            continue
+        simple_name = qualified_name.rsplit(".", 1)[-1]
+        bound_by_simple_name = simple_bindings.get(simple_name) == qualified_name
+        patterns = [re.compile(rf"\b{re.escape(qualified_name)}\b")]
+        if bound_by_simple_name:
+            patterns.append(re.compile(rf"\b{re.escape(simple_name)}\b"))
+        matches = [match for pattern in patterns for match in pattern.finditer(body)]
+        if not matches:
+            continue
+        first = min(matches, key=lambda match: match.start())
+        references.append(
+            (
+                qualified_name,
+                targets[0],
+                body.count("\n", 0, first.start()) + 1,
+            )
+        )
+    return tuple(references)
+
+
 def _configuration_catalog_facts(
     scan: ScanResult, source_path: str
 ) -> tuple[CatalogFact, ...]:
@@ -561,7 +640,7 @@ def enrich_java_graph(
             (
                 f"Java static analysis processed {len(units)} file(s); "
                 f"{non_java_count} non-Java file(s) were not processed by this adapter; "
-                "capabilities=imports,declarations,inheritance,frameworkRules"
+                "capabilities=imports,declarations,inheritance,references,frameworkRules"
             ),
         )
     )
@@ -662,6 +741,33 @@ def enrich_java_graph(
                     "to": external_id,
                     "type": "IMPORTS",
                 }
+
+        for qualified_name, target_id, line in _local_type_references(
+            unit, qualified_files
+        ):
+            reference_evidence = _evidence(
+                unit.path,
+                line,
+                line,
+                "AST",
+                "Resolved local Java type reference",
+                "java.type-reference",
+            )
+            evidence_id = remember_evidence(reference_evidence)
+            edge_id = make_edge_id(
+                unit.file_id,
+                "REFERENCES",
+                target_id,
+                qualified_name,
+            )
+            new_edges[edge_id] = {
+                "confidence": "RESOLVED",
+                "evidenceIds": [evidence_id],
+                "from": unit.file_id,
+                "id": edge_id,
+                "to": target_id,
+                "type": "REFERENCES",
+            }
 
         role_candidates: list[tuple[int, str, str, str | None, str]] = []
         for declared_type in unit.types:

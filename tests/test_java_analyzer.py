@@ -250,15 +250,97 @@ class JavaAnalyzerTests(unittest.TestCase):
         self.assertEqual(2, len(local_imports))
         self.assertTrue(all(edge["confidence"] == "RESOLVED" for edge in local_imports))
         self.assertTrue(all(edge["evidenceIds"] for edge in local_imports))
+        local_relationships = [
+            edge
+            for edge in graph["edges"]
+            if edge["type"] in {"IMPORTS", "REFERENCES"}
+            and ":file:" in edge["from"]
+            and ":file:" in edge["to"]
+        ]
         scene = generate_city(graph)
         self.assertEqual(2, len(scene["networks"]))
         self.assertEqual(
-            sorted(edge["id"] for edge in local_imports),
+            sorted(edge["id"] for edge in local_relationships),
             sorted(
                 edge_id
                 for network in scene["networks"]
                 for edge_id in network["edgeIds"]
             ),
+        )
+
+    def test_same_package_field_type_creates_resolved_reference(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "Target.java").write_text(
+                "package demo;\npublic class Target {}\n", encoding="utf-8"
+            )
+            (root / "Consumer.java").write_text(
+                "package demo;\n"
+                "public class Consumer {\n"
+                "  private final Target target;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            graph = analyze(root)
+
+        files = {item["path"]: item["id"] for item in graph["entities"] if item["kind"] == "FILE"}
+        references = [edge for edge in graph["edges"] if edge["type"] == "REFERENCES"]
+        self.assertEqual(1, len(references))
+        self.assertEqual(files["Consumer.java"], references[0]["from"])
+        self.assertEqual(files["Target.java"], references[0]["to"])
+        evidence = {item["evidenceId"]: item for item in graph["evidence"]}
+        reference_evidence = evidence[references[0]["evidenceIds"][0]]
+        self.assertEqual("AST", reference_evidence["kind"])
+        self.assertEqual(3, reference_evidence["startLine"])
+        self.assertEqual("RESOLVED", references[0]["confidence"])
+        self.assertEqual([], validate_document(graph))
+
+    def test_comments_strings_and_unused_imports_do_not_create_references(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "Target.java").write_text(
+                "package demo;\npublic class Target {}\n", encoding="utf-8"
+            )
+            (root / "Consumer.java").write_text(
+                "package other;\n"
+                "import demo.Target;\n"
+                "public class Consumer {\n"
+                "  // Target appears only in a comment\n"
+                '  private final String label = "Target";\n'
+                "}\n",
+                encoding="utf-8",
+            )
+
+            graph = analyze(root)
+
+        self.assertEqual(
+            [], [edge for edge in graph["edges"] if edge["type"] == "REFERENCES"]
+        )
+
+    def test_ambiguous_wildcard_type_is_not_resolved(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "first").mkdir()
+            (root / "second").mkdir()
+            (root / "first" / "Target.java").write_text(
+                "package first;\npublic class Target {}\n", encoding="utf-8"
+            )
+            (root / "second" / "Target.java").write_text(
+                "package second;\npublic class Target {}\n", encoding="utf-8"
+            )
+            (root / "Consumer.java").write_text(
+                "package demo;\n"
+                "import first.*;\n"
+                "import second.*;\n"
+                "public class Consumer { Target target; }\n",
+                encoding="utf-8",
+            )
+
+            graph = analyze(root)
+
+        self.assertEqual(
+            [], [edge for edge in graph["edges"] if edge["type"] == "REFERENCES"]
         )
 
     def test_declarations_create_stable_symbol_entities(self):
