@@ -10,7 +10,6 @@ from metropogits.building_forms import building_parts
 from metropogits.preview import (
     ARCHETYPE_COLORS,
     MAJOR_DISTRICT_COLORS,
-    NETWORK_COLORS,
     MAX_DIMENSION,
     MIN_HEIGHT,
     MIN_WIDTH,
@@ -22,6 +21,7 @@ from metropogits.preview import (
 )
 from metropogits.projection import aggregate_parts, derive_blocks, district_owners
 from metropogits.streets import derive_street_grid
+from metropogits.access_routes import derive_access_routes, svg_access_lines
 from metropogits.territory import derive_district_territories
 from scripts.canonical_json import canonical_json_bytes
 from scripts.validate_city import validate_document
@@ -82,7 +82,7 @@ def _selected_networks(scene, graph):
     return sorted(sorted(scene["networks"], key=rank)[:24], key=lambda n: n["id"])
 
 
-def render_showcase(scene, graph, width=1200, height=675):
+def render_showcase(scene, graph, width=1200, height=675, routing=None):
     """Render a traceable SVG; never execute source or mutate graph/scene."""
     errors = validate_document(scene, graph)
     if errors:
@@ -133,7 +133,7 @@ def render_showcase(scene, graph, width=1200, height=675):
     for district_id in visible_districts:
         mapping[district_id] = dict(kind="district", districtId=district_id)
     mapping["visual:streets"] = dict(kind="structural-streets", semantic=False,
-                                     basis="network.path", networkIds=sorted(n["id"] for n in networks))
+                                     basis="visual-access/0.1", networkIds=sorted(n["id"] for n in networks))
 
     surfaces = [
         (r, district_id)
@@ -227,12 +227,6 @@ def render_showcase(scene, graph, width=1200, height=675):
             colors.get(district_id, "#172236"),
             f'data-map-id="{_escape(district_id)}"',
         )
-    for rect in derive_street_grid({**scene, "networks": networks})["surfaces"]:
-        polygon(
-            [project(x, z) for x, z in _corners(rect)],
-            rect["color"],
-            'data-map-id="visual:streets"',
-        )
     for plot, owner in plots:
         polygon(
             [project(x, z, 0.05) for x, z in _corners(plot)],
@@ -240,15 +234,8 @@ def render_showcase(scene, graph, width=1200, height=675):
             f'data-map-id="{_escape(owner)}"',
             0.8,
         )
-    for network in networks:
-        points = points_text([project(*p, 0.1) for p in network["path"]])
-        stroke_width = 0.7 + min(1.4, math.log2(len(network["edgeIds"]) + 1) * 0.15)
-        lines.append(
-            f'<polyline data-map-id="{_escape(network["id"])}" points="{points}" '
-            f'fill="none" stroke="{NETWORK_COLORS.get(network["kind"], "#a8b5c8")}" '
-            f'stroke-width="{_fmt(stroke_width)}" opacity="0.65"><title>'
-            f"{_escape(network['kind'])} · {len(network['edgeIds'])} evidenced edges</title></polyline>"
-        )
+    routing = routing if routing is not None else derive_access_routes(scene, graph)
+    lines.extend(svg_access_lines(routing, project, overview=bool(blocks), network_ids={n["id"] for n in networks}))
     faces = []
     for part, archetype, owner in cuboids:
         rotated = [_rotate(x, z, turn) for x, z in _corners(part)]

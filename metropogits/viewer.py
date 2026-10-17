@@ -7,6 +7,7 @@ from typing import Any
 
 from metropogits.territory import derive_district_territories
 from metropogits.streets import derive_street_grid
+from metropogits.access_routes import derive_access_routes
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
@@ -34,11 +35,12 @@ def _javascript_assignment(name: str, document: Any) -> bytes:
     return f"globalThis.{name}={safe_payload};\n".encode("utf-8")
 
 
-def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any]) -> bytes:
+def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> bytes:
     return _javascript_assignment(
         "METROPOGITS_DATA",
         {
             "scene": scene,
+            "routing": routing if routing is not None else derive_access_routes(scene, ucg),
             "streets": derive_street_grid(scene),
             "territories": derive_district_territories(scene),
             "ucg": ucg,
@@ -46,7 +48,7 @@ def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any]) -> bytes:
     )
 
 
-def render_viewer(scene: dict[str, Any], ucg: dict[str, Any]) -> dict[str, bytes]:
+def render_viewer(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> dict[str, bytes]:
     """Return deterministic, file://-compatible viewer artifacts."""
 
     errors = validate_city_document(scene, ucg)
@@ -65,7 +67,7 @@ def render_viewer(scene: dict[str, Any], ucg: dict[str, Any]) -> dict[str, bytes
         ).read_bytes(),
         "assets/viewer-3d.js": resources.joinpath("viewer-3d.js").read_bytes(),
         "assets/viewer.js": resources.joinpath("viewer.js").read_bytes(),
-        "assets/viewer-data.js": _javascript_data(scene, ucg),
+        "assets/viewer-data.js": _javascript_data(scene, ucg, routing),
     }
     return dict(sorted(result.items()))
 
@@ -99,6 +101,7 @@ def render_history_viewer(
             {
                 "revision": frame["revision"],
                 "scene": scene,
+                "routing": derive_access_routes(scene, ucg),
                 "streets": derive_street_grid(scene),
                 "territories": derive_district_territories(scene),
                 "ucg": ucg,

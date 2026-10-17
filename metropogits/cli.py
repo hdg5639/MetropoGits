@@ -18,6 +18,7 @@ from metropogits.layout import LayoutError, generate_city
 from metropogits.metropolis import MetropolisMember, build_metropolis
 from metropogits.preview import PreviewError, render_preview
 from metropogits.showcase import render_showcase
+from metropogits.access_routes import derive_access_routes
 from metropogits.scanner import (
     ScanLimits,
     ScannerError,
@@ -196,9 +197,13 @@ def build_repository(
     )
     layout_diagnostics: list[dict[str, Any]] = []
     scene = generate_city(graph, theme, previous_scene, layout_diagnostics)
-    preview = render_preview(scene, graph, width, height)
-    showcase = render_showcase(scene, graph, width, height)
-    viewer_artifacts = render_viewer(scene, graph)
+    routing = derive_access_routes(scene, graph)
+    if routing["status"] != "COMPLETE":
+        layout_diagnostics.append(dict(code="VISUAL_ACCESS_PARTIAL", severity="WARNING",
+                                       message=f'{len(routing["unresolvedEdgeIds"])} evidenced edges have no safe access route'))
+    preview = render_preview(scene, graph, width, height, routing=routing)
+    showcase = render_showcase(scene, graph, width, height, routing=routing)
+    viewer_artifacts = render_viewer(scene, graph, routing=routing)
 
     graph_bytes = canonical_json_bytes(graph)
     scene_bytes = canonical_json_bytes(scene)

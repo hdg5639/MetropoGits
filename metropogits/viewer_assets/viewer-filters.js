@@ -971,7 +971,69 @@
     return !rectangle.networkIds || rectangle.networkIds.some(id => renderedNetworkIds.has(id));
   }
 
+  function createAccessPolicy(routing) {
+    if (!routing) return null;
+    const routes = new Map(routing.routes.map(route => [route.id, route]));
+    const segments = new Map(routing.segments.map(segment => [segment.id, segment]));
+    const trajectories = new Map(routing.routes.map(route => {
+      let distance = 0;
+      const steps = route.path.slice(1).map((end, i) => {
+        const start = route.path[i], length = Math.hypot(end[0]-start[0], end[1]-start[1]);
+        const step = {start, end, length, distance, segmentId: route.segmentIds[i]};
+        distance += length;
+        return step;
+      });
+      return [route.id, {steps, distance}];
+    }));
+    function frame(level, buildingIds, networkIds, selected, showAll = false, members = []) {
+      const selectedSegment = selected?.kind === 'network' ? segments.get(selected.id) : null;
+      const selectedRoutes = selectedSegment ? new Set(selectedSegment.routeIds) : null;
+      const memberIds = new Set(members);
+      const candidates = routing.routes.filter(route => buildingIds.has(route.source) && buildingIds.has(route.target)
+        && route.networkIds.some(id => networkIds.has(id)));
+      const related = candidates.filter(route => (selected?.kind !== 'building' || route.source === selected.id || route.target === selected.id)
+        && (selected?.kind !== 'aggregate' || memberIds.has(route.source) || memberIds.has(route.target))
+        && (selected?.kind !== 'network' || (selectedRoutes ? selectedRoutes.has(route.id) : route.networkIds.includes(selected.id))));
+      const eligible = showAll ? candidates : related;
+      const routeIds = new Set(eligible.map(route => route.id));
+      const focused = ['building', 'network', 'aggregate'].includes(selected?.kind);
+      const highlighted = new Set(focused ? related.map(route => route.id) : []);
+      const visibleSegments = routing.segments.map(segment => {
+        const active = segment.routeIds.filter(id => routeIds.has(id));
+        return {...segment, routeIds: active, highlighted: active.some(id => highlighted.has(id))};
+      }).filter(segment => segment.routeIds.length &&
+        (level !== 'overview' || focused || showAll || (!segment.access && segment.routeIds.length >= 4)));
+      const segmentIds = new Set(visibleSegments.map(segment => segment.id));
+      const representedRoutes = new Set(visibleSegments.flatMap(segment => segment.routeIds));
+      const animated = eligible.filter(route => representedRoutes.has(route.id));
+      const stride = Math.max(1, Math.ceil(animated.length / 96));
+      return {routes: eligible, routeIds, segments: visibleSegments, segmentIds, focused,
+        networkIds: new Set(eligible.flatMap(route => route.networkIds)),
+        animated: animated.filter((_, i) => i % stride === 0),
+        junctions: routing.junctions.filter(j => j.segmentIds.filter(id => segmentIds.has(id)).length >= 3)};
+    }
+    function network(id, activeRouteIds = null) {
+      const segment = segments.get(id);
+      if (!segment) return null;
+      const contributing = segment.routeIds.filter(key => !activeRouteIds || activeRouteIds.has(key));
+      return {id, kind: segment.kind, path: [segment.start, segment.end], routeIds: contributing,
+        edgeIds: [...new Set(contributing.flatMap(key => routes.get(key).edgeIds))].sort()};
+    }
+    function position(route, phase) {
+      const trajectory = trajectories.get(route.id);
+      const distance = Math.max(0, Math.min(1, phase)) * trajectory.distance;
+      const step = trajectory.steps.find(item => distance <= item.distance + item.length) || trajectory.steps.at(-1);
+      if (!step) return null;
+      const fraction = step.length ? (distance - step.distance) / step.length : 0;
+      return {segmentId: step.segmentId, point: [step.start[0] + (step.end[0]-step.start[0])*fraction,
+        step.start[1] + (step.end[1]-step.start[1])*fraction]};
+    }
+    return Object.freeze({frame, network, position, segments, routes, status: routing.status,
+      unresolved: routing.unresolvedEdgeIds.length});
+  }
+
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    createAccessPolicy,
     corridorVisible,
     aggregateParts,
     aggregateLabel,

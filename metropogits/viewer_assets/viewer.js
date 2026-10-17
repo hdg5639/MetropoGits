@@ -45,6 +45,11 @@
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
+  const accessPolicy = filterEngine.createAccessPolicy(data.routing);
+  let accessFrame = null;
+  function networkForId(id) {
+    return accessPolicy?.network(id, accessFrame?.routeIds) || scene.networks.find(network => network.id === id);
+  }
   function districtTerritory(district) {
     return districtTerritories.get(district.id) || {
       boundary: [
@@ -286,6 +291,11 @@
     renderedAggregateIds = new Set(visible.aggregateIds);
     renderedBuildingIds = new Set(visible.buildingIds);
     renderedNetworkIds = new Set(visible.networkIds);
+    if (accessPolicy) {
+      accessFrame = accessPolicy.frame(currentDetailLevel, visibleBuildingIds, visibleNetworkIds, state.selected,
+        showAllNetworks, aggregateFacilities.get(state.selected?.id)?.memberEntityIds || []);
+      renderedNetworkIds = accessFrame.networkIds;
+    }
     renderedDistrictIds = new Set(
       scene.districts
         .filter((district) => (
@@ -307,7 +317,10 @@
         ? `${renderedAggregateIds.size} aggregates (${representedFiles} files) + ${renderedBuildingIds.size} buildings`
         : `${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings`;
       const routeLabel = state.selected?.kind === "building" && !showAllNetworks ? "related routes" : "routes";
-      const status = `${label} · ${subject} · ${renderedNetworkIds.size}/${visibleNetworkIds.size} ${routeLabel}`;
+      const routingStatus = accessFrame
+        ? `${accessFrame.routes.length} relation paths / ${accessFrame.segments.length} shared segments${accessPolicy.unresolved ? ` · ${accessPolicy.unresolved} unrouted edges` : ""}`
+        : `${renderedNetworkIds.size}/${visibleNetworkIds.size} ${routeLabel}`;
+      const status = `${label} · ${subject} · ${routingStatus}${accessFrame?.focused ? " · Selected paths (x-ray)" : ""}`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
     }
   }
@@ -320,7 +333,7 @@
     if (state.selected.kind === "building") {
       return visibleBuildingIds.has(state.selected.id);
     }
-    return visibleNetworkIds.has(state.selected.id);
+    return visibleNetworkIds.has(state.selected.id) || Boolean(accessPolicy?.segments.has(state.selected.id));
   }
 
   function resetInspector(message = "Choose a building, visual block, district, or network to inspect the repository facts behind it.") {
@@ -652,6 +665,19 @@
   function drawSyntheticActivity(timestamp) {
     if (!state.syntheticActivity || !activityEngine) return;
     const elapsed = Math.max(0, timestamp - state.activityEpoch);
+    if (accessFrame) {
+      for (const route of accessFrame.animated) {
+        const phase = (elapsed / 6000 + activityEngine.phaseForId(route.id)) % 1;
+        const sample = accessPolicy.position(route, phase);
+        if (!sample || !accessFrame.segmentIds.has(sample.segmentId)) continue;
+        const point = project(...sample.point, 0.6);
+        context.beginPath();
+        context.arc(point.x, point.y, 2, 0, Math.PI * 2);
+        context.fillStyle = "#f8fafc";
+        context.fill();
+      }
+      return;
+    }
     for (const network of scene.networks) {
       if (!renderedNetworkIds.has(network.id)) continue;
       const phase = (elapsed / 6000 + activityEngine.phaseForId(network.id)) % 1;
@@ -794,8 +820,20 @@
     if (currentDetailLevel === "detail") {
       for (const block of civicBlocks) drawCivicBlock(block);
     }
-    for (const rectangle of streetRectangles) drawStructuralStreet(rectangle);
-    for (const network of scene.networks) {
+    for (const rectangle of accessPolicy ? [] : streetRectangles) drawStructuralStreet(rectangle);
+    for (const segment of accessFrame?.segments || []) {
+      const points = [segment.start, segment.end].map(p => project(...p, 0.15));
+      const width = Math.min(segment.width, 0.7 + Math.log2(segment.routeIds.length+1)*0.5);
+      context.beginPath();
+      context.moveTo(points[0].x, points[0].y);
+      context.lineTo(points[1].x, points[1].y);
+      context.lineCap = "butt";
+      context.lineWidth = Math.max(0.5, width * baseScale() * state.zoom * 0.65);
+      context.strokeStyle = segment.highlighted ? "#67d7ff" : segment.kind === "DEPENDENCY_ROAD" ? "#35475c" : networkColors[segment.kind];
+      context.stroke();
+      hitRegions.push({kind: "network", id: segment.id, points});
+    }
+    for (const network of accessPolicy ? [] : scene.networks) {
       if (renderedNetworkIds.has(network.id)) drawNetwork(network);
     }
     const orderedBuildings = [...scene.buildings].sort(
@@ -806,6 +844,13 @@
     }
     for (const aggregateId of [...renderedAggregateIds].sort()) {
       drawAggregateFacility(aggregateFacilities.get(aggregateId));
+    }
+    for (const segment of accessFrame?.segments || []) {
+      if (!segment.highlighted) continue;
+      const a=project(...segment.start,0.22), b=project(...segment.end,0.22);
+      context.beginPath();
+      context.moveTo(a.x,a.y); context.lineTo(b.x,b.y);
+      context.lineWidth=1.5; context.strokeStyle="#67d7ff"; context.stroke();
     }
     drawDistrictLabels();
     drawSyntheticActivity(timestamp);
@@ -1084,13 +1129,17 @@
   }
 
   function showNetwork(networkId) {
-    const network = scene.networks.find((item) => item.id === networkId);
+    const network = networkForId(networkId);
     inspector.replaceChildren();
     inspector.append(element("p", "NETWORK", "eyebrow"));
     inspector.append(element("h2", network.kind));
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Graph edges", network.edgeIds.length);
     detailRow(details, "Route points", network.path.length);
+    if (network.routeIds) {
+      detailRow(details, "Shared relation paths", network.routeIds.length);
+      inspector.append(element("p", "Shared geometry does not create new relationships. Highlighted paths retain their own source and destination.", "muted"));
+    }
     inspector.append(details);
     factSection(
       inspector,
@@ -1131,7 +1180,7 @@
       return `${entity?.path || selection.id} · ${building.archetype}`;
     }
     if (selection.kind === "district") return districtLabel(districts.get(selection.id));
-    const network = scene.networks.find((item) => item.id === selection.id);
+    const network = networkForId(selection.id);
     return `${network.kind} · ${network.edgeIds.length} edge${network.edgeIds.length === 1 ? "" : "s"}`;
   }
 

@@ -66,6 +66,7 @@ h2 { font-size: 1.2rem; overflow-wrap: anywhere; }
 .toolbar {
   z-index: 2;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.45rem;
   padding: 0.55rem 1rem;
@@ -200,7 +201,8 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
   color: #cbd5e1;
   font-size: 0.7rem;
   padding-left: 0.65rem;
-  white-space: nowrap;
+  max-width: 34rem;
+  white-space: normal;
 }
 .scene-labels { inset: 0; overflow: hidden; pointer-events: none; position: absolute; }
 .scene-label {

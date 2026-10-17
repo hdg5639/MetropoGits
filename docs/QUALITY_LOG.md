@@ -2469,3 +2469,62 @@
   in CURRENT_BASELINE. Full TS compiler resolution and Java nested imports remain
   open. Connectivity counts are not an estimate of overall analyzer accuracy.
 - Delivery: one fix(analyzer) work unit, human attribution, authorized main push.
+
+## Checkpoint 2026-10-18 — Evidenced endpoints and shared access roads
+- Implemented: ADR-016 derived access graph, building-boundary entrances,
+  clearance-limited shared pavement and junctions. File-pair routes retain exact
+  edge IDs; segments reference their actual routes. Sharing geometry never
+  creates a new semantic relation. Communication styling work is deferred;
+  shared access is the priority immediately after the alias recovery above.
+- Fixtures: GJ-Cloud 3d9b53f, GamjaOJ b163acd, maintained spring-positive and
+  structural-showcase (unsupported/low-semantic structural fallback).
+- Commands: `python -m unittest discover -s tests -q`; Ruff; Node access_routes,
+  role_landmarks and viewer_audit tests; `git diff --check`; full CLI builds via
+  `python -m metropogits build --repo <fixture> --out <artifact>`. Large builds
+  use `--previous-scene ../artifacts/visual/relations-alias-r2/{gj,oj}/city.json`.
+  `node scripts/viewer_audit.mjs <local Chrome> ../artifacts/visual/shared-access-audit-r3
+  ../artifacts/visual/shared-access-r3/gj ../artifacts/visual/shared-access-r3/oj`;
+  local verify_access.mjs and compare_relations.mjs audit helpers.
+- Artifacts: `artifacts/visual/shared-access-r3/{gj,oj,spring,unknown}`;
+  controlled browser report/captures in `shared-access-audit-r3`.
+  Inspected actual GJ access-selected.png and preview.png, OJ district.png;
+  previous r2 GJ selection inspection exposed faint/occluded highlighting.
+- Coverage: GJ 6157 evidenced edges / 1273 connected files -> 4209 pair routes,
+  9466 segments (7303 shared), 4256 junctions. OJ 2243 edges / 400 files ->
+  1381 routes, 2462 segments (1853 shared), 1091 junctions. Both COMPLETE:
+  zero unresolved eligible edges and zero pavement/building intersections.
+  GJ 51 and OJ 281 files without eligible local edges are not artificially wired.
+- Stability: graph.ucg.json and city.json SHA256 unchanged against alias-r2 for
+  both projects; zero moved buildings. Public canonical network groups remain
+  compatible, while all renderers consume the derived endpoint routes. No new
+  HTTP/messaging facts, public schema change, or repository-code execution.
+- Visual findings: README now shows internal corridors as well as inter-block
+  connections. Dense ground-level access is still narrow/subpixel at city scale;
+  selected routes use an explicitly labeled ground-coordinate x-ray overlay.
+  It reveals complete paths through visual occlusion without inventing elevated
+  roads. District retains individual files and persistent role compounds.
+  Large-city framing, narrow-street legibility and muted road contrast remain
+  iterative quality work; this is not a claim of final urban appearance.
+- Browser checks: real constituent/file clicks, exact selected-route/segment
+  coverage, All routes context, facility focus/expand/collapse and synthetic
+  path membership pass. Synthetic samples at most 96 stored routes, never random
+  junction turns. Static geometry rebuilds during animation: zero at all LODs.
+  GJ first draw submission 718.7 ms; orbit CPU p95 Overview/District/Detail
+  12.8/20.7/21.0 ms, synthetic 1.5/1.1/1.3 ms. OJ first draw 180.2 ms; orbit
+  2.6/5.6/5.6 ms, synthetic 1.1/1.6/1.2 ms. Headless SwiftShader CPU submission
+  measurements, not GPU FPS; GJ camera interaction remains above 16.7 ms p95.
+- Tests: 257 Python tests run, 256 pass, one expected Windows symlink skip;
+  19 Node tests pass; Ruff and whitespace checks pass. Access tests cover
+  permutation determinism, exact provenance, bounded detours, collision-free
+  pavement, self-reference, filters, synthetic paths and resource-limit fallback.
+- Fixes reverified: coalesce only straight segments with identical provenance
+  and width (GJ 16047 -> 9466; OJ 4039 -> 2462); restore All routes context;
+  label/draw selected-path x-ray; wrap long toolbar counters. Fresh r3 pipeline
+  and asset-integrity-checked browser audit pass after these corrections.
+- Spec alignment: PASS, derived visual routing with bounded failure diagnostics.
+  Open risks: larger viewer payload (~37 MB GJ), camera CPU, narrow access lanes,
+  Java/other unresolved analysis coverage. Canvas implementation has regression
+  checks but was not visually inspected in a browser this checkpoint. Keep
+  communication-layer redesign deferred until this road behavior is reviewed.
+- Delivery: one feat(renderer) work unit on authorized main; commit/push and CI
+  status are verified separately at handoff, not inferred from local tests.

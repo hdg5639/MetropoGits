@@ -38,8 +38,8 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            # ADR-014 review: exact route-derived pavement, no vacant-land infill.
-            "cc6688eed5bb70ac228ad6396349d16dcfa25788ce833a0b286f98045201e102",
+            # ADR-016: shared endpoint routes replace mean-anchor road geometry.
+            "7912d5b1d4a4f38d8ddc37a0abd1667eb86f0ebdc3116533463e5b3d829e16ea",
             hashlib.sha256(first).hexdigest(),
         )
 

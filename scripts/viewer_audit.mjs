@@ -65,6 +65,26 @@ export function instrument(source) {
       hitMs: auditHitEnd - auditDrawEnd, labelsMs: ended - auditHitEnd,`);
   return replaceOnce(result, '  new ResizeObserver(resize).observe(canvas);', `
   globalThis.__METRO_AUDIT__ = {
+    accessTargets() {
+      if (!accessPolicy) return [];
+      return hitRegions.filter(region => region.kind === 'building')
+        .map(region => ({id: region.id, x:(region.minX+region.maxX)/2, y:(region.minY+region.maxY)/2,
+          routes: data.routing.routes.filter(route => route.source === region.id || route.target === region.id).map(route=>route.id)}))
+        .filter(point => point.routes.length && point.x>8 && point.y>8 && point.x<viewportWidth-8 && point.y<viewportHeight-8
+          && hitTest(point.x,point.y)?.id===point.id)
+        .sort((a,b)=>Math.abs(a.routes.length-6)-Math.abs(b.routes.length-6) || a.id.localeCompare(b.id));
+    },
+    accessState() {
+      if (!accessFrame) return null;
+      return {status:accessPolicy.status, unresolved:accessPolicy.unresolved, selected:state.selected,
+        routes:[...accessFrame.routeIds].sort(), segments:[...accessFrame.segmentIds].sort(),
+        expectedSegments:[...new Set(accessFrame.routes.flatMap(route=>route.segmentIds))].sort(),
+        highlightComplete:accessFrame.segments.every(segment=>segment.highlighted),
+        animationBound:accessFrame.animated.length,
+        animationOnOwnPath:accessFrame.animated.every(route=>[0,.1,.3,.6,.9,1].every(phase=>{
+          const point=accessPolicy.position(route,phase); return point && route.segmentIds.includes(point.segmentId);
+        }))};
+    },
     roleState(id) {
       const facility = aggregateFacilities.get(id);
       return {expanded: expandedAggregateIds.has(id), visible: renderedAggregateIds.has(id),
@@ -414,6 +434,23 @@ export async function runAudit(browser, output, inputs, samples = 20) {
           selectedMember, focusedRole, expanded, collapsed, allRoutes: allRoutes.counts.networks};
       } else {
         result.roleInteraction = {status: 'No visible role target at this framing'};
+      }
+      await configure(cdp, {zoom: 1.6});
+      const accessTargets = await cdp.evaluate('__METRO_AUDIT__.accessTargets()');
+      if (accessTargets.length) {
+        const target=accessTargets[0], frame=await snapshot(cdp);
+        const point={x:target.x+frame.canvasRect.x,y:target.y+frame.canvasRect.y};
+        await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',...point});
+        await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
+        await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
+        await nextDraw(cdp,frame.sequence);
+        const check=await cdp.evaluate('__METRO_AUDIT__.accessState()');
+        if (check.selected?.id!==target.id || JSON.stringify(check.routes)!==JSON.stringify([...target.routes].sort())
+          || JSON.stringify(check.segments)!==JSON.stringify(check.expectedSegments) || !check.highlightComplete
+          || !check.animationOnOwnPath || check.animationBound>96) throw new Error('Building access path selection or synthetic provenance failed');
+        const capture=await cdp.send('Page.captureScreenshot',{format:'png'});
+        await writeFile(join(directory,'access-selected.png'),Buffer.from(capture.data,'base64'));
+        result.accessInteraction=check;
       }
       await cdp.send('Page.navigate', {url: pathToFileURL(join(directory, 'preview.svg')).href});
       const previewDeadline = Date.now() + 10000;

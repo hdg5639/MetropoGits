@@ -56,6 +56,20 @@ or schema versions; aggregate route anchors are not per-file doorways.
 
 ## Functional scope and open work
 
+ADR-016 supersedes mean-anchor rendering with `visual-access/0.1` derived data.
+Canonical City/UCG and building coordinates remain unchanged; network groups
+remain compatibility/inspection records, not the displayed file endpoints.
+Viewer, detailed SVG and showcase derive geometry from the same access graph.
+Shared segment route IDs resolve to exact UCG edges, never implied cross-product
+relationships. Straight runs merge only with identical provenance and width.
+District/Detail retain every routed endpoint; Overview suppresses local spurs.
+Selection reveals complete incident routes, with a disclosed x-ray trace through
+visual occluders. All routes can restore context without highlighting unrelated
+branches. Synthetic is a bounded sample (at most 96) of stored complete routes,
+not a random walk or measured traffic. Partial routing is disclosed in viewer,
+SVG metadata and CLI manifest diagnostics. Java nested imports remain unresolved
+work; communication-renderer changes were deferred at maintainer direction.
+
 JS/TS configured-path resolution reads bounded `tsconfig.json`/`jsconfig.json`
 without executing plugins. Exact and single-wildcard `compilerOptions.paths`
 use the declared baseUrl (or config directory), longest-prefix matching and

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import argparse
 import html
-import math
 import sys
 from pathlib import Path
 from typing import Any
 
 from metropogits.territory import derive_district_territories
 from metropogits.streets import derive_street_grid
+from metropogits.access_routes import derive_access_routes, svg_access_lines
 from scripts.canonical_json import CanonicalJsonError, loads_strict_json
 from scripts.validate_city import validate_document as validate_city_document
 
@@ -384,6 +384,7 @@ def render_preview(
     ucg: dict[str, Any],
     width: int = 1200,
     height: int = 675,
+    routing: dict[str, Any] | None = None,
 ) -> bytes:
     errors = validate_city_document(scene, ucg)
     if errors:
@@ -567,19 +568,6 @@ def render_preview(
         )
     lines.append("  </g>")
 
-    street_lines = [
-        '  <g id="structural-streets" aria-label="Visual street infrastructure; not dependency evidence">'
-    ]
-    for rectangle in street_data["surfaces"]:
-        x, y = project(rectangle["x"], rectangle["z"])
-        street_lines.append(
-            f'    <rect x="{_fmt(x)}" y="{_fmt(y)}" '
-            f'width="{_fmt(float(rectangle["width"]) * scale)}" '
-            f'height="{_fmt(float(rectangle["depth"]) * scale)}" '
-            f'fill="{rectangle["color"]}"/>'
-        )
-    street_lines.append("  </g>")
-
     buildings_by_district: dict[str, list[dict[str, Any]]] = {}
     for building in scene["buildings"]:
         buildings_by_district.setdefault(building["districtId"], []).append(
@@ -615,43 +603,13 @@ def render_preview(
         )
     lines.append("  </g>")
 
-    lines.extend(street_lines)
+    routing = routing if routing is not None else derive_access_routes(scene, ucg)
+    lines.extend(svg_access_lines(routing, project))
+    # Keep canonical group identities discoverable; these are not legacy paths.
+    lines.append('<g id="structural-streets" aria-label="Visual street infrastructure; not dependency evidence"/>')
     lines.append("  <g id=\"networks\" fill=\"none\">")
     for network in scene["networks"]:
-        projected = [project(point[0], point[1]) for point in network["path"]]
-        points = " ".join(f"{_fmt(x)},{_fmt(y)}" for x, y in projected)
-        color = NETWORK_COLORS.get(network["kind"], NETWORK_COLORS["DEPENDENCY_ROAD"])
-        style = NETWORK_STYLES.get(
-            network["kind"], NETWORK_STYLES["DEPENDENCY_ROAD"]
-        )
-        weight_scale = 1 + min(0.8, math.log2(len(network["edgeIds"]) + 1) * 0.12)
-        edge_summary = ", ".join(network["edgeIds"])
-        surface_color = "#4b3a31" if network["kind"] == "HTTP_HIGHWAY" else "#354256"
-        dash = ' stroke-dasharray="6 4"' if network["kind"] == "MESSAGING_PATH" else ""
-        lines.extend(
-            [
-                (
-                    f"    <polyline data-network-id=\"{_escape(network['id'])}\" "
-                    f"points=\"{points}\" stroke=\"#080d16\" "
-                    f"stroke-width=\"{_fmt(style['shoulder'] * weight_scale)}\" "
-                    "stroke-linejoin=\"round\" stroke-linecap=\"round\" "
-                    "opacity=\"0.92\"/>"
-                ),
-                (
-                    f"    <polyline points=\"{points}\" stroke=\"{surface_color}\" "
-                    f"stroke-width=\"{_fmt(style['surface'] * weight_scale)}\" "
-                    "stroke-linejoin=\"round\" stroke-linecap=\"round\"/>"
-                ),
-                (
-                    f"    <polyline points=\"{points}\" stroke=\"{color}\" "
-                    f"stroke-width=\"{_fmt(style['marking'] * weight_scale)}\"{dash} "
-                    "stroke-linejoin=\"round\" "
-                    "stroke-linecap=\"round\"><title>"
-                    f"{_escape(network['kind'])}: {_escape(edge_summary)}"
-                    "</title></polyline>"
-                ),
-            ]
-        )
+        lines.append(f'<g data-network-id="{_escape(network["id"])}"><title>{_escape(", ".join(network["edgeIds"]))}</title></g>')
     lines.append("  </g>")
 
     lines.append("  <g id=\"buildings\">")
