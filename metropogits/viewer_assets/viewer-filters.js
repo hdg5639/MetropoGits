@@ -145,60 +145,192 @@
       groups.set(districtId, members);
     }
 
-    return [...groups.entries()].map(([districtId, members]) => {
-      members.sort((left, right) => left.entityId.localeCompare(right.entityId));
+    function center(building, axis) {
+      const origin = Number(building[axis]);
+      const size = Number(building[axis === "x" ? "width" : "depth"]);
+      return Number.isFinite(origin) && Number.isFinite(size)
+        ? origin + size / 2
+        : 0;
+    }
+
+    function spatialPartitions(members, count) {
+      if (count <= 1 || members.length <= 1) return [[...members]];
+      const spreads = ["x", "z"].map((axis) => {
+        const values = members.map((building) => center(building, axis));
+        return { axis, spread: Math.max(...values) - Math.min(...values) };
+      });
+      spreads.sort(
+        (left, right) => right.spread - left.spread || left.axis.localeCompare(right.axis),
+      );
+      const leftGroups = Math.floor(count / 2);
+      const rightGroups = count - leftGroups;
+      const ideal = Math.round(members.length * leftGroups / count);
+      let selected = null;
+      for (const { axis } of spreads) {
+        const otherAxis = axis === "x" ? "z" : "x";
+        const sizeKey = axis === "x" ? "width" : "depth";
+        const ordered = [...members].sort(
+          (left, right) =>
+            center(left, axis) - center(right, axis)
+            || center(left, otherAxis) - center(right, otherAxis)
+            || left.entityId.localeCompare(right.entityId),
+        );
+        const leftEnds = [];
+        let leftEnd = Number.NEGATIVE_INFINITY;
+        for (const building of ordered) {
+          leftEnd = Math.max(leftEnd, Number(building[axis]) + Number(building[sizeKey]));
+          leftEnds.push(leftEnd);
+        }
+        const rightStarts = Array(ordered.length);
+        let rightStart = Number.POSITIVE_INFINITY;
+        for (let index = ordered.length - 1; index >= 0; index -= 1) {
+          rightStart = Math.min(rightStart, Number(ordered[index][axis]));
+          rightStarts[index] = rightStart;
+        }
+        const candidates = [];
+        for (let split = leftGroups; split <= ordered.length - rightGroups; split += 1) {
+          if (leftEnds[split - 1] <= rightStarts[split]) candidates.push(split);
+        }
+        if (candidates.length) {
+          candidates.sort((left, right) => Math.abs(left - ideal) - Math.abs(right - ideal) || left - right);
+          selected = { ordered, split: candidates[0] };
+          break;
+        }
+      }
+      const ordered = selected?.ordered || [...members].sort(
+        (left, right) => left.entityId.localeCompare(right.entityId),
+      );
+      const split = selected?.split
+        || Math.max(leftGroups, Math.min(ordered.length - rightGroups, ideal));
+      return [
+        ...spatialPartitions(ordered.slice(0, split), leftGroups),
+        ...spatialPartitions(ordered.slice(split), rightGroups),
+      ];
+    }
+
+    function commonDistrictId(members, fallbackId) {
+      const ancestry = (districtId) => {
+        const result = [];
+        let current = districts.get(districtId);
+        while (current) {
+          result.unshift(current.id);
+          current = current.parentId === null ? null : districts.get(current.parentId);
+        }
+        return result;
+      };
+      const paths = members.map((building) => ancestry(building.districtId));
+      if (!paths.length || paths.some((path) => !path.length)) return fallbackId;
+      let common = paths[0][0];
+      for (let index = 0; index < Math.min(...paths.map((path) => path.length)); index += 1) {
+        if (paths.every((path) => path[index] === paths[0][index])) common = paths[0][index];
+        else break;
+      }
+      return common || fallbackId;
+    }
+
+    function occupiedBounds(members, districtId) {
+      const positioned = members.filter((building) =>
+        [building.x, building.z, building.width, building.depth].every(Number.isFinite),
+      );
+      if (positioned.length) {
+        const x = Math.min(...positioned.map((building) => building.x));
+        const z = Math.min(...positioned.map((building) => building.z));
+        return {
+          depth: Math.max(...positioned.map((building) => building.z + building.depth)) - z,
+          width: Math.max(...positioned.map((building) => building.x + building.width)) - x,
+          x,
+          z,
+        };
+      }
       const district = districts.get(districtId);
       const territory = territories.get(districtId);
-      const placement = territory?.landmarkPlot || (territory?.rectangles?.length
-        ? [...territory.rectangles].sort(
-          (left, right) =>
-            right.width * right.depth - left.width * left.depth
-            || left.z - right.z
-            || left.x - right.x,
-        )[0]
-        : district);
-      const margin = Math.min(2, placement.width * 0.05, placement.depth * 0.05);
-      const maxWidth = Math.max(2, placement.width - margin * 2);
-      const maxDepth = Math.max(2, placement.depth - margin * 2);
-      const populationFootprint = Math.max(
-        8,
-        Math.sqrt(members.length) * 2.8,
+      return territory?.landmarkPlot || territory?.rectangles?.[0] || district;
+    }
+
+    function clippedPlots(placement, majorDistrictId) {
+      const rectangles = territories.get(majorDistrictId)?.rectangles || [];
+      const maxX = placement.x + placement.width;
+      const maxZ = placement.z + placement.depth;
+      const plots = rectangles.map((rectangle) => {
+        const x = Math.max(placement.x, rectangle.x);
+        const z = Math.max(placement.z, rectangle.z);
+        return {
+          depth: Math.min(maxZ, rectangle.z + rectangle.depth) - z,
+          width: Math.min(maxX, rectangle.x + rectangle.width) - x,
+          x,
+          z,
+        };
+      }).filter((plot) => plot.width > 0 && plot.depth > 0);
+      return (plots.length ? plots : [placement]).sort(
+        (left, right) => left.z - right.z || left.x - right.x
+          || left.depth - right.depth || left.width - right.width,
       );
-      const width = Math.min(
-        maxWidth,
-        Math.max(populationFootprint, placement.width * 0.64),
+    }
+
+    const targetBlockCount = Math.min(
+      48,
+      Math.max(12, Math.round(Math.sqrt(scene.buildings.length))),
+    );
+    const targetPopulation = Math.max(1, scene.buildings.length / targetBlockCount);
+    const facilities = [];
+    for (const [majorDistrictId, majorMembers] of [...groups.entries()].sort()) {
+      majorMembers.sort((left, right) => left.entityId.localeCompare(right.entityId));
+      const partitionCount = Math.min(
+        majorMembers.length,
+        Math.max(1, Math.round(majorMembers.length / targetPopulation)),
       );
-      const depth = Math.min(
-        maxDepth,
-        Math.max(populationFootprint, placement.depth * 0.64),
-      );
-      const x = placement.x + (placement.width - width) / 2;
-      const z = placement.z + (placement.depth - depth) / 2;
-      const archetypeCounts = new Map();
-      for (const building of members) {
-        archetypeCounts.set(
-          building.archetype,
-          (archetypeCounts.get(building.archetype) || 0) + 1,
-        );
-      }
-      return {
-        archetypeCounts: [...archetypeCounts]
-          .map(([archetype, count]) => ({ archetype, count }))
-          .sort(
-            (left, right) =>
-              right.count - left.count
-              || left.archetype.localeCompare(right.archetype),
-          ),
-        depth,
-        districtId,
-        height: Math.min(96, 18 + Math.log2(members.length + 1) * 6),
-        id: `visual:aggregate:${districtId}`,
-        memberEntityIds: members.map((building) => building.entityId),
-        width,
-        x,
-        z,
-      };
-    }).sort((left, right) => left.id.localeCompare(right.id));
+      const partitions = spatialPartitions(majorMembers, partitionCount)
+        .sort((left, right) => {
+          const leftZ = Math.min(...left.map((building) => center(building, "z")));
+          const rightZ = Math.min(...right.map((building) => center(building, "z")));
+          const leftX = Math.min(...left.map((building) => center(building, "x")));
+          const rightX = Math.min(...right.map((building) => center(building, "x")));
+          return leftZ - rightZ || leftX - rightX
+            || left[0].entityId.localeCompare(right[0].entityId);
+        });
+      partitions.forEach((members, index) => {
+        members.sort((left, right) => left.entityId.localeCompare(right.entityId));
+        const districtId = commonDistrictId(members, majorDistrictId);
+        const placement = occupiedBounds(members, districtId);
+        const plots = clippedPlots(placement, majorDistrictId);
+        const x = Math.min(...plots.map((plot) => plot.x));
+        const z = Math.min(...plots.map((plot) => plot.z));
+        const maxX = Math.max(...plots.map((plot) => plot.x + plot.width));
+        const maxZ = Math.max(...plots.map((plot) => plot.z + plot.depth));
+        const labelPlot = [...plots].sort(
+          (left, right) => right.width * right.depth - left.width * left.depth
+            || left.z - right.z || left.x - right.x,
+        )[0];
+        const archetypeCounts = new Map();
+        for (const building of members) {
+          const archetype = building.archetype || "GENERIC_BUILDING";
+          archetypeCounts.set(archetype, (archetypeCounts.get(archetype) || 0) + 1);
+        }
+        facilities.push({
+          archetypeCounts: [...archetypeCounts]
+            .map(([archetype, count]) => ({ archetype, count }))
+            .sort(
+              (left, right) =>
+                right.count - left.count
+                || left.archetype.localeCompare(right.archetype),
+            ),
+          depth: Math.max(2, maxZ - z),
+          districtId,
+          height: Math.min(64, 14 + Math.log2(members.length + 1) * 4.5),
+          id: `visual:block:${majorDistrictId}:${String(index).padStart(3, "0")}`,
+          labelX: labelPlot.x + labelPlot.width / 2,
+          labelZ: labelPlot.z + labelPlot.depth / 2,
+          majorDistrictId,
+          memberDistrictIds: [...new Set(members.map((building) => building.districtId))].sort(),
+          memberEntityIds: members.map((building) => building.entityId),
+          plots,
+          width: Math.max(2, maxX - x),
+          x,
+          z,
+        });
+      });
+    }
+    return facilities.sort((left, right) => left.id.localeCompare(right.id));
   }
 
   function aggregateParts(facility) {
@@ -244,29 +376,46 @@
         || left.entityId.localeCompare(right.entityId),
     );
 
-    const aspect = facility.width / Math.max(1, facility.depth);
-    const columns = Math.max(1, Math.ceil(Math.sqrt(parts.length * aspect)));
-    const rows = Math.ceil(parts.length / columns);
-    const marginX = facility.width * 0.07;
-    const marginZ = facility.depth * 0.07;
-    const gapX = facility.width * 0.035;
-    const gapZ = facility.depth * 0.035;
-    const partWidth = (
-      facility.width - marginX * 2 - gapX * Math.max(0, columns - 1)
-    ) / columns;
-    const partDepth = (
-      facility.depth - marginZ * 2 - gapZ * Math.max(0, rows - 1)
-    ) / rows;
+    const plots = [...(facility.plots || [facility])]
+      .sort(
+        (left, right) => right.width * right.depth - left.width * left.depth
+          || left.z - right.z || left.x - right.x,
+      )
+      .slice(0, parts.length);
+    const plotCounts = plots.map((plot) => ({ count: 1, plot }));
+    while (plotCounts.reduce((sum, item) => sum + item.count, 0) < parts.length) {
+      plotCounts.sort(
+        (left, right) =>
+          right.plot.width * right.plot.depth / (right.count + 1)
+          - left.plot.width * left.plot.depth / (left.count + 1)
+          || left.plot.z - right.plot.z || left.plot.x - right.plot.x,
+      );
+      plotCounts[0].count += 1;
+    }
+    const slots = plotCounts.flatMap(({ count, plot }) => {
+      const aspect = plot.width / Math.max(1, plot.depth);
+      const columns = Math.max(1, Math.ceil(Math.sqrt(count * aspect)));
+      const rows = Math.ceil(count / columns);
+      const marginX = plot.width * 0.07;
+      const marginZ = plot.depth * 0.07;
+      const gapX = plot.width * 0.035;
+      const gapZ = plot.depth * 0.035;
+      const width = (plot.width - marginX * 2 - gapX * Math.max(0, columns - 1)) / columns;
+      const depth = (plot.depth - marginZ * 2 - gapZ * Math.max(0, rows - 1)) / rows;
+      return Array.from({ length: count }, (_, index) => ({
+        depth,
+        width,
+        x: plot.x + marginX + (index % columns) * (width + gapX),
+        z: plot.z + marginZ + Math.floor(index / columns) * (depth + gapZ),
+      }));
+    });
     const largest = Math.max(...parts.map((part) => part.representedCount));
     return parts.map((part, index) => ({
       ...part,
-      depth: partDepth,
+      ...slots[index],
       height: facility.height * (
         0.48 + Math.sqrt(part.representedCount / largest) * 0.52
       ),
-      width: partWidth,
-      x: facility.x + marginX + (index % columns) * (partWidth + gapX),
-      z: facility.z + marginZ + Math.floor(index / columns) * (partDepth + gapZ),
     }));
   }
 
@@ -326,7 +475,9 @@
         .sort();
 
       const visibleAggregateIds = level === "overview"
-        ? [...aggregateIds]
+        ? aggregates
+          .filter((aggregate) => aggregate.memberEntityIds.some((id) => candidateBuildings.has(id)))
+          .map((aggregate) => aggregate.id)
         : [];
       if (
         selected?.kind === "aggregate"

@@ -474,15 +474,20 @@ process.stdout.write(JSON.stringify(
         script = """
 require(process.argv[1]);
 const districts = [
-  { depth: 120, id: "root", parentId: null, width: 160, x: 0, z: 0 },
-  { depth: 100, id: "app", parentId: "root", width: 140, x: 10, z: 10 },
-  { depth: 80, id: "leaf", parentId: "app", width: 120, x: 20, z: 20 },
-  { depth: 60, id: "deep", parentId: "leaf", width: 100, x: 30, z: 30 },
+  { depth: 220, id: "root", parentId: null, width: 240, x: 0, z: 0 },
+  { depth: 190, id: "app", parentId: "root", width: 220, x: 10, z: 10 },
+  { depth: 160, id: "leaf", parentId: "app", width: 200, x: 20, z: 20 },
+  { depth: 20, id: "deep", parentId: "leaf", width: 20, x: 30, z: 30 },
 ];
 const buildings = Array.from({ length: 300 }, (_, index) => ({
   archetype: index < 12 ? "SERVICE_OFFICE" : "GENERIC_BUILDING",
+  depth: 6,
   districtId: "leaf",
   entityId: `building-${index}`,
+  height: 10,
+  width: 6,
+  x: 24 + (index % 20) * 9,
+  z: 24 + Math.floor(index / 20) * 9,
 }));
 const networks = Array.from({ length: 100 }, (_, index) => ({
   edgeIds: Array.from({ length: 100 - index }, (_, edge) => `edge-${index}-${edge}`),
@@ -490,8 +495,8 @@ const networks = Array.from({ length: 100 }, (_, index) => ({
 }));
 const territoryData = { districts: [{
   id: "leaf",
-  landmarkPlot: { depth: 40, width: 60, x: 45, z: 35 },
-  rectangles: [{ depth: 40, width: 60, x: 45, z: 35 }],
+  landmarkPlot: { depth: 135, width: 180, x: 22, z: 22 },
+  rectangles: [{ depth: 135, width: 180, x: 22, z: 22 }],
 }] };
 const policy = globalThis.METROPOGITS_FILTERS.createLodPolicy(
   { buildings, districts, networks },
@@ -503,9 +508,24 @@ const overview = policy.visibility("overview", buildingIds, networkIds);
 const district = policy.visibility("district", buildingIds, networkIds);
 const detail = policy.visibility("detail", buildingIds, networkIds);
 const aggregate = policy.aggregates[0];
+const aggregateMembers = policy.aggregates.flatMap((item) => item.memberEntityIds);
+const aggregatePlots = policy.aggregates.flatMap((item) =>
+  item.plots.map((plot) => ({ ...plot, aggregateId: item.id })),
+);
 const aggregateDistrict = districts.find((district) => district.id === aggregate.districtId);
 const aggregateParts = globalThis.METROPOGITS_FILTERS.aggregateParts(aggregate);
 const aggregatePlot = territoryData.districts[0].landmarkPlot;
+const overlaps = aggregatePlots.flatMap((left, leftIndex) =>
+  aggregatePlots.slice(leftIndex + 1).filter((right) =>
+    left.aggregateId !== right.aggregateId
+    && left.x < right.x + right.width
+    && right.x < left.x + left.width
+    && left.z < right.z + right.depth
+    && right.z < left.z + left.depth
+  ).map((right) => [left.aggregateId, right.aggregateId])
+);
+const filteredIds = new Set(buildingIds.slice(0, 10));
+const filteredOverview = policy.visibility("overview", filteredIds, networkIds);
 process.stdout.write(JSON.stringify({
   deterministic: JSON.stringify(overview) === JSON.stringify(
     policy.visibility("overview", buildingIds, networkIds),
@@ -525,28 +545,42 @@ process.stdout.write(JSON.stringify({
   ],
   aggregate: {
     archetypeCounts: aggregate.archetypeCounts,
+    blockNamespace: aggregate.id.startsWith("visual:block:"),
     facilityContained: aggregate.x >= aggregateDistrict.x
       && aggregate.z >= aggregateDistrict.z
       && aggregate.x + aggregate.width <= aggregateDistrict.x + aggregateDistrict.width
       && aggregate.z + aggregate.depth <= aggregateDistrict.z + aggregateDistrict.depth,
-    facilityInOccupiedPlot: aggregate.x >= aggregatePlot.x
-      && aggregate.z >= aggregatePlot.z
-      && aggregate.x + aggregate.width <= aggregatePlot.x + aggregatePlot.width
-      && aggregate.z + aggregate.depth <= aggregatePlot.z + aggregatePlot.depth,
+    facilityInOccupiedPlot: aggregate.plots.every((plot) =>
+      plot.x >= aggregatePlot.x
+      && plot.z >= aggregatePlot.z
+      && plot.x + plot.width <= aggregatePlot.x + aggregatePlot.width
+      && plot.z + plot.depth <= aggregatePlot.z + aggregatePlot.depth
+    ),
     memberCount: aggregate.memberEntityIds.length,
-    membersAreUnique: new Set(aggregate.memberEntityIds).size === buildingIds.length,
+    memberDistrictIds: aggregate.memberDistrictIds,
     partsContained: aggregateParts.every((part) =>
-      part.x >= aggregate.x
-      && part.z >= aggregate.z
-      && part.x + part.width <= aggregate.x + aggregate.width
-      && part.z + part.depth <= aggregate.z + aggregate.depth
+      aggregate.plots.some((plot) =>
+        part.x >= plot.x
+        && part.z >= plot.z
+        && part.x + part.width <= plot.x + plot.width
+        && part.z + part.depth <= plot.z + plot.depth
+      )
     ),
     parts: aggregateParts.map((part) => ({
       archetype: part.archetype,
       representedCount: part.representedCount,
     })),
   },
+  allMembers: {
+    count: aggregateMembers.length,
+    unique: new Set(aggregateMembers).size,
+  },
   aggregateCounts: [overview.aggregateIds.length, district.aggregateIds.length],
+  filteredAggregatesMatch: filteredOverview.aggregateIds.every((aggregateId) =>
+    policy.aggregates.find((item) => item.id === aggregateId)
+      .memberEntityIds.some((entityId) => filteredIds.has(entityId))
+  ),
+  overlapCount: overlaps.length,
   selectedAggregate: policy.visibility(
     "district",
     buildingIds,
@@ -582,29 +616,22 @@ process.stdout.write(JSON.stringify({
         self.assertEqual("detail", result["forcedLevel"])
         self.assertEqual([300, 100], result["detailCounts"])
         self.assertEqual([24, 64], result["networkCounts"])
-        self.assertEqual([1, 0], result["aggregateCounts"])
+        self.assertEqual([17, 0], result["aggregateCounts"])
         self.assertEqual(0, result["overviewBuildingCount"])
-        self.assertEqual(300, result["aggregate"]["memberCount"])
-        self.assertTrue(result["aggregate"]["membersAreUnique"])
+        self.assertGreater(result["aggregate"]["memberCount"], 1)
+        self.assertLess(result["aggregate"]["memberCount"], 30)
+        self.assertEqual({"count": 300, "unique": 300}, result["allMembers"])
+        self.assertTrue(result["aggregate"]["blockNamespace"])
+        self.assertEqual(["leaf"], result["aggregate"]["memberDistrictIds"])
         self.assertTrue(result["aggregate"]["facilityContained"])
         self.assertTrue(result["aggregate"]["facilityInOccupiedPlot"])
         self.assertTrue(result["aggregate"]["partsContained"])
         self.assertEqual(
-            [
-                {"archetype": "GENERIC_BUILDING", "count": 288},
-                {"archetype": "SERVICE_OFFICE", "count": 12},
-            ],
-            result["aggregate"]["archetypeCounts"],
-        )
-        self.assertEqual(9, len(result["aggregate"]["parts"]))
-        self.assertEqual(
-            300,
+            result["aggregate"]["memberCount"],
             sum(item["representedCount"] for item in result["aggregate"]["parts"]),
         )
-        self.assertEqual(
-            {"GENERIC_BUILDING", "SERVICE_OFFICE"},
-            {item["archetype"] for item in result["aggregate"]["parts"]},
-        )
+        self.assertEqual(0, result["overlapCount"])
+        self.assertTrue(result["filteredAggregatesMatch"])
         self.assertEqual(1, len(result["selectedAggregate"]))
         self.assertEqual(
             [f"network-{index:03d}" for index in range(24)],

@@ -822,16 +822,18 @@
     for (const aggregateId of [...renderedAggregateIds].sort()) {
       const facility = aggregateFacilities.get(aggregateId);
       const isSelected = selected("aggregate", facility.id);
-      box(
-        triangles,
-        facility.x,
-        0.16,
-        facility.z,
-        facility.width,
-        2.2,
-        facility.depth,
-        color(isSelected ? "#f8fafc" : "#475569"),
-      );
+      for (const plot of facility.plots || [facility]) {
+        box(
+          triangles,
+          plot.x,
+          0.16,
+          plot.z,
+          plot.width,
+          2.2,
+          plot.depth,
+          color(isSelected ? "#f8fafc" : "#475569"),
+        );
+      }
       for (const aggregatePart of filterEngine.aggregateParts(facility)) {
         const baseColor = color(
           colors[aggregatePart.archetype] || colors.GENERIC_BUILDING,
@@ -850,17 +852,19 @@
           );
         }
       }
-      const x0 = facility.x - 0.55;
-      const x1 = facility.x + facility.width + 0.55;
-      const z0 = facility.z - 0.55;
-      const z1 = facility.z + facility.depth + 0.55;
       const borderColor = color(isSelected ? "#f8fafc" : "#fbbf24");
-      for (const [start, end] of [
-        [[x0, 0.2, z0], [x1, 0.2, z0]],
-        [[x1, 0.2, z0], [x1, 0.2, z1]],
-        [[x1, 0.2, z1], [x0, 0.2, z1]],
-        [[x0, 0.2, z1], [x0, 0.2, z0]],
-      ]) line(lines, start, end, borderColor);
+      for (const plot of facility.plots || [facility]) {
+        const x0 = plot.x - 0.55;
+        const x1 = plot.x + plot.width + 0.55;
+        const z0 = plot.z - 0.55;
+        const z1 = plot.z + plot.depth + 0.55;
+        for (const [start, end] of [
+          [[x0, 0.2, z0], [x1, 0.2, z0]],
+          [[x1, 0.2, z0], [x1, 0.2, z1]],
+          [[x1, 0.2, z1], [x0, 0.2, z1]],
+          [[x0, 0.2, z1], [x0, 0.2, z0]],
+        ]) line(lines, start, end, borderColor);
+      }
     }
 
     if (state.syntheticActivity && activityEngine) {
@@ -970,26 +974,28 @@
     }
     for (const aggregateId of renderedAggregateIds) {
       const facility = aggregateFacilities.get(aggregateId);
-      const corners = [];
-      for (const x of [facility.x, facility.x + facility.width]) {
-        for (const y of [0.2, facility.height + 2.4]) {
-          for (const z of [facility.z, facility.z + facility.depth]) {
-            const point = projected([x, y, z]);
-            if (point) corners.push(point);
+      for (const plot of facility.plots || [facility]) {
+        const corners = [];
+        for (const x of [plot.x, plot.x + plot.width]) {
+          for (const y of [0.2, facility.height + 2.4]) {
+            for (const z of [plot.z, plot.z + plot.depth]) {
+              const point = projected([x, y, z]);
+              if (point) corners.push(point);
+            }
           }
         }
-      }
-      if (corners.length === 8) {
-        regions.push({
-          depth: Math.min(...corners.map((point) => point.depth)),
-          id: facility.id,
-          kind: "aggregate",
-          maxX: Math.max(...corners.map((point) => point.x)),
-          maxY: Math.max(...corners.map((point) => point.y)),
-          minX: Math.min(...corners.map((point) => point.x)),
-          minY: Math.min(...corners.map((point) => point.y)),
-          priority: 250,
-        });
+        if (corners.length === 8) {
+          regions.push({
+            depth: Math.min(...corners.map((point) => point.depth)),
+            id: facility.id,
+            kind: "aggregate",
+            maxX: Math.max(...corners.map((point) => point.x)),
+            maxY: Math.max(...corners.map((point) => point.y)),
+            minX: Math.min(...corners.map((point) => point.x)),
+            minY: Math.min(...corners.map((point) => point.y)),
+            priority: 250,
+          });
+        }
       }
     }
     return regions.sort((left, right) => right.priority - left.priority || left.depth - right.depth);
@@ -1067,11 +1073,12 @@
       });
     }
     for (const aggregateId of renderedAggregateIds) {
+      if (!selected("aggregate", aggregateId)) continue;
       const facility = aggregateFacilities.get(aggregateId);
       const anchor = projected([
-        facility.x + facility.width / 2,
+        facility.labelX ?? facility.x + facility.width / 2,
         facility.height + 5,
-        facility.z + facility.depth / 2,
+        facility.labelZ ?? facility.z + facility.depth / 2,
       ]);
       if (!anchor || anchor.depth < -1 || anchor.depth > 1) continue;
       const label = `${districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files`;
@@ -1226,14 +1233,14 @@
         0,
       );
       const subject = renderedAggregateIds.size
-        ? `${renderedAggregateIds.size} aggregate facilities / ${representedFiles} files`
+        ? `${renderedAggregateIds.size} visual blocks / ${representedFiles} files`
         : `${renderedBuildingIds.size}/${visibleBuildingIds.size} buildings`;
       const status = `${label} · ${subject} · ${renderedNetworkIds.size}/${visibleNetworkIds.size} routes`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
     }
   }
 
-  function resetInspector(message = "Choose a building, aggregate facility, district, or network to inspect the repository facts behind it.") {
+  function resetInspector(message = "Choose a building, visual block, district, or network to inspect the repository facts behind it.") {
     inspector.replaceChildren();
     inspector.append(element("p", "INSPECTOR", "eyebrow"));
     inspector.append(element("h2", "Select a city element"));
@@ -1304,6 +1311,13 @@
     parent.append(details);
   }
 
+  function aggregateDistrictsSection(parent, facility) {
+    const labels = (facility.memberDistrictIds || [])
+      .map((districtId) => districtLabel(districts.get(districtId)))
+      .sort();
+    factSection(parent, "CONSTITUENT DISTRICTS", labels);
+  }
+
   function evidenceLabel(evidenceId) {
     const item = evidence.get(evidenceId);
     if (!item) return evidenceId;
@@ -1352,17 +1366,18 @@
   function showAggregate(aggregateId) {
     const facility = aggregateFacilities.get(aggregateId);
     inspector.replaceChildren();
-    inspector.append(element("p", "AGGREGATE FACILITY · VISUAL", "eyebrow"));
+    inspector.append(element("p", "CITY BLOCK · VISUAL AGGREGATE", "eyebrow"));
     inspector.append(element("h2", districtLabel(districts.get(facility.districtId))));
     inspector.append(element(
       "p",
-      "This overview structure groups real file buildings. It is not a code entity or inferred service.",
+      "This overview block groups real file buildings and districts. It is not a code entity or inferred service.",
       "aggregate-disclosure",
     ));
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Files", facility.memberEntityIds.length);
-    detailRow(details, "District", districtLabel(districts.get(facility.districtId)));
-    detailRow(details, "Representation", "Deterministic visual aggregate");
+    detailRow(details, "Owning district", districtLabel(districts.get(facility.districtId)));
+    detailRow(details, "Districts", facility.memberDistrictIds?.length || 0);
+    detailRow(details, "Representation", "Deterministic visual block aggregate");
     inspector.append(details);
     factSection(
       inspector,
@@ -1371,6 +1386,7 @@
         (item) => `${displayValue(item.archetype)} · ${item.count} files`,
       ),
     );
+    aggregateDistrictsSection(inspector, facility);
     aggregateMembersSection(inspector, facility);
     inspector.append(focusButton(
       facility.x + facility.width / 2,
