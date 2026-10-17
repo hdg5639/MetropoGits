@@ -1008,3 +1008,50 @@
   Publication remains deferred by ADR-007.
 - Commits created / pushed (and branch): `b8b3f78` on local `main`; push is
   scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - city-scale camera and selection (`5526854`)
+
+- Implemented: the WebGL view now fits the complete city with explicit
+  horizontal and vertical margins, aims above ground level according to the
+  tallest building, and uses a lower city-scale pitch. Building focus uses a
+  bright full-volume wireframe, district focus uses a thick perimeter ribbon,
+  and focus distance is derived from the selected element's extent.
+- Fixture(s) / revision(s): the complete MetropoGits repository at exact
+  revision `5526854`, built twice as `hdg5639/MetropoGits`; the small semantic
+  `spring-positive` fixture; and the low-semantic `jsts-basic` fixture.
+- Commands run: four real CLI builds; Edge SwiftShader WebGL captures for all
+  three repository shapes; forced 2D fallback and CPU SVG captures for the
+  complete repository; `pip check`; Ruff; `compileall`; JavaScript syntax;
+  release-readiness validation; the full automated suite; and whitespace
+  checks.
+- Artifacts inspected: `actual-webgl.png`, `actual-fallback.png`,
+  `actual-preview.png`, `spring-webgl.png`, `jsts-webgl.png`, and all generated
+  static artifacts under
+  `D:\Code\MetroPoGits\.visual-recovery-final-5526854`.
+- Visual findings: PASS. The complete repository is centered as one balanced
+  city block with readable height, parcel, road, and district separation. The
+  Spring slice makes role-specific silhouettes and routes immediately visible.
+  The low-semantic JavaScript/TypeScript slice stays neutral and uses only
+  deterministic generic massing instead of inventing roles.
+- Spec alignment: PASS. The complete scene retains exactly 76 file buildings,
+  52 directory districts, and 3 evidence networks. Renderer-only civic blocks
+  add no scene entities or edge references. The three slices retain their
+  evidence-backed archetypes and exact network edge membership.
+- Tests / determinism / stability: 194 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. Repeated complete builds
+  produced identical SHA-256
+  `183ceea1019b9cef809350c6e0dc4efe3917dff13439e12baaea44636acabb0a`
+  for `graph.ucg.json`,
+  `6281f8e87d01fae116ad927f1b74a7e13730e21674cce4e06b04511808a1e001`
+  for `city.json`, and
+  `0c66f15464be9197effc95d864023d1bf9c8fb4dc07a27ab2eb82d0c78e057fc`
+  for `preview.svg`.
+- Fixes applied and reverified: the camera target and fit margins were tuned
+  against the complete repository after the previous high, distant view made
+  building heights and roads harder to read. All renderer paths were captured
+  again after the adjustment.
+- Open risks / next actions: visual recovery is complete for the current
+  private v1 candidate. Public repository conversion and Pages activation
+  remain explicitly deferred by ADR-007 until maintainer approval.
+- Commits created / pushed (and branch): `5526854` on local `main`; push is
+  scheduled after this checkpoint log commit.
