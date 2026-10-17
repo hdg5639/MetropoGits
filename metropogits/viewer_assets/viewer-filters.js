@@ -376,12 +376,50 @@
         || left.entityId.localeCompare(right.entityId),
     );
 
-    const plots = [...(facility.plots || [facility])]
-      .sort(
-        (left, right) => right.width * right.depth - left.width * left.depth
-          || left.z - right.z || left.x - right.x,
-      )
-      .slice(0, parts.length);
+    const sourcePlots = [...(facility.plots || [facility])];
+    const usablePlots = sourcePlots.filter((plot) => plot.width >= 2 && plot.depth >= 2);
+    const candidates = (usablePlots.length >= Math.min(parts.length, sourcePlots.length)
+      ? usablePlots
+      : sourcePlots).map((plot) => ({
+        ...plot,
+        area: plot.width * plot.depth,
+        centerX: plot.x + plot.width / 2,
+        centerZ: plot.z + plot.depth / 2,
+      }));
+    const targetPlotCount = Math.min(parts.length, candidates.length);
+    const facilityCenterX = facility.x + facility.width / 2;
+    const facilityCenterZ = facility.z + facility.depth / 2;
+    const spanX = Math.max(1, facility.width);
+    const spanZ = Math.max(1, facility.depth);
+    const largestArea = Math.max(...candidates.map((plot) => plot.area));
+    const selectedPlots = [];
+    while (selectedPlots.length < targetPlotCount) {
+      const remaining = candidates.filter((plot) => !selectedPlots.includes(plot));
+      remaining.sort((left, right) => {
+        function score(plot) {
+          const areaBonus = Math.sqrt(plot.area / largestArea) * 0.08;
+          if (!selectedPlots.length) {
+            const centerDistance = Math.hypot(
+              (plot.centerX - facilityCenterX) / spanX,
+              (plot.centerZ - facilityCenterZ) / spanZ,
+            );
+            return -centerDistance + areaBonus;
+          }
+          const separation = Math.min(...selectedPlots.map((selected) => Math.hypot(
+            (plot.centerX - selected.centerX) / spanX,
+            (plot.centerZ - selected.centerZ) / spanZ,
+          )));
+          return separation + areaBonus;
+        }
+        return score(right) - score(left) || right.area - left.area
+          || left.z - right.z || left.x - right.x;
+      });
+      selectedPlots.push(remaining[0]);
+    }
+    const plots = selectedPlots.sort(
+      (left, right) => left.z - right.z || left.x - right.x
+        || right.area - left.area,
+    );
     const plotCounts = plots.map((plot) => ({ count: 1, plot }));
     while (plotCounts.reduce((sum, item) => sum + item.count, 0) < parts.length) {
       plotCounts.sort(

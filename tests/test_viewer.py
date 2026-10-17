@@ -526,6 +526,25 @@ const overlaps = aggregatePlots.flatMap((left, leftIndex) =>
 );
 const filteredIds = new Set(buildingIds.slice(0, 10));
 const filteredOverview = policy.visibility("overview", filteredIds, networkIds);
+const spreadFacility = {
+  archetypeCounts: [{ archetype: "GENERIC_BUILDING", count: 64 }],
+  depth: 100,
+  height: 32,
+  id: "visual:block:spread",
+  memberEntityIds: Array.from({ length: 64 }, (_, index) => `spread-${index}`),
+  plots: [
+    { depth: 10, width: 10, x: 0, z: 0 },
+    { depth: 10, width: 10, x: 90, z: 0 },
+    { depth: 10, width: 10, x: 0, z: 90 },
+    { depth: 10, width: 10, x: 90, z: 90 },
+  ],
+  width: 100,
+  x: 0,
+  z: 0,
+};
+const spreadParts = globalThis.METROPOGITS_FILTERS.aggregateParts(spreadFacility);
+const spreadCentersX = spreadParts.map((part) => part.x + part.width / 2);
+const spreadCentersZ = spreadParts.map((part) => part.z + part.depth / 2);
 process.stdout.write(JSON.stringify({
   deterministic: JSON.stringify(overview) === JSON.stringify(
     policy.visibility("overview", buildingIds, networkIds),
@@ -581,6 +600,11 @@ process.stdout.write(JSON.stringify({
       .memberEntityIds.some((entityId) => filteredIds.has(entityId))
   ),
   overlapCount: overlaps.length,
+  representativeSpread: {
+    count: spreadParts.length,
+    x: Math.max(...spreadCentersX) - Math.min(...spreadCentersX),
+    z: Math.max(...spreadCentersZ) - Math.min(...spreadCentersZ),
+  },
   selectedAggregate: policy.visibility(
     "district",
     buildingIds,
@@ -631,6 +655,7 @@ process.stdout.write(JSON.stringify({
             sum(item["representedCount"] for item in result["aggregate"]["parts"]),
         )
         self.assertEqual(0, result["overlapCount"])
+        self.assertEqual({"count": 4, "x": 90, "z": 90}, result["representativeSpread"])
         self.assertTrue(result["filteredAggregatesMatch"])
         self.assertEqual(1, len(result["selectedAggregate"]))
         self.assertEqual(
