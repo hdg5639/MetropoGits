@@ -647,28 +647,6 @@
     hitRegions.push({ kind: "building", id: building.entityId, points: outline });
   }
 
-  function aggregateParts(facility) {
-    const slots = [
-      [0.34, 0.29, 0.32, 0.42],
-      [0.08, 0.1, 0.22, 0.28],
-      [0.7, 0.1, 0.22, 0.28],
-      [0.08, 0.62, 0.22, 0.28],
-      [0.7, 0.62, 0.22, 0.28],
-    ];
-    const largest = facility.archetypeCounts[0]?.count || 1;
-    return facility.archetypeCounts.slice(0, slots.length).map((item, index) => {
-      const [x, z, width, depth] = slots[index];
-      return {
-        archetype: item.archetype,
-        depth: facility.depth * depth,
-        height: facility.height * (0.45 + item.count / largest * 0.55),
-        width: facility.width * width,
-        x: facility.x + facility.width * x,
-        z: facility.z + facility.depth * z,
-      };
-    });
-  }
-
   function drawAggregateFacility(facility) {
     const isSelected = selected("aggregate", facility.id);
     const outline = drawVolume(
@@ -677,7 +655,7 @@
       isSelected ? "#f8fafc" : "#fbbf24",
       isSelected ? 3.2 : 2.2,
     );
-    for (const part of aggregateParts(facility).sort(
+    for (const part of filterEngine.aggregateParts(facility).sort(
       (left, right) => buildingDepth(left) - buildingDepth(right),
     )) {
       drawVolume(

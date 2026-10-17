@@ -470,10 +470,10 @@ process.stdout.write(JSON.stringify(
         script = """
 require(process.argv[1]);
 const districts = [
-  { id: "root", parentId: null },
-  { id: "app", parentId: "root" },
-  { id: "leaf", parentId: "app" },
-  { id: "deep", parentId: "leaf" },
+  { depth: 120, id: "root", parentId: null, width: 160, x: 0, z: 0 },
+  { depth: 100, id: "app", parentId: "root", width: 140, x: 10, z: 10 },
+  { depth: 80, id: "leaf", parentId: "app", width: 120, x: 20, z: 20 },
+  { depth: 60, id: "deep", parentId: "leaf", width: 100, x: 30, z: 30 },
 ];
 const buildings = Array.from({ length: 300 }, (_, index) => ({
   archetype: index < 12 ? "SERVICE_OFFICE" : "GENERIC_BUILDING",
@@ -495,6 +495,8 @@ const overview = policy.visibility("overview", buildingIds, networkIds);
 const district = policy.visibility("district", buildingIds, networkIds);
 const detail = policy.visibility("detail", buildingIds, networkIds);
 const aggregate = policy.aggregates[0];
+const aggregateDistrict = districts.find((district) => district.id === aggregate.districtId);
+const aggregateParts = globalThis.METROPOGITS_FILTERS.aggregateParts(aggregate);
 process.stdout.write(JSON.stringify({
   deterministic: JSON.stringify(overview) === JSON.stringify(
     policy.visibility("overview", buildingIds, networkIds),
@@ -514,8 +516,22 @@ process.stdout.write(JSON.stringify({
   ],
   aggregate: {
     archetypeCounts: aggregate.archetypeCounts,
+    facilityContained: aggregate.x >= aggregateDistrict.x
+      && aggregate.z >= aggregateDistrict.z
+      && aggregate.x + aggregate.width <= aggregateDistrict.x + aggregateDistrict.width
+      && aggregate.z + aggregate.depth <= aggregateDistrict.z + aggregateDistrict.depth,
     memberCount: aggregate.memberEntityIds.length,
     membersAreUnique: new Set(aggregate.memberEntityIds).size === buildingIds.length,
+    partsContained: aggregateParts.every((part) =>
+      part.x >= aggregate.x
+      && part.z >= aggregate.z
+      && part.x + part.width <= aggregate.x + aggregate.width
+      && part.z + part.depth <= aggregate.z + aggregate.depth
+    ),
+    parts: aggregateParts.map((part) => ({
+      archetype: part.archetype,
+      representedCount: part.representedCount,
+    })),
   },
   aggregateCounts: [overview.aggregateIds.length, district.aggregateIds.length],
   selectedAggregate: policy.visibility(
@@ -546,9 +562,8 @@ process.stdout.write(JSON.stringify({
             text=True,
             check=False,
         )
-        result = json.loads(completed.stdout)
-
         self.assertEqual(0, completed.returncode, completed.stderr)
+        result = json.loads(completed.stdout)
         self.assertTrue(result["deterministic"])
         self.assertEqual(["overview", "district", "detail"], result["levels"])
         self.assertEqual("detail", result["forcedLevel"])
@@ -558,12 +573,23 @@ process.stdout.write(JSON.stringify({
         self.assertEqual(0, result["overviewBuildingCount"])
         self.assertEqual(300, result["aggregate"]["memberCount"])
         self.assertTrue(result["aggregate"]["membersAreUnique"])
+        self.assertTrue(result["aggregate"]["facilityContained"])
+        self.assertTrue(result["aggregate"]["partsContained"])
         self.assertEqual(
             [
                 {"archetype": "GENERIC_BUILDING", "count": 288},
                 {"archetype": "SERVICE_OFFICE", "count": 12},
             ],
             result["aggregate"]["archetypeCounts"],
+        )
+        self.assertEqual(9, len(result["aggregate"]["parts"]))
+        self.assertEqual(
+            300,
+            sum(item["representedCount"] for item in result["aggregate"]["parts"]),
+        )
+        self.assertEqual(
+            {"GENERIC_BUILDING", "SERVICE_OFFICE"},
+            {item["archetype"] for item in result["aggregate"]["parts"]},
         )
         self.assertEqual(1, len(result["selectedAggregate"]))
         self.assertEqual(

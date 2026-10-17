@@ -148,32 +148,23 @@
     return [...groups.entries()].map(([districtId, members]) => {
       members.sort((left, right) => left.entityId.localeCompare(right.entityId));
       const district = districts.get(districtId);
-      const centerX = members.reduce(
-        (sum, building) => sum + building.x + building.width / 2,
-        0,
-      ) / members.length;
-      const centerZ = members.reduce(
-        (sum, building) => sum + building.z + building.depth / 2,
-        0,
-      ) / members.length;
       const margin = Math.min(2, district.width * 0.05, district.depth * 0.05);
       const maxWidth = Math.max(2, district.width - margin * 2);
       const maxDepth = Math.max(2, district.depth - margin * 2);
-      const footprint = Math.max(
+      const populationFootprint = Math.max(
         8,
         Math.sqrt(members.length) * 2.8,
-        Math.min(district.width, district.depth) * 0.28,
       );
-      const width = Math.min(maxWidth, footprint);
-      const depth = Math.min(maxDepth, footprint * 0.78);
-      const x = Math.max(
-        district.x + margin,
-        Math.min(centerX - width / 2, district.x + district.width - margin - width),
+      const width = Math.min(
+        maxWidth,
+        Math.max(populationFootprint, district.width * 0.46),
       );
-      const z = Math.max(
-        district.z + margin,
-        Math.min(centerZ - depth / 2, district.z + district.depth - margin - depth),
+      const depth = Math.min(
+        maxDepth,
+        Math.max(populationFootprint, district.depth * 0.46),
       );
+      const x = district.x + (district.width - width) / 2;
+      const z = district.z + (district.depth - depth) / 2;
       const archetypeCounts = new Map();
       for (const building of members) {
         archetypeCounts.set(
@@ -191,13 +182,7 @@
           ),
         depth,
         districtId,
-        height: Math.min(
-          120,
-          Math.max(
-            18 + Math.log2(members.length + 1) * 4,
-            footprint * 0.38,
-          ),
-        ),
+        height: Math.min(96, 18 + Math.log2(members.length + 1) * 6),
         id: `visual:aggregate:${districtId}`,
         memberEntityIds: members.map((building) => building.entityId),
         width,
@@ -205,6 +190,75 @@
         z,
       };
     }).sort((left, right) => left.id.localeCompare(right.id));
+  }
+
+  function aggregateParts(facility) {
+    const targetCount = Math.min(
+      12,
+      Math.max(
+        facility.archetypeCounts.length,
+        Math.ceil(Math.sqrt(facility.memberEntityIds.length) / 2),
+      ),
+    );
+    const allocations = new Map(
+      facility.archetypeCounts
+        .slice(0, targetCount)
+        .map((item) => [item.archetype, 1]),
+    );
+    while ([...allocations.values()].reduce((sum, count) => sum + count, 0) < targetCount) {
+      const selected = facility.archetypeCounts
+        .filter((item) => allocations.has(item.archetype))
+        .sort((left, right) => {
+          const leftScore = left.count / (allocations.get(left.archetype) + 1);
+          const rightScore = right.count / (allocations.get(right.archetype) + 1);
+          return rightScore - leftScore || left.archetype.localeCompare(right.archetype);
+        })[0];
+      allocations.set(selected.archetype, allocations.get(selected.archetype) + 1);
+    }
+
+    const parts = [];
+    for (const item of facility.archetypeCounts) {
+      const count = allocations.get(item.archetype) || 0;
+      for (let index = 0; index < count; index += 1) {
+        parts.push({
+          archetype: item.archetype,
+          entityId: `${facility.id}:${item.archetype}:${index}`,
+          representedCount: Math.floor(item.count / count)
+            + (index < item.count % count ? 1 : 0),
+        });
+      }
+    }
+    parts.sort(
+      (left, right) =>
+        stableBucket(left.entityId, 2_147_483_647)
+        - stableBucket(right.entityId, 2_147_483_647)
+        || left.entityId.localeCompare(right.entityId),
+    );
+
+    const aspect = facility.width / Math.max(1, facility.depth);
+    const columns = Math.max(1, Math.ceil(Math.sqrt(parts.length * aspect)));
+    const rows = Math.ceil(parts.length / columns);
+    const marginX = facility.width * 0.07;
+    const marginZ = facility.depth * 0.07;
+    const gapX = facility.width * 0.035;
+    const gapZ = facility.depth * 0.035;
+    const partWidth = (
+      facility.width - marginX * 2 - gapX * Math.max(0, columns - 1)
+    ) / columns;
+    const partDepth = (
+      facility.depth - marginZ * 2 - gapZ * Math.max(0, rows - 1)
+    ) / rows;
+    const largest = Math.max(...parts.map((part) => part.representedCount));
+    return parts.map((part, index) => ({
+      ...part,
+      depth: partDepth,
+      height: facility.height * (
+        0.48 + Math.sqrt(part.representedCount / largest) * 0.52
+      ),
+      width: partWidth,
+      x: facility.x + marginX + (index % columns) * (partWidth + gapX),
+      z: facility.z + marginZ + Math.floor(index / columns) * (partDepth + gapZ),
+    }));
   }
 
   function createLodPolicy(scene) {
@@ -466,6 +520,7 @@
   }
 
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    aggregateParts,
     createLodPolicy,
     createIndex,
     declaredDependenciesForEntity,
