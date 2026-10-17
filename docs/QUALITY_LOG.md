@@ -1255,3 +1255,57 @@
   explicitly deferred by ADR-007 until maintainer approval.
 - Commits created / pushed (and branch): `70ea174` on local `main`; push is
   scheduled after this checkpoint log commit.
+
+## Checkpoint 2026-10-17 - traceable semantic LOD (`1434e9b`)
+
+- Implemented: the large-city overview now replaces sampled file buildings
+  with deterministic aggregate facilities grouped by the existing major
+  structural districts. Each facility preserves its complete sorted member
+  list and observed archetype composition. Both WebGL and 2D render the same
+  composition, label it as a visual aggregate, and let the inspector disclose
+  that it is not a code entity or inferred service before listing every source
+  file and allowing a drill-down to the real buildings.
+- Fixture(s) / revision(s): the external `visual_test_proj/GJ-Cloud` repository
+  at exact revision `3d9b53f9dac9af1187ac9754cb3066b27e43b766`, plus the
+  synthetic 300-building, 100-network LOD policy fixture.
+- Commands run: two complete matching CLI builds; Chrome SwiftShader WebGL,
+  forced 2D fallback, and CPU SVG captures; an aggregate coverage audit; `pip
+  check`; Ruff; `compileall`; JavaScript syntax checks; release-readiness
+  validation; the full automated suite; whitespace checks; and recursive
+  SHA-256 comparisons across every generated non-image artifact.
+- Artifacts inspected: `viewer-webgl.png`, `viewer-fallback.png`, `preview.png`,
+  and the generated static artifacts under
+  `D:\Code\MetroPoGits\artifacts\visual\.visual-gj-cloud-semantic-lod-final`.
+- Visual findings: PASS for the Semantic LOD objective. The overview states
+  `7 aggregate facilities / 1324 files` and exposes Auth (86), Ops (493), User
+  (115), Vm (162), portal (466), and two single-file structural branches as
+  distinct facilities. The larger facilities visibly encode their observed
+  archetype mix, while amber boundaries and labels distinguish aggregates from
+  canonical file buildings. The underlying 24 evidence routes remain intact.
+- Spec alignment: PASS. Aggregates exist only as viewer projections over the
+  unchanged City Scene, use structural ancestry and observed archetypes only,
+  and never invent service semantics. The coverage audit found 1,324 members,
+  1,324 unique entity IDs, and 1,324 canonical buildings, so no file is omitted
+  or duplicated by the overview abstraction.
+- Tests / determinism / stability: 202 tests passed; one Windows symlink test
+  was skipped because symbolic links are unavailable. Matching builds produced
+  identical bytes for all 12 non-image artifacts, including SHA-256
+  `8382dbb2beb4fa888ba0a5d5caffa113c9671e2b2e94a446f457e10e8a8c65cf`
+  for `graph.ucg.json`,
+  `1137232b7d87b5b9a9cf70fadcc47e41c62f990581a8919439c609fb2759c464`
+  for `city.json`, and
+  `5a5d65b0f494d14cc8107a2aa583e6e74e6fa96eea8c877ec7e5b5469e6806e8`
+  for `preview.svg`.
+- Fixes applied and reverified: an intermediate WebGL build referenced hit-test
+  regions while constructing geometry and rendered black. The aggregate hit
+  box construction was moved to the hit-region phase, after which both WebGL
+  and fallback captures rendered correctly. Hidden aggregate dimensions were
+  also excluded from initial camera fitting for small repositories.
+- Open risks / next actions: canonical district geometry still leaves large
+  unused areas, evidence routes still read like circuit traces, and the static
+  README SVG intentionally remains unchanged. The portal aggregate also
+  exposes that all 466 files currently remain generic. Urban density, road
+  hierarchy, JS/TS archetype coverage, and a shared-model showcase renderer
+  should remain separate evidence-backed work units.
+- Commits created / pushed (and branch): `1434e9b` on local `main`; push is
+  scheduled after this checkpoint log commit.
