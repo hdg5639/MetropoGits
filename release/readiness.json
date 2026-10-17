@@ -296,6 +296,7 @@
         "tests/test_layout.py::LayoutTests::test_empty_directory_chains_share_a_compact_footprint",
         "tests/test_layout.py::LayoutTests::test_large_directories_expand_in_bounded_non_overlapping_pages",
         "tests/test_layout.py::LayoutTests::test_malformed_previous_scene_is_ignored_deterministically",
+        "tests/test_layout.py::LayoutTests::test_mixed_size_siblings_keep_a_balanced_parent_footprint",
         "tests/test_layout.py::LayoutTests::test_previous_layout_versions_are_not_reused_as_hints",
         "tests/test_layout.py::LayoutTests::test_previous_scene_hint_preserves_colliding_file_positions",
         "tests/test_layout.py::LayoutTests::test_previous_scene_hint_preserves_existing_district_subtrees"

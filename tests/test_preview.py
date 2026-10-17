@@ -30,7 +30,7 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            "ef41c5d18ab7eba089b19b13090a42cde1abe88cff25012b6bcdfd1da71bf31a",
+            "42d0334a9c2dac07a603828d57182e368429382525c596b5e64caaf8ad9be3f7",
             hashlib.sha256(first).hexdigest(),
         )
 
@@ -63,6 +63,28 @@ class PreviewTests(unittest.TestCase):
         self.assertEqual(1, preview.count("data-district-id="))
         self.assertIn(">service</text>", preview)
         self.assertIn("src/main/java/com/example/service", preview)
+
+    def test_square_city_is_centered_in_a_wide_preview(self):
+        scan = ScanResult(
+            files=(
+                ScannedFile(
+                    path="src/App.py",
+                    language="python",
+                    size_bytes=4,
+                ),
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/centered-preview")
+        scene = generate_city(ucg)
+
+        preview = element_tree.fromstring(render_preview(scene, ucg))
+        namespace = {"svg": "http://www.w3.org/2000/svg"}
+        district_group = preview.find("svg:g[@id='districts']", namespace)
+        district_rect = district_group.find("svg:g/svg:rect", namespace)
+
+        self.assertGreater(float(district_rect.attrib["x"]), 250)
+        self.assertLess(float(district_rect.attrib["x"]), 400)
 
     def test_untrusted_labels_are_xml_escaped(self):
         ucg = copy.deepcopy(self.ucg)

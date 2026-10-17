@@ -20,10 +20,11 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.2"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.3"
 DISTRICT_WIDTH = 64
 DISTRICT_DEPTH = 64
 DISTRICT_PADDING = 16
+CHILD_PACKING_WIDTH_BIAS = 1.16
 BUILDING_COLUMNS = 8
 BUILDING_SPACING = 7
 BUILDING_OFFSET = 6
@@ -392,7 +393,8 @@ def _measure_districts(
                 * (dimensions[child_id][1] + DISTRICT_PADDING)
                 for child_id in unplaced
             )
-        ),
+        )
+        * CHILD_PACKING_WIDTH_BIAS,
     )
     child_x = DISTRICT_PADDING
     row_depth = 0.0

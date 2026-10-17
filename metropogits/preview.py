@@ -146,10 +146,14 @@ def render_preview(
     drawing_width = width - PADDING * 2
     drawing_height = height - HEADER_HEIGHT - PADDING * 2
     scale = min(drawing_width / world_width, drawing_height / world_depth)
+    content_width = world_width * scale
+    content_height = world_depth * scale
+    origin_x = PADDING + (drawing_width - content_width) / 2
+    origin_y = HEADER_HEIGHT + PADDING + (drawing_height - content_height) / 2
 
     def project(x: Any, z: Any) -> tuple[float, float]:
-        projected_x = PADDING + (float(x) - min_x) * scale
-        projected_y = HEADER_HEIGHT + PADDING + (float(z) - min_z) * scale
+        projected_x = origin_x + (float(x) - min_x) * scale
+        projected_y = origin_y + (float(z) - min_z) * scale
         return projected_x, projected_y
 
     entities = {entity["id"]: entity for entity in ucg["entities"]}

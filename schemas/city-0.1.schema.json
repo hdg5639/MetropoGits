@@ -27,7 +27,8 @@
         "anchored-directory/0.1",
         "hierarchical-paged/1.0",
         "hierarchical-paged/1.1",
-        "hierarchical-paged/1.2"
+        "hierarchical-paged/1.2",
+        "hierarchical-paged/1.3"
       ]
     },
     "theme": {

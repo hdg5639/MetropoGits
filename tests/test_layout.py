@@ -236,7 +236,11 @@ class LayoutTests(unittest.TestCase):
     def test_previous_layout_versions_are_not_reused_as_hints(self):
         ucg = load_json(FIXTURES / "ucg" / "valid" / "spring-minimal.json")
         cold = generate_city(ucg)
-        for version in ("hierarchical-paged/1.0", "hierarchical-paged/1.1"):
+        for version in (
+            "hierarchical-paged/1.0",
+            "hierarchical-paged/1.1",
+            "hierarchical-paged/1.2",
+        ):
             with self.subTest(version=version):
                 previous = {**cold, "layoutAlgorithm": version}
                 diagnostics: list[dict] = []
@@ -333,7 +337,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.2", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.3", scene["layoutAlgorithm"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
         siblings: dict[str, list[dict]] = {}
@@ -433,6 +437,31 @@ class LayoutTests(unittest.TestCase):
         )
 
         self.assertLessEqual(max(root["width"], root["depth"]), 400)
+        self.assertLessEqual(
+            max(root["width"], root["depth"])
+            / min(root["width"], root["depth"]),
+            1.5,
+        )
+        self.assertEqual([], validate_document(scene, ucg))
+
+    def test_mixed_size_siblings_keep_a_balanced_parent_footprint(self):
+        paths = [
+            f"large/section-{index:02}/App.py" for index in range(12)
+        ] + ["small-a/App.py", "small-b/App.py"]
+        scan = ScanResult(
+            files=tuple(
+                ScannedFile(path=path, language="python", size_bytes=4)
+                for path in paths
+            ),
+            diagnostics=(),
+        )
+        ucg = build_structural_ucg(scan, "example/mixed-size-siblings")
+
+        scene = generate_city(ucg)
+        root = next(
+            item for item in scene["districts"] if item["parentId"] is None
+        )
+
         self.assertLessEqual(
             max(root["width"], root["depth"])
             / min(root["width"], root["depth"]),
