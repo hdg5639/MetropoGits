@@ -5,7 +5,7 @@ rule may classify only exact manifest, code, or configuration facts and must
 ship with both a matching fixture and a confusing non-matching fixture.
 
 The current contract is [`catalog/0.1`](../schemas/catalog-0.1.schema.json), and
-the bundled release is [`0.3.0`](../catalog/0.3.0/catalog.json). Previous
+the bundled release is [`0.4.0`](../catalog/0.4.0/catalog.json). Previous
 release directories remain unchanged so generated artifact provenance stays
 auditable.
 
@@ -15,7 +15,7 @@ Place fixture files under a `fixtures` directory beside `catalog.json`, using
 the IDs declared by the rule, and run:
 
 ```powershell
-python -m metropogits validate --input catalog/0.3.0/catalog.json
+python -m metropogits validate --input catalog/0.4.0/catalog.json
 ```
 
 The standalone validator accepts an explicit fixture root when needed:
@@ -56,10 +56,13 @@ contain raw configuration files or secret values.
 
 ## Bundled direct-use mappings
 
-Catalog `0.3.0` combines exact Maven package declarations with exact Java
-imports for Spring `RestClient`, Kafka `KafkaTemplate`, MongoDB
+Catalog `0.4.0` carries forward the direct-use mappings from `0.3.0`, which
+combine exact Maven package declarations with exact Java imports for Spring
+`RestClient`, Kafka `KafkaTemplate`, MongoDB
 `MongoRepository`, RabbitMQ `RabbitTemplate`, and Redis `RedisTemplate`. These
 produce `PORT`, `EXCHANGE`, `DOCUMENT_DEPOT`, and `CACHE_TOWER` city archetypes.
-A package declaration or similarly named class alone remains unclassified, and
-imports never create HTTP or messaging edges without a verified target or
-channel.
+It adds PostgreSQL classification only when an exact driver declaration,
+verified `JpaRepository` inheritance, and the allowlisted non-secret Spring
+driver configuration all match. A package declaration or similarly named
+class alone remains unclassified, and imports never create HTTP or messaging
+edges without a verified target or channel.

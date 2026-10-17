@@ -1,8 +1,9 @@
 # MetropoGits
 
 MetropoGits turns source repositories into explorable, architecture-driven
-cities. The project is currently establishing its versioned implementation
-contracts.
+cities. The implementation is at a v1 candidate milestone: every P0 functional
+requirement has automated evidence, while public release remains blocked on the
+owner decisions and opt-in deployment listed in `release/readiness.json`.
 
 ## Structural preview quick start
 
@@ -19,8 +20,8 @@ snippet. Open `dist/index.html` directly to pan, zoom, rotate, and inspect the
 city. Buildings and links can be filtered by verified role, language,
 technology, and evidence level. District labels are decluttered at each view so
 deeper, populated districts remain readable while zooming and rotating. The
-bundled Java analyzer recognizes
-evidence-backed local imports, inheritance, declarations, and core Spring
+bundled Java analyzer recognizes evidence-backed local imports, uniquely
+resolved local type references, inheritance, declarations, and core Spring
 stereotypes. The JavaScript/TypeScript adapter resolves explicit local ESM and
 CommonJS module references without running repository code; its conservative
 resolution rules are documented in [the JS/TS analyzer guide](docs/JSTS_ANALYZER.md).
@@ -33,6 +34,12 @@ treated as active external dependencies. A declaration alone does not claim
 runtime technology usage. Catalog rules may combine the closest enclosing
 manifest declaration with exact code evidence; the resulting claim retains
 both provenance classes.
+
+Allowlisted Spring `application*.properties` signatures are parsed without
+retaining arbitrary keys or raw secret values. PostgreSQL is classified only
+when the exact driver declaration, verified JPA repository inheritance, and
+non-secret driver configuration agree. A selected building's inspector lists
+its nearest module dependencies under `DECLARED DEPENDENCIES (NOT USAGE)`.
 
 npm `package-lock.json` v2/v3 files contribute only the root package's direct
 dependency sections. Nested resolved packages are not promoted to direct
@@ -70,7 +77,9 @@ python -m unittest discover -s tests -v
 
 The same lint, compile, JavaScript parse, dependency consistency, and full test
 gates run automatically on pull requests and pushes to `main` through the
-least-privilege [quality workflow](.github/workflows/ci.yml).
+least-privilege [quality workflow](.github/workflows/ci.yml). That workflow also
+runs the composite Action against a safe fixture on a GitHub-hosted runner and
+checks the complete static artifact set.
 
 Validate the versioned P0 and acceptance evidence map:
 
@@ -117,7 +126,7 @@ python scripts/stable_ids.py edge --from-id source --type REFERENCES --to-id tar
 Validate a versioned technology catalog and its positive/negative fixtures:
 
 ```powershell
-python -m metropogits validate --input catalog/0.2.0/catalog.json
+python -m metropogits validate --input catalog/0.4.0/catalog.json
 ```
 
 See [technology catalog contributions](docs/CATALOG_CONTRIBUTING.md) for the
