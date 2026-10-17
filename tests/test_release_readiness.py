@@ -99,6 +99,29 @@ class ReleaseReadinessTests(unittest.TestCase):
         )
         self.assertTrue(all(item["blocker"] for item in blocked))
 
+    def test_l2_progress_keeps_only_unimplemented_semantics_blocked(self):
+        document = readiness_document()
+        requirements = {item["id"]: item for item in document["requirements"]}
+
+        project_detection = requirements["FR-003"]
+        self.assertEqual("BLOCKED", project_detection["status"])
+        self.assertIn("lockfile", project_detection["blocker"])
+        self.assertIn("configuration", project_detection["blocker"])
+        self.assertTrue(
+            any("test_maven_dependencies" in item for item in project_detection["evidence"])
+        )
+        self.assertTrue(
+            any("test_gradle_literal_dependencies" in item for item in project_detection["evidence"])
+        )
+        self.assertTrue(
+            any("test_npm_dependencies" in item for item in project_detection["evidence"])
+        )
+
+        technology_typing = requirements["FR-009"]
+        self.assertEqual("BLOCKED", technology_typing["status"])
+        self.assertIn("catalog", technology_typing["blocker"])
+        self.assertIn("distinct graph facts", technology_typing["blocker"])
+
     def test_aggregate_checks_cannot_hide_incomplete_entries(self):
         document = readiness_document()
         for check_id in (

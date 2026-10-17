@@ -207,13 +207,13 @@
       "summary": "The pipeline runs locally without executing or uploading target repository code."
     },
     {
-      "blocker": "FR-003 and FR-009 remain incomplete.",
+      "blocker": "FR-003 still lacks lockfile and configuration parsing, and FR-009 still lacks catalog-level declared-versus-used resolution.",
       "evidence": [
         "tests/test_release_readiness.py::ReleaseReadinessTests::test_readiness_maps_every_p0_requirement_and_required_acceptance"
       ],
       "id": "P0_REQUIREMENTS",
       "status": "BLOCKED",
-      "summary": "Every P0 requirement is mapped, but manifest analysis and layout guarantees remain incomplete."
+      "summary": "Every P0 requirement is mapped, but complete L2 project detection and declared-versus-used technology resolution remain incomplete."
     },
     {
       "blocker": "The project owner must select and publish a project license.",
@@ -258,15 +258,18 @@
       "summary": "Unsupported source languages retain generic file buildings."
     },
     {
-      "blocker": "Maven, Gradle, npm, lockfile, and configuration parsing are not implemented without executing build scripts.",
+      "blocker": "Maven, Gradle, and npm manifests are parsed safely, but lockfile and configuration parsing remain unimplemented.",
       "evidence": [
         "tests/test_java_analyzer.py::JavaAnalyzerTests::test_cli_analysis_runs_java_adapter",
-        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_cli_composes_jsts_adapter_and_city_networks"
+        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_cli_composes_jsts_adapter_and_city_networks",
+        "tests/test_scanner.py::ScannerTests::test_gradle_literal_dependencies_create_manifest_evidenced_edges",
+        "tests/test_scanner.py::ScannerTests::test_maven_dependencies_create_manifest_evidenced_edges",
+        "tests/test_scanner.py::ScannerTests::test_npm_dependencies_create_manifest_evidenced_edges"
       ],
       "id": "FR-003",
       "priority": "P0",
       "status": "BLOCKED",
-      "summary": "Language analyzers exist, but project and manifest detection is incomplete."
+      "summary": "Language analyzers and three primary manifest families are covered; lockfile and configuration detection remain incomplete."
     },
     {
       "blocker": null,
@@ -327,14 +330,15 @@
       "summary": "Five core Spring roles require exact annotation evidence."
     },
     {
-      "blocker": "No manifest or configuration facts exist to distinguish a declared dependency from verified code usage.",
+      "blocker": "Manifest dependencies and code imports are distinct graph facts, but catalog classification does not yet intersect them to distinguish declared technology from verified usage.",
       "evidence": [
-        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_negative_near_matches_do_not_create_spring_roles"
+        "tests/test_java_analyzer.py::JavaAnalyzerTests::test_negative_near_matches_do_not_create_spring_roles",
+        "tests/test_jsts_analyzer.py::JsTsAnalyzerTests::test_npm_manifest_and_import_share_package_without_claiming_unused_usage"
       ],
       "id": "FR-009",
       "priority": "P0",
       "status": "BLOCKED",
-      "summary": "Negative code matches are safe, but declared-package versus actual-usage typing is incomplete."
+      "summary": "Declared packages and observed imports remain separate, but technology typing does not yet resolve their combined evidence."
     },
     {
       "blocker": null,
