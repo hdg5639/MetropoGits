@@ -44,6 +44,7 @@ class ViewerTests(unittest.TestCase):
             set(first),
         )
         html = first["index.html"].decode("utf-8")
+        viewer_data = first["assets/viewer-data.js"].decode("utf-8")
         self.assertIn("Content-Security-Policy", html)
         self.assertIn('data-filter="role"', html)
         self.assertIn('data-filter="confidence"', html)
@@ -52,6 +53,7 @@ class ViewerTests(unittest.TestCase):
         self.assertNotIn("http://", html)
         self.assertNotIn("https://", html)
         self.assertNotIn("fetch(", first["assets/viewer.js"].decode("utf-8"))
+        self.assertIn('"territories":{"cellSize":14,"districts":[', viewer_data)
 
     def test_viewer_assets_are_subpath_safe(self):
         graph = load_fixture()
@@ -484,11 +486,15 @@ const networks = Array.from({ length: 100 }, (_, index) => ({
   edgeIds: Array.from({ length: 100 - index }, (_, edge) => `edge-${index}-${edge}`),
   id: `network-${String(index).padStart(3, "0")}`,
 }));
-const policy = globalThis.METROPOGITS_FILTERS.createLodPolicy({
-  buildings,
-  districts,
-  networks,
-});
+const territoryData = { districts: [{
+  id: "leaf",
+  landmarkPlot: { depth: 40, width: 60, x: 45, z: 35 },
+  rectangles: [{ depth: 40, width: 60, x: 45, z: 35 }],
+}] };
+const policy = globalThis.METROPOGITS_FILTERS.createLodPolicy(
+  { buildings, districts, networks },
+  territoryData,
+);
 const buildingIds = buildings.map((building) => building.entityId);
 const networkIds = networks.map((network) => network.id);
 const overview = policy.visibility("overview", buildingIds, networkIds);
@@ -497,6 +503,7 @@ const detail = policy.visibility("detail", buildingIds, networkIds);
 const aggregate = policy.aggregates[0];
 const aggregateDistrict = districts.find((district) => district.id === aggregate.districtId);
 const aggregateParts = globalThis.METROPOGITS_FILTERS.aggregateParts(aggregate);
+const aggregatePlot = territoryData.districts[0].landmarkPlot;
 process.stdout.write(JSON.stringify({
   deterministic: JSON.stringify(overview) === JSON.stringify(
     policy.visibility("overview", buildingIds, networkIds),
@@ -520,6 +527,10 @@ process.stdout.write(JSON.stringify({
       && aggregate.z >= aggregateDistrict.z
       && aggregate.x + aggregate.width <= aggregateDistrict.x + aggregateDistrict.width
       && aggregate.z + aggregate.depth <= aggregateDistrict.z + aggregateDistrict.depth,
+    facilityInOccupiedPlot: aggregate.x >= aggregatePlot.x
+      && aggregate.z >= aggregatePlot.z
+      && aggregate.x + aggregate.width <= aggregatePlot.x + aggregatePlot.width
+      && aggregate.z + aggregate.depth <= aggregatePlot.z + aggregatePlot.depth,
     memberCount: aggregate.memberEntityIds.length,
     membersAreUnique: new Set(aggregate.memberEntityIds).size === buildingIds.length,
     partsContained: aggregateParts.every((part) =>
@@ -574,6 +585,7 @@ process.stdout.write(JSON.stringify({
         self.assertEqual(300, result["aggregate"]["memberCount"])
         self.assertTrue(result["aggregate"]["membersAreUnique"])
         self.assertTrue(result["aggregate"]["facilityContained"])
+        self.assertTrue(result["aggregate"]["facilityInOccupiedPlot"])
         self.assertTrue(result["aggregate"]["partsContained"])
         self.assertEqual(
             [

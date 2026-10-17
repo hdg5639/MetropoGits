@@ -10,7 +10,11 @@
   );
   const selectedIndex = requestedIndex >= 0 ? requestedIndex : history.frames.length - 1;
   const selected = history.frames[selectedIndex];
-  globalThis.METROPOGITS_DATA = { scene: selected.scene, ucg: selected.ucg };
+  globalThis.METROPOGITS_DATA = {
+    scene: selected.scene,
+    territories: selected.territories,
+    ucg: selected.ucg,
+  };
 
   const revisionSelect = document.getElementById("history-revision");
   const summary = document.getElementById("history-summary");

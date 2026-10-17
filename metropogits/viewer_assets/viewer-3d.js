@@ -318,6 +318,32 @@
   const edges = new Map(ucg.edges.map((edge) => [edge.id, edge]));
   const evidence = new Map(ucg.evidence.map((item) => [item.evidenceId, item]));
   const districts = new Map(scene.districts.map((district) => [district.id, district]));
+  const districtTerritories = new Map(
+    (data.territories?.districts || []).map((territory) => [territory.id, territory]),
+  );
+  function districtTerritory(district) {
+    return districtTerritories.get(district.id) || {
+      boundary: [
+        [[district.x, district.z], [district.x + district.width, district.z]],
+        [[district.x + district.width, district.z], [district.x + district.width, district.z + district.depth]],
+        [[district.x + district.width, district.z + district.depth], [district.x, district.z + district.depth]],
+        [[district.x, district.z + district.depth], [district.x, district.z]],
+      ],
+      bounds: {
+        maxX: district.x + district.width,
+        maxZ: district.z + district.depth,
+        minX: district.x,
+        minZ: district.z,
+      },
+      labelAnchor: [district.x + 2, district.z + 2],
+      rectangles: [{
+        depth: district.depth,
+        width: district.width,
+        x: district.x,
+        z: district.z,
+      }],
+    };
+  }
   const districtChildren = new Map();
   const districtsWithBuildings = new Set(
     scene.buildings.map((building) => building.districtId),
@@ -375,7 +401,7 @@
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
-  const lodPolicy = filterEngine.createLodPolicy(scene);
+  const lodPolicy = filterEngine.createLodPolicy(scene, data.territories);
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -386,15 +412,21 @@
       majorDistrictColors[index % majorDistrictColors.length],
     ]),
   );
-  const worldBounds = scene.districts.reduce(
-    (bounds, district) => ({
-      maxX: Math.max(bounds.maxX, district.x + district.width),
-      maxZ: Math.max(bounds.maxZ, district.z + district.depth),
-      minX: Math.min(bounds.minX, district.x),
-      minZ: Math.min(bounds.minZ, district.z),
+  const framingDistricts = scene.buildings.length >= 256 && majorDistrictIds.size
+    ? [...majorDistrictIds].map((districtId) => districts.get(districtId)).filter(Boolean)
+    : scene.districts;
+  const worldBounds = framingDistricts.map(districtTerritory).reduce(
+    (bounds, territory) => ({
+      maxX: Math.max(bounds.maxX, territory.bounds.maxX),
+      maxZ: Math.max(bounds.maxZ, territory.bounds.maxZ),
+      minX: Math.min(bounds.minX, territory.bounds.minX),
+      minZ: Math.min(bounds.minZ, territory.bounds.minZ),
     }),
-    { maxX: 1, maxZ: 1, minX: 0, minZ: 0 },
+    { maxX: -Infinity, maxZ: -Infinity, minX: Infinity, minZ: Infinity },
   );
+  if (!Number.isFinite(worldBounds.minX)) {
+    Object.assign(worldBounds, { maxX: 1, maxZ: 1, minX: 0, minZ: 0 });
+  }
   const worldSpan = Math.max(
     worldBounds.maxX - worldBounds.minX,
     worldBounds.maxZ - worldBounds.minZ,
@@ -536,21 +568,26 @@
 
   function fitInitialDistance() {
     const points = [];
-    for (const district of scene.districts) {
-      points.push(
-        [district.x, 0, district.z],
-        [district.x + district.width, 0, district.z],
-        [district.x + district.width, 0, district.z + district.depth],
-        [district.x, 0, district.z + district.depth],
-      );
+    const fitDistricts = scene.buildings.length >= 256 ? framingDistricts : scene.districts;
+    for (const district of fitDistricts) {
+      for (const rectangle of districtTerritory(district).rectangles) {
+        points.push(
+          [rectangle.x, 0, rectangle.z],
+          [rectangle.x + rectangle.width, 0, rectangle.z],
+          [rectangle.x + rectangle.width, 0, rectangle.z + rectangle.depth],
+          [rectangle.x, 0, rectangle.z + rectangle.depth],
+        );
+      }
     }
-    for (const building of scene.buildings) {
-      points.push(
-        [building.x, building.height, building.z],
-        [building.x + building.width, building.height, building.z],
-        [building.x + building.width, building.height, building.z + building.depth],
-        [building.x, building.height, building.z + building.depth],
-      );
+    if (scene.buildings.length < 256) {
+      for (const building of scene.buildings) {
+        points.push(
+          [building.x, building.height, building.z],
+          [building.x + building.width, building.height, building.z],
+          [building.x + building.width, building.height, building.z + building.depth],
+          [building.x, building.height, building.z + building.depth],
+        );
+      }
     }
     if (scene.buildings.length >= 256) {
       for (const facility of aggregateFacilities.values()) {
@@ -589,50 +626,41 @@
   function buildGeometry(timestamp) {
     const triangles = [];
     const lines = [];
-    box(
-      triangles,
-      worldBounds.minX,
-      -0.55,
-      worldBounds.minZ,
-      worldBounds.maxX - worldBounds.minX,
-      0.5,
-      worldBounds.maxZ - worldBounds.minZ,
-      color("#182337"),
-    );
-
-    const gridStep = Math.max(7, Math.ceil(worldSpan / 24 / 7) * 7);
-    const gridColor = color("#263a54");
-    for (let x = worldBounds.minX; x <= worldBounds.maxX; x += gridStep) {
-      line(lines, [x, 0.02, worldBounds.minZ], [x, 0.02, worldBounds.maxZ], gridColor);
-    }
-    for (let z = worldBounds.minZ; z <= worldBounds.maxZ; z += gridStep) {
-      line(lines, [worldBounds.minX, 0.02, z], [worldBounds.maxX, 0.02, z], gridColor);
+    for (const district of framingDistricts) {
+      for (const rectangle of districtTerritory(district).rectangles) {
+        box(
+          triangles,
+          rectangle.x,
+          -0.55,
+          rectangle.z,
+          rectangle.width,
+          0.5,
+          rectangle.depth,
+          color("#182337"),
+        );
+      }
     }
 
     for (const districtId of [...majorDistrictIds].sort()) {
       const district = districts.get(districtId);
       if (!district) continue;
+      const territory = districtTerritory(district);
       const districtColor = color(majorDistrictColorById.get(districtId));
-      box(
-        triangles,
-        district.x + 0.5,
-        -0.03,
-        district.z + 0.5,
-        Math.max(0.5, district.width - 1),
-        0.12,
-        Math.max(0.5, district.depth - 1),
-        districtColor,
-      );
+      for (const rectangle of territory.rectangles) {
+        box(
+          triangles,
+          rectangle.x,
+          -0.03,
+          rectangle.z,
+          rectangle.width,
+          0.12,
+          rectangle.depth,
+          districtColor,
+        );
+      }
       const borderColor = lighten(districtColor, 0.48);
-      const corners = [
-        [district.x, district.z],
-        [district.x + district.width, district.z],
-        [district.x + district.width, district.z + district.depth],
-        [district.x, district.z + district.depth],
-        [district.x, district.z],
-      ];
-      for (let index = 1; index < corners.length; index += 1) {
-        roadSegment(triangles, corners[index - 1], corners[index], 1.2, 0.09, borderColor);
+      for (const segment of territory.boundary) {
+        roadSegment(triangles, segment[0], segment[1], 1.2, 0.09, borderColor);
       }
     }
 
@@ -670,25 +698,21 @@
       const districtColor = selected("district", district.id)
         ? color("#38bdf8")
         : lighten(color("#40516c"), Math.min(0.18, depth * 0.025));
-      const x1 = district.x + district.width;
-      const z1 = district.z + district.depth;
-      line(lines, [district.x, y, district.z], [x1, y, district.z], districtColor);
-      line(lines, [x1, y, district.z], [x1, y, z1], districtColor);
-      line(lines, [x1, y, z1], [district.x, y, z1], districtColor);
-      line(lines, [district.x, y, z1], [district.x, y, district.z], districtColor);
+      const territory = districtTerritory(district);
+      for (const segment of territory.boundary) {
+        line(
+          lines,
+          [segment[0][0], y, segment[0][1]],
+          [segment[1][0], y, segment[1][1]],
+          districtColor,
+        );
+      }
       if (selected("district", district.id)) {
-        const corners = [
-          [district.x, district.z],
-          [x1, district.z],
-          [x1, z1],
-          [district.x, z1],
-          [district.x, district.z],
-        ];
-        for (let index = 1; index < corners.length; index += 1) {
+        for (const segment of territory.boundary) {
           roadSegment(
             triangles,
-            corners[index - 1],
-            corners[index],
+            segment[0],
+            segment[1],
             0.5,
             y + 0.02,
             color("#38bdf8"),
@@ -881,20 +905,22 @@
     const regions = [];
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
-      const points = [
-        projected([district.x, 0.08, district.z]),
-        projected([district.x + district.width, 0.08, district.z]),
-        projected([district.x + district.width, 0.08, district.z + district.depth]),
-        projected([district.x, 0.08, district.z + district.depth]),
-      ];
-      if (points.every(Boolean)) {
-        regions.push({
-          depth: Math.min(...points.map((point) => point.depth)),
-          id: district.id,
-          kind: "district",
-          points,
-          priority: districtDepths.get(district.id) || 0,
-        });
+      for (const rectangle of districtTerritory(district).rectangles) {
+        const points = [
+          projected([rectangle.x, 0.08, rectangle.z]),
+          projected([rectangle.x + rectangle.width, 0.08, rectangle.z]),
+          projected([rectangle.x + rectangle.width, 0.08, rectangle.z + rectangle.depth]),
+          projected([rectangle.x, 0.08, rectangle.z + rectangle.depth]),
+        ];
+        if (points.every(Boolean)) {
+          regions.push({
+            depth: Math.min(...points.map((point) => point.depth)),
+            id: district.id,
+            kind: "district",
+            points,
+            priority: districtDepths.get(district.id) || 0,
+          });
+        }
       }
     }
     for (const network of scene.networks) {
@@ -1009,7 +1035,12 @@
     const candidates = [];
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
-      const anchor = projected([district.x + 2, 0.35, district.z + 2]);
+      const territory = districtTerritory(district);
+      const anchor = projected([
+        territory.labelAnchor[0],
+        0.35,
+        territory.labelAnchor[1],
+      ]);
       if (!anchor || anchor.depth < -1 || anchor.depth > 1) continue;
       const label = districtCanvasLabel(district);
       candidates.push({

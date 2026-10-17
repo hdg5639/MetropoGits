@@ -41,6 +41,32 @@
   const edges = new Map(ucg.edges.map((edge) => [edge.id, edge]));
   const evidence = new Map(ucg.evidence.map((item) => [item.evidenceId, item]));
   const districts = new Map(scene.districts.map((district) => [district.id, district]));
+  const districtTerritories = new Map(
+    (data.territories?.districts || []).map((territory) => [territory.id, territory]),
+  );
+  function districtTerritory(district) {
+    return districtTerritories.get(district.id) || {
+      boundary: [
+        [[district.x, district.z], [district.x + district.width, district.z]],
+        [[district.x + district.width, district.z], [district.x + district.width, district.z + district.depth]],
+        [[district.x + district.width, district.z + district.depth], [district.x, district.z + district.depth]],
+        [[district.x, district.z + district.depth], [district.x, district.z]],
+      ],
+      bounds: {
+        maxX: district.x + district.width,
+        maxZ: district.z + district.depth,
+        minX: district.x,
+        minZ: district.z,
+      },
+      labelAnchor: [district.x + 2, district.z + 2],
+      rectangles: [{
+        depth: district.depth,
+        width: district.width,
+        x: district.x,
+        z: district.z,
+      }],
+    };
+  }
   const districtChildren = new Map();
   const districtsWithBuildings = new Set(
     scene.buildings.map((building) => building.districtId),
@@ -97,7 +123,7 @@
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
   const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
-  const lodPolicy = filterEngine.createLodPolicy(scene);
+  const lodPolicy = filterEngine.createLodPolicy(scene, data.territories);
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -175,15 +201,21 @@
 
   const worldBounds = (() => {
     if (!scene.districts.length) return { minX: 0, minZ: 0, maxX: 1, maxZ: 1 };
-    return scene.districts.reduce(
-      (bounds, district) => ({
-        minX: Math.min(bounds.minX, district.x),
-        minZ: Math.min(bounds.minZ, district.z),
-        maxX: Math.max(bounds.maxX, district.x + district.width),
-        maxZ: Math.max(bounds.maxZ, district.z + district.depth),
+    const framingDistricts = scene.buildings.length >= 256 && majorDistrictIds.size
+      ? [...majorDistrictIds].map((districtId) => districts.get(districtId)).filter(Boolean)
+      : scene.districts;
+    const bounds = framingDistricts.map(districtTerritory).reduce(
+      (result, territory) => ({
+        minX: Math.min(result.minX, territory.bounds.minX),
+        minZ: Math.min(result.minZ, territory.bounds.minZ),
+        maxX: Math.max(result.maxX, territory.bounds.maxX),
+        maxZ: Math.max(result.maxZ, territory.bounds.maxZ),
       }),
       { minX: Infinity, minZ: Infinity, maxX: -Infinity, maxZ: -Infinity },
     );
+    return Number.isFinite(bounds.minX)
+      ? bounds
+      : { minX: 0, minZ: 0, maxX: 1, maxZ: 1 };
   })();
   const worldCenter = {
     x: (worldBounds.minX + worldBounds.maxX) / 2,
@@ -437,27 +469,38 @@
   }
 
   function drawDistrict(district) {
-    const points = [
-      project(district.x, district.z),
-      project(district.x + district.width, district.z),
-      project(district.x + district.width, district.z + district.depth),
-      project(district.x, district.z + district.depth),
-    ];
-    polygonPath(points);
+    const territory = districtTerritory(district);
     context.fillStyle = selected("district", district.id)
       ? "rgba(14, 165, 233, 0.24)"
       : "rgba(30, 41, 59, 0.72)";
-    context.fill();
+    for (const rectangle of territory.rectangles) {
+      const points = [
+        project(rectangle.x, rectangle.z),
+        project(rectangle.x + rectangle.width, rectangle.z),
+        project(rectangle.x + rectangle.width, rectangle.z + rectangle.depth),
+        project(rectangle.x, rectangle.z + rectangle.depth),
+      ];
+      polygonPath(points);
+      context.fill();
+      hitRegions.push({ kind: "district", id: district.id, points });
+    }
     context.strokeStyle = selected("district", district.id) ? "#38bdf8" : "#34445e";
     context.lineWidth = selected("district", district.id) ? 2.5 : 1;
-    context.stroke();
+    for (const segment of territory.boundary) {
+      const start = project(segment[0][0], segment[0][1]);
+      const end = project(segment[1][0], segment[1][1]);
+      context.beginPath();
+      context.moveTo(start.x, start.y);
+      context.lineTo(end.x, end.y);
+      context.stroke();
+    }
 
     const major = majorDistrictIds.has(district.id);
     context.font = major
       ? "800 12px ui-sans-serif, system-ui, sans-serif"
       : "600 10px ui-sans-serif, system-ui, sans-serif";
     const label = districtCanvasLabel(district);
-    const labelPoint = project(district.x + 3, district.z + 3);
+    const labelPoint = project(...territory.labelAnchor);
     const textWidth = Math.ceil(context.measureText(label).width);
     districtLabelCandidates.push({
       height: major ? 19 : 15,
@@ -473,23 +516,31 @@
       x: labelPoint.x - 3,
       y: labelPoint.y - (major ? 19 : 16),
     });
-    hitRegions.push({ kind: "district", id: district.id, points });
   }
 
   function drawMajorDistrict(district) {
-    const points = [
-      project(district.x, district.z, 0.04),
-      project(district.x + district.width, district.z, 0.04),
-      project(district.x + district.width, district.z + district.depth, 0.04),
-      project(district.x, district.z + district.depth, 0.04),
-    ];
+    const territory = districtTerritory(district);
     const channels = majorDistrictColorById.get(district.id) || [24, 50, 74];
-    polygonPath(points);
     context.fillStyle = `rgba(${channels.join(", ")}, 0.24)`;
-    context.fill();
+    for (const rectangle of territory.rectangles) {
+      polygonPath([
+        project(rectangle.x, rectangle.z, 0.04),
+        project(rectangle.x + rectangle.width, rectangle.z, 0.04),
+        project(rectangle.x + rectangle.width, rectangle.z + rectangle.depth, 0.04),
+        project(rectangle.x, rectangle.z + rectangle.depth, 0.04),
+      ]);
+      context.fill();
+    }
     context.strokeStyle = `rgba(${channels.map((value) => Math.min(255, value + 90)).join(", ")}, 0.95)`;
     context.lineWidth = 3;
-    context.stroke();
+    for (const segment of territory.boundary) {
+      const start = project(segment[0][0], segment[0][1], 0.04);
+      const end = project(segment[1][0], segment[1][1], 0.04);
+      context.beginPath();
+      context.moveTo(start.x, start.y);
+      context.lineTo(end.x, end.y);
+      context.stroke();
+    }
   }
 
   function drawDistrictLabels() {

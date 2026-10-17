@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from metropogits.territory import derive_district_territories
 from scripts.canonical_json import CanonicalJsonError, loads_strict_json
 from scripts.validate_city import validate_document as validate_city_document
 
@@ -145,15 +146,16 @@ def _roof_signature(
     return lines
 
 
-def _bounds(scene: dict[str, Any]) -> tuple[float, float, float, float]:
+def _bounds(
+    scene: dict[str, Any], territories: dict[str, Any] | None = None
+) -> tuple[float, float, float, float]:
     points: list[tuple[float, float]] = []
-    for district in scene["districts"]:
-        x = float(district["x"])
-        z = float(district["z"])
+    for territory in (territories or derive_district_territories(scene))["districts"]:
+        bounds = territory["bounds"]
         points.extend(
             [
-                (x, z),
-                (x + float(district["width"]), z + float(district["depth"])),
+                (float(bounds["minX"]), float(bounds["minZ"])),
+                (float(bounds["maxX"]), float(bounds["maxZ"])),
             ]
         )
     for network in scene["networks"]:
@@ -370,7 +372,11 @@ def render_preview(
         raise PreviewError(f"height must be between {MIN_HEIGHT} and {MAX_DIMENSION}")
 
     palette = _palette(scene["theme"])
-    min_x, min_z, max_x, max_z = _bounds(scene)
+    territory_data = derive_district_territories(scene)
+    territories = {
+        item["id"]: item for item in territory_data["districts"]
+    }
+    min_x, min_z, max_x, max_z = _bounds(scene, territory_data)
     world_width = max(max_x - min_x, 1.0)
     world_depth = max(max_z - min_z, 1.0)
     drawing_width = width - PADDING * 2
@@ -454,9 +460,7 @@ def render_preview(
     for district in scene["districts"]:
         if district["id"] not in drawable_district_ids:
             continue
-        x, y = project(district["x"], district["z"])
-        district_width = max(float(district["width"]) * scale, 1.0)
-        district_depth = max(float(district["depth"]) * scale, 1.0)
+        territory = territories[district["id"]]
         label = (
             repository_id
             if district["id"] in root_ids
@@ -466,18 +470,32 @@ def render_preview(
             [
                 f"    <g data-district-id=\"{_escape(district['id'])}\">",
                 f"      <title>{_escape(label)}</title>",
-                (
-                    f"      <rect x=\"{_fmt(x)}\" y=\"{_fmt(y)}\" "
-                    f"width=\"{_fmt(district_width)}\" height=\"{_fmt(district_depth)}\" "
-                    f"rx=\"4\" fill=\"{palette['district']}\" fill-opacity=\"0.82\" "
-                    f"stroke=\"{palette['districtBorder']}\" stroke-width=\"1.5\"/>"
-                ),
             ]
+        )
+        for rectangle in territory["rectangles"]:
+            x, y = project(rectangle["x"], rectangle["z"])
+            lines.append(
+                f"      <rect x=\"{_fmt(x)}\" y=\"{_fmt(y)}\" "
+                f"width=\"{_fmt(max(float(rectangle['width']) * scale, 1.0))}\" "
+                f"height=\"{_fmt(max(float(rectangle['depth']) * scale, 1.0))}\" "
+                f"fill=\"{palette['district']}\" fill-opacity=\"0.82\"/>"
+            )
+        boundary_path = " ".join(
+            f"M {_fmt(project(segment[0][0], segment[0][1])[0])} "
+            f"{_fmt(project(segment[0][0], segment[0][1])[1])} "
+            f"L {_fmt(project(segment[1][0], segment[1][1])[0])} "
+            f"{_fmt(project(segment[1][0], segment[1][1])[1])}"
+            for segment in territory["boundary"]
+        )
+        lines.append(
+            f"      <path d=\"{boundary_path}\" fill=\"none\" "
+            f"stroke=\"{palette['districtBorder']}\" stroke-width=\"1.5\"/>"
         )
         canvas_label = visible_district_labels.get(district["id"])
         if canvas_label is not None:
+            x, y = project(*territory["labelAnchor"])
             lines.append(
-                f"      <text x=\"{_fmt(x + 6)}\" y=\"{_fmt(y + 15)}\" "
+                f"      <text x=\"{_fmt(x + 4)}\" y=\"{_fmt(y + 12)}\" "
                 f"fill=\"{palette['muted']}\" font-family=\"system-ui, sans-serif\" "
                 f"font-size=\"10\">{_escape(canvas_label)}</text>"
             )
@@ -490,24 +508,34 @@ def render_preview(
     }
     lines.append('  <g id="major-districts">')
     for district_id in sorted(major_district_ids):
-        district = next(
-            item for item in scene["districts"] if item["id"] == district_id
-        )
-        x, y = project(district["x"], district["z"])
-        district_width = max(float(district["width"]) * scale, 1.0)
-        district_depth = max(float(district["depth"]) * scale, 1.0)
+        territory = territories[district_id]
         full_label = district_labels.get(district_id, district_id)
         color = major_color_by_id[district_id]
         lines.extend(
             [
                 f'    <g data-major-district="{_escape(district_id)}">',
                 f"      <title>Major structural district: {_escape(full_label)}</title>",
-                (
-                    f'      <rect x="{_fmt(x)}" y="{_fmt(y)}" '
-                    f'width="{_fmt(district_width)}" height="{_fmt(district_depth)}" '
-                    f'rx="5" fill="{color}" fill-opacity="0.12" stroke="#38bdf8" '
-                    'stroke-opacity="0.88" stroke-width="3"/>'
-                ),
+            ]
+        )
+        for rectangle in territory["rectangles"]:
+            x, y = project(rectangle["x"], rectangle["z"])
+            lines.append(
+                f'      <rect x="{_fmt(x)}" y="{_fmt(y)}" '
+                f'width="{_fmt(max(float(rectangle["width"]) * scale, 1.0))}" '
+                f'height="{_fmt(max(float(rectangle["depth"]) * scale, 1.0))}" '
+                f'fill="{color}" fill-opacity="0.18"/>'
+            )
+        boundary_path = " ".join(
+            f"M {_fmt(project(segment[0][0], segment[0][1])[0])} "
+            f"{_fmt(project(segment[0][0], segment[0][1])[1])} "
+            f"L {_fmt(project(segment[1][0], segment[1][1])[0])} "
+            f"{_fmt(project(segment[1][0], segment[1][1])[1])}"
+            for segment in territory["boundary"]
+        )
+        lines.extend(
+            [
+                f'      <path d="{boundary_path}" fill="none" stroke="#38bdf8" '
+                'stroke-opacity="0.88" stroke-width="3"/>',
                 "    </g>",
             ]
         )
@@ -658,10 +686,7 @@ def render_preview(
     lines.append("  </g>")
     lines.append('  <g id="major-district-labels">')
     for district_id in sorted(major_district_ids):
-        district = next(
-            item for item in scene["districts"] if item["id"] == district_id
-        )
-        x, y = project(district["x"], district["z"])
+        x, y = project(*territories[district_id]["labelAnchor"])
         full_label = district_labels.get(district_id, district_id)
         label = full_label.rsplit("/", 1)[-1] or full_label
         lines.append(

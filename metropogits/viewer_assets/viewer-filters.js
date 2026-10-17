@@ -123,7 +123,7 @@
     return (hash >>> 0) % bucketCount;
   }
 
-  function aggregateFacilities(scene, majorIds, districts) {
+  function aggregateFacilities(scene, majorIds, districts, territories) {
     const groups = new Map();
 
     function aggregateDistrictId(districtId) {
@@ -148,23 +148,32 @@
     return [...groups.entries()].map(([districtId, members]) => {
       members.sort((left, right) => left.entityId.localeCompare(right.entityId));
       const district = districts.get(districtId);
-      const margin = Math.min(2, district.width * 0.05, district.depth * 0.05);
-      const maxWidth = Math.max(2, district.width - margin * 2);
-      const maxDepth = Math.max(2, district.depth - margin * 2);
+      const territory = territories.get(districtId);
+      const placement = territory?.landmarkPlot || (territory?.rectangles?.length
+        ? [...territory.rectangles].sort(
+          (left, right) =>
+            right.width * right.depth - left.width * left.depth
+            || left.z - right.z
+            || left.x - right.x,
+        )[0]
+        : district);
+      const margin = Math.min(2, placement.width * 0.05, placement.depth * 0.05);
+      const maxWidth = Math.max(2, placement.width - margin * 2);
+      const maxDepth = Math.max(2, placement.depth - margin * 2);
       const populationFootprint = Math.max(
         8,
         Math.sqrt(members.length) * 2.8,
       );
       const width = Math.min(
         maxWidth,
-        Math.max(populationFootprint, district.width * 0.46),
+        Math.max(populationFootprint, placement.width * 0.64),
       );
       const depth = Math.min(
         maxDepth,
-        Math.max(populationFootprint, district.depth * 0.46),
+        Math.max(populationFootprint, placement.depth * 0.64),
       );
-      const x = district.x + (district.width - width) / 2;
-      const z = district.z + (district.depth - depth) / 2;
+      const x = placement.x + (placement.width - width) / 2;
+      const z = placement.z + (placement.depth - depth) / 2;
       const archetypeCounts = new Map();
       for (const building of members) {
         archetypeCounts.set(
@@ -261,14 +270,17 @@
     }));
   }
 
-  function createLodPolicy(scene) {
+  function createLodPolicy(scene, territoryData = null) {
     const buildings = new Map(
       scene.buildings.map((building) => [building.entityId, building]),
     );
     const networks = new Map(scene.networks.map((network) => [network.id, network]));
     const districts = new Map(scene.districts.map((district) => [district.id, district]));
+    const territories = new Map(
+      (territoryData?.districts || []).map((territory) => [territory.id, territory]),
+    );
     const majorIds = new Set(majorDistrictIds(scene));
-    const aggregates = aggregateFacilities(scene, majorIds, districts);
+    const aggregates = aggregateFacilities(scene, majorIds, districts, territories);
     const aggregateIds = new Set(aggregates.map((aggregate) => aggregate.id));
     const districtDepths = new Map();
 

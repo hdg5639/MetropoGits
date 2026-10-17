@@ -166,6 +166,18 @@ class GovernanceTests(unittest.TestCase):
         self.assertIn("explicitly approves", decision)
         self.assertEqual(["ci.yml"], [path.name for path in active_workflows])
 
+    def test_occupied_territory_keeps_canonical_layout_contract(self):
+        decision = (ROOT / "docs" / "adr" / "ADR-008.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("Status: Accepted", decision)
+        self.assertIn("stable allocation envelope", decision)
+        self.assertIn("orthogonal territory mask", decision)
+        self.assertIn("does not revise the City Scene schema", decision)
+        self.assertIn("does not yet relocate", decision)
+        self.assertIn("buildings into gaps", decision)
+
 
 if __name__ == "__main__":
     unittest.main()

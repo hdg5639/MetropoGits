@@ -5,6 +5,7 @@ from __future__ import annotations
 from importlib.resources import files
 from typing import Any
 
+from metropogits.territory import derive_district_territories
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
@@ -33,7 +34,14 @@ def _javascript_assignment(name: str, document: Any) -> bytes:
 
 
 def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any]) -> bytes:
-    return _javascript_assignment("METROPOGITS_DATA", {"scene": scene, "ucg": ucg})
+    return _javascript_assignment(
+        "METROPOGITS_DATA",
+        {
+            "scene": scene,
+            "territories": derive_district_territories(scene),
+            "ucg": ucg,
+        },
+    )
 
 
 def render_viewer(scene: dict[str, Any], ucg: dict[str, Any]) -> dict[str, bytes]:
@@ -86,7 +94,12 @@ def render_history_viewer(
         ):
             raise ViewerError(f"history snapshot {index} does not match its frame")
         frames.append(
-            {"revision": frame["revision"], "scene": scene, "ucg": ucg}
+            {
+                "revision": frame["revision"],
+                "scene": scene,
+                "territories": derive_district_territories(scene),
+                "ucg": ucg,
+            }
         )
 
     resources = files(ASSET_PACKAGE)
