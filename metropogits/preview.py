@@ -157,7 +157,8 @@ def _roof_signature(
 
 
 def _bounds(
-    scene: dict[str, Any], territories: dict[str, Any] | None = None
+    scene: dict[str, Any], territories: dict[str, Any] | None = None,
+    streets: dict[str, Any] | None = None,
 ) -> tuple[float, float, float, float]:
     points: list[tuple[float, float]] = []
     for territory in (territories or derive_district_territories(scene))["districts"]:
@@ -170,6 +171,17 @@ def _bounds(
         )
     for network in scene["networks"]:
         points.extend((float(point[0]), float(point[1])) for point in network["path"])
+    for rectangle in (streets or derive_street_grid(scene))["rectangles"]:
+        points.extend([
+            (rectangle["x"], rectangle["z"]),
+            (rectangle["x"] + rectangle["width"], rectangle["z"] + rectangle["depth"]),
+        ])
+    for building in scene["buildings"]:
+        points.extend([
+            (float(building["x"]) - 1.1, float(building["z"]) - 1.1),
+            (float(building["x"]) + float(building["width"]) + 1.1,
+             float(building["z"]) + float(building["depth"]) + 1.1),
+        ])
     if not points:
         return 0.0, 0.0, 1.0, 1.0
     xs = [point[0] for point in points]
@@ -387,7 +399,7 @@ def render_preview(
     territories = {
         item["id"]: item for item in territory_data["districts"]
     }
-    min_x, min_z, max_x, max_z = _bounds(scene, territory_data)
+    min_x, min_z, max_x, max_z = _bounds(scene, territory_data, street_data)
     world_width = max(max_x - min_x, 1.0)
     world_depth = max(max_z - min_z, 1.0)
     drawing_width = width - PADDING * 2
@@ -441,6 +453,8 @@ def render_preview(
             f"and {len(scene['networks'])} networks.</desc>"
         ),
         "  <defs>",
+        f'    <clipPath id="scene-clip"><rect y="{HEADER_HEIGHT}" '
+        f'width="{width}" height="{height - HEADER_HEIGHT}"/></clipPath>',
         (
             "    <pattern id=\"city-grid\" width=\"16\" height=\"16\" "
             "patternUnits=\"userSpaceOnUse\">"
@@ -465,6 +479,7 @@ def render_preview(
             f"{len(scene['buildings'])} buildings · {len(scene['districts'])} districts · "
             f"{len(scene['networks'])} networks</text>"
         ),
+        '  <g id="scene-content" clip-path="url(#scene-clip)">',
         "  <g id=\"districts\">",
     ]
 
@@ -722,7 +737,7 @@ def render_preview(
             'font-family="system-ui, sans-serif" font-size="13" '
             f'font-weight="800">{_escape(label)}</text>'
         )
-    lines.extend(["  </g>", "</svg>"])
+    lines.extend(["  </g>", "  </g>", "</svg>"])
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 

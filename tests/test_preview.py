@@ -13,6 +13,7 @@ from metropogits.preview import (
     render_preview,
 )
 from metropogits.scanner import ScanResult, ScannedFile, build_structural_ucg
+from scripts.canonical_json import canonical_json_bytes, loads_strict_json
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -32,10 +33,12 @@ class PreviewTests(unittest.TestCase):
         second = render_preview(self.scene, self.ucg)
 
         self.assertEqual(first, second)
+        strict_scene = loads_strict_json(canonical_json_bytes(self.scene).decode())
+        self.assertEqual(first, render_preview(strict_scene, self.ucg))
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            "8df58281ae8ac50bba7e36fb3b654b913c2ee87f155b35f63c2b53bf980685d8",
+            "f157d486487bfd0ade55905e296ff43962a01a95eab97037a24ff5329a61a219",
             hashlib.sha256(first).hexdigest(),
         )
 
@@ -111,7 +114,7 @@ class PreviewTests(unittest.TestCase):
 
         preview = element_tree.fromstring(render_preview(scene, ucg))
         namespace = {"svg": "http://www.w3.org/2000/svg"}
-        district_group = preview.find("svg:g[@id='districts']", namespace)
+        district_group = preview.find(".//svg:g[@id='districts']", namespace)
         district_rect = district_group.find("svg:g/svg:rect", namespace)
 
         self.assertGreater(float(district_rect.attrib["x"]), 250)
@@ -221,6 +224,19 @@ class PreviewTests(unittest.TestCase):
             render_preview(self.scene, self.ucg, width=100)
         with self.assertRaisesRegex(PreviewError, "height must be between"):
             render_preview(self.scene, self.ucg, height=5000)
+
+    def test_street_surfaces_and_civic_plots_stay_below_header(self):
+        from metropogits.cli import analyze_repository
+
+        graph = analyze_repository(FIXTURES / "repositories" / "spring-positive")
+        scene = generate_city(graph)
+        namespace = {"svg": "http://www.w3.org/2000/svg"}
+        root = element_tree.fromstring(render_preview(scene, graph))
+        world = root.find("svg:g[@id='scene-content']", namespace)
+        self.assertEqual("url(#scene-clip)", world.attrib["clip-path"])
+        for rect in world.findall(".//svg:rect", namespace):
+            self.assertGreaterEqual(float(rect.attrib["y"]), 64)
+            self.assertLessEqual(float(rect.attrib["y"]) + float(rect.attrib["height"]), 675.01)
 
 
 if __name__ == "__main__":

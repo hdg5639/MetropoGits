@@ -1950,3 +1950,28 @@
   above; the new renderer is explicitly still pending.
 - Documentation/link and whitespace validation precede the independent ADR
   commit. VIS-00 is commit `fa4c1ae`; VIS-01 is the subsequent ADR commit.
+
+## Checkpoint 2026-10-18 - detailed SVG framing correction
+
+- Implemented: include street rectangles and civic-plot margins in preview
+  bounds and clip city geometry below the header. Updated the SVG golden hash
+  for the intentional framing change; no UCG, layout, or viewer code changed.
+- Fixture / command: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --repo-id fixture/showcase
+  --revision showcase --out ../artifacts/visual/showcase-20261018/spring`,
+  repeated at `spring-repeat`; maintained fixture from `3829d6e`.
+- Artifacts inspected: generated SVG via headless Chrome screenshot
+  `artifacts/visual/showcase-20261018/detail.png`. Header is fully visible,
+  six file buildings and both evidence routes fit below it. Static viewer
+  assets are unchanged; fresh interaction testing is deferred to the showcase
+  checkpoint. The earlier WebGL checkpoint remains the viewer baseline.
+- Tests / determinism: 219 tests run, 218 passed, one Windows symlink skip;
+  Ruff passed; all generated files matched across the two builds. Regression
+  checks all drawn rectangle extents remain below the protected header.
+- Spec alignment: PASS under FR-011 and AC-002; scene identities and canonical
+  coordinates are unchanged. The formerly omitted street bounds explain the
+  revised static preview scale.
+- Open risks / next actions: implement ADR-013 isometric showcase; detailed
+  top-down output remains a structural inspection target.
+- Commit / push: independent preview fix on main; delivery follows the
+  completed showcase checkpoint.
