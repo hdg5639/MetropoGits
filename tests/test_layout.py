@@ -258,6 +258,17 @@ class LayoutTests(unittest.TestCase):
                 self.assertEqual("LAYOUT_HINT_IGNORED", diagnostics[-1]["code"])
                 self.assertIn("algorithm family", diagnostics[-1]["message"])
 
+    def test_layout_14_geometry_remains_eligible_as_a_hint(self):
+        ucg = load_json(FIXTURES / "ucg" / "valid" / "spring-minimal.json")
+        cold = generate_city(ucg)
+        previous = {**cold, "layoutAlgorithm": "hierarchical-paged/1.4"}
+        diagnostics: list[dict] = []
+
+        hinted = generate_city(ucg, previous_scene=previous, diagnostics=diagnostics)
+
+        self.assertEqual(canonical_json_bytes(cold), canonical_json_bytes(hinted))
+        self.assertEqual("LAYOUT_HINT_APPLIED", diagnostics[-1]["code"])
+
     def test_edges_between_districts_are_aggregated_without_losing_ids(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -304,7 +315,28 @@ class LayoutTests(unittest.TestCase):
         scene = generate_city(ucg)
 
         self.assertEqual(1, len(scene["networks"]))
-        self.assertEqual(sorted(edge_ids), scene["networks"][0]["edgeIds"])
+        network = scene["networks"][0]
+        self.assertEqual(sorted(edge_ids), network["edgeIds"])
+        buildings = {item["entityId"]: item for item in scene["buildings"]}
+        source_centers = [
+            (
+                buildings[files[path]]["x"] + buildings[files[path]]["width"] / 2,
+                buildings[files[path]]["z"] + buildings[files[path]]["depth"] / 2,
+            )
+            for path in ("api/First.py", "api/Second.py", "api/Third.py")
+        ]
+        target = buildings[target_id]
+        self.assertEqual(
+            [
+                sum(item[0] for item in source_centers) / len(source_centers),
+                sum(item[1] for item in source_centers) / len(source_centers),
+            ],
+            network["path"][0],
+        )
+        self.assertEqual(
+            [target["x"] + target["width"] / 2, target["z"] + target["depth"] / 2],
+            network["path"][-1],
+        )
 
     def test_top_level_file_uses_synthetic_root_district(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -338,7 +370,7 @@ class LayoutTests(unittest.TestCase):
 
         scene = generate_city(ucg)
 
-        self.assertEqual("hierarchical-paged/1.4", scene["layoutAlgorithm"])
+        self.assertEqual("hierarchical-paged/1.5", scene["layoutAlgorithm"])
         self.assertEqual([], validate_document(scene, ucg))
         districts = {item["id"]: item for item in scene["districts"]}
         siblings: dict[str, list[dict]] = {}

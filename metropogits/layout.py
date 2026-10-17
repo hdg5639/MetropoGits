@@ -20,7 +20,10 @@ from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
-LAYOUT_ALGORITHM = "hierarchical-paged/1.4"
+LAYOUT_ALGORITHM = "hierarchical-paged/1.5"
+HINT_LAYOUT_ALGORITHMS = frozenset(
+    {"hierarchical-paged/1.4", LAYOUT_ALGORITHM}
+)
 DISTRICT_DEPTH = 64
 DISTRICT_PADDING = 16
 MIN_DISTRICT_SIZE = 24
@@ -133,7 +136,7 @@ def _prepare_layout_hint(
     reason: str | None = None
     if previous_scene.get("schemaVersion") != "city/0.1":
         reason = "unsupported or missing scene schema"
-    elif previous_scene.get("layoutAlgorithm") != LAYOUT_ALGORITHM:
+    elif previous_scene.get("layoutAlgorithm") not in HINT_LAYOUT_ALGORITHMS:
         reason = "unsupported layout algorithm family"
     elif not isinstance(previous_scene.get("districts"), list) or not isinstance(
         previous_scene.get("buildings"), list
@@ -642,7 +645,8 @@ def generate_city(
             entity_districts[entity["id"]] = district_id
     buildings.sort(key=lambda item: item["entityId"])
 
-    grouped_edges: dict[tuple[str, str, str], list[str]] = defaultdict(list)
+    buildings_by_entity = {item["entityId"]: item for item in buildings}
+    grouped_edges: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
     for edge in ucg["edges"]:
         if edge["type"] == "CONTAINS":
             continue
@@ -652,15 +656,31 @@ def generate_city(
             continue
         grouped_edges[
             (_network_kind(edge["type"]), source_district, target_district)
-        ].append(edge["id"])
+        ].append(edge)
 
     networks: list[dict[str, Any]] = []
-    for (kind, source_id, target_id), unsorted_edge_ids in grouped_edges.items():
-        edge_ids = sorted(unsorted_edge_ids)
-        source = districts_by_id[source_id]
-        target = districts_by_id[target_id]
-        start = [source["x"] + source["width"] / 2, source["z"] + source["depth"] / 2]
-        end = [target["x"] + target["width"] / 2, target["z"] + target["depth"] / 2]
+    for (kind, source_id, target_id), grouped in grouped_edges.items():
+        edge_ids = sorted(edge["id"] for edge in grouped)
+        source_buildings = {
+            edge["from"]: buildings_by_entity[edge["from"]]
+            for edge in grouped
+        }
+        target_buildings = {
+            edge["to"]: buildings_by_entity[edge["to"]]
+            for edge in grouped
+        }
+
+        def center(items: dict[str, dict[str, Any]]) -> list[float]:
+            ordered = [items[entity_id] for entity_id in sorted(items)]
+            return [
+                sum(item["x"] + item["width"] / 2 for item in ordered)
+                / len(ordered),
+                sum(item["z"] + item["depth"] / 2 for item in ordered)
+                / len(ordered),
+            ]
+
+        start = center(source_buildings)
+        end = center(target_buildings)
         if start == end:
             path = [
                 start,
