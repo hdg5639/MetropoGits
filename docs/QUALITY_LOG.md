@@ -2117,3 +2117,24 @@
   `test(viewer)` work unit, delivered to the explicitly authorized owner main
   using the existing human identity. Previous showcase CI `dc10c1a` succeeded;
   new commit CI is checked separately after push.
+
+## Checkpoint 2026-10-18 — camera-only geometry reuse
+
+- Implemented: one-entry geometry cache keyed by LOD/filter generation/selection;
+  unchanged arrays retain their GPU buffers. Synthetic activity bypasses the
+  cache so animated markers remain current. No graph or layout change.
+- Commands: full unittest suite (230 run, 229 pass, one Windows symlink skip);
+  real `build --repo ../visual_test_proj/{GJ-Cloud,GamjaOJ}` into workspace
+  `artifacts/visual/frontage-cache/{gj,oj}` and spring-positive into `spring`;
+  `node scripts/viewer_audit.mjs <chrome> ../artifacts/visual/frontage-cache-audit
+  ../artifacts/visual/frontage-cache/gj ../artifacts/visual/frontage-cache/oj`.
+- Observed: actual GJ Detail capture retains the same content/roads and counts.
+  Same audit protocol: GJ orbit CPU p95 Overview/District/Detail 2.4/3.1/6.6 ms;
+  OJ 1.0/1.6/2.5 ms. Prior GJ Detail 87.3–98.5 ms. Software SwiftShader,
+  draw-submission CPU only; not a hardware FPS claim. Legend overlap remains.
+- Tests: cache reuses identity on camera frames, invalidates all visual state
+  keys, and produces fresh animated geometry before restoring static geometry.
+  Full pipeline/golden/determinism tests pass. Spec alignment PASS (TECH 8,
+  FR-012/NF-008); schema and evidence unchanged.
+- Next: legend isolation and ADR-014 frontage/circulation implementation.
+- Commit / push: independent perf(viewer) unit on owner-authorized main.

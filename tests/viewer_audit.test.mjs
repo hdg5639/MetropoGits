@@ -4,7 +4,24 @@ import { readFile, mkdir, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Script } from 'node:vm';
+import '../metropogits/viewer_assets/viewer-3d.js';
 import { Cdp, instrument, replaceOnce, summarize, reportHtml, prepare } from '../scripts/viewer_audit.mjs';
+
+test('geometry cache reuses camera frames, invalidates visual state, bypasses animation', () => {
+  const cache = globalThis.METROPOGITS_GEOMETRY_CACHE();
+  let builds = 0;
+  const build = () => ({triangles: [++builds], lines: []});
+  const first = cache('overview:0:none', build);
+  assert.equal(cache('overview:0:none', build), first);
+  for (const key of ['district:0:none', 'district:1:none', 'district:1:building:a']) {
+    const geometry = cache(key, build);
+    assert.equal(cache(key, build), geometry);
+  }
+  assert.equal(builds, 4);
+  const animated = cache('district:1:building:a', build, true);
+  assert.notEqual(cache('district:1:building:a', build, true), animated);
+  assert.equal(cache('district:1:building:a', build).triangles[0], 4);
+});
 
 test('instrumentation is isolated, parseable and fails closed on marker drift', async () => {
   const source = await readFile(new URL('../metropogits/viewer_assets/viewer-3d.js', import.meta.url), 'utf8');

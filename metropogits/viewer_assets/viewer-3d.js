@@ -216,6 +216,20 @@
   globalThis.METROPOGITS_NETWORK_STYLES = networkProfiles;
   globalThis.METROPOGITS_CAMERA_POLICY = cameraPolicy;
 
+  function createGeometryCache() {
+    let savedKey;
+    let saved;
+    return (key, build, animated = false) => {
+      if (animated) return build();
+      if (!saved || key !== savedKey) {
+        saved = build();
+        savedKey = key;
+      }
+      return saved;
+    };
+  }
+  globalThis.METROPOGITS_GEOMETRY_CACHE = createGeometryCache;
+
   if (typeof document === "undefined") return;
 
   const data = globalThis.METROPOGITS_DATA;
@@ -631,7 +645,14 @@
     return state.selected?.kind === kind && state.selected.id === id;
   }
 
+  const geometryCache = createGeometryCache();
+  const uploadedGeometry = new WeakMap();
+
   function buildGeometry(timestamp) {
+    return geometryCache(lodCacheKey, () => buildUncachedGeometry(timestamp), state.syntheticActivity);
+  }
+
+  function buildUncachedGeometry(timestamp) {
     const triangles = [];
     const lines = [];
     for (const district of framingDistricts) {
@@ -891,7 +912,10 @@
   function bindAndDraw(buffer, values, primitive) {
     if (!values.length) return;
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), gl.DYNAMIC_DRAW);
+    if (uploadedGeometry.get(buffer) !== values) {
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), gl.STATIC_DRAW);
+      uploadedGeometry.set(buffer, values);
+    }
     const stride = 9 * Float32Array.BYTES_PER_ELEMENT;
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, stride, 0);
