@@ -105,6 +105,86 @@ def _drawable_district_ids(scene: dict[str, Any]) -> set[str]:
     return result
 
 
+def _district_label_candidates(
+    scene: dict[str, Any],
+    drawable_ids: set[str],
+    labels: dict[str, str],
+    root_ids: set[str],
+    repository_id: str,
+    project: Any,
+    width: int,
+    height: int,
+) -> dict[str, str]:
+    districts = {item["id"]: item for item in scene["districts"]}
+    depths: dict[str, int] = {}
+
+    def district_depth(district_id: str) -> int:
+        if district_id in depths:
+            return depths[district_id]
+        parent_id = districts[district_id]["parentId"]
+        depth = 0 if parent_id is None else district_depth(parent_id) + 1
+        depths[district_id] = depth
+        return depth
+
+    populated = {item["districtId"] for item in scene["buildings"]}
+    candidates: list[dict[str, Any]] = []
+    for district in scene["districts"]:
+        if district["id"] not in drawable_ids:
+            continue
+        x, y = project(district["x"], district["z"])
+        right, bottom = project(
+            district["x"] + district["width"],
+            district["z"] + district["depth"],
+        )
+        full_label = (
+            repository_id
+            if district["id"] in root_ids
+            else labels.get(district["id"], district["id"])
+        )
+        canvas_label = full_label.rsplit("/", 1)[-1] or full_label
+        available_width = max(0, right - x - 12)
+        max_characters = int(available_width // 6)
+        if max_characters < 3 or bottom - y < 18:
+            continue
+        if len(canvas_label) > max_characters:
+            canvas_label = canvas_label[: max_characters - 1] + "…"
+        label_width = len(canvas_label) * 6 + 4
+        candidates.append(
+            {
+                "height": 14,
+                "id": district["id"],
+                "label": canvas_label,
+                "priority": (1000 if district["id"] in populated else 0)
+                + district_depth(district["id"]),
+                "width": label_width,
+                "x": x + 4,
+                "y": y + 3,
+            }
+        )
+
+    accepted: list[dict[str, Any]] = []
+    for candidate in sorted(
+        candidates, key=lambda item: (-item["priority"], item["id"])
+    ):
+        if (
+            candidate["x"] < 0
+            or candidate["y"] < HEADER_HEIGHT
+            or candidate["x"] + candidate["width"] > width
+            or candidate["y"] + candidate["height"] > height
+        ):
+            continue
+        overlaps = any(
+            candidate["x"] < item["x"] + item["width"] + 3
+            and item["x"] < candidate["x"] + candidate["width"] + 3
+            and candidate["y"] < item["y"] + item["height"] + 3
+            and item["y"] < candidate["y"] + candidate["height"] + 3
+            for item in accepted
+        )
+        if not overlaps:
+            accepted.append(candidate)
+    return {item["id"]: item["label"] for item in accepted}
+
+
 def _palette(theme: str) -> dict[str, str]:
     if theme == "cyberpunk":
         return {
@@ -167,6 +247,16 @@ def render_preview(
     }
     repository_id = ucg["repository"]["id"]
     drawable_district_ids = _drawable_district_ids(scene)
+    visible_district_labels = _district_label_candidates(
+        scene,
+        drawable_district_ids,
+        district_labels,
+        root_ids,
+        repository_id,
+        project,
+        width,
+        height,
+    )
 
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -220,7 +310,6 @@ def render_preview(
             if district["id"] in root_ids
             else district_labels.get(district["id"], district["id"])
         )
-        canvas_label = label.rsplit("/", 1)[-1] or label
         lines.extend(
             [
                 f"    <g data-district-id=\"{_escape(district['id'])}\">",
@@ -231,14 +320,16 @@ def render_preview(
                     f"rx=\"4\" fill=\"{palette['district']}\" fill-opacity=\"0.82\" "
                     f"stroke=\"{palette['districtBorder']}\" stroke-width=\"1.5\"/>"
                 ),
-                (
-                    f"      <text x=\"{_fmt(x + 6)}\" y=\"{_fmt(y + 15)}\" "
-                    f"fill=\"{palette['muted']}\" font-family=\"system-ui, sans-serif\" "
-                    f"font-size=\"10\">{_escape(canvas_label)}</text>"
-                ),
-                "    </g>",
             ]
         )
+        canvas_label = visible_district_labels.get(district["id"])
+        if canvas_label is not None:
+            lines.append(
+                f"      <text x=\"{_fmt(x + 6)}\" y=\"{_fmt(y + 15)}\" "
+                f"fill=\"{palette['muted']}\" font-family=\"system-ui, sans-serif\" "
+                f"font-size=\"10\">{_escape(canvas_label)}</text>"
+            )
+        lines.append("    </g>")
     lines.append("  </g>")
 
     lines.append("  <g id=\"networks\" fill=\"none\">")

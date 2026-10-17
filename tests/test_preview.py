@@ -6,7 +6,11 @@ import xml.etree.ElementTree as element_tree
 from pathlib import Path
 
 from metropogits.layout import generate_city
-from metropogits.preview import PreviewError, render_preview
+from metropogits.preview import (
+    PreviewError,
+    _district_label_candidates,
+    render_preview,
+)
 from metropogits.scanner import ScanResult, ScannedFile, build_structural_ucg
 
 
@@ -85,6 +89,42 @@ class PreviewTests(unittest.TestCase):
 
         self.assertGreater(float(district_rect.attrib["x"]), 250)
         self.assertLess(float(district_rect.attrib["x"]), 400)
+
+    def test_overlapping_district_labels_prefer_populated_deeper_district(self):
+        scene = {
+            "buildings": [{"districtId": "child"}],
+            "districts": [
+                {
+                    "depth": 30,
+                    "id": "root",
+                    "parentId": None,
+                    "width": 30,
+                    "x": 0,
+                    "z": 0,
+                },
+                {
+                    "depth": 30,
+                    "id": "child",
+                    "parentId": "root",
+                    "width": 30,
+                    "x": 0,
+                    "z": 0,
+                },
+            ],
+        }
+
+        selected = _district_label_candidates(
+            scene,
+            {"child", "root"},
+            {"child": "nested/child"},
+            {"root"},
+            "repository",
+            lambda x, z: (float(x) + 100, float(z) + 100),
+            500,
+            500,
+        )
+
+        self.assertEqual({"child": "ch…"}, selected)
 
     def test_untrusted_labels_are_xml_escaped(self):
         ucg = copy.deepcopy(self.ucg)
