@@ -168,3 +168,57 @@
   hosted-runner, and license risks remain open.
 - Commits created / pushed (and branch): `be96b73` on local `main`; push is
   scheduled after this checkpoint log commit and final repository-state check.
+
+## Checkpoint 2026-10-17 — npm manifest evidence (`aea2d34`)
+
+- Implemented: strict, bounded `package.json` dependency parsing across
+  runtime, development, optional, and peer sections; npm package entities and
+  manifest-backed dependency edges; reuse of the same package entity when a
+  JS/TS file also imports the declared package.
+- Fixture(s) / revision(s): `tests/fixtures/repositories/npm-manifest` at
+  synthetic revision `fixture-1`, with one imported `react` dependency, one
+  declaration-only `redis` dependency, a scoped development dependency, a
+  duplicate declaration, and a deliberately harmful `postinstall` script.
+- Commands run: two identical `python -m metropogits build --repo
+  tests/fixtures/repositories/npm-manifest --repo-id fixture/npm-manifest
+  --revision fixture-1 --source-url
+  https://github.com/example/npm-manifest/tree/fixture-1 --out <artifact-dir>`
+  builds; explicit marker check; UCG and City validation; Chrome headless
+  viewer and SVG captures; lint, compilation, 165-test full suite, dependency
+  consistency, readiness validation, and JavaScript syntax checks.
+- Artifacts inspected: `graph.ucg.json`, `city.json`, `preview.svg`,
+  `index.html`, `npm-viewer.png`, and `npm-preview.png` under
+  `C:\WINDOWS\TEMP\metropogits-npm-cd659c4ac49e48c4a286c5e712c03e9e`.
+  `react` has separate `DEPENDS_ON` and `IMPORTS` edges to one package entity;
+  `redis` has only `DEPENDS_ON`; no technology claim is fabricated.
+- Visual findings: the generic JS building renders cleanly and no manifest or
+  external-package edge is misrepresented as an internal runtime road. The
+  sparse city still allocates excessive district space and places its lone
+  building near a corner, confirming the previously logged layout issue.
+- Spec alignment: DEVIATION. The scanner now covers the three planned manifest
+  families—Maven, Gradle, and npm—without executing scripts, and the graph
+  structurally distinguishes declaration from observed import usage. FR-003
+  readiness has not yet been changed pending a dedicated traceability audit;
+  FR-009 remains incomplete until catalog resolution consumes both evidence
+  classes and exposes the distinction to users.
+- Tests / determinism / stability: 165 tests passed with one unavailable
+  symlink skip. Repeated builds produced SHA-256
+  `1605ccf2e159aeade6c6cc9edb66dbcaf6e435bcb14d240e16a503d9f5b39eee`
+  for `graph.ucg.json`,
+  `7d9f4155c97642bc01533b4d92899238cfcf7a8fba686b7da721e94b78bdc037`
+  for `city.json`, and
+  `c1107eb5b179a406ba249d03f93cf4fb1cbf3e409f220776273a761a8e6abbcd`
+  for `preview.svg`. The fixture's `executed.marker` remained absent.
+- Fixes applied and reverified: JS/TS enrichment now reuses manifest-created
+  external package entities instead of emitting duplicate IDs. Duplicate JSON
+  keys reject the manifest safely; file, link, workspace, and npm-alias
+  specifiers remain outside external package facts. Positive and negative
+  cases pass in scanner and JS/TS integration tests.
+- Open risks / next actions: audit FR-003 readiness evidence, then connect
+  manifest facts to catalog code signatures so declared-only packages cannot
+  become active facilities. Add viewer inspection for external dependencies
+  without turning them into runtime roads, and separately correct sparse
+  layout placement. Existing dense SVG label, road endpoint, 2D-versus-3D,
+  hosted-runner, and license risks remain open.
+- Commits created / pushed (and branch): `aea2d34` on local `main`; push is
+  scheduled after this checkpoint log commit and final repository-state check.
