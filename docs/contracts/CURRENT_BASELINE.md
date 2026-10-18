@@ -380,3 +380,20 @@ expansion limit. Hard input caps fail; exhausted searches report partial streets
 or retain fallback relationships. No default schema/config migration or claim of
 incremental street stability. LOD obstacle rectangles stay at the legacy value
 for controlled comparisons; new surfaces do not retile aggregate facilities.
+
+Assignment diagnostics are additive under
+`diagnosticsVersion: street-assignment-diagnostics/0.1`: `fallbackReasons`
+contains one `{routeId, reason}` per fallback, `fallbackReasonCounts` aggregates
+them, and `diagnosticSearchStates` reports a separate global1M-state budget.
+Optional `latticeStepLimit` and `shortestLatticeSteps` are lattice distances,
+not world lengths or traffic. This diagnostic budget cannot change routed trips.
+
+Reasons distinguish `distance_limit`, `joint_constraints`, `missing_access`,
+`disconnected_streets`, `access_only`, `no_structural_streets`, and connector,
+route or diagnostic search limits. Capped searches mean unknown feasibility;
+joint constraints mean a distance-feasible path exists but the combined
+bend/simple-path search did not return one, not proven bend-only infeasibility.
+Older artifacts lacking reasons display `unrecorded` rather than an invented
+diagnosis. The opt-in viewer's Review fallbacks panel respects current endpoint
+and network filters, renders at most25 paths per page, and opens exact original
+path evidence. Default viewers do not gain this experimental control.

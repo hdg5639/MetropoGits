@@ -16,6 +16,24 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 const files=new Set(['A','B','C','D']), networks=new Set(['n']);
+test('fallback review is paged, filter-aware and honest for legacy artifacts',()=>{
+  const input=structuredClone(routing);
+  input.routes=Array.from({length:70},(_,i)=>({...input.routes[1],id:`r${i}`}));
+  input.streetGrid={assignment:{assignedRouteIds:[],fallbackRouteIds:input.routes.map(r=>r.id),
+    fallbackReasons:input.routes.slice(0,35).map(r=>({routeId:r.id,reason:'distance_limit',latticeStepLimit:6}))}};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(input);
+  const first=p.failurePage(files,networks), second=p.failurePage(files,networks,25);
+  assert.equal(first.total,70); assert.equal(first.rows.length,25); assert.equal(second.rows.length,25);
+  assert.ok(first.rows.every(a=>second.rows.every(b=>a.id!==b.id)));
+  assert.deepEqual(first.counts.map(c=>[c.reason,c.count]),[['distance_limit',35],['unrecorded',35]]);
+  assert.equal(p.failurePage(files,networks,0,'distance_limit').total,35);
+  assert.equal(p.failurePage(new Set(['A','B']),networks).total,0);
+  assert.equal(p.failurePage(files,new Set()).total,0);
+  assert.equal(p.assignmentReason('r0').latticeStepLimit,6);
+  assert.match(p.assignmentReason('r69').label,/not recorded/);
+  assert.equal(p.assignmentReason('missing'),null);
+  assert.equal(policy.assignmentReason('ab'),null);
+});
 test('structural mode discloses fallback and preserves inspection and exact synthetic paths',()=>{
   const input=structuredClone(routing);
   input.streetGrid={assignment:{assignedRouteIds:['ab'],fallbackRouteIds:['cd']}};

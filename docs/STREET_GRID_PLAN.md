@@ -67,14 +67,45 @@ future check. Canvas overview still has noisy aggregate outlines.
 
 ## Next decision gates
 
-1. Diagnose fallback trips by missing access, disconnected topology, length and
-   bend constraints; current report counts fallback but does not prove which
-   constraint dominates. Do not relax budgets blindly.
-2. Reduce redundant structural loops using building-frontage coverage and block
-   connectivity, **without consulting dependency edges** or paving empty space
-   simply to fill it. Compare infrastructure length and access coverage together.
+1. [Done] Diagnose fallback trips without altering routes; see the measured
+   breakdown below. Do not relax budgets blindly.
+2. Prioritize distance-compatible block streets/access over further road deletion.
+   Removing edges alone cannot shorten shortest paths in the same graph. Preserve
+   all source relationships and compare complete-trip assignment, not hidden lines.
 3. Test a bounded street-first block layout separately if fixed parcels prevent
    useful assignment. Any relocation needs explicit stable-geography comparison;
    no global relayout is part of this first prototype.
 4. Re-evaluate both source fidelity and appearance before promotion. Do not stack
    lighting/landscaping onto this grid and describe it as a solved city model.
+
+## Fallback review / 2026-10-18
+
+Artifacts: `artifacts/visual/street-diagnostics-r1/{gj,cold,oj}/index.html`.
+`Review fallbacks` opens a filtered, paged list in both WebGL and Canvas. A row
+opens the exact original path and source evidence, not an invented connection.
+The default view and every road/building coordinate remain unchanged.
+
+| Fallback reason | Hinted GJ | Cold GJ | GamjaOJ |
+| --- | ---: | ---: | ---: |
+| No street path within original distance allowance | 1,392 | 1,390 | 706 |
+| Distance fits; joint bend/simple-path search did not find a route | 324 | 331 | 124 |
+| Original path has no lattice road segment (access-only) | 6 | 5 | 4 |
+| All fallbacks | 1,722 | 1,726 | 834 |
+
+Distance alone explains approximately81% of hinted GJ and85% of OJ fallbacks.
+No missing access, disconnected topology or capped diagnostic searches were
+observed in these three cases. The joint category is **not proof of a bend-only
+failure**. A bounded independent shortest-distance check separates it from the
+distance category; exhausted checks explicitly report an unknown cause.
+
+A conservative branch-removal trial protected every geometry-eligible building
+access and selected structural entrance, then removed only terminal-free bridge
+subtrees. GJ9645 and OJ4015 lattice edges stayed unchanged: zero improvement.
+That ineffective deletion pass was **not shipped**. This does not establish that
+all possible topology simplifications are ineffective.
+
+Next experiment: compare a bounded street-first block/access arrangement against
+this unchanged baseline, measuring assignment, total infrastructure, detour and
+relocations together. Do not add per-fallback shortcut streets based on dependency
+edges: that would turn independent infrastructure back into relationship wiring.
+This diagnostic work is useful evidence, **not a visual road improvement**.

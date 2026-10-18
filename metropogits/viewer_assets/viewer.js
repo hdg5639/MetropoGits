@@ -1149,6 +1149,37 @@
     );
   }
 
+  function showStreetDiagnostics(offset=0, reason='') {
+    if (!data.routing?.streetGrid) return;
+    const page=accessPolicy.failurePage(visibleBuildingIds,visibleNetworkIds,offset,reason);
+    inspector.replaceChildren();
+    inspector.append(element('p','STREET ASSIGNMENT','eyebrow'));
+    inspector.append(element('h2','Original paths retained'));
+    inspector.append(element('p','These relationships are not lost. Select a path to inspect its original source, destination and evidence. Counts respect the current filters.','muted'));
+    for (const item of [{reason:'',label:'All fallback reasons',count:null},...page.counts]) {
+      const button=element('button',item.label+(item.count===null?'':` · ${item.count}`),'focus-button');
+      button.type='button';
+      button.addEventListener('click',()=>showStreetDiagnostics(0,item.reason));
+      inspector.append(button);
+    }
+    inspector.append(element('p',page.total?`${page.offset+1}–${page.offset+page.rows.length} of ${page.total} paths`:'No fallback paths match these filters.','section-title'));
+    for (const route of page.rows) {
+      const button=element('button',`${entities.get(route.source)?.path || route.source} → ${entities.get(route.target)?.path || route.target}`,'focus-button fallback-route');
+      button.type='button';
+      button.dataset.routeId=route.id;
+      button.addEventListener('click',()=>showSelection({kind:'network',
+        id:route.networkIds.find(id=>visibleNetworkIds.has(id)),routeId:route.id}));
+      inspector.append(button,element('p',accessPolicy.assignmentReason(route.id).label,'muted'));
+    }
+    for (const [label,next] of [['Previous',page.offset-25],['Next',page.offset+25]]) {
+      if (next<0 || next>=page.total) continue;
+      const button=element('button',label,'focus-button');
+      button.type='button';button.addEventListener('click',()=>showStreetDiagnostics(next,reason));
+      inspector.append(button);
+    }
+  }
+  document.getElementById('street-diagnostics')?.addEventListener('click',()=>showStreetDiagnostics());
+
   function showNetwork(networkId) {
     const choices = accessPolicy?.choices(networkId, visibleBuildingIds, visibleNetworkIds) || [];
     const chosen = choices.find(route => route.id === state.selected?.routeId);
@@ -1160,6 +1191,12 @@
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Graph edges", network.edgeIds.length);
     detailRow(details, "Route points", network.path.length);
+    if (chosen && data.routing?.streetGrid) {
+      const diagnostic=accessPolicy.assignmentReason(chosen.id);
+      detailRow(details,'Street assignment',diagnostic.label);
+      if (diagnostic.latticeStepLimit !== undefined) detailRow(details,'Street-grid distance limit (steps)',diagnostic.latticeStepLimit);
+      if (diagnostic.shortestLatticeSteps !== undefined) detailRow(details,'Shortest street-grid distance (steps)',diagnostic.shortestLatticeSteps);
+    }
     if (network.routeIds) {
       detailRow(details, "Shared relation paths", network.routeIds.length);
       inspector.append(element("p", "Shared geometry does not create new relationships. Highlighted paths retain their own source and destination.", "muted"));

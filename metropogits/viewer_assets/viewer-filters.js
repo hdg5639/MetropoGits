@@ -974,6 +974,34 @@
   function createAccessPolicy(routing, hierarchy = null) {
     if (!routing) return null;
     const assigned = routing.streetGrid ? new Set(routing.streetGrid.assignment.assignedRouteIds) : null;
+    const fallbackIds = new Set(routing.streetGrid?.assignment.fallbackRouteIds || []);
+    const fallbackReasons = new Map((routing.streetGrid?.assignment.fallbackReasons || []).map(r=>[r.routeId,r]));
+    const reasonLabels = {
+      assigned:'Assigned to structural streets', distance_limit:'Street detour exceeds distance limit',
+      joint_constraints:'Distance fits; no path found under combined bend/simple-path constraints',
+      missing_access:'Endpoint has no street access', disconnected_streets:'Endpoints lie on disconnected streets',
+      connector_search_limit:'Access search capped; feasibility unknown', route_search_limit:'Route search capped; feasibility unknown',
+      diagnostic_search_limit:'Diagnostic search capped; cause unknown', access_only:'Original path has no lattice road segment',
+      no_structural_streets:'No structural street geometry', unrecorded:'Legacy artifact: cause not recorded',
+    };
+    function assignmentReason(id) {
+      if (!assigned || !routes.has(id)) return null;
+      const record = assigned.has(id) ? {reason:'assigned'} : fallbackReasons.get(id) || {reason:'unrecorded'};
+      return {...record, label:reasonLabels[record.reason] || reasonLabels.unrecorded};
+    }
+    function failurePage(buildingIds, networkIds, offset=0, reason='') {
+      const failures = [...routes.values()].filter(r=>fallbackIds.has(r.id) && buildingIds.has(r.source)
+        && buildingIds.has(r.target) && r.networkIds.some(id=>networkIds.has(id))).sort((a,b)=>a.id.localeCompare(b.id));
+      const counts = {};
+      for (const route of failures) {
+        const key=assignmentReason(route.id).reason;
+        counts[key]=(counts[key] || 0)+1;
+      }
+      const matching=failures.filter(r=>!reason || assignmentReason(r.id).reason===reason);
+      const start=Math.max(0,Math.min(Math.floor(Number.isFinite(offset)?offset:0),Math.max(0,matching.length-1)));
+      return {total:matching.length, offset:start, rows:matching.slice(start,start+25),
+        counts:Object.keys(counts).sort().map(key=>({reason:key,label:reasonLabels[key] || reasonLabels.unrecorded,count:counts[key]}))};
+    }
     const routes = new Map(routing.routes.map(route => [route.id, route]));
     const segments = new Map(routing.segments.map(segment => [segment.id,
       {...segment, demand: hierarchy?.segments?.[segment.id]}]));
@@ -1038,7 +1066,7 @@
       return {segmentId: step.segmentId, point: [step.start[0] + (step.end[0]-step.start[0])*fraction,
         step.start[1] + (step.end[1]-step.start[1])*fraction]};
     }
-    return Object.freeze({frame, network, choices, position, segments, routes, status: routing.status,
+    return Object.freeze({frame, network, choices, position, segments, routes, assignmentReason, failurePage, status: routing.status,
       streetStatus: assigned ? ` · Street assignment ${assigned.size}/${routing.routes.length} · ${routing.streetGrid.assignment.fallbackRouteIds.length} legacy paths: select a building or All routes` : '',
       unresolved: routing.unresolvedEdgeIds.length});
   }

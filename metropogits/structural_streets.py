@@ -10,6 +10,7 @@ from metropogits.block_collectors import _expand, _rebuild
 from metropogits.road_consolidation import _bends, _world
 from metropogits.road_frontage import _doors
 from metropogits.shared_frontage import _compress, _length, _search
+from metropogits.street_diagnostics import explain_failure
 
 MAX_CELLS = 250_000
 MAX_STEPS = 2_000_000
@@ -213,10 +214,18 @@ def assign_streets(scene, original):
     template = copy.deepcopy(original)
     template['version'] = 'visual-access/0.3'
     report = dict(assignedRouteIds=[], fallbackRouteIds=[], connectorSteps=4,
-                  maxSearchStates=MAX_ROUTE_STATES, originalBoundsPreserved=True)
+                  maxSearchStates=MAX_ROUTE_STATES, originalBoundsPreserved=True,
+                  diagnosticsVersion='street-assignment-diagnostics/0.1',
+                  fallbackReasons=[], fallbackReasonCounts={}, diagnosticSearchStates=0)
+    def fallback(rid, reason):
+        report['fallbackRouteIds'].append(rid)
+        report['fallbackReasons'].append(dict(routeId=rid, **reason))
+        code = reason['reason']
+        report['fallbackReasonCounts'][code] = report['fallbackReasonCounts'].get(code, 0)+1
     template['streetGrid'] = {**streets, 'assignment': report}
     if not paths or not streets['segments']:
-        report['fallbackRouteIds'] = sorted(r['id'] for r in original['routes'])
+        for rid in sorted(r['id'] for r in original['routes']):
+            fallback(rid, dict(reason='no_structural_streets' if not streets['segments'] else 'access_only'))
         return template
     grid = AccessGrid(scene['buildings'])
     keys = set()
@@ -232,24 +241,34 @@ def assign_streets(scene, original):
     street_nodes = set().union(*(set(p) for p in keys))
     ports = {p[i] for p in paths.values() for i in (0, -1)}
     connector_budget = [0]
+    capped_ports = set()
     for p in sorted(ports):
         path = _connect(grid, [p], street_nodes, connector_budget, max_distance=4)
         if path:
             keys.update(_pair(a, b) for a, b in zip(path, path[1:]))
-    graph = _compress(_adjacency(keys), ports)
+        elif connector_budget[0] >= MAX_STEPS:
+            capped_ports.add(p)
+    adjacency = _adjacency(keys)
+    components = {node: i for i, component in enumerate(_components(adjacency)) for node in component}
+    graph = _compress(adjacency, ports)
     usage, budget = Counter(dict.fromkeys(keys, 1)), [0, 0]
+    diagnostic_budget = [0]
     for route in sorted(original['routes'], key=lambda r: r['id']):
         rid, kind = route['id'], route['kind']
         if rid not in paths:
-            report['fallbackRouteIds'].append(rid)
+            fallback(rid, dict(reason='access_only'))
             continue
         p = paths[rid]
         n = route['latticeSteps']
-        candidate = _search(graph, p[0], p[-1], usage, max(n*3//2, n+4),
+        capped_before = budget[1]
+        limit = max(n*3//2, n+4)
+        candidate = _search(graph, p[0], p[-1], usage, limit,
             _bends(route['path'])+4, _heading(route['path'][0], _world(p[0])),
             _heading(_world(p[-1]), route['path'][-1]), budget, state_limit=MAX_ROUTE_STATES)
         if candidate is None:
-            report['fallbackRouteIds'].append(rid)
+            fallback(rid, explain_failure(graph, components, p[0], p[-1], limit, diagnostic_budget,
+                search_capped=budget[1] > capped_before,
+                connector_capped=bool({p[0], p[-1]} & capped_ports)))
             continue
         paths[rid] = candidate
         report['assignedRouteIds'].append(rid)
@@ -257,6 +276,7 @@ def assign_streets(scene, original):
             widths[kind, _pair(a, b)] = round(min(3.5, 2*(grid.clearance(_world(a), _world(b))-.12)), 4)
     result = _rebuild(template, paths, widths)
     result['streetGrid']['assignment'].update(searchStates=budget[0], cappedSearches=budget[1],
+        diagnosticSearchStates=diagnostic_budget[0],
         connectorSearchStates=connector_budget[0], beforeLength=sum(_length(r['path']) for r in original['routes']),
         afterLength=sum(_length(r['path']) for r in result['routes']))
     return result

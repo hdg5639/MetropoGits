@@ -82,7 +82,8 @@ def render_viewer(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> d
             b'METROPOGITS / STATIC CITY', b'METROPOGITS / STRUCTURAL STREET EXPERIMENT').replace(
             b'METROPOGITS / EXPERIMENTAL PARCEL LAYOUT', b'METROPOGITS / STRUCTURAL STREET EXPERIMENT').replace(
             b'Route corridor (derived)', b'Structural street (visual, not a relationship)').replace(
-            b'Dependency road \xc2\xb7 width / paint = static demand', b'Assigned dependency demand (not runtime traffic)')
+            b'Dependency road \xc2\xb7 width / paint = static demand', b'Assigned dependency demand (not runtime traffic)').replace(
+            b'<span id="renderer-mode"', b'<button type="button" id="street-diagnostics">Review fallbacks</button><span id="renderer-mode"')
     return dict(sorted(result.items()))
 
 

@@ -104,6 +104,8 @@ class StructuralStreetTests(unittest.TestCase):
         new, new_data = data(after)
         self.assertNotIn(b'STRUCTURAL STREET EXPERIMENT', old['index.html'])
         self.assertIn(b'STRUCTURAL STREET EXPERIMENT', new['index.html'])
+        self.assertIn(b'id="street-diagnostics"', new['index.html'])
+        self.assertNotIn(b'id="street-diagnostics"', old['index.html'])
         self.assertEqual(old_data['streets']['rectangles'], new_data['streets']['rectangles'])
         self.assertEqual(frozen, canonical_json_bytes(scene))
         self.assertEqual(frozen, canonical_json_bytes(new_data['scene']))

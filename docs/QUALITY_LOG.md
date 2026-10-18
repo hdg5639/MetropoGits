@@ -4473,3 +4473,79 @@
   work unit on experiment/street-grid. Final staged review and normal feature
   branch push follow this checkpoint; no main merge, force push, attribution or
   generated/private artifacts. Delivery hash/push result are recorded in handoff.
+
+## Checkpoint 2026-10-18 — structural street fallback diagnostics
+- Implemented: additive bounded failure explanations, filtered25-row fallback
+  review in WebGL/Canvas, and exact original-path/evidence navigation. No route,
+  street, building, UCG or public City geometry changed. Existing artifacts with
+  no diagnostics display an explicit unrecorded cause.
+- Fixtures / revisions: GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766
+  (hinted and cold), GamjaOJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  maintained spring-positive and structural-showcase at base34a5eb4, catalog0.4.0.
+- Commands: `python ../artifacts/visual/street_pruning_probe.py` rejected a
+  conservative terminal-free bridge-subtree deletion trial: protecting all
+  geometry-eligible access and selected entrances leaves GJ9645/OJ4015 lattice
+  edges unchanged. Zero improvement; this pruning pass is not shipped.
+  `python ../artifacts/visual/street_diagnostics_review.py` packages
+  street-diagnostics-r1/{gj,cold,oj}, asserts canonical routes/segments/junctions
+  and infrastructure equality to street-grid-r3 and repeats GJ assignment.
+  `python ../artifacts/visual/street_diagnostics_refresh.py` repackages the same
+  owned geometry after the long-path CSS fix, without rerouting.
+- Results (hintedGJ / coldGJ / OJ): distance_limit1392/1390/706;
+  joint_constraints324/331/124; access_only6/5/4. Assignment remains
+  2487/4209,2483/4209,547/1381. Independent diagnostic A* states
+  166624/168154/74605, below its separate1M cap. No access/disconnection or
+  search-cap diagnoses observed. Joint constraints do not prove bend-only
+  infeasibility. Capped checks explicitly report unknown, not impossible.
+- Fresh source-to-output commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --out
+  ../artifacts/visual/street-diagnostics-fixtures/spring`; same command for
+  structural-showcase to unknown. `python -m scripts.street_grid BUILD
+  --street-grid --out ../artifacts/visual/street-diagnostics-fixtures/NAME-study`
+  for both. Spring retains2/2 fallback paths; unknown has0 logical relations.
+- Browser commands: `node scripts/viewer_audit.mjs
+  'C:/Program Files/Google/Chrome/Application/chrome.exe'
+  ../artifacts/visual/street-diagnostics-browser-r1
+  ../artifacts/visual/street-diagnostics-r1/gj
+  ../artifacts/visual/street-diagnostics-r1/oj
+  ../artifacts/visual/street-diagnostics-r1/cold` passes three LODs, filters,
+  navigation, exact route tracing and Synthetic (static rebuilds0 throughout).
+  These are CPU/browser checks, not a hardware GPU FPS claim.
+  `node ../artifacts/visual/junction_smoke.mjs street-diagnostics-fixtures`
+  renders real WebGL and SVG previews for both fresh fixtures.
+  `node ../artifacts/visual/street_diagnostics_ui.mjs OUT INPUT...` runs with
+  large gj/oj and small spring-study/after,unknown-study/after inputs to
+  street-diagnostics-{large,small}-ui-r2. WebGL and forced Canvas pass reason
+  selection, exact-path navigation,25-row bound, pagination, empty state,
+  horizontal-overflow assertions and no browser exceptions.
+- Artifacts inspected: street-diagnostics-small-ui-r1/webgl-0/selected-fallback.png;
+  street-diagnostics-large-ui-r2/webgl-0/fallbacks.png;
+  street-diagnostics-large-ui-r1/canvas-1/selected-fallback.png;
+  street-diagnostics-fixtures/unknown-preview.png (actual SVG rasterization).
+  Initial GJ fallback list clipped long paths; fixed wrapping and reran both
+  browser modes with overflow assertions. Panel now legible without horizontal
+  scroll. City remains small at overview; Canvas aggregate outlines remain
+  crowded and sparse unknown has excessively broad streets. No visual road
+  improvement claimed, and these existing issues still block promotion.
+- Tests / determinism / stability: Python444 run,443 pass,1 existing Windows
+  symlink skip via `python -m unittest discover -s tests -q`; Node40 pass via
+  `node --test tests/access_routes.test.mjs tests/junction_geometry.test.mjs
+  tests/road_paint.test.mjs tests/viewer_audit.test.mjs
+  tests/camera_navigation.test.mjs tests/role_landmarks.test.mjs`.
+  Independent seeded unit-graph BFS checks shortest-distance diagnoses. Zero
+  diagnostic budget cannot alter routed geometry. Exact repeated GJ output and
+  unchanged real-city geometry pass. `python -m ruff check .` and Git diff check
+  pass. No neighboring-revision relayout needed: this unit changes no positions.
+- Spec alignment: PASS within the approved ADR-020 experiment; technical7,
+  FR-007/AC-006 and product5.1/DEC-011 remain the documented experimental
+  deviation, not a silently changed default. Source evidence, deterministic
+  contracts, unsupported-input behavior and no untrusted execution retained.
+- Open risks / next: roughly81% of hintedGJ and85% of OJ fallbacks violate
+  distance limits on this skeleton. Further edge deletion cannot shorten paths
+  in the same graph. Prioritize a bounded street-first block/access comparison,
+  with assignment, infrastructure length and relocation measurements; do not
+  replace independent infrastructure with dependency-driven shortcut paving.
+- Commit / push: coherent diagnostic capability, tests and findings staged as
+  one work unit on experiment/street-grid after verification. Normal upstream
+  push follows; exact delivery hash/result recorded in handoff. Private sources,
+  captures, generated cities and unrelated IDE caches excluded.
