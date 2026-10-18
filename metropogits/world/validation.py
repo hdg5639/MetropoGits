@@ -9,6 +9,7 @@ from scripts.canonical_json import sha256_digest
 from . import VERSION
 from .geometry import area, bounds, inside, ribbon, nearest
 from .zoning import validate_zoning
+from .soft import validate_soft
 
 
 def validate_world(world, scene, graph):
@@ -29,6 +30,7 @@ def validate_world(world, scene, graph):
             raise ValueError("invalid shared boundary ownership")
     zones = {d["id"]: d for d in world["districts"]}
     neighborhoods = validate_zoning(world, scene, graph)
+    validate_soft(world, scene, graph)
     neighborhood_members = {
         key: set(z["memberEntityIds"]) for key, z in neighborhoods.items()
     }

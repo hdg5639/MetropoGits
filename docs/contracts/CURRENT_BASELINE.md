@@ -46,6 +46,31 @@ ellipse/default GRID worlds reproduce their original bytes. This is convex
 connected land only, not a terrain/coastline or concave polygon implementation.
 Original UCG/City contracts and browser source inspection remain unchanged.
 
+## Soft functional influence — 2026-10-19
+
+[ADR-029](../adr/ADR-029.md) adds `--zoning soft`, compatible with all existing
+planning/outline policies, without changing their physical sites, streets or
+principal territory. `flat-soft-zoning/0.1` adds optional `softZoning` metadata;
+[`planning/0.2-experimental`](../../schemas/planning-0.2.schema.json) separates
+center evidence from mixed geographical occupants. The hard0.1 policy below
+is unchanged, and legacy City/UCG bytes/IDs remain the source of truth.
+
+Swaps are deterministic, bounded, within the same principal directory/service,
+and restricted to matching source footprint sizes. Graph affinity uses only
+DIRECT/RESOLVED non-containment relationships, resolves symbols to actual files,
+caps pair weights at4 and optimization degree at24. Role-center preference is
+6% of local affinity weight. These are planning heuristics, not new graph facts.
+Routing still includes all supported source trips, not just optimizer pairs.
+
+`referenceEntityIds/referenceClaims` describe the functional center;
+`memberEntityIds/memberClaims` describe actual occupants with unchanged claims.
+Only the center of an address determines its influence-region membership; a
+parcel may straddle an advisory influence boundary but never its true parent.
+The occupied-address digest, optimizer counters/energy and exact center/occupant
+evidence are validated. Unsupported/no-edge inputs remain useful neutral worlds.
+Hints pin existing physical frames; an updated influence boundary may change a
+file's derived `zoneId` without moving that file or rewriting its source role.
+
 ## Internal semantic neighborhoods — 2026-10-19
 
 [ADR-028](../adr/ADR-028.md) adds opt-in `--zoning semantic` to the World

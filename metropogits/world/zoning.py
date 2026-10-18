@@ -284,6 +284,24 @@ def plan_zones(
 
 
 def planning_document(world):
+    if world.get("zoningPolicy") == "soft":
+        return dict(
+            schemaVersion="planning/0.2-experimental",
+            zoningVersion=world["softZoning"]["version"],
+            worldSeed=world["seed"],
+            ucgDigest=world["ucgDigest"],
+            sourceCityDigest=world["sourceCityDigest"],
+            terrainPreset="flat",
+            **{
+                k: world["softZoning"][k]
+                for k in (
+                    "zones",
+                    "optimization",
+                    "baseGeneratorVersion",
+                    "addressDigest",
+                )
+            },
+        )
     return dict(
         schemaVersion="planning/0.1-experimental",
         zoningVersion=VERSION,
@@ -301,6 +319,10 @@ def validate_zoning(world, scene, graph):
     from .geometry import inside
     from .planning import groups
 
+    if world.get("zoningPolicy") == "soft":
+        if "zoning" in world:
+            raise ValueError("hard and soft zoning cannot both own parcels")
+        return {}
     if world.get("zoningPolicy") != "semantic":
         if "zoning" in world or any("zoneId" in p for p in world["parcels"]):
             raise ValueError("zoning data lacks an explicit policy")

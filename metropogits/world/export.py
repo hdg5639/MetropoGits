@@ -47,7 +47,7 @@ def view_data(world, scene, graph):
 
     districts = [dict(id=root, parentId=None, **envelope(world["envelope"]))]
     territories = []
-    neighborhoods = world.get("zoning", {}).get("zones", [])
+    neighborhoods = world.get("zoning", world.get("softZoning", {})).get("zones", [])
     physical_polygons = {d["id"]: d["polygon"] for d in world["districts"]}
     physical_polygons.update({z["id"]: z["polygon"] for z in neighborhoods})
     for d in world["districts"]:
@@ -198,14 +198,19 @@ def view_data(world, scene, graph):
     )
     if neighborhoods:
         data["semanticZoning"] = {z["id"]: z for z in neighborhoods}
-        data["occupiedGround"]["pads"] = [
-            dict(
-                districtId=z["id"],
-                polygons=[list(reversed(z["polygon"]))],
-                color=ZONE_COLORS[z["clusterKey"]],
+        if "softZoning" in world:
+            data["softZoning"] = dict(
+                version=world["softZoning"]["version"], influenceOnly=True
             )
-            for z in neighborhoods
-        ]
+        else:
+            data["occupiedGround"]["pads"] = [
+                dict(
+                    districtId=z["id"],
+                    polygons=[list(reversed(z["polygon"]))],
+                    color=ZONE_COLORS[z["clusterKey"]],
+                )
+                for z in neighborhoods
+            ]
     return data
 
 
@@ -349,8 +354,10 @@ def package_world(world, scene, graph, validation):
     page = page.replace(
         b"Civic block (visual)", b"World district (structural)"
     ).replace(b"Route corridor (derived)", b"Structural street (visual)")
-    if "zoning" in world:
-        page = page.replace(b"World district (structural)", b"Planning neighborhood (derived)")
+    if "zoning" in world or "softZoning" in world:
+        page = page.replace(
+            b"World district (structural)", b"Planning neighborhood (derived)"
+        )
     page = page.replace(
         b'<span id="renderer-mode"',
         b'<button type="button" data-action="toggle-structure" aria-pressed="false">Structure overlay</button><span id="renderer-mode"',
@@ -371,7 +378,7 @@ def package_world(world, scene, graph, validation):
             "README_SNIPPET.md": b"[![Procedural source city](showcase.svg)](index.html)\n",
         }
     )
-    if "zoning" in world:
+    if "zoning" in world or "softZoning" in world:
         artifacts["planning.json"] = canonical_json_bytes(planning_document(world))
     types = {
         ".html": "text/html",

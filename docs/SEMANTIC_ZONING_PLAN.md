@@ -61,6 +61,40 @@ Concave/holed geometry is rejected or remains outside this convex-only stage.
 Avoid serial micro-tuning: prioritize a visible complete slice, measure it,
 and use real outputs to choose the next architectural improvement.
 
+## Soft influence correction (2026-10-19)
+
+Maintainer feedback: pure role quarters looked like category-sorted production
+lines. [ADR-029](adr/ADR-029.md) supersedes exclusive occupancy **only for the
+new opt-in soft policy**. Keep hard quarters available for comparison.
+
+Run `python -m scripts.procedural_world BUILD --namespace owner/project
+--planning varied --outline varied --zoning soft --out NEW_OUTPUT`.
+All five existing grammars and seeded convex outline families remain the
+physical base. Soft zoning does not rebuild streets or add land to enforce a
+category. Functional centers attract weakly; actual DIRECT/RESOLVED file/symbol
+dependencies attract across roles within the original principal district.
+Only equal-footprint occupants swap existing frontage sites, with meshes,
+rotation and entrances regenerated together. All source dimensions, roles,
+evidence, IDs and exact trip endpoints remain unchanged.
+
+`planning/0.2-experimental` distinguishes center `referenceEntityIds` /
+`referenceClaims` from actual mixed `memberEntityIds` / `memberClaims`.
+Region membership uses address centers, not exclusive parcel containment.
+A center's classification does not classify every occupant. Per-file roles
+and evidence remain inspectable, with paged source navigation in both renderers.
+Principal service names remain visible independently of derived regions.
+
+The bounded sparse optimizer uses at most24 neighbors, three passes,
+32 candidate addresses and per-district400k evaluations /10M scored pairs.
+It records work limits, objective changes and actual mean dependency distance;
+optimization limits never remove source relations from routing. Compatible
+previous worlds pin existing physical frames, even when influence membership
+changes after an edit. This is not unrestricted global force-directed layout.
+
+Next separate slice: neutral exterior materials plus small role accents, shared
+by browser and CPU preview. Concave coasts, terrain and real road-enclosed block
+subdivision remain pending; do not disguise them with decorative irregularity.
+
 ## First delivered slice (2026-10-19)
 
 HZ-00 and the first role-quarter HZ-01 policy are implemented. The convex-only
