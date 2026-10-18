@@ -4073,3 +4073,79 @@
 - Commits created / pushed (main): this checkpoint accompanies the renderer
   feature/tests/docs commit. Verify final metadata and ordinary owner-authorized
   push result; no force, attribution or remote-policy modification.
+
+## Checkpoint 2026-10-18 — independent cold source rebuilds (engine1956e78)
+- Implemented: no engine change. Rebuilt GJ from source twice without previous
+  artifacts/hints; documented reproducible commands and cold-versus-hinted
+  geography in REPRODUCIBLE_CITY_BUILD. Existing outputs retained, no deletion.
+- Fixture(s) / revision(s): clean GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  catalog0.4.0, default local namespace/minimal theme; maintained
+  structural-showcase as fresh unknown-language fallback. Target remains clean.
+- Commands run, twice with `<run>` = run1/run2 (repo cwd):
+  `python -m metropogits build --repo ../visual_test_proj/GJ-Cloud --out
+  ../artifacts/visual/clean-rebuild-r1/gj/<run>/base --json`;
+  `python -m scripts.parcel_viewer ../artifacts/visual/clean-rebuild-r1/gj/<run>/base
+  --out ../artifacts/visual/clean-rebuild-r1/gj/<run>/parcel`;
+  `python -m scripts.road_consolidation ../artifacts/visual/clean-rebuild-r1/gj/<run>/parcel
+  --out ../artifacts/visual/clean-rebuild-r1/gj/<run>/roads --shared-frontage`.
+  All stages succeed; source scan reports COMPLETE with60 info diagnostics,
+  including46 unresolved Java and4 JS/TS imports, not universal semantic accuracy.
+- Repeatability: `python ../artifacts/visual/clean_rebuild_verify.py`: all13
+  default,14 parcel,14 final files identical across independent processes.
+  Building1324/district506 coordinate and footprint differences0 between runs.
+  Final City SHA256 cd1018be25431bd5c5e9b1dbc2be0283a4e9cdea61fd6d172fa6449df30e8b08;
+  UCG1406ff8b73eedfdb141d30c7cb71636034d1a8af67d2de2b5134569c58fe11d3.
+- Historical comparison: previous displayed road-surface city differs by58
+  Portal building coordinates, no district changes, identical UCG. Separate
+  `python -m metropogits generate --graph
+  ../artifacts/visual/clean-rebuild-r1/gj/run1/base/graph.ucg.json --out
+  ../artifacts/visual/clean-rebuild-r1/gj/hint-check/city.json --previous-scene
+  ../artifacts/visual/road-continuity-r2/gj/city.json --json` emits
+  LAYOUT_HINT_APPLIED and reproduces previous base City bytes exactly. Historical
+  shared-access/generated-output builds recorded previous-scene use. Cold/hinted
+  inputs are different; this is not nondeterminism. Parcel stage moves35 Ops
+  buildings in both pipelines; not another source of historical differences.
+- Roads: exact4209 route identities/source/target/kind/edge membership retained,
+  but2681 path polylines differ from the old hinted geography. Fresh final has
+  4245 segments/1420 junctions;6157 scene-backed edges/1273 connected files.
+  `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/clean-rebuild-r1/gj/run1/roads/after`: unresolved0,
+  pavement/building intersections0. Independent RoadFrontageTests.check oracle
+  confirms original0.2 full-world detour/bend bounds, consistent doors and exact
+  segment memberships. Explicit validate_city CLI also passes.
+- Metrics: own gateway->shared frontage centerline26865.5->23918.5,
+  nearby parallel4742.5->2495.5, bends24263->23341, junctions1517->1420.
+  Compared with old displayed city, bends22642->23341, junctions1402->1420,
+  centerline23957->23918.5. Mixed tradeoff, not a new optimization claim.
+  Fresh shared pass372 accepted doors/2538 proposals,12M state cap,168 capped
+  searches. Whole-city replanning can affect routes outside moved directories;
+  incremental road locality is not certified by this cold-repeat check.
+- Artifacts inspected: `node ../artifacts/visual/clean_rebuild_review.mjs`:
+  same-camera Ops/Portal before/fresh captures, actual fresh WebGL overview,
+  showcase SVG and unknown WebGL/showcase inspected. Existing density, archetypes
+  and inspection remain usable; orthogonal detours/parallel approaches remain.
+  Generic sparse fixture remains generic with0 invented roads; large ground
+  boundaries and overview aggregate outlines still need separate visual work.
+- Browser: initial combined `clean-rebuild-audit-r1` audit fails on the three-file
+  fallback because its natural LOD is Detail, not the harness's expected Overview.
+  No test weakened. Standalone final GJ audit rerun:
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/clean-rebuild-audit-r2
+  ../artifacts/visual/clean-rebuild-r1/gj/run1/roads/after` passes all three LODs,
+  selection, filtering, exact-route inspection, navigation and Synthetic.
+  Synthetic CPU p95 1.5/1.3/1.3ms, static rebuilds0 (Chrome152/SwiftShader,
+  20 samples, local CPU submission timings, not GPU FPS). Unknown fixture is
+  separately smoke-captured without exceptions; no full three-LOD audit claim.
+- Tests / stability: Python405 run,404 pass,1 Windows symlink skip; Node access,
+  junction,paint,audit,camera,landmarks suites38 pass; Ruff and whitespace pass.
+  Source-backed AdminAccountDeletionController->AccountDeletionJobResponse still
+  carries the same RESOLVED IMPORTS/REFERENCES facts. No target code executed.
+- Spec alignment: PASS technical7-8, AC-002/006/014, DEC-003/005/006/007/011.
+  Fixed-input reproducibility demonstrated; no algorithm, schema, default, ID,
+  security or source mutation. AC-003 under changed input is not newly certified.
+- Open risks / next actions: directly improve lingering merges/bends, compare
+  cold and hinted geography, measure route-change locality and planning cost.
+  Small-fixture natural-LOD audit handling remains a separate harness task.
+- Commits created / pushed (main): one documentation/checkpoint work unit;
+  verified normal owner-authorized push follows. Private generated outputs and
+  pre-existing IDE build caches are not staged; human identity/no agent credit.
