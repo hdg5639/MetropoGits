@@ -33,6 +33,9 @@ export function instrument(source) {
   let auditStaticBuilds = 0;
   let auditUploadBytes = 0;
   let auditUploadPosition = null;
+  let auditDrawCalls = 0;
+  const auditDrawArrays = gl.drawArrays.bind(gl);
+  gl.drawArrays = (...args) => { auditDrawCalls += 1; return auditDrawArrays(...args); };
   const auditBufferData = gl.bufferData.bind(gl);
   gl.bufferData = (...args) => {
     auditUploadBytes += args[1]?.byteLength || 0;
@@ -42,7 +45,8 @@ export function instrument(source) {
   function render(timestamp = 0) {
     const auditStart = performance.now();
     const auditBeforeBuilds = auditStaticBuilds;
-    const auditBeforeUploads = auditUploadBytes;`);
+    const auditBeforeUploads = auditUploadBytes;
+    const auditBeforeDrawCalls = auditDrawCalls;`);
   result = replaceOnce(result, '  function buildUncachedGeometry(timestamp) {',
     '  function buildUncachedGeometry(timestamp) {\n    auditStaticBuilds += 1;');
   result = replaceOnce(result, '    renderLabels();', `    renderLabels();
@@ -51,6 +55,7 @@ export function instrument(source) {
     auditSequence += 1;
     auditFrames.push({start: auditStart, end: ended, cpuMs: ended - auditStart,
       staticBuilds: auditStaticBuilds - auditBeforeBuilds, uploadBytes: auditUploadBytes - auditBeforeUploads,
+      drawCalls: auditDrawCalls - auditBeforeDrawCalls,
       uploadPosition: auditUploadPosition,
       triangles: geometry.triangles.length / 27, lines: geometry.lines.length / 18});
     if (auditFrames.length > 1024) auditFrames.shift();`);
@@ -72,7 +77,7 @@ export function instrument(source) {
         .filter(point => point.x>8 && point.y>8 && point.x<viewportWidth-8 && point.y<viewportHeight-8
           && hitTest(point.x,point.y)?.id===point.id)
         .map(point => ({...point, choices:accessPolicy.choices(point.id,visibleBuildingIds,visibleNetworkIds)}))
-        .filter(point => point.choices.length>1)
+        .filter(point => point.choices.length>0)
         .sort((a,b)=>a.choices.length-b.choices.length || a.id.localeCompare(b.id));
     },
     accessTargets() {
@@ -120,9 +125,14 @@ export function instrument(source) {
       Object.assign(state, initialCamera);
       state.yaw = cameraPolicy.yaw;
       state.pitch = cameraPolicy.pitch;
+      if (options.pitch !== undefined) state.pitch = options.pitch;
       state.selected = null;
       auditLod = options.lod || null;
       state.distance = options.distance || initialCamera.distance / (options.zoom || 1);
+      if (options.target) {
+        [state.targetX, state.targetZ] = options.target;
+        state.targetY = 0;
+      }
       lodCacheKey = '';
       scheduleRender();
     },
@@ -227,8 +237,18 @@ async function activate(cdp, expression) {
   return nextDraw(cdp, sequence);
 }
 
-async function syntheticFrames(cdp, samples) {
+export async function syntheticFrames(cdp, samples) {
   const before = await snapshot(cdp);
+  const unavailable = await cdp.evaluate(`document.getElementById('synthetic-activity').disabled`);
+  if (unavailable) {
+    const networks = await cdp.evaluate('METROPOGITS_DATA.scene.networks.length');
+    if (networks) throw new Error('Synthetic unavailable despite evidenced networks');
+    return {status: 'NOT_APPLICABLE', reason: 'No evidenced networks; no fabricated traffic', staticBuilds: 0};
+  }
+  const access = await cdp.evaluate('__METRO_AUDIT__.accessState()');
+  if (access && access.animationBound === 0) {
+    return {status:'NOT_APPLICABLE', reason:'No complete animated routes at this LOD/selection', staticBuilds:0};
+  }
   await cdp.evaluate(`(() => {
     const toggle = document.getElementById('synthetic-activity');
     if (toggle.disabled) throw new Error('Synthetic unavailable');
@@ -243,7 +263,7 @@ async function syntheticFrames(cdp, samples) {
       frames = (await snapshot(cdp)).frames.filter(frame => frame.start > before.frames.at(-1).end);
     } while (frames.length < samples + 5);
     frames = frames.slice(5, samples + 5);
-    return {cpuMs: summarize(frames.map(frame => frame.cpuMs)),
+    return {status: 'MEASURED', cpuMs: summarize(frames.map(frame => frame.cpuMs)),
       staticBuilds: frames.reduce((sum, frame) => sum + frame.staticBuilds, 0),
       moved: new Set(frames.map(frame => JSON.stringify(frame.uploadPosition))).size > 1,
       uploadBytes: summarize(frames.map(frame => frame.uploadBytes)), frames};
@@ -313,7 +333,7 @@ export function reportHtml(report) {
     <table><tr><th>Case</th><th>LOD</th><th>Orbit CPU p95 ms</th><th>Wheel CPU p95 ms</th><th>Orbit input-to-submit p95 ms</th></tr>${rows}</table>
     ${['overview','district','detail','common-scale'].map(mode => `<section><h2>${mode}</h2><p>${mode === 'common-scale'
       ? 'Same absolute camera distance, same overview LOD, each city centered on its own bounds.'
-      : `Same fit-relative zoom (${report.policy.normalizedZooms[mode]}×), natural LOD. District/detail intentionally zoom into the city, so cropped edges are expected.`}</p><div class="pair">${cells(mode)}</div></section>`).join('')}
+      : `Same fit-relative zoom (${report.policy.normalizedZooms[mode]}×), explicit ${mode} LOD for cross-size comparison. Natural LOD is retained in the raw report. District/detail intentionally zoom into the city, so cropped edges are expected.`}</p><div class="pair">${cells(mode)}</div></section>`).join('')}
     <section><h2>Remote district navigation</h2><p>Actual district-jump control after ground pan, orbit, drag, keyboard and reset checks.</p><div class="pair">${report.cases.map((item,index) => item.navigation
       ? `<figure><a href="case-${index+1}/camera-district-jump.png"><img alt="Case ${index+1}, camera focused on a remote district" src="case-${index+1}/camera-district-jump.png"></a><figcaption>${escape(item.navigation.destination)}</figcaption></figure>` : '').join('')}</div></section>
     </html>`;
@@ -329,7 +349,7 @@ export async function prepare(input, output) {
     hashes[name] = sha256(bytes);
     await writeFile(join(output, 'assets', name), name === 'viewer-3d.js' ? instrument(bytes.toString('utf8')) : bytes);
   }
-  for (const name of ['index.html', 'assets/viewer-data.js', 'preview.svg']) {
+  for (const name of ['index.html', 'assets/viewer-data.js', 'preview.svg', 'showcase.svg']) {
     const bytes = await readFile(join(input, name));
     hashes[name] = sha256(bytes);
     await copyFile(join(input, name), join(output, name));
@@ -380,27 +400,35 @@ export async function runAudit(browser, output, inputs, samples = 20) {
         await sleep(100);
       }
       const initial = await snapshot(cdp);
+      const initialPng = await cdp.send('Page.captureScreenshot', {format:'png'});
+      await writeFile(join(directory, 'default.png'), Buffer.from(initialPng.data, 'base64'));
       const result = {input, hashes, initial, views: {}};
       report.cases.push(result);
       console.log(`Loaded case ${index + 1}: ${initial.firstDrawSubmittedMs.toFixed(1)} ms to first draw submission`);
       for (const [lod, zoom] of Object.entries(report.policy.normalizedZooms)) {
-        const state = await configure(cdp, {zoom});
-        if (state.lod !== lod) throw new Error(`Natural LOD mismatch: expected ${lod}, got ${state.lod}`);
+        const state = await configure(cdp, {zoom, lod});
+        if (state.lod !== lod) throw new Error(`Explicit LOD mismatch: expected ${lod}, got ${state.lod}`);
         if ((await cdp.evaluate('__METRO_AUDIT__.accessState()'))?.demandStable === false)
           throw new Error('Road demand profile missing or width changed in WebGL');
         const png = await cdp.send('Page.captureScreenshot', {format: 'png'});
         await writeFile(join(directory, `${lod}.png`), Buffer.from(png.data, 'base64'));
         const orbit = await interaction(cdp, 'orbit', samples);
-        await configure(cdp, {zoom});
+        await configure(cdp, {zoom, lod});
         const wheel = await interaction(cdp, 'wheel', samples);
-        await configure(cdp, {zoom});
+        await configure(cdp, {zoom, lod});
         const synthetic = await syntheticFrames(cdp, samples);
-        if (synthetic.staticBuilds !== 0 || !synthetic.moved) {
+        if (synthetic.staticBuilds !== 0 || (synthetic.status === 'MEASURED' && !synthetic.moved)) {
           throw new Error('Synthetic regression: static city rebuilt or activity did not move');
         }
-        result.views[lod] = {state, orbit, wheel, synthetic};
+        const heap = await cdp.send('Runtime.getHeapUsage');
+        result.views[lod] = {state, orbit, wheel, synthetic,
+          memory: {jsHeapUsedBytes: heap.usedSize, jsHeapTotalBytes: heap.totalSize,
+            scope: 'CDP JavaScript heap; not total process or GPU memory'},
+          submittedDrawCalls: state.frames.at(-1).drawCalls};
         console.log(`  ${lod}: orbit CPU p95=${orbit.cpuMs.p95.toFixed(1)} ms`);
-        console.log(`    synthetic CPU p95=${synthetic.cpuMs.p95.toFixed(1)} ms; static builds=${synthetic.staticBuilds}; upload p95=${synthetic.uploadBytes.p95}`);
+        console.log(synthetic.status === 'MEASURED'
+          ? `    synthetic CPU p95=${synthetic.cpuMs.p95.toFixed(1)} ms; static builds=${synthetic.staticBuilds}; upload p95=${synthetic.uploadBytes.p95}`
+          : `    synthetic: ${synthetic.reason}`);
       }
       await configure(cdp, {zoom: 1.6});
       const targets = await cdp.evaluate('globalThis.__METRO_AUDIT__.roleTargets()');
@@ -472,7 +500,23 @@ export async function runAudit(browser, output, inputs, samples = 20) {
         result.accessInteraction=check;
       }
       await configure(cdp, {zoom:1.6});
-      const roadTargets=await cdp.evaluate('__METRO_AUDIT__.roadTargets()');
+      let roadTargets=await cdp.evaluate('__METRO_AUDIT__.roadTargets()');
+      if (!roadTargets.length) {
+        // Sparse repositories may have their only relationship at the city edge.
+        await configure(cdp, {zoom:1, lod:'detail'});
+        roadTargets=await cdp.evaluate('__METRO_AUDIT__.roadTargets()');
+      }
+      if (!roadTargets.length) {
+        const anchors = await cdp.evaluate(`(METROPOGITS_DATA.routing?.segments || [])
+          .slice().sort((a,b)=>Math.hypot(b.end[0]-b.start[0],b.end[1]-b.start[1])-
+            Math.hypot(a.end[0]-a.start[0],a.end[1]-a.start[1])).slice(0,12)
+          .map(s=>[(s.start[0]+s.end[0])/2,(s.start[1]+s.end[1])/2])`);
+        for (const target of anchors) {
+          await configure(cdp, {target, distance:90, pitch:1.3, lod:'detail'});
+          roadTargets=await cdp.evaluate('__METRO_AUDIT__.roadTargets()');
+          if (roadTargets.length) break;
+        }
+      }
       if (roadTargets.length) {
         const target=roadTargets[0], before=await snapshot(cdp), route=target.choices[0];
         const point={x:target.x+before.canvasRect.x,y:target.y+before.canvasRect.y};
@@ -545,7 +589,12 @@ export async function runAudit(browser, output, inputs, samples = 20) {
         || dragged.camera.targetY!==dragStart.camera.targetY || dragged.camera.targetX===dragStart.camera.targetX)
         throw new Error('Move-mode drag did not translate the ground pivot');
       await activate(cdp, 'document.querySelector("[data-action=toggle-pan]").click()');
-      await cdp.evaluate('document.getElementById("filter-role").focus()');
+      await cdp.evaluate(`(() => {
+        const control = document.querySelector('select:not(:disabled), input:not(:disabled)');
+        if (!control) throw new Error('No enabled form control for keyboard guard audit');
+        control.focus();
+        if (document.activeElement !== control) throw new Error('Form control did not receive focus');
+      })()`);
       const formBefore=await snapshot(cdp);
       await cdp.send('Input.dispatchKeyEvent',{type:'keyDown',key:'w',code:'KeyW'});
       await cdp.send('Input.dispatchKeyEvent',{type:'keyUp',key:'w',code:'KeyW'});
@@ -579,6 +628,14 @@ export async function runAudit(browser, output, inputs, samples = 20) {
       }
       const previewPng = await cdp.send('Page.captureScreenshot', {format: 'png'});
       await writeFile(join(directory, 'preview.png'), Buffer.from(previewPng.data, 'base64'));
+      await cdp.send('Page.navigate', {url: pathToFileURL(join(directory, 'showcase.svg')).href});
+      const showcaseDeadline = Date.now() + 10000;
+      while (!(await cdp.evaluate('document.documentElement.localName === "svg" && document.readyState === "complete"'))) {
+        if (Date.now() > showcaseDeadline) throw new Error('Showcase failed to load');
+        await sleep(100);
+      }
+      const showcasePng = await cdp.send('Page.captureScreenshot', {format:'png'});
+      await writeFile(join(directory, 'showcase.png'), Buffer.from(showcasePng.data, 'base64'));
     }
     const distance = Math.max(...report.cases.map(c => c.initial.fittedDistance));
     report.policy.commonDistance = distance;

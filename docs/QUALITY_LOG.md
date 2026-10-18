@@ -4881,3 +4881,47 @@
 - Commit/push: one verified curved-street work unit on experiment/street-grid;
   normal upstream push after staged diff/identity review. Private artifacts and
   unrelated IDE caches excluded; no agent attribution.
+
+## Checkpoint 2026-10-18 — cross-repository benchmark
+
+- Implemented: repeatable local benchmark using the real build pipeline, per-language
+  adapter/structural coverage, edge type/confidence and unresolved diagnostics,
+  profiled stages, unprofiled repeat timing, all-artifact hashes and position checks.
+  Optional aligned curved street artifacts are also regenerated twice. No source
+  builds, dependency installs or runtime language-support expansion.
+- Fixtures/revisions: all seven locally supplied clones pinned in
+  CROSS_REPOSITORY_BENCHMARK.md; tracked trees clean. Actual base and street
+  artifacts under `artifacts/visual/cross-repository-r2/NAME/{first,repeat,streets}`.
+  Full commands and limitations are in that document. All seven repeat identically.
+- Browser: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/cross-repository-audit-r7 INPUT...` using all seven streets
+  directories. Chrome/SwiftShader,1280x800,DPR1; three explicit LODs, natural-default
+  capture, exact common-distance comparison, navigation, JS heap and draw-call
+  observations. Actual source-edge drilldown succeeds on Realworld/PocketBase;
+  zero-network cases correctly disable Synthetic. Active Synthetic static rebuilds0.
+  Measurements are CPU submission and JS heap, NOT GPU FPS or process memory.
+- Artifacts inspected: Realworld default and forced Overview, Bat Overview,
+  PocketBase Overview/showcase, Lazygit default, SQLite Browser default,
+  FastAPI showcase. Cities differ geometrically but remain generic/repetitive.
+  Small-city forced aggregates can clip; default Realworld uses Detail correctly.
+  No claim of large visual improvement from this measurement tool.
+- Audit corrections: replaced large-city-only natural-LOD assumptions with explicit
+  comparison LODs; sparse roads can be inspected at a higher local camera angle;
+  keyboard guard tests focus enabled controls; zero-network/zero-visible-trajectory
+  animation is explicitly not applicable. Existing movement/cache failures still
+  block where activity is actually present. Default camera captures stay unmodified.
+- Tests: Python475 run,474 pass/1 existing Windows symlink skip; Node48 pass;
+  Ruff passed. Fresh spring-positive and structural-showcase builds generated in
+  cross-repository-fixtures. The initial supplementary browser regression hit an
+  audit assumption about animated paths at forced Overview; recorded/fixed.
+  cross-repository-regression-r2 passes GJ plus both maintained fixtures, including
+  Spring District/Detail animation and exact-route inspection; generic traffic N/A.
+- Findings: Go/Rust/Python/C++ remain structural-only; samples/assets can account
+  for JS/Java coverage. Qt `.ts` translation files are incorrectly classified as
+  TypeScript in the baseline; prioritized scanner correction next. No universal
+  semantic-support or resolution-accuracy claim. Pipeline COMPLETE != L4 coverage.
+- Spec alignment: PASS for benchmark/AC-001/002/007/012/014. Public UCG/City,
+  source evidence, layout and security defaults unchanged by this tooling unit.
+- Commit/push: benchmark tooling/checkpoint committed separately on
+  experiment/street-grid; only tracked tool/tests/docs, never corpus/artifacts or
+  unrelated IDE caches. Ordinary upstream push after verification.
