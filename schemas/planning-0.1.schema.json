@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metropogits.dev/schemas/planning-0.1.schema.json",
+  "title": "Derived evidence-backed flat planning, not additional source modules",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "zoningVersion", "worldSeed", "ucgDigest", "sourceCityDigest", "terrainPreset", "zones"],
+  "properties": {
+    "schemaVersion": {"const": "planning/0.1-experimental"},
+    "zoningVersion": {"const": "semantic-zoning/0.1"},
+    "worldSeed": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+    "ucgDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "sourceCityDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "terrainPreset": {"const": "flat"},
+    "zones": {"type": "array", "minItems": 1, "maxItems": 448, "items": {"$ref": "#/$defs/zone"}}
+  },
+  "$defs": {
+    "point": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number", "minimum": -100000, "maximum": 100000}},
+    "polygon": {"type": "array", "minItems": 3, "maxItems": 512, "items": {"$ref": "#/$defs/point"}},
+    "strings": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "budget": {"type": "object", "additionalProperties": false, "required": ["parcelArea", "streetArea", "growthReserve", "boundaryReserve", "total"], "properties": {
+      "parcelArea": {"type": "number", "minimum": 0}, "streetArea": {"type": "number", "minimum": 0},
+      "growthReserve": {"type": "number", "minimum": 0}, "boundaryReserve": {"type": "number", "minimum": 0}, "total": {"type": "number", "exclusiveMinimum": 0}
+    }},
+    "profile": {"enum": ["GRID", "ORGANIC", "RADIAL", "INDUSTRIAL"]},
+    "zone": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "parentId", "clusterKey", "label", "classification", "memberEntityIds", "memberClaims", "requestedProfile", "polygon", "anchor", "planningSeed", "planningProfile", "primaryAxis", "areaDemand", "areaAllocated", "areaTarget", "capacity", "allocation"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^world:zone:[0-9a-f]{16}$"},
+        "parentId": {"type": "string"},
+        "clusterKey": {"enum": ["SERVICE_QUARTER", "INDUSTRIAL_LOGISTICS", "COMMERCIAL_FRONTEND", "GATEWAY_CIVIC", "CAMPUS_RESEARCH", "GENERAL_MIXED"]},
+        "label": {"type": "string"},
+        "classification": {"type": "object", "additionalProperties": false, "required": ["status", "ruleIds", "evidenceIds"], "properties": {"status": {"enum": ["INFERRED", "UNKNOWN"]}, "ruleIds": {"$ref": "#/$defs/strings"}, "evidenceIds": {"$ref": "#/$defs/strings"}}},
+        "memberEntityIds": {"allOf": [{"$ref": "#/$defs/strings"}], "minItems": 1, "maxItems": 10000},
+        "memberClaims": {"type": "array", "maxItems": 10000, "items": {"type": "object", "additionalProperties": false, "required": ["entityId", "roles"], "properties": {
+          "entityId": {"type": "string"}, "roles": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["value", "confidence", "evidenceIds"], "properties": {"value": {"type": "string"}, "confidence": {"enum": ["DIRECT", "RESOLVED"]}, "evidenceIds": {"allOf": [{"$ref": "#/$defs/strings"}], "minItems": 1}}}}
+        }}},
+        "requestedProfile": {"$ref": "#/$defs/profile"}, "planningProfile": {"$ref": "#/$defs/profile"},
+        "planningSeed": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+        "polygon": {"$ref": "#/$defs/polygon"}, "anchor": {"$ref": "#/$defs/point"},
+        "primaryAxis": {"type": "number"}, "areaDemand": {"$ref": "#/$defs/budget"},
+        "areaAllocated": {"type": "number", "exclusiveMinimum": 0}, "areaTarget": {"type": "number", "exclusiveMinimum": 0}, "capacity": {"type": "integer", "minimum": 1},
+        "allocation": {"type": "object", "additionalProperties": false, "required": ["algorithm", "iterations", "maxRelativeAreaError"], "properties": {
+          "algorithm": {"enum": ["unsplit/0.1", "clipped-power/0.1", "capacity-bisection/0.1", "previous-anchors/0.1"]},
+          "iterations": {"type": "integer", "minimum": 0, "maximum": 32}, "maxRelativeAreaError": {"type": "number", "minimum": 0}, "fallbackReason": {"type": "string"}
+        }}
+      }
+    }
+  }
+}

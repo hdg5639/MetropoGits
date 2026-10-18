@@ -17,6 +17,12 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed")
     parser.add_argument(
+        "--zoning",
+        choices=("none", "semantic"),
+        default="none",
+        help="opt-in evidence-backed neighborhoods; leaves canonical City/UCG intact",
+    )
+    parser.add_argument(
         "--outline",
         choices=("ellipse", "varied"),
         default="ellipse",
@@ -68,6 +74,7 @@ def main():
             previous=read(args.previous_world) if args.previous_world else None,
             planning=args.planning,
             outline=args.outline,
+            zoning=args.zoning,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)

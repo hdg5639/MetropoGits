@@ -60,3 +60,22 @@ Concave/holed geometry is rejected or remains outside this convex-only stage.
 
 Avoid serial micro-tuning: prioritize a visible complete slice, measure it,
 and use real outputs to choose the next architectural improvement.
+
+## First delivered slice (2026-10-19)
+
+HZ-00 and the first role-quarter HZ-01 policy are implemented. The convex-only
+HZ-02/03 slice is available with `scripts.procedural_world --zoning semantic`;
+see [current contracts](contracts/CURRENT_BASELINE.md) and QUALITY_LOG for exact
+verification. This is not completion of all clustering/terrain/LOD packages.
+Structural-only defaults and original City/UCG remain available unchanged.
+
+Controlled four-repository comparison: `artifacts/visual/semantic-zoning-r4`.
+Browser/CPU captures: `semantic-zoning-reviewed-r1`; Canvas inspection:
+`semantic-zoning-canvas-r1`. GJ has13 zones, OJ11; PocketBase8 and SQLite3 all
+neutral because there are no supported role claims. Real files/relations remain
+individually inspectable. The GJ ellipse comparison currently uses GRID in all
+zones after capacity fallback; OJ retains ORGANIC and INDUSTRIAL, while varied
+GJ retains one ORGANIC zone. Do not claim every semantic category has a unique
+planning morphology. The next high-impact zoning task is bounded package/graph
+affinity inside large mixed quarters, with persistent keys and real block/LOD
+geometry, not tuning another individual bend.

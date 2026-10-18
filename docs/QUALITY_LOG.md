@@ -5803,3 +5803,104 @@
   current main, standing owner-authorized normal push. Review final staged paths,
   human identity, upstream and remote SHA before reporting delivery. Preserve
   untracked user build caches; never force-push or add agent attribution.
+
+## Checkpoint 2026-10-19 — evidence-backed internal power zoning
+
+- Implemented: HZ-00/ADR-028 and first HZ-01/02/03 flat vertical slice from the
+  hierarchical semantic-zoning proposal. Opt-in `--zoning semantic`, strict
+  role-quarter membership/evidence, bounded clipped power area balancing,
+  measured-capacity local repair, real connected streets/frontage parcels,
+  canonical planning.json, same World-fed CPU/WebGL/Canvas geometry and paged
+  neighborhood/member/source inspection. Legacy/default output unchanged.
+- Fixtures/revisions: fixed world-flat-reviewed-r2 source snapshots, GJ
+  local-sha256-06eb492d57141c16 and OJ local-sha256-c2e80f9d3908fec8 (both
+  revision=null, not claimed pinned Git commits); PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522
+  and SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b. Fresh maintained
+  spring-positive at baselineff75c80 through scanner/analyzer/City, plus generated
+  72-source mixed-role and30-source unknown Rust unit fixtures. No target code,
+  dependency install, target build or outbound analysis service was invoked.
+- Commands run (repository cwd): `python -u ../artifacts/visual/semantic_zoning_review.py
+  semantic-zoning-r4`; `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --repo-id fixture/semantic-zoning
+  --out ../artifacts/visual/semantic-zoning-e2e-r1/build`; `python -m
+  scripts.procedural_world ../artifacts/visual/semantic-zoning-e2e-r1/build
+  --namespace fixture/semantic-zoning --outline varied --zoning semantic
+  --out ../artifacts/visual/semantic-zoning-e2e-r2/world`; same World CLI on
+  world-flat-reviewed-r2/gj/after, namespace benchmark/gj-cloud, varied outline,
+  out semantic-zoning-varied-r1/gj. Full Python/Node suites, Ruff and diff check.
+- Browser command: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/semantic-zoning-reviewed-r1` followed, in order, by
+  semantic-zoning-r4/gj/before, gj/after, oj/after, pocketbase/after,
+  sqlitebrowser/after, semantic-zoning-e2e-r2/world and semantic-zoning-varied-r1/gj
+  (each prefixed ../artifacts/visual/). Forced Canvas:
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs
+  ../artifacts/visual/semantic-zoning-canvas-r1` with r4/gj/after and r4/oj/after.
+- Artifacts actually inspected: all four new real WebGL default/overview images,
+  GJ district/zone inspector, actual CPU showcase captures for all four, varied
+  GJ WebGL default and GJ Canvas inspector. Actual browser runs exercise three
+  LODs, camera/pointer/filters, exact source-backed route inspection and Synthetic.
+  New browser assertions navigate parent -> neighborhood -> source member ->
+  neighborhood, verify original role confidence, exact first/second25-file pages,
+  and separate principal district/planning-zone counts. Canvas also verifies
+  Structure overlay restoration. Browser7 cases exit0, no exceptions; all
+  applicable Synthetic samples have zero static city rebuilds.
+- Visual findings: role clusters become contiguous, auditable neighborhoods
+  instead of scattered colored buildings. OJ service/storage/test/entry regions
+  are distinct at a glance. GJ's large mixed quarters remain repetitive gray
+  rows; semantic grouping is visible but full organic block morphology is not
+  done. Generic Go/C++ stay neutral, without fabricated DB/auth categories.
+  Borders are subdued, selected context and original source evidence remain.
+  Existing long inspector paths and float size formatting remain rough edges.
+- Geometry/source results:3175 corpus buildings/5782 actual source-pair trips,
+  represented edges6157/2243/192/0 respectively, zero parcel/building/road
+  collisions or owner escapes, all entrances reachable. All eligible files
+  belong to exactly one planning zone; every specialized member's original
+  claim is retained. Every canonical City/UCG byte matches its input snapshot.
+  GJ13 zones/OJ11; PB8 and SQLite3 all GENERAL_MIXED, no internal tessellation
+  when only one cluster exists. Raw cell boundaries are not automatically paved:
+  connect required ports and a stable adjacency tree, removing port-free arcs.
+- Tests/determinism/stability: Python553 run,552 pass, one existing Windows
+  symlink skip; Node56 pass.14 new tests cover real analysis, both schemas,
+  exact repeated packages, provenance/membership tampering, clipping/area,
+  bounded solver fallback, unsupported land and resource limits, street-port
+  omission, weak/tiny/unknown claims, changed seed and malformed hints.
+  Hinted one-file addition preserves all72 existing parcel frames and zone/parent
+  polygons. All eight four-repository before/after packages repeat identically.
+  Independently regenerated legacy default World bytes match all four original
+  world-flat-reviewed-r2 baselines. Latest validator membership lookup uses sets,
+  avoiding a per-file scan of the whole zone's member list; targeted14 re-pass.
+- Corrections: first semantic output inflated GJ/OJ land by58%/55%. Added one
+  within-parent measured-capacity redistribution and bounded local GRID fits;
+  retained sources, styles and exact access, then re-ran all corpus outputs.
+  Final areas251306->271804 GJ (+8.16%),138820->150028 OJ (+8.07%),
+  150427->136541 PB (-9.23%),97208->97208 SQLite. Not a universal density gain.
+  A rotated quantized-lot contact was corrected with real0.01 parcel clearance
+  in new zoning, not a weakened validator or a silent legacy geometry rewrite.
+- Performance: unprofiled generation seconds before->after5.67->7.20 GJ,
+  2.20->2.89 OJ,0.73->0.99 PB,0.29->0.56 SQLite. Viewer-data28.03->30.16MB GJ,
+  10.57->11.29MB OJ. This new opt-in capability costs time/data; not a speedup.
+  WebGL orbit submission CPU p95 across the seven cases0.1–3.8ms; not GPU FPS.
+  CDP JS heap samples and Synthetic p95 are in the raw report (same browser,
+  uncontrolled GC; not independent peak RSS/GPU-memory comparisons). Total
+  process RSS and GPU frame-completion p95 were not measured; HZ release gate
+  remains open. Varied GJ area260188, actual profiles12GRID/1ORGANIC.
+- Spec alignment: PASS under requested opt-in ADR-028 scope; rechecked technical
+  sections3/4/7/8/10/12, functional AC-001/002/003/006/008/011/012/014,
+  product DEC-004/005/006/007/008/009/011. UCG/City unchanged, existing World
+  documents valid, no new dependency, native rewrite, LLM, API or execution.
+- Open risks/next actions: first clustering uses verified roles, not graph-affinity
+  or full package subclusters. Large unknown quarters still need neutral internal
+  structure/LOD. GJ ellipse currently falls back to GRID for all13 neighborhoods;
+  OJ retains one ORGANIC/one INDUSTRIAL. Do not claim every category has a unique
+  grammar. Concave/holed land, terrain/water/bridges/tunnels, real enclosed block
+  polygons and rotated role compounds remain pending. Initial r1 benchmark's
+  pre-existing non-zoned GRID+varied GJ failed strict quantized parcel-overlap
+  validation; the controlled comparison uses the valid unchanged ellipse
+  baseline. New zoned varied GJ passes. That legacy combination still needs an
+  explicitly versioned clearance fix, not a claim of all-seed legacy success.
+- Delivery: docs commit3520056; feature/checkpoint committed separately after
+  staged review. New proposal's protected-branch rule followed with
+  feat/semantic-zoning, not direct protected-main integration. Push verified
+  commits normally to the existing origin; no force, settings change or agent
+  attribution. Unrelated user build caches are preserved.

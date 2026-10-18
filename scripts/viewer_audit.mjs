@@ -361,6 +361,41 @@ export async function prepare(input, output) {
   return hashes;
 }
 
+export async function auditZoning(cdp) {
+  const target = await cdp.evaluate(`(() => {
+    const zones = Object.values(METROPOGITS_DATA.semanticZoning || {});
+    zones.sort((a,b) => Boolean(b.memberClaims.length)-Boolean(a.memberClaims.length) || b.memberEntityIds.length-a.memberEntityIds.length);
+    const z=zones[0]; return z ? {id:z.id,parentId:z.parentId,label:z.label,count:z.memberEntityIds.length} : null;
+  })()`);
+  if (!target) return null;
+  await cdp.evaluate(`(() => {
+    const z=METROPOGITS_DATA.semanticZoning[${JSON.stringify(target.id)}];
+    const select=document.getElementById('district-jump');
+    select.value=z.parentId; select.dispatchEvent(new Event('change'));
+    const button=[...document.querySelectorAll('#inspector-content button')].find(b=>b.textContent===z.label+' · '+z.memberEntityIds.length+' files');
+    if(!button)throw Error('Planning zone unavailable through parent inspector'); button.click();
+    const shown=[...document.querySelectorAll('.zoning-member')].map(b=>b.dataset.entityId);
+    if(JSON.stringify(shown)!==JSON.stringify(z.memberEntityIds.slice(0,25)))throw Error('Zoning member page mismatch');
+    if(!document.getElementById('inspector-content').textContent.includes('not a source module'))throw Error('Missing derived-zone disclosure');
+    document.querySelector('.zoning-member').click();
+    const entity=METROPOGITS_DATA.ucg.entities.find(e=>e.id===z.memberEntityIds[0]);
+    if(document.querySelector('#inspector-content h2').textContent!==entity.path)throw Error('Zoning constituent lost source identity');
+    const claim=z.memberClaims.find(c=>c.entityId===entity.id);
+    if(claim && !claim.roles.every(r=>document.getElementById('inspector-content').textContent.includes(r.value+' · '+r.confidence)))throw Error('Zoning constituent lost role evidence');
+    const back=[...document.querySelectorAll('#inspector-content button')].find(b=>b.textContent==='Inspect planning neighborhood');
+    if(!back)throw Error('Building lacks planning-zone navigation'); back.click();
+    const next=[...document.querySelectorAll('#inspector-content button')].find(b=>b.textContent==='Next members');
+    if(z.memberEntityIds.length>25) {
+      if(!next)throw Error('Missing zoning pagination'); next.click();
+      const page=[...document.querySelectorAll('.zoning-member')].map(b=>b.dataset.entityId);
+      if(JSON.stringify(page)!==JSON.stringify(z.memberEntityIds.slice(25,50)))throw Error('Second zoning member page mismatch');
+      [...document.querySelectorAll('#inspector-content button')].find(b=>b.textContent==='Previous members').click();
+    }
+    if(!document.getElementById('city-stats').textContent.includes('planning zones'))throw Error('Derived zones misreported as source districts');
+  })()`);
+  return {...target, sourceNavigation:true, evidenceVerified:true, pages:target.count>25?2:1};
+}
+
 export async function runAudit(browser, output, inputs, samples = 20) {
   // A new directory prevents accidental overwrite of previous captures or inputs.
   await mkdir(output);
@@ -408,6 +443,11 @@ export async function runAudit(browser, output, inputs, samples = 20) {
       const result = {input, hashes, initial, views: {}};
       report.cases.push(result);
       console.log(`Loaded case ${index + 1}: ${initial.firstDrawSubmittedMs.toFixed(1)} ms to first draw submission`);
+      result.zoning = await auditZoning(cdp);
+      if (result.zoning) {
+        const image = await cdp.send('Page.captureScreenshot', {format:'png'});
+        await writeFile(join(directory, 'zoning-inspector.png'), Buffer.from(image.data, 'base64'));
+      }
       for (const [lod, zoom] of Object.entries(report.policy.normalizedZooms)) {
         const state = await configure(cdp, {zoom, lod});
         if (state.lod !== lod) throw new Error(`Explicit LOD mismatch: expected ${lod}, got ${state.lod}`);

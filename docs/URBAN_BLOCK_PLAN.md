@@ -1067,3 +1067,38 @@ python -m scripts.procedural_world BUILD --namespace owner/project --planning va
 테스트 소스의 다섯 문법과 네 외곽 계열을 모았다. 계열별 seed는 명시적인 예시 선택이며
 같은 픽셀 스케일/같은 면적이라는 뜻은 아니다. 실제 네 저장소의 새 외곽+자동 계획은
 `world-varied-outline-r1/index.html`에서 확인한다. 새 감자박스 viewer-data는 약 36MB다.
+
+## 2026-10-19 — Hierarchical Voronoi Semantic Zoning 설계 반영
+
+새 설계안의 구현 순서와 한계를 [별도 계획](SEMANTIC_ZONING_PLAN.md)과
+[ADR-028](adr/ADR-028.md)에 기록했다. 기존 평지 월드 한 구역 전체에 같은 패턴을
+반복하는 대신, 부모 소유권 안에서 근거가 있는 역할별 동네를 만든다.
+
+```powershell
+python -m scripts.procedural_world BUILD --namespace owner/project --zoning semantic --out ZONED_WORLD
+python -m scripts.procedural_world BUILD --namespace owner/project --zoning semantic --outline varied --out ZONED_VARIED_WORLD
+```
+
+첫 정책은 DIRECT/RESOLVED 역할 증거가 있는 그룹만 전문 구역으로 분류한다.
+서비스·저장소·진입점·페이지·테스트를 구분하되, 12개 미만의 작은 그룹과
+분류 불명 파일은 GENERAL_MIXED에 둔다. 디렉터리 이름으로 DB나 AI를 추측하지 않는다.
+외부 도시의 CBD/공업지구가 실제 배포 환경에 존재한다는 주장도 하지 않는다.
+Go/C++ 역할 근거가 없는 PocketBase/SQLiteBrowser는 중립 구역으로 남는다.
+
+볼록한 부모 안에서 용량 목표를 맞추는 weighted power cell을 계산한다.
+실제 필지 부족은 같은 부모 안의 면적 재배분 → 결정론적 단순 분할 → 명시적 부모
+확장 순으로 복구한다. 수렴/폴백·초기 수요·최종 목표·배정 면적을 모두 기록한다.
+분할선 전체를 도로로 장식하지 않고 접도점과 선택한 인접 존의 연결에 필요한
+경계 구간만 잇는다. 코드 관계 경로는 그 물리망 위에서 원래 edge ID를 보존한다.
+
+`planning.json`과 world의 같은 존 데이터에서 멤버·역할 증거·모양·문법을 추적한다.
+뷰어의 건물 → Inspect planning neighborhood → 구성 파일 선택으로 원본을 확인한다.
+부모 구역 Inspector에서도 하위 동네를 열 수 있고 파일 목록은 25개씩 나눈다.
+브라우저가 별도로 재클러스터링하지 않는다. City/UCG는 바이트 그대로 유지한다.
+
+`--zoning none`이 기본값이다. semantic에서는 자체 역할 정책이 문법을 고르므로
+`--planning`은 기본 grid로 둔다. 호환 힌트가 있으면 같은 존의 폴리곤과 필지를
+유지하고, 그룹 구성이나 수용량이 달라져 재계획하면 명시한다.
+일부 존은 수용량 때문에 GRID로 폴백한다. 전문 역할 분류가 곧 모든 존의 서로 다른
+문법을 보장한다는 뜻은 아니다. 실제 다각형 블록, 관계 친화 하위 클러스터, 지형,
+교량/터널, 회전 집계 LOD는 후속 단계이며 이번 결과를 전체 설계 완성으로 부르지 않는다.

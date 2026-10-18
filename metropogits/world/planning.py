@@ -47,14 +47,14 @@ def demand(buildings, profile="GRID"):
     )
 
 
-def slots(poly, seed):
+def slots(poly, seed, *, rotation=0, phase_offset=0):
     """Two frontage rows per local street, with boundary corridors reserved first."""
     inner = inset(poly, 5)
     if len(inner) < 3:
         return [], [], 0
     edges = list(zip(poly, poly[1:] + poly[:1]))
     a, b = max(edges, key=lambda e: math.dist(*e))
-    angle = math.atan2(b[1] - a[1], b[0] - a[0])
+    angle = math.atan2(b[1] - a[1], b[0] - a[0]) + rotation
     c, s = math.cos(angle), math.sin(angle)
 
     def to_local(p):
@@ -65,7 +65,7 @@ def slots(poly, seed):
 
     local = [to_local(p) for p in inner]
     x0, z0, x1, z1 = bounds(local)
-    phase = (draw(seed) - 0.5) * 8
+    phase = (draw(seed) - 0.5) * 8 + phase_offset
     candidates, lanes = [], []
     estimated = (int((x1 - x0) / 8) + 3) * (int((z1 - z0) / 24) + 3) * 2
     if estimated > MAX_SLOTS:
