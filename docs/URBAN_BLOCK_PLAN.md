@@ -1037,3 +1037,13 @@ INDUSTRIAL: `--planning industrial`. 폭 7 간선과 폭 4 서비스 코트가 �
 예산에 반영하며 네 가지 고정 로컬 축/위상을 비교해 좁은 구역의 수용량을 확보한다.
 `world-industrial-r3`가 검토본이다. 네 저장소 모두 GRID보다 면적이 약 51~66% 늘었으므로
 전체 강제 산업형은 밀도 개선 모드가 아니다. r1/r2는 PocketBase 수용량 실패로 미채택했다.
+
+HYBRID: `--planning hybrid`. 한 구역을 곡선형/격자형 계획 영역으로 나누고 공통 경계 도로로
+연결한다. `planningRegions`에 영역의 폴리곤과 문법을, 각 필지에 `planningRegionId`와
+`blockProfile`을 기록한다. 원래 코드 디렉터리 소유권과 실제 관계는 그대로다.
+`world-hybrid-r1`의 모든 물리 구역에 두 영역이 있고, 영역 이탈/중복과 관계 경로를 검증했다.
+
+다섯 문법 자동 선택은 `--planning varied`다. 기존 `mixed`는 GRID/RADIAL 선택기로 유지한다.
+공간이 부족한 문법은 진단을 남기고 해당 구역만 GRID로 폴백한다. 따라서 특정 저장소에
+다섯 종류가 반드시 모두 나오는 것은 아니다. `world-varied-r1`에서 실제 선택/폴백을 확인한다.
+평지 문법 구현이 지형·Semantic LOD 또는 임의의 오목한 블록 분할 완료를 뜻하지는 않는다.

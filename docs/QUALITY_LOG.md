@@ -5694,3 +5694,42 @@
   then seeded exterior shape. Density cost remains an explicit industrial tradeoff.
 - Delivery: one atomic industrial feature/checkpoint on main; verify normal
   owner-authorized push result, preserve user caches and zero agent attribution.
+
+## Checkpoint 2026-10-19 — HYBRID regions and five-grammar selection
+- Implemented: one HYBRID district contains connected ORGANIC/GRID regions with
+  shared boundary streets, explicit region polygons and parcel region/profile
+  IDs. Independent validation rejects region area loss, overlap and escaped /
+  misassigned parcels. New varied policy chooses all five grammars; original
+  mixed remains GRID/RADIAL and source City/UCG contracts remain intact.
+- Fixtures/revisions: same four pinned canonical snapshots as prior checkpoints;
+  maintained fixture/world-grammars Spring build and controlled TS cycle fixture.
+- Commands: full Python discovery/Node/Ruff/diff checks; review helper with
+  `hybrid world-hybrid-r1` and `varied world-varied-r1`; procedural-world CLI on
+  world-grammars-e2e-r1/build with each policy into sibling hybrid/varied outputs.
+  Browser audit CHROME world-hybrid-audit-r1 against the four hybrid outputs,
+  four varied outputs and maintained hybrid output (nine cases).
+- Artifacts inspected: four hybrid Overview PNGs, GJ/PocketBase varied Overview,
+  and GJ hybrid CPU showcase in world-hybrid-audit-r1; both corpus report.json
+  files. Findings: street patterns transition within districts instead of being
+  two labels on one unchanged grid. Large nested block boundaries add visible
+  structure, while regular rows and the flat exterior remain obvious. Root
+  labels/role compound LOD remain pending. No claim of five patterns per city:
+  final varied may fall back to GRID when a chosen grammar lacks capacity.
+- Tests/determinism/stability: Python535 run/534 pass/one Windows symlink skip;
+  Node56 pass, lint pass. Schema/repeated byte packages, region ownership
+  negative cases and five-way vs legacy two-way selection are covered. Hybrid
+  and varied each retain 3,175 buildings/5,782 source-pair trips, every edge
+  classification, original source bytes, accessible doors and zero collisions.
+  Nine browser cases pass selection/provenance/filter/camera/Synthetic checks
+  without exceptions or static rebuilds. Maintained hybrid six files/two trips.
+- Land/performance: forced hybrid GJ/OJ/PB/SQLite areas 286446/160192/196162/
+  113662; varied 251913/138844/150427/97605. Values are world areas, not pixels.
+  GJ hybrid generation6.68s/package5.53s/viewer32.60MB; varied6.62s/6.44s/35.51MB
+  from analyzed snapshots. CPU browser timings are not GPU FPS.
+- Spec alignment: PASS under ADR-026, technical7/8, AC-002/006/011/012, immutable
+  directory ownership and source-evidence rules. Unknown languages retain
+  generic buildings. No target execution or runtime dependency introduced.
+- Next actions: seeded varied world envelopes and a clearly labeled five-profile
+  comparison so local fallback cannot obscure which grammars were implemented.
+- Delivery: one atomic hybrid/varied feature/checkpoint on main, normal
+  owner-authorized push verified separately; no agent attribution.

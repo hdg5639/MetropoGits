@@ -12,13 +12,32 @@ from .planning import demand, groups, populate, slots
 from .radial import radial_slots
 from .organic import organic_slots
 from .industrial import industrial_slots
+from .hybrid import hybrid_slots, hybrid_regions
 from .seed import ALGORITHM, derive, draw, world_seed
+
+
+def requested_profile(planning, seed):
+    if planning == "mixed":
+        return "RADIAL" if draw(derive(seed, "planning-profile")) < 0.5 else "GRID"
+    if planning == "varied":
+        return ("GRID", "ORGANIC", "RADIAL", "INDUSTRIAL", "HYBRID")[
+            int(draw(derive(seed, "varied-profile")) * 5)
+        ]
+    return planning.upper()
 
 
 def generate_world(
     scene, graph, *, seed=None, namespace=None, previous=None, planning="grid"
 ):
-    if planning not in ("grid", "mixed", "radial", "organic", "industrial"):
+    if planning not in (
+        "grid",
+        "mixed",
+        "radial",
+        "organic",
+        "industrial",
+        "hybrid",
+        "varied",
+    ):
         raise ValueError("unsupported world planning policy")
     if previous is not None:
         if (
@@ -72,10 +91,17 @@ def generate_world(
     identity = namespace or graph["repository"]["id"]
     resolved_seed = world_seed(identity, seed)
     entity_paths = {e["id"]: e.get("path", "") for e in graph["entities"]}
-    budgets = {
-        k: demand(v, "INDUSTRIAL" if planning == "industrial" else "GRID")
-        for k, v in grouped.items()
+    labels = {e["id"]: e.get("path", ".") for e in graph["entities"]}
+    local_seeds = {
+        k: derive(
+            resolved_seed,
+            "district",
+            labels.get(k, "." if k.endswith(":directory:.") else k),
+        )
+        for k in grouped
     }
+    requested = {k: requested_profile(planning, local_seeds[k]) for k in grouped}
+    budgets = {k: demand(v, requested[k]) for k, v in grouped.items()}
     # A tiny corner district still needs a complete frontage/circulation cell.
     # Budget it locally rather than inflating every large district to repair it.
     if len(grouped) > 1:
@@ -83,7 +109,6 @@ def generate_world(
             extra = max(0, 3000 - budget["total"])
             budget["boundaryReserve"] += extra
             budget["total"] += extra
-    labels = {e["id"]: e.get("path", ".") for e in graph["entities"]}
     compatible = bool(
         previous
         and previous.get("schemaVersion") == VERSION
@@ -98,7 +123,7 @@ def generate_world(
         not in (
             ("GRID",)
             if planning == "grid"
-            else ("GRID", "RADIAL", "ORGANIC", "INDUSTRIAL")
+            else ("GRID", "RADIAL", "ORGANIC", "INDUSTRIAL", "HYBRID")
         )
         for d in old_districts.values()
     ):
@@ -151,39 +176,30 @@ def generate_world(
         failed = []
         planning_diagnostics = []
         for key, members in grouped.items():
-            local_seed = derive(
-                resolved_seed,
-                "district",
-                labels.get(key, "." if key.endswith(":directory:.") else key),
-            )
-            profile = "GRID"
-            if planning == "radial" or (
-                planning == "mixed"
-                and draw(derive(local_seed, "planning-profile")) < 0.5
-            ):
-                profile = "RADIAL"
+            local_seed = local_seeds[key]
+            profile = requested[key]
             if attempt == 0 and compatible:
                 profile = old_districts[key]["planningProfile"]
-            elif planning in ("organic", "industrial"):
-                profile = planning.upper()
             planner = {
                 "GRID": slots,
                 "RADIAL": radial_slots,
                 "ORGANIC": organic_slots,
                 "INDUSTRIAL": industrial_slots,
+                "HYBRID": hybrid_slots,
             }[profile]
             candidates, lanes, angle = planner(polygons[key], local_seed)
             if (
-                planning == "mixed"
-                and profile == "RADIAL"
+                planning in ("mixed", "varied")
+                and profile != "GRID"
                 and len(candidates) < len(members)
                 and not (attempt == 0 and compatible)
             ):
+                missing_profile = profile
                 profile = "GRID"
                 candidates, lanes, angle = slots(polygons[key], local_seed)
                 planning_diagnostics.append(
                     dict(
-                        reason="radial frontage capacity insufficient; local GRID fallback",
+                        reason=f"{missing_profile.lower()} frontage capacity insufficient; local GRID fallback",
                         districtIds=[key],
                     )
                 )
@@ -218,6 +234,8 @@ def generate_world(
                     buildingCount=len(members),
                 )
             )
+            if profile == "HYBRID":
+                districts[-1]["planningRegions"] = hybrid_regions(poly, local_seed)
             for a, b in zip(poly, poly[1:] + poly[:1]):
                 raw.append(dict(start=a, end=b, width=3.5, access=False))
             raw.extend(lanes)
@@ -265,7 +283,7 @@ def generate_world(
         if planning == "grid"
         else (
             "flat-planning/0.3"
-            if planning in ("organic", "industrial")
+            if planning in ("organic", "industrial", "hybrid", "varied")
             else "flat-planning/0.2"
         ),
         seed=resolved_seed,

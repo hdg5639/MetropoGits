@@ -34,6 +34,7 @@ def validate_world(world, scene, graph):
     ) > max(0.01, area(world["envelope"]) * 1e-5):
         raise ValueError("world district area conservation failed")
     zone_list = list(zones.values())
+    regions = {}
     for i, d in enumerate(zone_list):
         if (
             len(d["polygon"]) < 3
@@ -48,6 +49,22 @@ def validate_world(world, scene, graph):
             # SAT alone treats these as overlaps even with zero common area.
             if area(clip(d["polygon"], other["polygon"])) > 0.001:
                 raise ValueError("world district overlap")
+        if d.get("planningProfile") == "HYBRID":
+            parts = d.get("planningRegions", [])
+            if not 2 <= len(parts) <= 4 or len({r["id"] for r in parts}) != len(parts):
+                raise ValueError("invalid hybrid planning regions")
+            if abs(sum(area(r["polygon"]) for r in parts) - area(d["polygon"])) > 0.02:
+                raise ValueError("hybrid planning region area loss")
+            for j, r in enumerate(parts):
+                if not all(
+                    inside(p, d["polygon"], margin=-0.001) for p in r["polygon"]
+                ):
+                    raise ValueError("hybrid planning region escaped district")
+                if any(
+                    area(clip(r["polygon"], o["polygon"])) > 0.001 for o in parts[:j]
+                ):
+                    raise ValueError("hybrid planning region overlap")
+                regions[(d["id"], r["id"])] = r
     cells = defaultdict(set)
     polygons = {}
     checks = 0
@@ -95,6 +112,14 @@ def validate_world(world, scene, graph):
         if p["sourceDistrictId"] != b["districtId"]:
             raise ValueError("world directory ownership mismatch")
         poly = p["footprint"]
+        if zones[p["districtId"]].get("planningProfile") == "HYBRID":
+            region = regions.get((p["districtId"], p.get("planningRegionId")))
+            if (
+                region is None
+                or p.get("blockProfile") != region["planningProfile"]
+                or not all(inside(v, region["polygon"]) for v in p["parcel"] + poly)
+            ):
+                raise ValueError("invalid hybrid parcel ownership")
         if not all(inside(v, p["parcel"]) for v in poly):
             raise ValueError("world building escaped its parcel")
         parcel_keys = buckets(p["parcel"])

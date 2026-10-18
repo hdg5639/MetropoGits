@@ -68,6 +68,33 @@ class WorldProfileTests(unittest.TestCase):
         self.assertTrue(any(count == 1 for count in adjacent.values()))
         self.assertEqual(world["districts"][0]["areaDemand"]["parcelArea"], 40 * 90)
 
+    def test_hybrid_contains_two_real_connected_grammars_in_one_district(self):
+        world = self.check_profile("hybrid")
+        self.assertEqual(len(world["districts"]), 1)
+        self.assertEqual(
+            {p["blockProfile"] for p in world["parcels"]}, {"GRID", "ORGANIC"}
+        )
+        self.assertEqual(len(world["districts"][0]["planningRegions"]), 2)
+        import copy
+
+        with tempfile.TemporaryDirectory() as directory:
+            scene, graph = fixture(Path(directory))
+        broken = copy.deepcopy(world)
+        broken["parcels"][0]["planningRegionId"] = "missing"
+        with self.assertRaisesRegex(ValueError, "hybrid parcel ownership"):
+            validate_world(broken, scene, graph)
+
+    def test_varied_selects_all_five_without_redefining_legacy_mixed(self):
+        from metropogits.world.generator import requested_profile
+        from metropogits.world.seed import derive
+
+        choices = {requested_profile("varied", derive(str(i))) for i in range(100)}
+        self.assertEqual(choices, {"GRID", "RADIAL", "ORGANIC", "INDUSTRIAL", "HYBRID"})
+        self.assertLessEqual(
+            {requested_profile("mixed", derive(str(i))) for i in range(100)},
+            {"GRID", "RADIAL"},
+        )
+
     def test_organic_hints_preserve_original_sites_after_file_addition(self):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)

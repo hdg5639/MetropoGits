@@ -231,4 +231,6 @@ def populate(buildings, candidates, zone_id, entity_paths, seed, previous=None):
         )
         if "blockProfile" in slot:
             result[-1]["blockProfile"] = slot["blockProfile"]
+        if "planningRegionId" in slot:
+            result[-1]["planningRegionId"] = slot["planningRegionId"]
     return result
