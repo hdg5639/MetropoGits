@@ -28,10 +28,14 @@ def groups(scene):
     return dict(sorted(result.items())), roots
 
 
-def demand(buildings):
+def demand(buildings, profile="GRID"):
     # Real six-unit envelopes + frontage parcels + circulation + 25% reserve.
-    parcel = sum((b["width"] + 2) * (b["depth"] + 2) for b in buildings)
-    access = 32 * len(buildings)
+    parcel = sum(
+        (b["width"] + (3 if profile == "INDUSTRIAL" else 2))
+        * (b["depth"] + (4 if profile == "INDUSTRIAL" else 2))
+        for b in buildings
+    )
+    access = (60 if profile == "INDUSTRIAL" else 32) * len(buildings)
     reserve = (parcel + access) * 0.25
     boundary = 64 * math.sqrt(len(buildings)) + 400
     return dict(

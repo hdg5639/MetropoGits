@@ -49,6 +49,25 @@ class WorldProfileTests(unittest.TestCase):
         self.assertGreater(len(directions), 15)
         self.assertTrue(all(p["blockProfile"] == "ORGANIC" for p in world["parcels"]))
 
+    def test_industrial_has_wide_spines_deeper_lots_and_actual_dead_ends(self):
+        world = self.check_profile("industrial")
+        self.assertTrue(any(s["width"] == 7 for s in world["streets"]))
+        self.assertTrue(
+            all(p["blockProfile"] == "INDUSTRIAL" for p in world["parcels"])
+        )
+        from metropogits.world.geometry import area
+
+        self.assertTrue(
+            all(abs(area(p["parcel"]) - 90) < 0.01 for p in world["parcels"])
+        )
+        adjacent = {}
+        for s in world["streets"]:
+            if not s["access"]:
+                for p in (s["start"], s["end"]):
+                    adjacent[tuple(p)] = adjacent.get(tuple(p), 0) + 1
+        self.assertTrue(any(count == 1 for count in adjacent.values()))
+        self.assertEqual(world["districts"][0]["areaDemand"]["parcelArea"], 40 * 90)
+
     def test_organic_hints_preserve_original_sites_after_file_addition(self):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)

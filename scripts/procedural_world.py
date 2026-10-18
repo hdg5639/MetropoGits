@@ -18,7 +18,7 @@ def main():
     parser.add_argument("--seed")
     parser.add_argument(
         "--planning",
-        choices=("grid", "mixed", "radial", "organic"),
+        choices=("grid", "mixed", "radial", "organic", "industrial"),
         default="grid",
         help="visual planning grammar; grid retains the original default",
     )

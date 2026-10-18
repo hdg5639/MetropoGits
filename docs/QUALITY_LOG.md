@@ -5652,3 +5652,45 @@
   keep these as separate commits and avoid curve micro-tuning.
 - Delivery: atomic organic feature/checkpoint on main; normal owner-authorized
   push outcome checked before moving to the next unit. No agent attribution.
+
+## Checkpoint 2026-10-19 — INDUSTRIAL planning grammar
+- Implemented: explicit industrial policy, seven-unit spines, four-unit service
+  courts with physical dead ends, 9x10 lots and entrance setbacks. Source building
+  envelopes/roles unchanged. Demand now budgets these larger lots/circulation.
+  Four fixed local axis/phase candidates avoid narrow-corner capacity misses;
+  the existing five envelope repairs and all geometry limits remain enforced.
+- Fixtures/revisions: four pinned corpus inputs/revisions as ORGANIC checkpoint;
+  same newly scanned maintained Spring build, regenerated industrial-r3 output.
+- Commands: full Python discovery, Node suite, Ruff and diff checks as above;
+  `python ../artifacts/visual/world_grammars_review.py industrial world-industrial-r3`;
+  `python -m scripts.procedural_world ../artifacts/visual/world-grammars-e2e-r1/build
+  --namespace fixture/world-grammars --planning industrial
+  --out ../artifacts/visual/world-grammars-e2e-r1/industrial-r3`;
+  browser audit with CHROME into world-industrial-audit-r3 against four corpus
+  outputs and maintained industrial-r3, using the preceding audit command form.
+- Artifacts inspected: four actual WebGL Overview PNGs and GJ showcase.png in
+  world-industrial-audit-r3; world-industrial-r3/report.json/index.html.
+  Findings: broad access spines and branching short courts are visible; open
+  loading/setback areas increase. Still regular industrial blocks, not different
+  inferred warehouse roles. All-industrial is deliberately sparse, not a claim
+  of better density or a proposed replacement default. Root label remains rough.
+- Tests/determinism/stability: Python 533 run/532 pass/one existing symlink skip;
+  Node 56 pass, lint pass. New checks assert real degree-one street ends, width7,
+  lot area90 and matching land budget. All 3,175 buildings and 5,782 logical trips
+  retained, repeat package bytes match, source City/UCG unchanged, zero collisions
+  or owner escapes, all doors reachable. Browser selection, provenance, camera,
+  filters and Synthetic pass with zero static rebuilds. Spring six files/two trips.
+- Fixes/reverified: r1/r2 PocketBase failed bounded capacity repair. Corrected
+  profile-specific budgeting and compared four deterministic local court frames;
+  rebuilt r3 and reran full suites/corpus. Did not increase repair limits, remove
+  buildings, silently switch to GRID or suppress failed fixtures.
+- Performance/land: GJ generation8.61s/package4.63s and viewer28.63MB on this run;
+  areas GJ/OJ/PB/SQLite 414984/230100/227073/149868, roughly 51–66% above GRID.
+  Times are from analyzed inputs, not end-to-end analysis or GPU FPS.
+- Spec alignment: PASS, ADR-026, technical7/8, AC-002/006/011/012 and evidence /
+  unknown fallback / directory ownership invariants rechecked; no public contract
+  break, new dependency, code execution or invented industrial semantic claim.
+- Next actions: actual within-district HYBRID and five-grammar varied policy,
+  then seeded exterior shape. Density cost remains an explicit industrial tradeoff.
+- Delivery: one atomic industrial feature/checkpoint on main; verify normal
+  owner-authorized push result, preserve user caches and zero agent attribution.

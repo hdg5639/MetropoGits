@@ -8,7 +8,7 @@
   "properties": {
     "schemaVersion": {"const":"world/0.1-experimental"},
     "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3"]},
-    "planningPolicy": {"enum":["grid","mixed","radial","organic"]},
+    "planningPolicy": {"enum":["grid","mixed","radial","organic","industrial"]},
     "seed": {"type":"string","pattern":"^[0-9a-f]{16}$"},
     "seedAlgorithm": {"const":"sha256-counter/1"},
     "repositoryNamespace": {"type":"string","minLength":1},
@@ -19,7 +19,7 @@
     "terrainPreset": {"const":"flat"},
     "allocationAlgorithm": {"const":"capacity-bisection/0.1"},
     "envelope": {"$ref":"#/$defs/polygon"},
-    "districts": {"type":"array","minItems":1,"maxItems":64,"items":{"type":"object","required":["id","sourceDirectoryId","label","polygon","anchor","localSeed","planningProfile","primaryAxis","areaDemand","areaAllocated","capacity","buildingCount"],"properties":{"id":{"type":"string"},"polygon":{"$ref":"#/$defs/polygon"},"planningProfile":{"enum":["GRID","RADIAL","ORGANIC"]},"areaAllocated":{"type":"number","exclusiveMinimum":0},"capacity":{"type":"integer","minimum":1},"buildingCount":{"type":"integer","minimum":1}}}},
+    "districts": {"type":"array","minItems":1,"maxItems":64,"items":{"type":"object","required":["id","sourceDirectoryId","label","polygon","anchor","localSeed","planningProfile","primaryAxis","areaDemand","areaAllocated","capacity","buildingCount"],"properties":{"id":{"type":"string"},"polygon":{"$ref":"#/$defs/polygon"},"planningProfile":{"enum":["GRID","RADIAL","ORGANIC","INDUSTRIAL"]},"areaAllocated":{"type":"number","exclusiveMinimum":0},"capacity":{"type":"integer","minimum":1},"buildingCount":{"type":"integer","minimum":1}}}},
     "logicalDistricts": {"type":"array","items":{"type":"object","required":["id","parentId"]}},
     "topology": {"type":"object","required":["edges"],"properties":{"edges":{"type":"array","items":{"type":"object","required":["id","start","end","districtIds"],"properties":{"start":{"$ref":"#/$defs/point"},"end":{"$ref":"#/$defs/point"},"districtIds":{"type":"array","minItems":1,"maxItems":2,"uniqueItems":true,"items":{"type":"string"}}}}}}},
     "parcels": {"type":"array","minItems":1,"maxItems":10000,"items":{"type":"object","required":["entityId","sourceDistrictId","districtId","slotId","blockId","center","angle","footprint","parts","parcel","entrance","streetPoint","archetype","width","depth","height","evidenceIds","styleVariant"],"properties":{"entityId":{"type":"string"},"footprint":{"$ref":"#/$defs/polygon"},"parcel":{"$ref":"#/$defs/polygon"},"center":{"$ref":"#/$defs/point"},"entrance":{"$ref":"#/$defs/point"},"angle":{"type":"number"},"parts":{"type":"array","minItems":1,"items":{"type":"object","required":["footprint","height","y"],"properties":{"footprint":{"$ref":"#/$defs/polygon"}}}}}}},

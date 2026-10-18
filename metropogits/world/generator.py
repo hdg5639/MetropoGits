@@ -11,13 +11,14 @@ from .infrastructure import atomic_streets, route_world
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
 from .organic import organic_slots
+from .industrial import industrial_slots
 from .seed import ALGORITHM, derive, draw, world_seed
 
 
 def generate_world(
     scene, graph, *, seed=None, namespace=None, previous=None, planning="grid"
 ):
-    if planning not in ("grid", "mixed", "radial", "organic"):
+    if planning not in ("grid", "mixed", "radial", "organic", "industrial"):
         raise ValueError("unsupported world planning policy")
     if previous is not None:
         if (
@@ -71,7 +72,10 @@ def generate_world(
     identity = namespace or graph["repository"]["id"]
     resolved_seed = world_seed(identity, seed)
     entity_paths = {e["id"]: e.get("path", "") for e in graph["entities"]}
-    budgets = {k: demand(v) for k, v in grouped.items()}
+    budgets = {
+        k: demand(v, "INDUSTRIAL" if planning == "industrial" else "GRID")
+        for k, v in grouped.items()
+    }
     # A tiny corner district still needs a complete frontage/circulation cell.
     # Budget it locally rather than inflating every large district to repair it.
     if len(grouped) > 1:
@@ -91,7 +95,11 @@ def generate_world(
     old_districts = {d["id"]: d for d in previous["districts"]} if compatible else {}
     if any(
         d.get("planningProfile")
-        not in (("GRID",) if planning == "grid" else ("GRID", "RADIAL", "ORGANIC"))
+        not in (
+            ("GRID",)
+            if planning == "grid"
+            else ("GRID", "RADIAL", "ORGANIC", "INDUSTRIAL")
+        )
         for d in old_districts.values()
     ):
         raise ValueError("invalid previous world planning profile")
@@ -156,11 +164,14 @@ def generate_world(
                 profile = "RADIAL"
             if attempt == 0 and compatible:
                 profile = old_districts[key]["planningProfile"]
-            elif planning == "organic":
-                profile = "ORGANIC"
-            planner = {"GRID": slots, "RADIAL": radial_slots, "ORGANIC": organic_slots}[
-                profile
-            ]
+            elif planning in ("organic", "industrial"):
+                profile = planning.upper()
+            planner = {
+                "GRID": slots,
+                "RADIAL": radial_slots,
+                "ORGANIC": organic_slots,
+                "INDUSTRIAL": industrial_slots,
+            }[profile]
             candidates, lanes, angle = planner(polygons[key], local_seed)
             if (
                 planning == "mixed"
@@ -252,7 +263,11 @@ def generate_world(
         schemaVersion=VERSION,
         generatorVersion="flat-capacity/0.1"
         if planning == "grid"
-        else ("flat-planning/0.3" if planning == "organic" else "flat-planning/0.2"),
+        else (
+            "flat-planning/0.3"
+            if planning in ("organic", "industrial")
+            else "flat-planning/0.2"
+        ),
         seed=resolved_seed,
         seedAlgorithm=ALGORITHM,
         repositoryNamespace=identity,
