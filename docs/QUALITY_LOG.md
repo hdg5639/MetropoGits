@@ -2584,3 +2584,57 @@
   the earlier owner exception. A permitted delivery branch/workflow needs user
   direction. Existing untracked .gradle/target directories and deferred stash
   are preserved and excluded from the commit.
+
+## Checkpoint 2026-10-18 — Exclude explicitly declared module-local JVM output
+- Implemented: a bounded local bin-output declaration beside a regular JVM
+  manifest, not global bin exclusion or a general Git ignore/index emulator.
+  Exact bin/ or /bin/ declarations authorize pruning; root-matching later
+  negations cancel it. Source-level nested bin and ordinary script bins survive.
+  Escaped/character-class negations conservatively preserve the output. Unreadable,
+  linked, oversized or invalid declarations cannot authorize exclusions.
+- Limits/security: no Git subprocess, build, dependency installation or target
+  code execution. At most 64 KiB per candidate declaration, charged to the scan
+  byte budget. Existing safe reader and reparse/link guard are reused. Explicit
+  exclusions of the manifest/declaration also prevent it authorizing pruning.
+  Diagnostics disclose the skipped path without embedding ignore-file contents.
+- Fixtures/revisions: GJ-Cloud 3d9b53f, GamjaOJ b163acd, maintained
+  structural-showcase; six scanner regression cases with temporary positive,
+  negative, linked-metadata, size-limit and generated-copy-addition fixtures.
+- Commands: `python -m unittest discover -s tests -q` (265 run, 264 pass, one
+  Windows symlink skip); focused test_generated_outputs discovery; Ruff;
+  `git diff --check`; full CLI builds from both local repository inputs with
+  camera-navigation-r3 scenes as previous-scene hints, and structural-showcase.
+  `node scripts/viewer_audit.mjs <Chrome> ../artifacts/visual/generated-output-filter-audit-r1
+  ../artifacts/visual/generated-output-filter-r1/gj ../artifacts/visual/generated-output-filter-r1/oj`.
+  Local compare_relations.mjs and verify_access.mjs audit helpers also run.
+- Artifacts: `artifacts/visual/generated-output-filter-r1/{gj,oj,unknown}`;
+  all three builds COMPLETE. Actual captures inspected: audit case-1 overview.png,
+  case-2 district.png and case-1 preview.png. District structure, existing camera
+  movement and traceable roads remain intact; narrow-road contrast and compact
+  Overview framing remain open visual issues, not masked with decoration.
+- Fidelity/stability: GJ returns from contaminated 1328 files to 1324. Four
+  excluded module bin roots explicitly diagnosed. Against the previous clean
+  baseline, entity/edge/evidence arrays and district/building/network geometry
+  are unchanged; moved buildings 0. GJ retains 6157 local edges, 1273 connected
+  files; OJ retains 681 files, 2243 edges, 400 connected files and 0 moved buildings.
+  Both route graphs remain COMPLETE with zero unresolved eligible edges and zero
+  pavement/building intersections. Repeat regression scans are canonical-equal.
+- Artifact diff: preview.svg is byte-identical for GJ and OJ. Showcase geometry
+  is identical; only its embedded UCG digest changes with scan diagnostics.
+  Do not claim whole graph/scene byte identity: exclusions change diagnostics
+  and the derived UCG digest even while all facts and coordinates remain equal.
+- Browser audit: all LOD, facility, endpoint-selection, camera move/keyboard/
+  district-jump and synthetic checks pass. Synthetic static rebuilds remain 0.
+  GJ orbit CPU p95 Overview/District/Detail 13.2/18.0/18.9 ms; OJ 2.9/4.9/5.4 ms.
+  This is software-renderer draw submission CPU, not GPU FPS or a new speed claim.
+- Fix/reverify: Windows DirEntry stat can lack the Path.stat inode value; the
+  mocked reparse test initially failed to mark its intended file. Identified
+  metadata by a unique fixture size instead, then verified both declaration and
+  manifest guard cases and reran the full suite. No safety assertion weakened.
+- Spec alignment: PASS for default build-output exclusion, AC-008/009, stable
+  geography and evidence preservation; no schema, layout algorithm or ID change.
+  Ordinary source-addition churn is not solved by this input-filter correction.
+  Broader build-output detection and full ignore semantics remain unsupported.
+- Delivery: one fix(scanner) local commit; no push to protected main under the
+  latest instructions. Earlier camera commit, unrelated local caches and the
+  deferred communication stash remain preserved; delivery branch needs direction.

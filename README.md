@@ -84,6 +84,27 @@ push and manual runs may publish only through the separately permissioned Pages
 job. See [GitHub Action and Pages publishing](docs/GITHUB_ACTION.md) before
 publishing generated repository metadata.
 
+## Generated JVM output exclusion
+
+The scanner additionally skips an immediate `bin` directory when the same module
+directory contains a regular, non-linked `pom.xml`, `build.gradle` or
+`build.gradle.kts` and its own `.gitignore` explicitly declares `bin/` or `/bin/`.
+This prevents IDE resource copies from becoming duplicate buildings. A later
+negation matching the root `bin` cancels the declaration; nested source bins and
+ordinary CLI `bin` directories without this declaration remain eligible.
+
+This is a narrow output policy, **not full Git ignore/index emulation**. It does
+not consult Git, global ignores or the tracked-file index. As with the existing
+`build`/`target` exclusions, an explicitly declared output may be omitted even
+if tracked. Only the module's own declaration authorizes this extra exclusion;
+other positive glob patterns are not used. Escaped or character-class negations
+conservatively preserve `bin`. Invalid/oversized declarations report a warning
+and preserve it, subject to normal scan limits. Reading is limited to 64 KiB
+and charged against the scan byte budget; links/reparse points are not followed.
+Every excluded module output is disclosed as `GENERATED_OUTPUT_EXCLUDED`.
+Pattern ordering and excluded-parent behavior follow the relevant rules in the
+[Git ignore reference](https://git-scm.com/docs/gitignore#_pattern_format).
+
 ## Contract validation
 
 Install the pinned Python 3.11 development environment and run the contract

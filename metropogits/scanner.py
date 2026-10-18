@@ -19,6 +19,9 @@ from typing import Any
 from metropogits import __version__
 from metropogits.catalog import CATALOG_VERSION
 from metropogits.module_paths import ModulePaths, parse_module_paths
+from metropogits.generated_outputs import (
+    JVM_MANIFESTS, MAX_DECLARATION_BYTES, declares_local_bin_output,
+)
 from scripts.canonical_json import (
     CanonicalJsonError,
     canonical_json_bytes,
@@ -613,6 +616,21 @@ def scan_repository(
             )
             return
 
+        local_bin_output = False
+        # Bounded metadata checks only; never execute or follow a build file.
+        jvm_module = False
+        if any(entry.name == "bin" for entry in entries):
+            for candidate in entries:
+                if candidate.name not in JVM_MANIFESTS or is_explicitly_excluded(candidate.path):
+                    continue
+                try:
+                    candidate_stat = candidate.stat(follow_symlinks=False)
+                    if stat.S_ISREG(candidate_stat.st_mode) and not candidate.is_symlink() and not _is_reparse_point(candidate_stat):
+                        jvm_module = True
+                        break
+                except OSError:
+                    pass
+
         for entry in entries:
             if halted:
                 break
@@ -665,6 +683,13 @@ def scan_repository(
                 continue
 
             if stat.S_ISDIR(entry_stat.st_mode):
+                if entry.name == "bin" and local_bin_output:
+                    diagnostics.append(_diagnostic(
+                        "GENERATED_OUTPUT_EXCLUDED", "INFO",
+                        "Module-local bin output excluded by .gitignore beside a JVM manifest",
+                        relative_path,
+                    ))
+                    continue
                 if entry.name.lower() in DEFAULT_EXCLUDED_DIRECTORIES:
                     excluded["ignored directories"] += 1
                     continue
@@ -687,6 +712,25 @@ def scan_repository(
                 continue
             if _is_sensitive_file(entry.name):
                 excluded["sensitive files"] += 1
+                continue
+
+            if entry.name == ".gitignore" and jvm_module:
+                if entry_stat.st_size > min(limits.max_file_bytes, MAX_DECLARATION_BYTES):
+                    diagnostics.append(_diagnostic("OUTPUT_DECLARATION_UNREADABLE", "WARNING",
+                                                   "Output declaration exceeds size limit; bin preserved", relative_path))
+                    continue
+                if total_bytes + entry_stat.st_size > limits.max_total_bytes:
+                    diagnostics.append(_diagnostic("TOTAL_SIZE_LIMIT_REACHED", "WARNING",
+                                                   "Scan stopped before exceeding total byte limit", relative_path))
+                    halted = True
+                    break
+                try:
+                    content = _read_prefix_safely(Path(entry.path), entry_stat, MAX_DECLARATION_BYTES + 1)
+                    total_bytes += len(content)
+                    local_bin_output = declares_local_bin_output(content)
+                except (OSError, UnicodeError, ScannerError, ValueError):
+                    diagnostics.append(_diagnostic("OUTPUT_DECLARATION_UNREADABLE", "WARNING",
+                                                   "Output declaration could not be read safely; bin preserved", relative_path))
                 continue
 
             manifest_format = {
