@@ -13,6 +13,63 @@ several evidence-backed neighborhoods; its entire territory need not repeat
 one radial/grid stencil. Voronoi allocates land, not semantic truth or roads.
 Directory ownership and exact file/edge coverage remain non-negotiable.
 
+## Active correction — do not promote the soft-placement experiment
+
+Maintainer rejected the direction of the soft output on2026-10-19: internal
+evidence-backed neighborhoods became visually ineffective, while restored
+district-wide patterns made streets repetitive again. This is a structural
+failure, not a missing color palette or insufficient number of patterns.
+
+Code evidence: `generate_soft_world` first generates the complete structural
+world, then swaps files on its existing occupied addresses. Influence cells
+never affect its streets/blocks. `generator.requested_profile` selects one
+grammar for a principal district; each grammar emits roads and frontage sites
+together. Therefore fewer dependency meters cannot demonstrate improved
+neighborhood structure or a more convincing street network.
+
+Measured counterexample in soft-zoning-r1/gj/after: SERVICE_QUARTER has18
+occupants but none of its reference service files; COMMERCIAL_FRONTEND has30
+occupants but none of its reference frontend files. Explicit advisory disclosure
+avoids false source claims, but does not rescue the intended city semantics.
+Keep this opt-in mode only as a reproducible ablation, not the new visual baseline.
+
+The source proposal already specifies the missing order (hierarchical design
+sections8/9; procedural world sections9/10):
+
+1. Keep source-owned services and evidence-backed internal neighborhood cores.
+   Admit existing supporting files via actual dependency provenance, without
+   pure-category sorting or a mixing quota. Every named core must remain in
+   its own physical neighborhood, not become a remote reference list.
+2. Choose neighborhood access ports and a continuous shared arterial/collector
+   backbone from adjacency, real aggregate demand and fixed geography. Streets
+   are disclosed infrastructure; demand never invents an edge. Do not pave
+   every Voronoi boundary or stamp concentric rings across an entire service.
+3. Derive actual enclosed block polygons from that road graph. Primary roads
+   must exist before frontage lots/buildings and survive local grammar changes.
+4. Use GRID/ORGANIC/RADIAL/INDUSTRIAL/HYBRID as **block-local planning tools**,
+   not one whole-district stencil or random pattern patchwork. Existing
+   grammars/seeded outline are reusable ingredients, not immutable city plans.
+5. Build rotated frontage parcels/buildings within those blocks; optimize local
+   affinity without erasing neighborhood cores or upstream road continuity.
+
+Next vertical slice: flat, convex, source-traceable neighborhood cores + actual
+access backbone + enclosed blocks, first on the maintained mixed-role fixture
+and GJ/OJ. Keep old generation available for honest comparison. Version new
+experimental physical metadata explicitly; do not break City/UCG or silently
+change existing cold/hinted geography. Terrain/concave coasts are separate work.
+
+Gates must include actual core retention/containment, supporting-member edge
+IDs, neighborhood readability in overview/district, arterial continuity across
+local-pattern boundaries, block area/coverage, full-width clearance, exact trip
+coverage, repeat bytes and hinted edits. Add a controlled local-pattern ablation:
+changing a block's local grammar must not regenerate the entire main road graph.
+Road angle entropy alone is not a quality target; arbitrary jitter/rotaries are
+not evidence that a city is more natural.
+
+Neutral materials/role accents remain wanted but are deferred behind this
+structural repair. Do not spend another series of commits on tiny road bends,
+cosmetics, or new patterns while the same pipeline order remains wrong.
+
 ## Delivery order and scope
 
 1. HZ-00: [ADR-028](adr/ADR-028.md), opt-in contract and geometry gates.
@@ -91,9 +148,10 @@ optimization limits never remove source relations from routing. Compatible
 previous worlds pin existing physical frames, even when influence membership
 changes after an edit. This is not unrestricted global force-directed layout.
 
-Next separate slice: neutral exterior materials plus small role accents, shared
-by browser and CPU preview. Concave coasts, terrain and real road-enclosed block
-subdivision remain pending; do not disguise them with decorative irregularity.
+This experiment's geometry/source gates passed, but the subsequent maintainer
+review above rejects it as the main visual direction. Neutral exterior materials
+are deferred until evidence-backed neighborhoods and road-enclosed blocks work
+together. Do not disguise this structural defect with decorative irregularity.
 
 ## First delivered slice (2026-10-19)
 

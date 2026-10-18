@@ -5977,3 +5977,34 @@
 - Delivery: docs9fa3068 followed by this atomic feature/checkpoint on
   feat/semantic-zoning; inspect explicit staged paths/human identity, normal
   upstream push, verify command result before reporting. Preserve user caches.
+
+## Checkpoint 2026-10-19 — maintainer rejects pattern-first soft direction
+
+- Implemented: documentation-only correction of the active priority and ADR-029
+  outcome. No new generation, renderer edit, schema migration or claimed visual
+  fix. Paused the announced materials slice before any implementation changes.
+- Evidence inspected: existing soft-zoning-r1/report.json and actual corrected
+  WebGL/CPU/Canvas captures from the preceding checkpoint; generator.py,
+  soft.py and both original proposal road/block sequences rechecked. GJ service
+  influence18 occupants/zero reference-core occupants; frontend influence30/zero.
+  Soft streets are exactly the unzoned patterned streets by design/test.
+- Findings: numerical affinity improvement is real but insufficient. Influence
+  annotations without physical neighborhood/block subdivision do not satisfy
+  the requested city. Whole-principal-district road stencils repeat even with
+  all five grammars available. Do not promote017df86's soft mode to the visual
+  baseline or hide the regression with materials, more patterns or random bends.
+- Spec/direction audit: implementation is a safe opt-in ablation, but **DEVIATION
+  from the intended complete planning sequence**. Hierarchical proposal sections
+  8/9 require zones -> access corridors -> roads -> enclosed blocks -> frontage
+  parcels -> buildings; procedural proposal sections9/10 likewise reserve main
+  roads before block/parcel construction. Those stages are not implemented by
+  address swapping. This is a product-direction failure despite passing tests.
+- Next priority: source-backed neighborhood cores with provenance-linked
+  supporting files; shared main-road/access backbone; actual enclosed blocks;
+  existing patterns demoted to block-local planning. Verify that changing a
+  local pattern cannot regenerate all main streets. Concave outlines/terrain
+  and neutral materials remain separate/deferred. Preserve existing source
+  contracts, old modes and explicit cold-replan compatibility boundaries.
+- Tests: no runtime files changed since verified017df86; diff/Markdown link and
+  local source references reviewed. No rerender or new performance claim. User
+  caches untouched. Separate docs commit and normal feature-branch push follow.
