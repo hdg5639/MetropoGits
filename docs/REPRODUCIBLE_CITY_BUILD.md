@@ -32,6 +32,15 @@ budget applies across every pass. It does not move buildings or change the
 default CLI layout. Use a new output directory and compare route geometry and
 travel distance, not merely fewer rendered segments.
 
+For the additional local entrance experiment, use `--refine-frontage` instead.
+Its `before` is the simplified routing; `after` jointly adjusts eligible building
+doors and short connectors near sampled failed corridor merges. It also rebuilds
+the prerequisite stages from City/UCG and retains the original distance/bend
+allowances, canonical buildings and every relationship. This is a modest local
+cleanup, not an automatic city redesign; compare the reported whole-trip distance
+as well as pavement, junctions and bends. Never feed a prior stage's relaxed
+distance back as a new original allowance.
+
 For a cold-repeat check, run all three commands again with another new output
 root and **no `--previous-scene`**. Compare files and coordinates by stable entity
 ID, not by screenshot appearance alone. Retain canonical graph/scene hashes,

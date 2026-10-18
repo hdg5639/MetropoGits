@@ -322,3 +322,29 @@ search; unknown/capped never means impossible. Distances are remaining lattice
 steps after fixed access spurs, not world units or runtime latency. Samples refer
 to the candidate graph at rejection time and are not statistical estimates of
 all remaining roads. This is developer metadata, not a semantic UCG fact.
+
+`scripts.road_consolidation --refine-frontage` runs the preceding experimental
+pipeline and compares the simplified baseline with a single entrance refinement.
+The derived `frontageRefinement` (`frontage-refinement/0.1`) report records seed
+route IDs, nearby/eligible/truncated building counts, accepted door changes,
+removed pavement lengths, complete incident-trip counts, rejections and budgets.
+Prior reports remain historical, including simplification's fixed-door/no-new-
+pavement assertions; those assertions describe that earlier pass, not refinement.
+
+Seeds are the bounded no-admissible-trip samples. Up to96 buildings within21
+Manhattan world units of their current endpoint doors are considered. Try other
+clear faces and at-most-three-step connectors, jointly rerouting every incident
+relationship while retaining its identity and original0.2 full-trip bounds.
+Mixed-kind and access-only endpoints retain their doors. Only actual used
+connectors become pavement. Every accepted proposal strictly reduces union
+pavement and does not increase junctions, nearby parallel length or total bends.
+Individual trip distances may grow within the original allowance; report their
+sum separately. No claim of global optimum or unchanged roads outside the patch:
+changed complete trips can reuse existing distant roads.
+
+Search compares turn costs25/150, existing/new steps10/80. Limits:768 proposals,
+1M popped states,12000 states/60000 labels per trip,100000 graph edges,20000
+routes and1M expanded steps. Caps retain complete valid routes. Repeated input
+is deterministic; a refinement result cannot be refined again. Default CLI,
+UCG/City schemas, positions and evidence stay unchanged. This remains an explicit
+developer comparison rather than a default production pipeline.

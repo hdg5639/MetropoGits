@@ -19,6 +19,9 @@ MAX_TRIP_LABELS = 60_000
 MAX_GRAPH_EDGES = 100_000
 MAX_INPUT_ROUTES = 20_000
 CONNECTOR_STEPS = 3
+REFINEMENT_ENTRANCES = 96
+REFINEMENT_STATES = 1_000_000
+REFINEMENT_RADIUS = 21
 
 
 def _length(points):
@@ -61,7 +64,8 @@ def _compress(graph, ports):
     return result
 
 
-def _search(graph, start, end, usage, limit, bend_limit, heading, terminal, budget):
+def _search(graph, start, end, usage, limit, bend_limit, heading, terminal, budget,
+            turn_cost=25, state_limit=None):
     """Bounded Pareto search; cap exhaustion is not a proof of infeasibility."""
     def distance(node):
         return abs(node[0]-end[0]) + abs(node[1]-end[1])
@@ -72,7 +76,7 @@ def _search(graph, start, end, usage, limit, bend_limit, heading, terminal, budg
     records = [(None, ())]
     local_states = 0
     while queue:
-        if budget[0] >= MAX_SEARCH_STATES or local_states >= MAX_TRIP_STATES:
+        if budget[0] >= (MAX_SEARCH_STATES if state_limit is None else state_limit) or local_states >= MAX_TRIP_STATES:
             budget[1] += 1
             return None
         _, cost, steps, bends, node, direction, record = heapq.heappop(queue)
@@ -97,7 +101,7 @@ def _search(graph, start, end, usage, limit, bend_limit, heading, terminal, budg
                 continue
             if keys not in weights:
                 weights[keys] = sum(10 if usage[e] else 80 for e in keys)
-            new_cost = cost+weights[keys]+(new_bends-bends)*25
+            new_cost = cost+weights[keys]+(new_bends-bends)*turn_cost
             old = labels[other, last]
             if any(c <= new_cost and s <= new_steps and b <= new_bends for c, s, b in old):
                 continue
@@ -115,17 +119,53 @@ def _search(graph, start, end, usage, limit, bend_limit, heading, terminal, budg
 
 def plan_shared_frontages(scene, original, baseline):
     """Atomically orient entrances toward shared complete trips, never new facts."""
+    return _plan_frontages(scene, original, baseline)
+
+
+def refine_failed_frontages(scene, original, baseline):
+    """One bounded follow-up at endpoints of sampled rejected corridor merges."""
+    if 'frontageRefinement' in baseline or 'routeSimplification' not in baseline:
+        raise ValueError('frontage refinement requires a once-simplified baseline')
+    if len(baseline['routes']) > MAX_INPUT_ROUTES:
+        raise ValueError('frontage refinement route limit')
+    samples = baseline['routeSimplification'].get('constraints', {}).get('samples', [])
+    if len(samples) > 24:
+        raise ValueError('frontage refinement sample limit')
+    rejected = {s['routeId'] for s in samples if s.get('reason') == 'no_admissible_trip'}
+    routes = {r['id']: r for r in baseline['routes']}
+    if not rejected <= routes.keys():
+        raise ValueError('frontage refinement sample provenance mismatch')
+    seeds = [routes[r]['path'][i] for r in sorted(rejected) for i in (0, -1)]
+    distances = {}
+    for route in baseline['routes']:
+        for key, i in (('source', 0), ('target', -1)):
+            point = route['path'][i]
+            distance = min((abs(point[0]-s[0])+abs(point[1]-s[1]) for s in seeds), default=math.inf)
+            if distance <= REFINEMENT_RADIUS:
+                distances[route[key]] = min(distance, distances.get(route[key], math.inf))
+    entities = set(sorted(distances, key=lambda e: (distances[e], e))[:REFINEMENT_ENTRANCES])
+    result = _plan_frontages(scene, original, baseline, entities)
+    report = result['frontageRefinement']
+    report.update(seedRouteIds=sorted(rejected), nearbyBuildings=len(distances),
+                  truncatedBuildings=max(0, len(distances)-len(entities)))
+    report['limitReached'] |= report['truncatedBuildings'] > 0
+    return result
+
+
+def _plan_frontages(scene, original, baseline, selected=None):
     if (original['version'] != 'visual-access/0.2'
             or baseline['version'] not in ('visual-access/0.2', 'visual-access/0.3')
             or any(r['status'] != 'COMPLETE' for r in (original, baseline))):
         raise ValueError('shared frontage requires complete routing and fresh original0.2 bounds')
-    if 'sharedFrontage' in baseline:
+    if selected is None and 'sharedFrontage' in baseline:
         raise ValueError('shared frontage cannot compound its own result')
     def identities(routing):
         return {r['id']: (r['kind'], r['source'], r['target'], r['edgeIds'], r['networkIds'])
                 for r in routing['routes']}
     if identities(original) != identities(baseline):
         raise ValueError('shared frontage provenance mismatch')
+    if any(len(identities(r)) != len(r['routes']) for r in (original, baseline)):
+        raise ValueError('shared frontage duplicate route identity')
     if max(len(original['routes']), len(baseline['routes'])) > MAX_INPUT_ROUTES:
         raise ValueError('shared frontage route limit')
     paths, widths = _expand(baseline)
@@ -142,10 +182,15 @@ def plan_shared_frontages(scene, original, baseline):
                   maxSearchStates=MAX_SEARCH_STATES, maxTripStates=MAX_TRIP_STATES,
                   maxTripLabels=MAX_TRIP_LABELS, maxGraphEdges=MAX_GRAPH_EDGES,
                   connectorSteps=CONNECTOR_STEPS, originalWorldDistanceBoundsPreserved=True)
+    state_limit = MAX_SEARCH_STATES if selected is None else min(MAX_SEARCH_STATES, REFINEMENT_STATES)
+    if selected is not None:
+        report.update(version='frontage-refinement/0.1', maxEntrances=REFINEMENT_ENTRANCES,
+                      maxSearchStates=state_limit, neighborhoodRadius=REFINEMENT_RADIUS,
+                      turnCosts=[25, 150], maxProposals=REFINEMENT_ENTRANCES*8)
     def finish(result, budget, limited=False):
         result['version'] = 'visual-access/0.3'
         report.update(searchStates=budget[0], cappedSearches=budget[1], limitReached=limited or budget[1] > 0)
-        result['sharedFrontage'] = report
+        result['sharedFrontage' if selected is None else 'frontageRefinement'] = report
         return result
     if not paths:
         return finish(template, [0, 0])
@@ -185,7 +230,8 @@ def plan_shared_frontages(scene, original, baseline):
         return sum(usage[kind][pair] == count for (kind, pair), count in counts.items())
     buildings = {b['entityId']: b for b in scene['buildings']}
     eligible = [e for e in incident if e not in protected
-                and len({routes[r]['kind'] for r in incident[e]}) == 1]
+                and len({routes[r]['kind'] for r in incident[e]}) == 1
+                and (selected is None or e in selected)]
     eligible.sort(key=lambda e: (-private_length(e), e))
     limited = len(eligible) > MAX_ENTRANCES
     eligible = eligible[:MAX_ENTRANCES]
@@ -221,17 +267,19 @@ def plan_shared_frontages(scene, original, baseline):
     score = _score(usage, doors, fixed)
     budget, rejected = [0, 0], Counter()
     for entity in eligible:
-        if report['attempts'] >= MAX_PROPOSALS or budget[0] >= MAX_SEARCH_STATES:
+        if report['attempts'] >= MAX_PROPOSALS or budget[0] >= state_limit:
             limited = True
             break
         kind = routes[min(incident[entity])]['kind']
         affected = sorted(incident[entity], key=lambda rid: (-len(paths[rid]), rid))
         removed = Counter(_pair(a, b) for rid in affected for a, b in zip(paths[rid], paths[rid][1:]))
         rest, best = usage[kind]-removed, None
-        for port, door in alternatives[kind, entity]:
+        proposals = [(p, d, t) for p, d in alternatives[kind, entity]
+                     for t in ([25] if selected is None else [25, 150])]
+        for port, door, turn_cost in proposals:
             if (tuple(door), port) == doors[kind, entity][1:]:
                 continue
-            if report['attempts'] >= MAX_PROPOSALS or budget[0] >= MAX_SEARCH_STATES:
+            if report['attempts'] >= MAX_PROPOSALS or budget[0] >= state_limit:
                 limited = True
                 break
             report['attempts'] += 1
@@ -244,13 +292,26 @@ def plan_shared_frontages(scene, original, baseline):
                 spurs = math.dist(a, _world(start))+math.dist(b, _world(end))
                 limit = math.floor((limits[rid]-spurs+1e-8)/PITCH)
                 path = _search(graph[kind], start, end, shared, limit, _bends(originals[rid]['path'])+4,
-                               _heading(a, _world(start)), _heading(_world(end), b), budget)
+                               _heading(a, _world(start)), _heading(_world(end), b), budget,
+                               turn_cost=turn_cost, state_limit=state_limit)
                 if path is None:
                     rejected['route_constraint_or_search_cap'] += 1
                     break
                 changes[rid] = path
                 shared.update(_pair(x, y) for x, y in zip(path, path[1:]))
             else:
+                if selected is not None:
+                    old_bends = sum(_bends([list(doors[kind, routes[r]['source']][1]),
+                                           *[_world(n) for n in paths[r]],
+                                           list(doors[kind, routes[r]['target']][1])])
+                                    for r in affected)
+                    new_bends = sum(_bends([list(trial_doors[kind, routes[r]['source']][1]),
+                                           *[_world(n) for n in changes[r]],
+                                           list(trial_doors[kind, routes[r]['target']][1])])
+                                    for r in affected)
+                    if new_bends > old_bends:
+                        rejected['total_bend_regression'] += 1
+                        continue
                 candidate_score = _score({**usage, kind: shared}, trial_doors, fixed)
                 if candidate_score[0] >= score[0] or any(candidate_score[i] > score[i] for i in (1, 2)):
                     rejected['no_global_geometry_gain'] += 1

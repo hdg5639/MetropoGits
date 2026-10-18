@@ -4301,3 +4301,92 @@
 - Commits / push: one coherent diagnostics/test/documentation work unit on main;
   verified normal owner-authorized push follows. Private reports and existing
   unrelated IDE build caches are not staged; no agent attribution.
+
+## Checkpoint 2026-10-18 — local entrance refinement after rejected corridor merges
+- Implemented: opt-in `--refine-frontage`, derived frontage-refinement/0.1.
+  Select up to96 nearby connected buildings within21 Manhattan world units of
+  sampled rejected-route endpoints; jointly reorient each eligible door and
+  every incident complete trip. Compare turn costs25/150 with the same clearance,
+  original0.2 world-distance/+4-bend bounds and strict union-pavement reduction.
+  Junctions, nearby parallel length and summed bends cannot increase per proposal.
+  Only used connectors are exported. No canonical positions, schema, evidence,
+  default CLI or rendering code changes. Prior pass reports retain historical meaning.
+- Fixtures / revisions: GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  both historical-hinted and cold geography; GamjaOJb163acd2b5fe41edfc1e7fc7d367362851241896.
+  Maintained spring-positive and structural-showcase fixtures at parent5c5ae61,
+  catalog0.4.0. No target dependencies installed or target code executed.
+- Commands / real-city artifacts: `python ../artifacts/visual/frontage_refinement_trial.py
+  cold oj gj --package` runs the final pass twice, compares canonical routing,
+  applies independent RoadFrontageTests.check, and exports
+  `artifacts/visual/frontage-refinement-r2/{cold,oj,gj}/{before,after}` and reports.
+  The harness uses retained City/UCG and original0.2 routing; it is not a claim of
+  fresh source analysis for these three large inputs. Their baseline diagnostics
+  came from the prior reproducible corridor-constraints-r2 run.
+- Observed results (historical GJ/cold GJ/OJ): changed doors5/5/1;
+  pavement23477.5->23446 /23337.5->23302.5 /6101->6076.5;
+  junctions1367->1366 /1367->1364 /403->401;
+  parallel2397.5->2397.5 /2348.5->2334.5 /826->819;
+  total bends22158->22137 /22797->22789 /6098->6092;
+  trip distance734358->734253 /731495->731446 /163592->163634.
+  These are small local gains (about0.13%/0.15%/0.40% pavement), not a solved
+  city-wide layout. OJ's distance increases42 within existing original bounds.
+  Attempts366/408/282; popped states558871/745139/207477; no caps hit.
+- Fidelity / determinism: each city repeated byte-identically. Original-world
+  bounds, consistent doors, exact route/edge/segment membership and full-width
+  obstacle oracle pass. Zero building intersections; same4209/4209/1381 routes,
+  6157/6157/2243 contributing edges and1273/1273/400 connected files. City/UCG
+  hashes equal the prior packages; building and district moves0. Representative
+  OJ training-courses.js import of thinking-difficulty.js remains at line7;
+  GJ ComponentRegistryEntry.java references RegistryScope at line8. No adjacency
+  or shared junction creates a new semantic relationship.
+- Fresh end-to-end commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/frontage-refinement-fixtures-r1/<spring|unknown>`;
+  `python -m scripts.road_consolidation <build> --out <name>-study --refine-frontage`;
+  `node ../artifacts/visual/junction_smoke.mjs frontage-refinement-fixtures-r1`.
+  Both COMPLETE; Spring6 buildings/2 routes, unknown3 generic buildings/0 routes.
+  Viewed actual Spring WebGL and unknown SVG; generic/no-evidence fallback unchanged.
+- Actual visual comparison: `node ../artifacts/visual/parcel_focus_review.mjs
+  frontage-refinement-r2 frontage-refinement-cold-focus-r1
+  Frontend/portal/components/preview-runtime/blueprints/workflows frontend/app cold`;
+  same command with frontage-refinement-focus-r2,
+  Backend/Ops/src/main/java/gj/cloud/ops/application/preview/analysis, frontend/app,
+  gj,oj. Captured and inspected identical-camera Detail images for cold Portal,
+  hinted Ops and OJ frontend; also cold showcase.svg through actual Chrome.
+  Some short approaches move to the opposite building face, leaving less unused
+  parallel pavement. Overall silhouettes and readability remain essentially the
+  same. OJ's broad district view makes the one-door change hard to spot; do not
+  claim major thumbnail improvement. Large generic clusters and some vacant
+  parcels remain. No cosmetic hiding or added roundabout/curve.
+- Browser checkpoint: `node scripts/viewer_audit.mjs
+  'C:/Program Files/Google/Chrome/Application/chrome.exe'
+  ../artifacts/visual/frontage-refinement-cold-audit-r1
+  ../artifacts/visual/frontage-refinement-r2/cold/after`; same audit for gj/oj to
+  frontage-refinement-audit-r1. All complete: overview/district/detail, navigation,
+  filters and exact-route inspection. Synthetic static rebuilds0 in every LOD.
+  Local Synthetic CPU p95 cold1.4/1.1/1.1ms, hinted1.4/1.0/1.1ms,
+  OJ1.3/1.0/1.4ms. These are local CPU submission timings, not GPU FPS or an SLA.
+- Tests: Python431 run,430 pass,1 Windows symlink skip; Node six maintained
+  routing/junction/paint/audit/camera/landmark suites38 pass; Ruff and whitespace
+  checks pass. Nine new tests cover positive full-trip entrance changes,
+  bounds/memberships, deterministic selection, atomic failure, resource caps,
+  absent/empty seeds, malformed/repeated provenance, neighborhood isolation and
+  packaging. Initial order test incorrectly compared deliberately preserved
+  historical sample ordering; corrected to check exact repeat and order-independent
+  new decisions/geometry while retaining the historical report.
+- Experiments / fixes: one cost policy missed acceptable low-bend alternatives;
+  evaluate two bounded policies and require strict per-proposal bend preservation.
+  Candidate connectors restricted solely to the currently changed door lost the
+  OJ gain; retained bounded nearby connectors that only appear if real routes use
+  them. No relaxed distance budget or weakened geometric acceptance.
+- Spec alignment: PASS technical7/8/10, FR-007/012/015, AC-002/006/009/014,
+  DEC-003/005/006/007/011. ADR-019, contract baseline, roadmap and reproducible
+  commands updated. Public scene and UCG unchanged; existing layout stability
+  tests included in the full suite.
+- Next: this small improvement does not justify repeated city-wide search.
+  Evaluate joint multi-building door changes within one problematic block before
+  proposing building relocation; keep every original relationship and bound.
+  No global optimality or incremental road locality claim.
+- Commit / push: one coherent feature/test/docs work unit on main; normal
+  owner-authorized push after final staged review. Generated/private outputs and
+  pre-existing .gradle/target IDE caches excluded; no agent attribution.

@@ -10,7 +10,7 @@ from metropogits.access_routes import derive_access_routes
 from metropogits.block_collectors import plan_collectors
 from metropogits.block_gateways import plan_gateways
 from metropogits.road_frontage import plan_frontages
-from metropogits.shared_frontage import plan_shared_frontages
+from metropogits.shared_frontage import plan_shared_frontages, refine_failed_frontages
 from metropogits.route_simplification import simplify_routes
 from metropogits.cli import _artifact_record, _diagnostic_summary
 from metropogits.preview import render_preview
@@ -24,7 +24,8 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False, continuity=False, collectors=False, frontage=False, gateways=False, shared_frontage=False, simplify=False):
+def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False, continuity=False, collectors=False, frontage=False, gateways=False, shared_frontage=False, simplify=False, refine_frontage=False):
+    simplify = simplify or refine_frontage
     shared_frontage = shared_frontage or simplify
     gateways = gateways or shared_frontage
     frontage = frontage or gateways
@@ -62,6 +63,8 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
                                     avenues=avenues or backbone, backbone=backbone, urban=urban, continuity=continuity))
     if simplify:
         baseline, candidate = candidate, simplify_routes(original, candidate)
+    if refine_frontage:
+        baseline, candidate = candidate, refine_failed_frontages(scene, original, candidate)
     def identities(routing):
         return {r['id']: (r['source'], r['target'], r['kind'], r['edgeIds'], r['networkIds'])
                 for r in routing['routes']}
@@ -101,6 +104,8 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
         report['sharedFrontage'] = candidate['sharedFrontage']
     if simplify:
         report['routeSimplification'] = candidate['routeSimplification']
+    if refine_frontage:
+        report['frontageRefinement'] = candidate['frontageRefinement']
     return baseline, candidate, report
 
 
@@ -143,6 +148,7 @@ def main():
     parser.add_argument('--gateways', action='store_true', help='pool nearby block boundary crossings on common evidenced gateways')
     parser.add_argument('--shared-frontage', action='store_true', help='orient entrances toward shared complete trips; preserve original route bounds and geography')
     parser.add_argument('--simplify', action='store_true', help='compare shared-frontage roads with fixed-door trip smoothing and atomic redundant corridor removal')
+    parser.add_argument('--refine-frontage', action='store_true', help='reorient entrances near rejected corridor samples after simplification, retaining original trip bounds')
     args = parser.parse_args()
     try:
         if args.out.exists():
@@ -156,7 +162,8 @@ def main():
         before, after, report = compare(scene, graph, merge_junctions=args.junctions, avenues=args.avenues,
                                       backbone=args.backbone, urban=args.urban, continuity=args.continuity,
                                       collectors=args.collectors, frontage=args.frontage, gateways=args.gateways,
-                                      shared_frontage=args.shared_frontage, simplify=args.simplify)
+                                      shared_frontage=args.shared_frontage, simplify=args.simplify,
+                                      refine_frontage=args.refine_frontage)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)
