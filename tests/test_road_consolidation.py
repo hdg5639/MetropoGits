@@ -1,4 +1,5 @@
 import copy
+import heapq
 import json
 import unittest
 from collections import defaultdict, deque
@@ -7,7 +8,7 @@ from unittest.mock import patch
 
 from metropogits.access_routes import PITCH, _id, _pair
 from metropogits.layout import generate_city
-from metropogits.road_consolidation import _bends, _junction_links, _search, consolidate_routes
+from metropogits.road_consolidation import _avenue_search, _avenue_spines, _bends, _junction_links, _search, consolidate_routes
 from scripts.canonical_json import canonical_json_bytes
 from scripts.road_consolidation import compare, package
 from scripts.road_metrics import road_metrics
@@ -49,6 +50,18 @@ def atomic(routing):
     return result
 
 
+def avenue_fixture(length=40, separate_kinds=False):
+    result = fixture(length, separate_kinds)
+    for i in range(4):
+        route = copy.deepcopy(result['routes'][0])
+        route.update(id=f'avenue{i}', source=f'as{i}', target=f'at{i}', edgeIds=[f'ae{i}-{j}' for j in range(6)])
+        result['routes'].append(route)
+        for segment in result['segments']:
+            if 'r0' in segment['routeIds']:
+                segment['routeIds'].append(route['id'])
+    return result
+
+
 def junction_fixture(short_route=False, separate_kinds=False, separation=2):
     paths = [[(x, 0) for x in range(41)], [(x, 1) for x in range(41)],
              [(x, 0) for x in range(21)] + [(x, 1) for x in range(20, 41)],
@@ -73,6 +86,154 @@ def junction_fixture(short_route=False, separate_kinds=False, separation=2):
 
 
 class RoadConsolidationTests(unittest.TestCase):
+    def avenue_only(self, routing):
+        with patch('metropogits.road_consolidation.MAX_ATTEMPTS', 0), patch('metropogits.road_consolidation.MAX_JUNCTION_ATTEMPTS', 0):
+            return consolidate_routes(routing, merge_junctions=True, avenues=True)
+
+    def test_avenue_reuses_continuous_high_demand_road_with_real_detour(self):
+        before = avenue_fixture()
+        original = copy.deepcopy(before)
+        after = self.avenue_only(before)
+        decision = after['avenueConsolidation']
+        self.assertEqual(before, original)
+        self.assertEqual(1, len(decision['spines']))
+        self.assertEqual([[0, 0], [140, 0]], decision['spines'][0]['path'])
+        self.assertEqual(1, decision['accepted'])
+        self.assertGreater(decision['avenueRouteStepsAfter'], decision['avenueRouteStepsBefore'])
+        self.assertTrue(atomic(after) < atomic(before))
+        self.assertEqual(42, next(r for r in after['routes'] if r['id'] == 'r1')['latticeSteps'])
+        self.check_provenance(before, after)
+
+    def test_avenue_does_not_invent_demand_or_cross_semantic_kinds(self):
+        low = self.avenue_only(fixture())
+        self.assertEqual([], low['avenueConsolidation']['spines'])
+        self.assertEqual(atomic(fixture()), atomic(low))
+        other = avenue_fixture(separate_kinds=True)
+        after = self.avenue_only(other)
+        self.assertEqual(0, after['avenueConsolidation']['accepted'])
+        self.assertEqual(atomic(other), atomic(after))
+
+    def test_avenue_limits_and_atomic_rollback(self):
+        short = avenue_fixture(length=10)
+        after = self.avenue_only(short)
+        self.assertEqual(atomic(short), atomic(after))
+        self.assertEqual(0, after['avenueConsolidation']['accepted'])
+        before = avenue_fixture()
+        for option, limit in [('MAX_AVENUE_ATTEMPTS', 0), ('MAX_SEARCH_STATES', 1), ('MAX_SEARCH_LABELS', 1)]:
+            with patch('metropogits.road_consolidation.'+option, limit):
+                after = self.avenue_only(before)
+            self.assertEqual(atomic(before), atomic(after))
+            self.assertTrue(after['avenueConsolidation']['limitReached'])
+            self.check_provenance(before, after)
+
+    def test_avenue_search_prefers_longer_shared_path_without_exceeding_bounds(self):
+        # A preference is not an unconditional command to use the avenue.
+        paths = [[(0, 0), (1, 0), (2, 0), (3, 0), (4, 0)],
+                 [(0, 0), (0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (4, 0)]]
+        graph = defaultdict(set)
+        for path in paths:
+            for a, b in zip(path, path[1:]):
+                graph[a].add(b)
+                graph[b].add(a)
+        preferred = {_pair(a, b) for a, b in zip(paths[1], paths[1][1:])}
+        # Shorter still wins here (400 < 480), so preference cannot mean forced detour.
+        actual = _avenue_search((0,0), (4,0), graph, set(), 6, (0,0), (0,0), 2, [0,0], preferred)
+        self.assertEqual(paths[0], actual)
+        blocked = {_pair((1,0), (2,0))}
+        self.assertIsNone(_avenue_search((0,0), (4,0), graph, blocked, 5, (0,0), (0,0), 2, [0,0], preferred))
+        self.assertEqual(paths[1], _avenue_search((0,0), (4,0), graph, blocked, 6, (0,0), (0,0), 2, [0,0], preferred))
+
+        direct = [(x,0) for x in range(21)]
+        detour = [(0,0), *[(x,1) for x in range(21)], (20,0)]
+        graph = defaultdict(set)
+        for path in [direct, detour]:
+            for a, b in zip(path, path[1:]):
+                graph[a].add(b)
+                graph[b].add(a)
+        preferred = {_pair(a,b) for a,b in zip(detour,detour[1:])}
+        self.assertEqual(detour, _avenue_search((0,0), (20,0), graph, set(), 22, (0,0), (0,0), 2, [0,0], preferred))
+        self.assertEqual(direct, _avenue_search((0,0), (20,0), graph, set(), 21, (0,0), (0,0), 2, [0,0], preferred))
+
+    def test_avenue_search_matches_independent_bounded_dijkstra(self):
+        graph = defaultdict(set)
+        for x in range(5):
+            for z in range(4):
+                for other in [(x+1,z),(x,z+1)]:
+                    if other[0] < 5 and other[1] < 4 and other != (2,2) and (x,z) != (2,2):
+                        graph[x,z].add(other)
+                        graph[other].add((x,z))
+        preferred = {_pair(a,b) for a in graph for b in graph[a] if a[1] == b[1] == 1}
+        start, end = (0,0), (4,3)
+        for limit, bend_limit, heading, terminal in [(7,1,(0,0),(0,0)), (9,3,(0,1),(1,0)), (9,2,(1,0),(0,-1))]:
+            queue, seen, optimum = [(0,start,heading,0,0)], set(), None
+            while queue:
+                cost, point, direction, steps, bends = heapq.heappop(queue)
+                state = point, direction, steps, bends
+                if state in seen:
+                    continue
+                seen.add(state)
+                if point == end and bends + int(terminal != (0,0) and direction != terminal) <= bend_limit:
+                    optimum = cost
+                    break
+                for other in graph[point]:
+                    ndirection = other[0]-point[0], other[1]-point[1]
+                    nbends = bends+int(direction != (0,0) and direction != ndirection)
+                    if steps < limit and nbends <= bend_limit:
+                        heapq.heappush(queue,(cost+(80 if _pair(point,other) in preferred else 100),other,ndirection,steps+1,nbends))
+            path = _avenue_search(start,end,graph,set(),limit,heading,terminal,bend_limit,[0,0],preferred)
+            actual = sum(80 if _pair(a,b) in preferred else 100 for a,b in zip(path,path[1:])) if path else None
+            self.assertEqual(optimum,actual)
+
+    def test_avenue_multi_route_failure_rolls_back_every_path(self):
+        before = avenue_fixture()
+        duplicate = copy.deepcopy(before['routes'][1])
+        duplicate.update(id='r1copy', source='s1copy', edgeIds=['e1copy'])
+        before['routes'].append(duplicate)
+        for s in before['segments']:
+            if 'r1' in s['routeIds']:
+                s['routeIds'].append('r1copy')
+        calls = []
+        def fail_second(*args):
+            calls.append(1)
+            return _avenue_search(*args) if len(calls) == 1 else None
+        with patch('metropogits.road_consolidation._avenue_search', side_effect=fail_second):
+            after = self.avenue_only(before)
+        self.assertEqual(2, len(calls))
+        self.assertEqual(0, after['avenueConsolidation']['accepted'])
+        self.assertEqual(atomic(before), atomic(after))
+        self.check_provenance(before,after)
+
+    def test_avenue_spines_require_contiguous_length_and_distinct_files(self):
+        routes = {str(i): dict(edgeIds=['same']*50, source=f's{i}', target=f't{i}') for i in range(4)}
+        users = {('DEPENDENCY_ROAD', _pair((x,0),(x+1,0))): set(routes) for x in [0,1,2,4,5,6]}
+        self.assertEqual((set(), []), _avenue_spines(users, routes))
+        for i, route in routes.items():
+            route['edgeIds'] = [f'{i}-{j}' for j in range(6)]
+        self.assertEqual((set(), []), _avenue_spines(users, routes))
+        users[('DEPENDENCY_ROAD', _pair((3,0),(4,0)))] = set(routes)
+        preferred, spines = _avenue_spines(users, routes)
+        self.assertEqual(7, len(preferred))
+        self.assertEqual(1, len(spines))
+
+    def test_avenue_determinism_frozen_bounds_and_package(self):
+        before = avenue_fixture()
+        expected = canonical_json_bytes(self.avenue_only(before))
+        before['routes'].reverse()
+        before['segments'].reverse()
+        for s in before['segments']:
+            s['routeIds'].reverse()
+        self.assertEqual(expected, canonical_json_bytes(self.avenue_only(before)))
+        with self.assertRaisesRegex(ValueError, 'junction consolidation first'):
+            consolidate_routes(before, avenues=True)
+        with self.assertRaisesRegex(ValueError, 'complete visual-access/0.2'):
+            self.avenue_only(self.avenue_only(before))
+        graph = json.loads((Path(__file__).parent/'fixtures/ucg/valid/spring-minimal.json').read_text(encoding='utf-8'))
+        scene = generate_city(graph)
+        baseline, routing, report = compare(scene, graph, avenues=True)
+        self.assertNotIn('avenueConsolidation', baseline)
+        self.assertIn('avenueConsolidation', report)
+        self.assertEqual(canonical_json_bytes(scene), package(scene, graph, routing, report)['city.json'])
+
     def test_short_junction_links_reassign_routes_to_remaining_crossing(self):
         before = junction_fixture()
         with patch('metropogits.road_consolidation.MAX_ATTEMPTS', 0):

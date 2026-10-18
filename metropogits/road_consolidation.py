@@ -6,6 +6,7 @@ import heapq
 from collections import defaultdict
 
 from metropogits.access_routes import PITCH, _compact_segments, _heading, _id, _pair
+from metropogits.road_hierarchy import demand_grade
 
 MAX_ATTEMPTS = 1200
 MAX_SEARCH_STATES = 2_000_000
@@ -14,6 +15,8 @@ MAX_ROUTE_STEPS = 1_000_000
 MAX_SEARCH_LABELS = 100_000
 MAX_JUNCTION_ATTEMPTS = 600
 MAX_JUNCTION_LINK_STEPS = 2
+MAX_AVENUE_ATTEMPTS = 600
+MIN_AVENUE_STEPS = 4
 
 
 def _distance(a, b):
@@ -102,10 +105,122 @@ def _junction_links(adjacency, ports, users):
     return sorted(candidates)
 
 
-def consolidate_routes(routing, *, merge_junctions=False):
+def _avenue_spines(users, routes):
+    """Freeze straight, evidenced avenue runs across junctions; never create pavement."""
+    lines = defaultdict(dict)
+    for (kind, pair), identities in sorted(users.items()):
+        if not identities:
+            continue
+        edges = set().union(*(set(routes[r]['edgeIds']) for r in identities))
+        files = {routes[r][k] for r in identities for k in ('source', 'target')}
+        if demand_grade(False, len(edges), len(files), 0) != 'AVENUE':
+            continue
+        a, b = pair
+        axis = 0 if a[1] == b[1] else 1
+        lines[(kind, axis, a[1-axis])][a[axis]] = (kind, pair)
+    preferred, spines = set(), []
+    for (kind, axis, offset), positions in sorted(lines.items()):
+        runs = []
+        for position in sorted(positions):
+            if not runs or position != runs[-1][-1]+1:
+                runs.append([])
+            runs[-1].append(position)
+        for run in runs:
+            if len(run) < MIN_AVENUE_STEPS:
+                continue
+            keys = [positions[p] for p in run]
+            preferred.update(keys)
+            a, b = [0, 0], [0, 0]
+            a[axis], b[axis] = run[0], run[-1]+1
+            a[1-axis] = b[1-axis] = offset
+            spines.append(dict(kind=kind, path=[_world(a), _world(b)], latticeSteps=len(run)))
+    return preferred, spines
+
+
+def _avenue_candidates(adjacency, ports, users, preferred, routes):
+    nearby = set()
+    for kind, (a, b) in sorted(preferred):
+        axis = 1 if a[1] == b[1] else 0
+        for offset in (-2, -1, 1, 2):
+            shifted = [list(a), list(b)]
+            for point in shifted:
+                point[axis] += offset
+            key = kind, _pair(tuple(shifted[0]), tuple(shifted[1]))
+            if key not in preferred and users.get(key):
+                nearby.add(key)
+    seen, candidates = set(), []
+    for key in sorted(nearby):
+        if key in seen:
+            continue
+        kind, (a, b) = key
+        stroke = {key}
+        for previous, current in ((a, b), (b, a)):
+            while len(adjacency[kind][current]) == 2 and (kind, current) not in ports:
+                other = next(n for n in adjacency[kind][current] if n != previous)
+                extra = kind, _pair(current, other)
+                if extra not in nearby or extra in seen or extra in stroke or _heading(previous, current) != _heading(current, other):
+                    break
+                stroke.add(extra)
+                previous, current = current, other
+        seen.update(stroke)
+        affected = set().union(*(users[k] for k in stroke))
+        edges = set().union(*(set(routes[r]['edgeIds']) for r in affected))
+        candidates.append((len(edges), -len(stroke), tuple(sorted(stroke))))
+    return sorted(candidates)
+
+
+def _avenue_search(start, end, adjacency, blocked, limit, heading, terminal, bend_limit, budget, preferred):
+    """Bounded A*: prefer existing avenue steps (80) over local steps (100).
+
+    Cost, distance and bends are separate Pareto dimensions. A cheap long detour
+    must never discard a costlier short prefix needed to meet the frozen bounds.
+    """
+    queue = [(80*_distance(start, end), 0, 0, 0, start, heading, 0)]
+    records, labels = [(start, None)], defaultdict(list)
+    while queue:
+        if budget[0] >= MAX_SEARCH_STATES:
+            return None
+        _, bends, steps, cost, node, direction, record = heapq.heappop(queue)
+        budget[0] += 1
+        if node == end:
+            if bends + int(terminal != (0, 0) and direction != terminal) <= bend_limit:
+                path = []
+                while record is not None:
+                    point, record = records[record]
+                    path.append(point)
+                return list(reversed(path))
+            continue
+        for other in sorted(adjacency.get(node, ())):
+            pair = _pair(node, other)
+            if pair in blocked:
+                continue
+            nsteps = steps+1
+            ndirection = _heading(node, other)
+            nbends = bends + int(direction != (0, 0) and direction != ndirection)
+            if nsteps+_distance(other, end) > limit or nbends > bend_limit:
+                continue
+            ncost = cost+(80 if pair in preferred else 100)
+            key = other, ndirection
+            old = labels[key]
+            value = ncost, nsteps, nbends
+            if any(all(a <= b for a, b in zip(label, value)) for label in old):
+                continue
+            labels[key] = [label for label in old if not all(a <= b for a, b in zip(value, label))] + [value]
+            if len(records) >= MAX_SEARCH_LABELS:
+                budget[1] += 1
+                return None
+            records.append((other, record))
+            heapq.heappush(queue, (ncost+80*_distance(other, end), nbends, nsteps, ncost,
+                                   other, ndirection, len(records)-1))
+    return None
+
+
+def consolidate_routes(routing, *, merge_junctions=False, avenues=False):
     """Return independent routing; never move buildings, add pavement or lose routes."""
     if routing['version'] != 'visual-access/0.2' or routing['status'] != 'COMPLETE':
         raise ValueError('consolidation requires complete visual-access/0.2 routing')
+    if avenues and not merge_junctions:
+        raise ValueError('avenue pass requires junction consolidation first')
     result = copy.deepcopy(routing)
     originals = {s['id']: s for s in result['segments']}
     unit, users, paths, anchors, limits, bend_limits = {}, defaultdict(set), {}, {}, {}, {}
@@ -184,8 +299,9 @@ def consolidate_routes(routing, *, merge_junctions=False):
             candidates.append((len(affected), -parallel, -len(stroke), tuple(sorted(stroke))))
 
     removed = set()
-    def remove_link(active, budget):
+    def remove_link(active, budget, preferred=None):
         kind = active[0][0]
+        preferred_pairs = {pair for k, pair in preferred if k == kind} if preferred is not None else None
         blocked = {pair for _, pair in active}
         affected = sorted(set().union(*(users[k] for k in active)))
         replacements = {}
@@ -193,12 +309,25 @@ def consolidate_routes(routing, *, merge_junctions=False):
             nodes = paths[identity]
             heading, terminal = anchors[identity]
             previous_label_hits = budget[1]
-            path = _search(nodes[0], nodes[-1], adjacency[kind], blocked, limits[identity],
-                           heading, terminal, bend_limits[identity], budget)
+            args = (nodes[0], nodes[-1], adjacency[kind], blocked, limits[identity],
+                    heading, terminal, bend_limits[identity], budget)
+            path = _search(*args) if preferred is None else _avenue_search(*args, preferred_pairs)
             if path is None:
-                reason = 'search_label_limit' if budget[1] > previous_label_hits else 'unreachable_or_detour_or_bend_limit'
+                reason = ('search_state_limit' if preferred is not None and budget[0] >= MAX_SEARCH_STATES else
+                          'search_label_limit' if budget[1] > previous_label_hits else 'unreachable_or_detour_or_bend_limit')
                 return reason
             replacements[identity] = path
+        if preferred is not None:
+            def hits(nodes):
+                return sum((kind, _pair(a, b)) in preferred for a, b in zip(nodes, nodes[1:]))
+            if sum(hits(path)-hits(paths[r]) for r, path in replacements.items()) <= 0:
+                return 'no_avenue_reuse_gain'
+            new_users = defaultdict(set)
+            for identity, path in replacements.items():
+                for a, b in zip(path, path[1:]):
+                    new_users[(kind, _pair(a, b))].add(identity)
+            if any(key[0] == kind and not (users[key]-replacements.keys() or new_users[key]) for key in preferred):
+                return 'would_orphan_avenue'
         for identity, path in replacements.items():
             for a, b in zip(paths[identity], paths[identity][1:]):
                 users[(kind, _pair(a, b))].discard(identity)
@@ -258,6 +387,35 @@ def consolidate_routes(routing, *, merge_junctions=False):
             maxLinkSteps=MAX_JUNCTION_LINK_STEPS, originalBoundsPreserved=True)
         if joint_budget[1]:
             result['junctionConsolidation']['searchLabelLimitHits'] = joint_budget[1]
+
+    if avenues:
+        preferred, spines = _avenue_spines(users, route_by_id)
+        avenue_candidates = _avenue_candidates(adjacency, ports, users, preferred, route_by_id)
+        avenue_budget, avenue_attempts, avenue_accepted = [0, 0], 0, 0
+        avenue_rejected = defaultdict(int)
+        before_removed = len(removed)
+        reuse_before = sum(len(users[key]) for key in preferred)
+        for _, _, stroke in avenue_candidates:
+            if avenue_attempts >= MAX_AVENUE_ATTEMPTS or avenue_budget[0] >= MAX_SEARCH_STATES:
+                break
+            active = [key for key in stroke if users.get(key)]
+            if not active:
+                continue
+            avenue_attempts += 1
+            reason = remove_link(active, avenue_budget, preferred)
+            if reason:
+                avenue_rejected[reason] += 1
+            else:
+                avenue_accepted += 1
+        result['avenueConsolidation'] = dict(
+            version='avenue-consolidation/0.1', spines=spines, candidates=len(avenue_candidates),
+            attempts=avenue_attempts, accepted=avenue_accepted, rejected=dict(sorted(avenue_rejected.items())),
+            removedLatticeEdges=len(removed)-before_removed, preferredLatticeEdges=len(preferred),
+            avenueRouteStepsBefore=reuse_before, avenueRouteStepsAfter=sum(len(users[key]) for key in preferred),
+            searchStates=avenue_budget[0], searchLabelLimitHits=avenue_budget[1],
+            maxAttempts=MAX_AVENUE_ATTEMPTS, maxSearchStates=MAX_SEARCH_STATES, maxSearchLabels=MAX_SEARCH_LABELS,
+            limitReached=avenue_attempts >= MAX_AVENUE_ATTEMPTS or avenue_budget[0] >= MAX_SEARCH_STATES or avenue_budget[1] > 0,
+            minimumSpineSteps=MIN_AVENUE_STEPS, originalBoundsPreserved=True)
 
     # Rebuild all memberships and intersections from final complete routes.
     segments = {}

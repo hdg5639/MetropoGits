@@ -148,3 +148,12 @@ This is static demand, never measured traffic or a change in relationship kind.
 Stored paths, Synthetic trajectories and buildings are unchanged. Continuous
 trunk planning, reserved road space, curves and selective roundabouts remain future
 stages; grade labels alone do not establish highway geometry.
+
+The developer comparison command now accepts `--avenues`: compare existing
+parallel+junction consolidation with bounded reuse of continuous high-demand
+straight spines. It implies the earlier passes but keeps every bound frozen from
+fresh complete0.2 routing. Optional `avenueConsolidation` metadata (version
+`avenue-consolidation/0.1`) records fixed spine paths, attempts, rejected reasons,
+reuse and limits in derived0.3. No UCG/City schema, default routing, building or
+source-ID changes. All renderers and Synthetic follow the same rebuilt paths.
+The pass removes existing roads only; reserved road space/curves remain pending.

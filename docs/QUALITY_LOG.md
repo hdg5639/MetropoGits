@@ -3297,3 +3297,71 @@
   committed after checks. Ordinary upstream push follows under the maintainer's
   explicit owner exception, without force, settings changes or agent attribution.
   Generated private outputs/review scripts and unrelated IDE caches excluded.
+
+## Checkpoint 2026-10-18 — bounded continuous avenue reuse
+
+- Implemented: opt-in `--avenues` third pass preserves evidenced straight spines
+  and transfers nearby parallel streets onto remaining pavement. All affected
+  routes commit together or roll back; original distance/bend limits stay frozen
+  across all three passes. Require increased spine use and no abandoned spine.
+  Default build/Action, canonical City/UCG and building positions remain unchanged.
+- Fixtures / revisions: GJ3d9b53f and OJb163acd parcel-3d-r2 JSON inputs;
+  maintained spring-positive and structural-showcase at parent 3edc0f4. No target
+  source code, dependencies or build scripts executed.
+- Commands: `python -m scripts.road_consolidation
+  ../artifacts/visual/parcel-3d-r2/<gj|oj> --out
+  ../artifacts/visual/avenue-reuse-r1/<gj|oj> --avenues`;
+  `python -m metropogits build --repo tests/fixtures/repositories/<spring-positive|structural-showcase>
+  --out ../artifacts/visual/avenue-reuse-fixtures/<spring|unknown>
+  --repo-id fixtures/<spring|unknown>`, followed by the same consolidation CLI
+  into `<spring|unknown>-study`. Both fresh fixture builds COMPLETE; no avenue
+  candidates in either sparse input, preserving prior geometry.
+- Results versus parallel+junction baseline: GJ accepts 107/562 attempts;
+  centerline 39210 -> 37666.5 (-3.94%), nearby-parallel length 14066.5 -> 11879
+  (-15.55%), junctions 2596 -> 2441. Route length 694542 -> 695823, turns
+  23129 -> 22941. OJ accepts 3/192; centerline 9447 -> 9412, parallel length
+  3696 -> 3654, junctions 631 -> 630. OJ route length 155878 -> 155913 and turns
+  6260 -> 6274: a small bend increase within each original route's +2 limit.
+  New-pass popped states 413555/47758; neither new pass hits its resource caps.
+  Protected short paths and no-reuse-gain candidates remain unmerged.
+- Fidelity / determinism: `python ../artifacts/visual/verify_consolidation.py`
+  repeats routing and all 14 packaged after assets byte-for-byte; City/UCG bytes,
+  source/target/kind/edge IDs/network IDs and doors unchanged. Pavement is a strict
+  subset, every route within its original length/+2-bend limits. Before routing
+  equals the previous junction-merge baseline. `node
+  ../artifacts/visual/verify_access.mjs ../artifacts/visual/avenue-reuse-r1/<gj|oj>/after`
+  confirms 4209/1381 routes, 6157/2243 covered edges, unresolved 0 and pavement/
+  building intersections 0. Connected files remain 1273/400.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs` generates
+  avenue-reuse-focus-r1. Viewed GJ/OJ before/after focused.png at identical cameras
+  and both after showcase.png. GJ redundant foreground/central parallel stretches
+  visibly decrease; OJ chosen view changes little. Skyline/composition are stable;
+  dense rectilinear topology, district boundaries and some blank areas persist.
+  `node ../artifacts/visual/junction_smoke.mjs` generates fresh fixture captures;
+  viewed Spring WebGL and unknown-language preview. No new obvious clipping.
+- Browser: `node scripts/viewer_audit.mjs <Chrome>
+  ../artifacts/visual/avenue-reuse-audit-r1
+  ../artifacts/visual/avenue-reuse-r1/gj/after
+  ../artifacts/visual/avenue-reuse-r1/oj/after` passes three LODs, real pointer
+  selection, source-edge Inspector, single-route drill-down, filter reset, demand
+  profiles, camera and Synthetic route checks. Chrome152 SwiftShader, 20 samples:
+  synthetic CPU p95 GJ 1.6/1.4/1.2ms and OJ 1.1/1.1/1.1ms; static rebuilds 0
+  throughout. These are not GPU FPS or controlled speedup measurements.
+- Tests: `python -m unittest discover -s tests -q` 328 run, 327 pass, 1 Windows
+  symlink skip; `python -m ruff check metropogits scripts tests` passes;
+  `node --test tests/access_routes.test.mjs tests/junction_geometry.test.mjs
+  tests/viewer_audit.test.mjs tests/camera_navigation.test.mjs tests/role_landmarks.test.mjs`
+  35 pass. Eight new cases cover real transfer, demand/kind separation, protected
+  short routes, search budgets, independent bounded-Dijkstra agreement, atomic
+  rollback, contiguous spines, deterministic order and package compatibility.
+- Spec alignment: PASS, technical 7–8, FR-007, AC-002/003/006/014, product 5.1,
+  DEC-005/006/007/011. Static demand is not measured traffic; shared pavement
+  creates no new semantic relationship. Public contracts and stable IDs intact.
+- Open risks / next actions: this is conservative reuse of existing streets,
+  not globally optimal road-first planning or highway geometry. Evaluate opt-in
+  road-space reservation within stable directory ownership before gentle curves
+  and selective roundabouts. Preserve distance bounds and incremental stability.
+- Commits created / pushed (main): implementation, tests and accompanying docs
+  form one work unit committed after verification; ordinary upstream push follows
+  under the maintainer's reconfirmed owner exception. No force, remote setting
+  changes or agent attribution. Private artifacts and unrelated IDE caches excluded.
