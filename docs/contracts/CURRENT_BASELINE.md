@@ -169,3 +169,22 @@ Decision and manifest identify the option. Earlier experimental commands and
 default build output are unchanged. Optional `--previous-scene` uses the existing
 same-structure-only policy; no implicit growth allocator or cold reset is added.
 This implements local width reservation, not reserved city-wide trunks or curves.
+
+The separate developer comparison `scripts.road_consolidation --urban` now adds
+whole-network corridor consolidation, explicitly approved on 2026-10-18. A
+unique-evidence-demand-ranked forest guides reuse; all dependencies on a removed
+corridor must receive complete replacements on existing same-kind pavement.
+Fixed ports, access, buildings, UCG/City and source IDs remain unchanged. Default
+build and previous conservative options remain unchanged; `--backbone` exposes
+the same fourth pass with the previous conservative bounds.
+
+Only urban pass four permits max(floor(1.5*N), N+4) through-road steps and four
+extra complete-path bends, frozen from original0.2. N excludes access spurs;
+four steps equal a 14-unit short-route block allowance. Do not describe this as
+an unconditional 50% cap: the short-path exception can exceed that percentage.
+`backboneConsolidation.policy` in derived0.3/decision identifies `urban-road/0.1`;
+earlier-stage `originalBoundsPreserved` flags describe those stages only. Search
+caps and safe atomic rejection remain. No new public schema or invented road.
+WebGL, SVG, inspection and Synthetic share the resulting paths. This is removal
+and rerouting on an existing orthogonal network, not curved highway/roundabout
+geometry or a default replacement for stable directory-first layout.

@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from metropogits.access_routes import PITCH, _id, _pair
 from metropogits.layout import generate_city
-from metropogits.road_consolidation import _avenue_search, _avenue_spines, _bends, _junction_links, _search, consolidate_routes
+from metropogits.road_consolidation import _avenue_search, _avenue_spines, _backbone_candidates, _bends, _junction_links, _search, consolidate_routes
 from scripts.canonical_json import canonical_json_bytes
 from scripts.road_consolidation import compare, package
 from scripts.road_metrics import road_metrics
@@ -86,6 +86,129 @@ def junction_fixture(short_route=False, separate_kinds=False, separation=2):
 
 
 class RoadConsolidationTests(unittest.TestCase):
+    def backbone_only(self, routing, urban=True):
+        with patch('metropogits.road_consolidation.MAX_ATTEMPTS', 0), patch('metropogits.road_consolidation.MAX_JUNCTION_ATTEMPTS', 0), patch('metropogits.road_consolidation.MAX_AVENUE_ATTEMPTS', 0):
+            return consolidate_routes(routing, merge_junctions=True, avenues=True, backbone=True, urban=urban)
+
+    def test_urban_short_block_and_long_route_diversions_preserve_every_relation(self):
+        for length in (1, 10, 40):
+            before = fixture(length)
+            original = copy.deepcopy(before)
+            after = self.backbone_only(before)
+            self.assertEqual(original, before)
+            self.assertTrue(atomic(after) < atomic(before))
+            self.assertGreater(after['backboneConsolidation']['accepted'], 0)
+            self.check_provenance(before, after, additional_bends=4)
+            for route in after['routes']:
+                previous = next(r for r in before['routes'] if r['id'] == route['id'])
+                n = previous['latticeSteps']
+                self.assertLessEqual(route['latticeSteps'], max(n*3//2, n+4))
+            if length < 40:
+                legacy = self.backbone_only(before, urban=False)
+                self.assertEqual(atomic(before), atomic(legacy))
+        short = self.backbone_only(fixture(1))
+        self.assertTrue(any(r['latticeSteps'] > 1.5 for r in short['routes']))
+        self.assertFalse(short['backboneConsolidation']['originalBoundsPreserved'])
+        self.assertEqual('urban-road/0.1', short['backboneConsolidation']['policy']['version'])
+
+    def test_urban_does_not_remove_bridges_or_cross_semantic_kinds(self):
+        before = fixture(10, separate_kinds=True)
+        after = self.backbone_only(before)
+        self.assertEqual(atomic(before), atomic(after))
+        self.assertEqual(0, after['backboneConsolidation']['candidates'])
+        self.check_provenance(before, after, additional_bends=4)
+
+    def test_backbone_demand_counts_unique_evidence_not_duplicates(self):
+        before = fixture(10)
+        def forest(source):
+            graph, users = defaultdict(lambda: defaultdict(set)), defaultdict(set)
+            routes = {r['id']: r for r in source['routes']}
+            for segment in source['segments']:
+                a, b = [tuple(round(v/PITCH) for v in p) for p in (segment['start'], segment['end'])]
+                kind = segment['kind']
+                graph[kind][a].add(b)
+                graph[kind][b].add(a)
+                users[kind, _pair(a,b)].update(segment['routeIds'])
+            ports = {(r['kind'], tuple(round(v/PITCH) for v in p)) for r in source['routes'] for p in (r['path'][0], r['path'][-1])}
+            return _backbone_candidates(graph, ports, users, routes)
+        expected = forest(before)
+        before['routes'][1]['edgeIds'] *= 100
+        self.assertEqual(expected, forest(before))
+        before['routes'][1]['edgeIds'] = ['distinct'+str(i) for i in range(10)]
+        preferred, _ = forest(before)
+        self.assertTrue(all(('DEPENDENCY_ROAD', _pair((x,1),(x+1,1))) in preferred for x in range(10)))
+
+    def test_urban_atomic_failure_and_resource_caps_keep_original_paths(self):
+        before = fixture(10)
+        # Every potential corridor has two independent dependencies.
+        for route in list(before['routes']):
+            duplicate = copy.deepcopy(route)
+            duplicate.update(id=route['id']+'copy', source=route['source']+'copy', edgeIds=[route['id']+'copy'])
+            before['routes'].append(duplicate)
+            for segment in before['segments']:
+                if route['id'] in segment['routeIds']:
+                    segment['routeIds'].append(duplicate['id'])
+        calls = []
+        def fail_second(*args):
+            calls.append(1)
+            return _avenue_search(*args) if len(calls) == 1 else None
+        with patch('metropogits.road_consolidation._avenue_search', side_effect=fail_second):
+            after = self.backbone_only(before)
+        self.assertEqual(2, len(calls))
+        self.assertEqual(atomic(before), atomic(after))
+        self.check_provenance(before, after, additional_bends=4)
+        for option, limit in [('MAX_BACKBONE_ATTEMPTS',0), ('MAX_SEARCH_STATES',1), ('MAX_SEARCH_LABELS',1)]:
+            with patch('metropogits.road_consolidation.'+option, limit):
+                after = self.backbone_only(before)
+            self.assertEqual(atomic(before), atomic(after))
+            self.assertTrue(after['backboneConsolidation']['limitReached'])
+
+    def test_backbone_corridors_span_bends_without_swallowing_ports(self):
+        graph, users = defaultdict(lambda: defaultdict(set)), defaultdict(set)
+        kind = 'DEPENDENCY_ROAD'
+        ring = [(0,0),(1,0),(2,0),(2,1),(2,2),(1,2),(0,2),(0,1),(0,0)]
+        for a,b in zip(ring,ring[1:]):
+            graph[kind][a].add(b)
+            graph[kind][b].add(a)
+            users[kind,_pair(a,b)].add('r')
+        ports = {(kind,(0,0)),(kind,(2,2))}
+        preferred, redundant = _backbone_candidates(graph,ports,users,{'r':dict(edgeIds=['e'])})
+        self.assertEqual(4,len(preferred))
+        self.assertEqual(1,len(redundant))
+        self.assertEqual(4,len(redundant[0][3]))
+        self.assertEqual(1,redundant[0][2])
+        self.assertFalse(preferred.intersection(redundant[0][3]))
+
+    def test_urban_deterministic_and_allowance_never_compounds(self):
+        before = junction_fixture(short_route=True)
+        after = consolidate_routes(before, urban=True)
+        self.check_provenance(before, after, additional_bends=4)
+        old = {r['id']: r for r in before['routes']}
+        for route in after['routes']:
+            n = old[route['id']]['latticeSteps']
+            self.assertLessEqual(route['latticeSteps'], max(n*3//2,n+4))
+        before['routes'].reverse()
+        before['segments'].reverse()
+        self.assertEqual(canonical_json_bytes(after), canonical_json_bytes(consolidate_routes(before, urban=True)))
+        with self.assertRaisesRegex(ValueError, 'complete visual-access/0.2'):
+            consolidate_routes(after, urban=True)
+        before['status'] = 'PARTIAL'
+        with self.assertRaisesRegex(ValueError, 'complete visual-access/0.2'):
+            consolidate_routes(before, urban=True)
+
+    def test_urban_package_keeps_baseline_and_canonical_contracts(self):
+        graph = json.loads((Path(__file__).parent/'fixtures/ucg/valid/spring-minimal.json').read_text(encoding='utf-8'))
+        scene = generate_city(graph)
+        baseline, routing, report = compare(scene, graph, urban=True)
+        self.assertNotIn('backboneConsolidation', baseline)
+        self.assertIn('avenueConsolidation', baseline)
+        self.assertEqual('urban-road/0.1', report['backboneConsolidation']['policy']['version'])
+        artifacts = package(scene, graph, routing, report)
+        self.assertEqual(canonical_json_bytes(scene), artifacts['city.json'])
+        self.assertEqual(canonical_json_bytes(graph), artifacts['graph.ucg.json'])
+        self.assertEqual(routing, json.loads(artifacts['assets/viewer-data.js'].decode().split('=',1)[1].rstrip(';\n'))['routing'])
+        self.assertNotIn('backboneConsolidation', consolidate_routes(fixture(), merge_junctions=True, avenues=True))
+
     def avenue_only(self, routing):
         with patch('metropogits.road_consolidation.MAX_ATTEMPTS', 0), patch('metropogits.road_consolidation.MAX_JUNCTION_ATTEMPTS', 0):
             return consolidate_routes(routing, merge_junctions=True, avenues=True)
@@ -351,7 +474,7 @@ class RoadConsolidationTests(unittest.TestCase):
         self.assertEqual('visual-access/0.3', after['version'])
         self.check_provenance(before, after)
 
-    def check_provenance(self, before, after):
+    def check_provenance(self, before, after, additional_bends=2):
         old = {r['id']: r for r in before['routes']}
         segments = {s['id']: s for s in after['segments']}
         self.assertEqual(set(old), {r['id'] for r in after['routes']})
@@ -361,7 +484,7 @@ class RoadConsolidationTests(unittest.TestCase):
                 self.assertEqual(source[key], route[key])
             self.assertEqual(source['path'][0], route['path'][0])
             self.assertEqual(source['path'][-1], route['path'][-1])
-            self.assertLessEqual(_bends(route['path']), _bends(source['path'])+2)
+            self.assertLessEqual(_bends(route['path']), _bends(source['path'])+additional_bends)
             self.assertEqual(len(route['path']), len(route['segmentIds'])+1)
             for i, sid in enumerate(route['segmentIds']):
                 segment = segments[sid]

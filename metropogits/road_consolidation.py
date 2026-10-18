@@ -17,6 +17,48 @@ MAX_JUNCTION_ATTEMPTS = 600
 MAX_JUNCTION_LINK_STEPS = 2
 MAX_AVENUE_ATTEMPTS = 600
 MIN_AVENUE_STEPS = 4
+MAX_BACKBONE_ATTEMPTS = 2400
+
+
+def _backbone_candidates(adjacency, ports, users, routes):
+    """Demand-ranked corridor forest; redundant cycle corridors may be diverted."""
+    seen, corridors = set(), []
+    for kind, graph in sorted(adjacency.items()):
+        starts = sorted(p for p in graph if len(graph[p]) != 2 or (kind, p) in ports)
+        for start in starts:
+            for other in sorted(graph[start]):
+                first = kind, _pair(start, other)
+                if first in seen:
+                    continue
+                keys, points = [first], [start, other]
+                seen.add(first)
+                while len(graph[points[-1]]) == 2 and (kind, points[-1]) not in ports:
+                    following = next(p for p in graph[points[-1]] if p != points[-2])
+                    key = kind, _pair(points[-1], following)
+                    if key in seen:
+                        break
+                    keys.append(key)
+                    points.append(following)
+                    seen.add(key)
+                affected = set().union(*(users[key] for key in keys))
+                demand = len(set().union(*(set(routes[r]['edgeIds']) for r in affected)))
+                corridors.append((demand, _bends(points), tuple(sorted(keys)), start, points[-1]))
+    parent = {}
+    def find(key):
+        parent.setdefault(key, key)
+        while parent[key] != key:
+            parent[key] = parent[parent[key]]
+            key = parent[key]
+        return key
+    preferred, redundant = set(), []
+    for demand, bends, keys, a, b in sorted(corridors, key=lambda c: (-c[0], c[1], len(c[2]), c[2])):
+        left, right = find((keys[0][0], a)), find((keys[0][0], b))
+        if left != right:
+            parent[max(left, right)] = min(left, right)
+            preferred.update(keys)
+        else:
+            redundant.append((demand, -len(keys), bends, keys))
+    return preferred, sorted(redundant)
 
 
 def _distance(a, b):
@@ -215,15 +257,20 @@ def _avenue_search(start, end, adjacency, blocked, limit, heading, terminal, ben
     return None
 
 
-def consolidate_routes(routing, *, merge_junctions=False, avenues=False):
+def consolidate_routes(routing, *, merge_junctions=False, avenues=False, backbone=False, urban=False):
     """Return independent routing; never move buildings, add pavement or lose routes."""
     if routing['version'] != 'visual-access/0.2' or routing['status'] != 'COMPLETE':
         raise ValueError('consolidation requires complete visual-access/0.2 routing')
+    if urban:
+        merge_junctions = avenues = backbone = True
     if avenues and not merge_junctions:
         raise ValueError('avenue pass requires junction consolidation first')
+    if backbone and not avenues:
+        raise ValueError('backbone pass requires avenue consolidation first')
     result = copy.deepcopy(routing)
     originals = {s['id']: s for s in result['segments']}
     unit, users, paths, anchors, limits, bend_limits = {}, defaultdict(set), {}, {}, {}, {}
+    urban_limits, urban_bend_limits = {}, {}
     route_by_id = {r['id']: r for r in result['routes']}
     step_count = 0
     for route in result['routes']:
@@ -258,6 +305,8 @@ def consolidate_routes(routing, *, merge_junctions=False, avenues=False):
                              _heading(_world(nodes[-1]), route['path'][-1]))
         limits[identity] = max(len(nodes)-1, _distance(nodes[0], nodes[-1])*100//90)
         bend_limits[identity] = _bends(route['path']) + 2
+        urban_limits[identity] = max((len(nodes)-1)*3//2, len(nodes)-1+4)
+        urban_bend_limits[identity] = _bends(route['path']) + 4
 
     adjacency = defaultdict(lambda: defaultdict(set))
     for kind, (a, b) in unit:
@@ -299,7 +348,7 @@ def consolidate_routes(routing, *, merge_junctions=False, avenues=False):
             candidates.append((len(affected), -parallel, -len(stroke), tuple(sorted(stroke))))
 
     removed = set()
-    def remove_link(active, budget, preferred=None):
+    def remove_link(active, budget, preferred=None, protect_preferred=True):
         kind = active[0][0]
         preferred_pairs = {pair for k, pair in preferred if k == kind} if preferred is not None else None
         blocked = {pair for _, pair in active}
@@ -317,7 +366,7 @@ def consolidate_routes(routing, *, merge_junctions=False, avenues=False):
                           'search_label_limit' if budget[1] > previous_label_hits else 'unreachable_or_detour_or_bend_limit')
                 return reason
             replacements[identity] = path
-        if preferred is not None:
+        if preferred is not None and protect_preferred:
             def hits(nodes):
                 return sum((kind, _pair(a, b)) in preferred for a, b in zip(nodes, nodes[1:]))
             if sum(hits(path)-hits(paths[r]) for r, path in replacements.items()) <= 0:
@@ -416,6 +465,37 @@ def consolidate_routes(routing, *, merge_junctions=False, avenues=False):
             maxAttempts=MAX_AVENUE_ATTEMPTS, maxSearchStates=MAX_SEARCH_STATES, maxSearchLabels=MAX_SEARCH_LABELS,
             limitReached=avenue_attempts >= MAX_AVENUE_ATTEMPTS or avenue_budget[0] >= MAX_SEARCH_STATES or avenue_budget[1] > 0,
             minimumSpineSteps=MIN_AVENUE_STEPS, originalBoundsPreserved=True)
+
+    if backbone:
+        if urban:
+            limits, bend_limits = urban_limits, urban_bend_limits
+        preferred, alternatives = _backbone_candidates(adjacency, ports, users, route_by_id)
+        backbone_budget, backbone_attempts, backbone_accepted = [0, 0], 0, 0
+        backbone_rejected = defaultdict(int)
+        before_removed = len(removed)
+        for _, _, _, stroke in alternatives:
+            if backbone_attempts >= MAX_BACKBONE_ATTEMPTS or backbone_budget[0] >= MAX_SEARCH_STATES:
+                break
+            active = [key for key in stroke if users.get(key)]
+            if not active:
+                continue
+            backbone_attempts += 1
+            reason = remove_link(active, backbone_budget, preferred, protect_preferred=False)
+            if reason:
+                backbone_rejected[reason] += 1
+            else:
+                backbone_accepted += 1
+        result['backboneConsolidation'] = dict(version='road-backbone/0.1', candidates=len(alternatives),
+            attempts=backbone_attempts, accepted=backbone_accepted, rejected=dict(sorted(backbone_rejected.items())),
+            backboneLatticeEdges=len(preferred), removedLatticeEdges=len(removed)-before_removed,
+            searchStates=backbone_budget[0], searchLabelLimitHits=backbone_budget[1],
+            maxAttempts=MAX_BACKBONE_ATTEMPTS, maxSearchStates=MAX_SEARCH_STATES, maxSearchLabels=MAX_SEARCH_LABELS,
+            limitReached=backbone_attempts >= MAX_BACKBONE_ATTEMPTS or backbone_budget[0] >= MAX_SEARCH_STATES or backbone_budget[1] > 0,
+            originalBoundsPreserved=not urban,
+            policy=dict(version='urban-road/0.1' if urban else 'conservative-road/0.1',
+                        boundsFrozenToOriginal=True, additionalBends=4 if urban else 2,
+                        maximumSteps='max(floor(3*N/2), N+4)' if urban else 'max(N, floor(100*M/90))',
+                        shortRouteExtraSteps=4 if urban else 0))
 
     # Rebuild all memberships and intersections from final complete routes.
     segments = {}

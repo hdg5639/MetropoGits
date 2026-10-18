@@ -3441,3 +3441,87 @@
   committed after verification; ordinary upstream push under the maintainer's
   reconfirmed owner exception. No force, remote changes or agent attribution.
   Private review artifacts and unrelated IDE caches remain outside the commit.
+
+## Checkpoint 2026-10-18 — approved urban shared-backbone routing
+
+- Implemented: opt-in `scripts.road_consolidation --urban`, after the existing
+  three conservative passes. A unique-evidence-demand corridor forest guides
+  whole-network removal and atomic rerouting. Preserve fixed ports, access,
+  buildings, relationship IDs and kind; remove only unused existing pavement.
+  `--backbone` keeps the older bounds; defaults and public contracts unchanged.
+  ADR-019 records the maintainer's explicit urban detour approval before coding:
+  max(floor(1.5*N),N+4) original through-steps and original complete-path bends+4.
+- Fixtures / revisions: GJ3d9b53f and OJb163acd, parcel-3d-r2 JSON inputs; fresh
+  spring-positive and structural-showcase at parent627ea88. No input application
+  code, dependencies or build scripts executed. Private artifacts stay local.
+- Commands: `python -m scripts.road_consolidation
+  ../artifacts/visual/parcel-3d-r2/<gj|oj> --out
+  ../artifacts/visual/urban-backbone-r2/<gj|oj> --urban`.
+  Fresh fixture pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/urban-backbone-fixtures/<spring|unknown> --repo-id
+  fixtures/<spring|unknown>`, then the urban comparison into *-study.
+  Both fresh builds COMPLETE; sparse Spring keeps its two paths, unknown has
+  zero invented roads. Output directory overwrite remains refused.
+- Whole-city results vs avenue-only baseline: GJ pavement37666.5->28412.5,
+  nearby-parallel11879->5736.5, junctions2441->1582, segments6316->4917.
+  OJ pavement9412->7438, parallel3654->1949.5, junctions630->462,
+  segments1698->1400. New pass accepts611/904 and135/211 candidates respectively.
+  It uses1495745/149126 popped search states, no label/state/attempt cap reached.
+  Earlier parallel passes hit1200 attempts and GJ's junction pass hits600;
+  therefore this is not exhaustive or globally optimal road planning.
+- Tradeoffs: route-distance sums GJ695823->717817 (+3.16%), OJ155913->160701
+  (+3.07%); bend sums22941->25671 and6274->7050. Original0.2 step-ratio p50=1,
+  p95=1.333 for both. Short-block exceptions exceed1.5 on28/14 routes, with
+  maximum ratios2/3; all stay within14 extra world units and original bends+4.
+  Do not characterize the short-route exception as a strict universal50% cap.
+- Fidelity / determinism: `python ../artifacts/visual/verify_urban_backbone.py
+  <gj|oj>` repeats routing and all14 packaged files byte-for-byte per city,
+  compares old avenue-only routing exactly, checks every original bound, access
+  port and source identity. Original City/UCG bytes and all coordinates identical.
+  Repeated consolidation+packaging takes70.33s/16.24s on this machine (not the
+  entire analysis pipeline). Generation-time optimization remains necessary.
+  `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/urban-backbone-r2/<gj|oj>/after` confirms exact6157/2243
+  evidenced edges,1273/400 connected files,4209/1381 paths, unresolved0 and
+  pavement/building intersections0. This is coverage of scene-backed edges,
+  not proof that all possible source relationships have been discovered.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs
+  urban-backbone-r2 urban-backbone-focus-r2`; viewed all four focused WebGL
+  images at identical cameras and both showcase SVG captures. GJ's repeated
+  transverse grid links visibly decrease; OJ's dense buildings partly obscure
+  the change. Skyline/layout unchanged; remaining right-angle roads and access
+  stubs still look schematic. No claim of curves or roundabouts delivered.
+  `node ../artifacts/visual/junction_smoke.mjs urban-backbone-fixtures` captures
+  real sparse/unknown WebGL/SVG; inspected Spring WebGL and unknown preview.
+- Browser: `node scripts/viewer_audit.mjs <Chrome>
+  ../artifacts/visual/urban-backbone-audit-r2
+  ../artifacts/visual/urban-backbone-r2/gj/after
+  ../artifacts/visual/urban-backbone-r2/oj/after` passes three LODs, actual picking,
+  role/source inspection, single-path tracing, filters, stable road grades,
+  navigation and Synthetic. Also inspected GJ overview/route inspector and OJ
+  preview. Overview still leaves substantial margins; thumbnail fine roads
+  remain dense, not a camera/composition redesign. Chrome152 SwiftShader,
+  20 samples: Synthetic CPU p95 GJ2.0/1.5/1.3ms, OJ1.7/1.2/1.5ms; static rebuilds0.
+  Concurrent validation load and software rendering: not GPU FPS/speedup evidence.
+- Tests: `python -m unittest discover -s tests -q`:344 run,343 pass,1 Windows
+  symlink skip; `python -m ruff check metropogits scripts tests`:pass. Node suites
+  access_routes/junction_geometry/viewer_audit/camera_navigation/role_landmarks:
+  35 pass. Seven new tests cover short/long urban detours, original frozen caps,
+  exact membership/ports, demand deduplication, bent corridors, semantic isolation,
+  bridges, atomic rollback, resource limits, order determinism and packaging.
+- Fixes applied and reverified: initial forest ties favored longer corridors and
+  retained two long equal-demand sides while trying to remove a necessary short
+  connector. Rectangle tests exposed this; ties now prefer shorter connectors.
+  Full r2 outputs, suites and repeatability reverified after the correction.
+- Spec alignment: PASS, technical7-8, functional AC-002/003/006/014, product
+  DEC-005/006/007/011 and approved ADR-019 policy. No source semantics, stable ID,
+  public schema, security default, external service or default-layout change.
+- Open risks / next actions: reduce new merging turns with continuous alignments
+  and junction planning, while retaining verified coverage/clearance. Curves and
+  selective roundabouts need real space and shared path geometry, not decoration.
+  Profile generation cost before making this experimental mode a default.
+- Commits created / pushed (main): one coherent implementation/test/docs unit,
+  committed after this checkpoint; normal upstream push under the maintainer's
+  previously reconfirmed owner exception. No force, remote-setting changes or
+  agent attribution. Private artifacts and unrelated IDE caches excluded.
