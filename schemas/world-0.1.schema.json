@@ -7,8 +7,9 @@
   "required": ["schemaVersion","generatorVersion","seed","seedAlgorithm","repositoryNamespace","sourceCityDigest","ucgDigest","coordinateSystem","coordinateQuantum","terrainPreset","allocationAlgorithm","envelope","districts","logicalDistricts","topology","parcels","streets","routing","networks","coverage","diagnostics","anchors"],
   "properties": {
     "schemaVersion": {"const":"world/0.1-experimental"},
-    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1"]},
-    "zoningPolicy": {"const":"semantic"},
+    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1"]},
+    "zoningPolicy": {"enum":["semantic","soft"]},
+    "softZoning": {"type":"object","additionalProperties":false,"required":["version","baseGeneratorVersion","zones","optimization","addressDigest"],"properties":{"version":{"const":"soft-zoning/0.1"},"baseGeneratorVersion":{"type":"string"},"addressDigest":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},"zones":{"type":"array","minItems":1,"maxItems":448},"optimization":{"type":"array","maxItems":64}}},
     "zoning": {"type":"object","additionalProperties":false,"required":["version","zones"],"properties":{"version":{"const":"semantic-zoning/0.1"},"zones":{"type":"array","minItems":1,"maxItems":448,"items":{"type":"object","required":["id","parentId","clusterKey","classification","memberEntityIds","memberClaims","polygon","anchor","planningSeed","planningProfile","areaDemand","areaAllocated","capacity","allocation"],"properties":{"polygon":{"$ref":"#/$defs/polygon"},"memberEntityIds":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string"}}}}}}},
     "outlinePolicy": {"enum":["ellipse","varied"]},
     "outlineVersion": {"const":"seeded-convex/1"},

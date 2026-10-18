@@ -1450,8 +1450,10 @@
     renderedDistrictIds = new Set(
       scene.districts
         .filter((district) => (
-          drawableDistrictIds.has(district.id)
-          && lodPolicy.districtVisible(district.id, currentDetailLevel)
+          majorDistrictIds.has(district.id) || (
+            drawableDistrictIds.has(district.id)
+            && lodPolicy.districtVisible(district.id, currentDetailLevel)
+          )
         ))
         .map((district) => district.id),
     );
@@ -1768,9 +1770,9 @@
       }
       return;
     }
-    inspector.append(element('p', 'Derived planning neighborhood, not a source module or runtime service. Unknown members remain unclassified.', 'muted'));
+    inspector.append(element('p', data.softZoning ? 'Functional influence region, not a source module or runtime service. Occupants can have different roles; center evidence does not classify every member.' : 'Derived planning neighborhood, not a source module or runtime service. Unknown members remain unclassified.', 'muted'));
     factSection(inspector, 'ZONING BASIS', [zone.classification.status, `${zone.planningProfile} · ${zone.allocation.algorithm}`, ...zone.classification.ruleIds]);
-    factSection(inspector, 'GROUPING EVIDENCE', zone.classification.evidenceIds.map(evidenceLabel));
+    factSection(inspector, data.softZoning ? 'FUNCTIONAL CENTER EVIDENCE' : 'GROUPING EVIDENCE', zone.classification.evidenceIds.map(evidenceLabel));
     inspector.append(element('h3', `MEMBER FILES · ${offset + 1}–${Math.min(offset + 25, zone.memberEntityIds.length)} / ${zone.memberEntityIds.length}`, 'section-title'));
     for (const id of zone.memberEntityIds.slice(offset, offset + 25)) {
       const button = element('button', entities.get(id)?.path || id, 'focus-button zoning-member');

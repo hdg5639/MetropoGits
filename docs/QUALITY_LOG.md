@@ -5904,3 +5904,76 @@
   feat/semantic-zoning, not direct protected-main integration. Push verified
   commits normally to the existing origin; no force, settings change or agent
   attribution. Unrelated user build caches are preserved.
+
+## Checkpoint 2026-10-19 — graph-aware soft influence over varied geography
+
+- Implemented: ADR-029, opt-in `--zoning soft`, immutable five-grammar/outline
+  base, sparse dependency-guided equal-size address exchanges, advisory power
+  influence cells, separate center/occupant evidence, planning0.2 and browser
+  disclosure/source navigation. No new land, streets, fake roles or relations.
+- Fixtures/revisions: same fixed world-flat-reviewed-r2 source snapshots as the
+  preceding checkpoint (GJ/OJ local content IDs, revision=null; PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522; SQLiteBrowser
+  ae32df153a64d250de7c77a5057deeff4092a39b). Fresh maintained spring-positive
+  through analysis/UCG/City; real analyzed32-file cross-role and30-file unknown
+  unit fixtures. No target dependency installation/build/execution.
+- Commands run: `python ../artifacts/visual/soft_zoning_review.py soft-zoning-r1`;
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --repo-id fixture/soft-zoning-e2e --out ../artifacts/visual/soft-zoning-e2e-r1/build`;
+  `python -m scripts.procedural_world ../artifacts/visual/soft-zoning-e2e-r1/build
+  --namespace fixture/soft-zoning-e2e --planning varied --outline varied
+  --zoning soft --out ../artifacts/visual/soft-zoning-e2e-r1/world`.
+  Full Python560 run/559 pass/one existing Windows symlink skip; Node56 pass;
+  targeted seven new tests re-pass after final optimizer/validation corrections;
+  Ruff and Git diff checks pass. Schemas world0.1/planning0.2 validated.
+- Browser commands: viewer_audit.mjs with installed Chrome into
+  soft-zoning-reviewed-r2 against soft-zoning-r1/gj/before, gj/after, oj/after,
+  pocketbase/after, sqlitebrowser/after, exit0. Actual three LODs, exact route
+  evidence, filtering, camera and Synthetic tested. Forced Canvas helper
+  semantic_zoning_canvas_review.mjs into soft-zoning-canvas-r2 against GJ after
+  and fresh Spring, source navigation/pagination and Structure restoration pass.
+- Artifacts inspected: new WebGL defaults for all four repositories; GJ
+  district view, route/zone/member evidence captures, GJ/OJ CPU showcase PNGs;
+  GJ Canvas inspector and fresh Spring WebGL detail. soft-zoning-r1/index.html
+  is the controlled same-base comparison, not the earlier hard-GRID comparison.
+  Five existing planning grammars remain available; actual varied profiles on
+  GJ are ORGANIC/GRID/ORGANIC/RADIAL/GRID/RADIAL, PB also retains HYBRID.
+- Geometry/source/determinism:3175 files,5782 original trips; represented
+  edge counts6157/2243/192/0 unchanged. Strict validation reports zero parcel,
+  building or road collisions/owner escapes; all entrances reachable. Every
+  canonical City/UCG byte, principal polygon, street and occupied physical
+  address matches its input/base. All eight packages repeat byte-identically.
+  Compatible one-file hint addition keeps every original full physical frame;
+  influence region annotation may change, explicitly tested/documented.
+- Actual affinity results (weighted Euclidean distances, not runtime latency):
+  GJ Auth61.0->23.9, Ops153.3->55.7, User146.3->39.9, Vm87.9->33.5,
+  Portal157.0->83.2; OJ backend142.0->53.6, frontend57.3->26.0;
+  PB supported ui/src79.7->36.6. SQLite has no supported relationships and
+  keeps original addresses. This does not establish new Go/C++ analyzer support.
+- Performance: uncontrolled single generation before->after seconds GJ7.08->8.46,
+  OJ2.51->3.06, PB0.90->0.93, SQLite0.37->0.41. No optimizer work limits hit.
+  GJ viewer-data36.29->31.52MB, OJ14.00->12.23MB (shorter routed geometry,
+  not source deletion). Browser orbit CPU p95 across corpus0.4–4.5ms,
+  Synthetic static city rebuilds0. Software renderer submission, not GPU FPS.
+- Visual findings/corrections: mixed role buildings follow actual affinities
+  rather than isolated color quarters, while existing orbital/organic streets
+  remain. Derived districts initially suppressed major service names at Overview;
+  fixed both renderers to honor explicit principal identities and re-ran audits.
+  The actual corrected GJ capture shows Auth/Ops/User/Vm/portal. Colored facades
+  and regular base rows still look toy-like; prioritize material/role separation
+  next instead of polishing individual bends. Influence labels describe a
+  preference center, not guaranteed dominant-role occupancy or a runtime module.
+- Diagnostic limitation: initial six-case soft-zoning-reviewed-r1 stopped at
+  fresh six-file Spring's shared-road pointer-target assertion after successful
+  three-LOD/Synthetic checks; no visible target was available at that audit
+  camera. Did not weaken the assertion. Corpus rerun r2 passes all five cases;
+  fresh Spring separately passes geometry, CPU generation and real Canvas
+  source/evidence/structure navigation. That tiny-camera pointer coverage is
+  not claimed verified. Earlier failed artifacts remain for diagnosis.
+- Spec alignment: PASS within opt-in ADR-029; technical3/4/7/8/10/12,
+  functional AC-001/002/003/006/008/011/012/014, product fixed decisions.
+  UCG/City/IDs unchanged, no new runtime dependency/AI/API/unsafe execution.
+  Concave outline/terrain/road-enclosed polygons remain outside this slice.
+- Delivery: docs9fa3068 followed by this atomic feature/checkpoint on
+  feat/semantic-zoning; inspect explicit staged paths/human identity, normal
+  upstream push, verify command result before reporting. Preserve user caches.

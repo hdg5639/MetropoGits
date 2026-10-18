@@ -43,9 +43,22 @@ def generate_world(
     planning="grid",
     outline="ellipse",
     zoning="none",
+    _route=True,
 ):
-    if zoning not in ("none", "semantic"):
+    if zoning not in ("none", "semantic", "soft"):
         raise ValueError("unsupported world zoning policy")
+    if zoning == "soft":
+        from .soft import generate_soft_world
+
+        return generate_soft_world(
+            scene,
+            graph,
+            seed=seed,
+            namespace=namespace,
+            previous=previous,
+            planning=planning,
+            outline=outline,
+        )
     if zoning == "semantic" and planning != "grid":
         raise ValueError(
             "semantic zoning selects neighborhood grammars; use --planning grid (default)"
@@ -349,7 +362,9 @@ def generate_world(
             "world parcel capacity infeasible after bounded envelope repair"
         )
     streets = atomic_streets(raw)
-    routing, networks, coverage = route_world(graph, parcels, streets)
+    routing, networks, coverage = (
+        route_world(graph, parcels, streets) if _route else ({}, [], {})
+    )
     reused = sorted(grouped) if compatible and attempt == 0 else []
     if zoning == "semantic":
         reused = sorted(reused_zoned) if compatible and attempt == 0 else []
