@@ -11,6 +11,7 @@ from typing import Any
 from metropogits.territory import derive_district_territories
 from metropogits.streets import derive_street_grid
 from metropogits.access_routes import derive_access_routes, svg_access_lines
+from metropogits.road_hierarchy import derive_road_hierarchy
 from scripts.canonical_json import CanonicalJsonError, loads_strict_json
 from scripts.validate_city import validate_document as validate_city_document
 
@@ -604,7 +605,7 @@ def render_preview(
     lines.append("  </g>")
 
     routing = routing if routing is not None else derive_access_routes(scene, ucg)
-    lines.extend(svg_access_lines(routing, project))
+    lines.extend(svg_access_lines(routing, project, hierarchy=derive_road_hierarchy(scene, routing)))
     # Keep canonical group identities discoverable; these are not legacy paths.
     lines.append('<g id="structural-streets" aria-label="Visual street infrastructure; not dependency evidence"/>')
     lines.append("  <g id=\"networks\" fill=\"none\">")

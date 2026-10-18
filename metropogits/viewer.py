@@ -8,6 +8,7 @@ from typing import Any
 from metropogits.territory import derive_district_territories
 from metropogits.streets import derive_street_grid
 from metropogits.access_routes import derive_access_routes
+from metropogits.road_hierarchy import derive_road_hierarchy
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
@@ -36,11 +37,13 @@ def _javascript_assignment(name: str, document: Any) -> bytes:
 
 
 def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> bytes:
+    routing = routing if routing is not None else derive_access_routes(scene, ucg)
     return _javascript_assignment(
         "METROPOGITS_DATA",
         {
             "scene": scene,
-            "routing": routing if routing is not None else derive_access_routes(scene, ucg),
+            "routing": routing,
+            "roadHierarchy": derive_road_hierarchy(scene, routing),
             "streets": derive_street_grid(scene),
             "territories": derive_district_territories(scene),
             "ucg": ucg,
@@ -100,11 +103,13 @@ def render_history_viewer(
             or sha256_digest(scene) != frame["cityDigest"]
         ):
             raise ViewerError(f"history snapshot {index} does not match its frame")
+        routing = derive_access_routes(scene, ucg)
         frames.append(
             {
                 "revision": frame["revision"],
                 "scene": scene,
-                "routing": derive_access_routes(scene, ucg),
+                "routing": routing,
+                "roadHierarchy": derive_road_hierarchy(scene, routing),
                 "streets": derive_street_grid(scene),
                 "territories": derive_district_territories(scene),
                 "ucg": ucg,

@@ -22,6 +22,7 @@ from metropogits.preview import (
 from metropogits.projection import aggregate_parts, derive_blocks, district_owners
 from metropogits.streets import derive_street_grid
 from metropogits.access_routes import derive_access_routes, svg_access_lines
+from metropogits.road_hierarchy import derive_road_hierarchy
 from metropogits.territory import derive_district_territories
 from scripts.canonical_json import canonical_json_bytes
 from scripts.validate_city import validate_document
@@ -235,7 +236,8 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
             f'data-map-id="{_escape(owner)}"',
             0.8,
         )
-    lines.extend(svg_access_lines(routing, project, overview=bool(blocks), network_ids={n["id"] for n in networks}))
+    lines.extend(svg_access_lines(routing, project, overview=bool(blocks), network_ids={n["id"] for n in networks},
+                                  hierarchy=derive_road_hierarchy(scene, routing)))
     faces = []
     for part, archetype, owner in cuboids:
         rotated = [_rotate(x, z, turn) for x, z in _corners(part)]

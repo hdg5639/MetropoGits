@@ -394,7 +394,7 @@
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
-  const accessPolicy = filterEngine.createAccessPolicy(data.routing);
+  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy);
   let accessFrame = null;
   function networkForId(id) {
     return accessPolicy?.network(id, accessFrame?.routeIds) || scene.networks.find(network => network.id === id);
@@ -843,7 +843,7 @@
       roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
       roadSegment(triangles, segment.start, segment.end, width * 0.76, 0.14, color(style.surface));
       const marking = filterEngine.accessMarkingSegment(segment, junctionGeometry.trims);
-      if (marking && (segment.highlighted || segment.routeIds.length >= 4)) {
+      if (marking && (segment.highlighted || (segment.demand ? style.shared : segment.routeIds.length >= 4))) {
         roadSegment(triangles, marking.start, marking.end, Math.min(0.2, width * 0.24), 0.18,
           color(segment.highlighted ? "#67d7ff" : segment.kind === "DEPENDENCY_ROAD" ? style.marking : networkColors[segment.kind]));
       }
@@ -1686,6 +1686,18 @@
     if (network.routeIds) {
       detailRow(details, "Shared relation paths", network.routeIds.length);
       inspector.append(element("p", "Shared geometry does not create new relationships. Highlighted paths retain their own source and destination.", "muted"));
+    }
+    const demand = accessPolicy?.network(networkId)?.demand;
+    if (demand) {
+      detailRow(details, "Road grade", demand.label);
+      detailRow(details, "Full-road unique edges", demand.edgeCount);
+      detailRow(details, "Source / destination files", `${demand.sourceCount} / ${demand.targetCount}`);
+      detailRow(details, "Distinct endpoint files", demand.buildingCount);
+      detailRow(details, "Major structural districts", demand.majorDistrictCount);
+      detailRow(details, "Cross-major edges", demand.crossDistrictEdgeCount);
+      detailRow(details, "Files outside major districts", demand.unassignedBuildingCount);
+      detailRow(details, "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
+      inspector.append(element("p", "Grade uses full-road static dependency demand, not runtime traffic. Filters and path selection do not change it. Trunk demand does not imply highway geometry.", "muted"));
     }
     inspector.append(details);
     if (choices.length) {

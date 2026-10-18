@@ -12,6 +12,9 @@
   const selected = history.frames[selectedIndex];
   globalThis.METROPOGITS_DATA = {
     scene: selected.scene,
+    routing: selected.routing,
+    roadHierarchy: selected.roadHierarchy,
+    streets: selected.streets,
     territories: selected.territories,
     ucg: selected.ucg,
   };

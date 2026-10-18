@@ -90,6 +90,11 @@ export function instrument(source) {
         routes:[...accessFrame.routeIds].sort(), segments:[...accessFrame.segmentIds].sort(),
         expectedSegments:[...new Set(accessFrame.routes.flatMap(route=>route.segmentIds))].sort(),
         highlightComplete:accessFrame.segments.every(segment=>segment.highlighted),
+        demandStable:!data.roadHierarchy || accessFrame.segments.every(segment=>{
+          const expected=data.roadHierarchy.segments[segment.id];
+          return JSON.stringify(segment.demand)===JSON.stringify(expected)
+            && filterEngine.accessRoadStyle(segment).width===Math.min(segment.width,expected.width);
+        }),
         animationBound:accessFrame.animated.length,
         animationOnOwnPath:accessFrame.animated.every(route=>[0,.1,.3,.6,.9,1].every(phase=>{
           const point=accessPolicy.position(route,phase); return point && route.segmentIds.includes(point.segmentId);
@@ -381,6 +386,8 @@ export async function runAudit(browser, output, inputs, samples = 20) {
       for (const [lod, zoom] of Object.entries(report.policy.normalizedZooms)) {
         const state = await configure(cdp, {zoom});
         if (state.lod !== lod) throw new Error(`Natural LOD mismatch: expected ${lod}, got ${state.lod}`);
+        if ((await cdp.evaluate('__METRO_AUDIT__.accessState()'))?.demandStable === false)
+          throw new Error('Road demand profile missing or width changed in WebGL');
         const png = await cdp.send('Page.captureScreenshot', {format: 'png'});
         await writeFile(join(directory, `${lod}.png`), Buffer.from(png.data, 'base64'));
         const orbit = await interaction(cdp, 'orbit', samples);
@@ -481,6 +488,16 @@ export async function runAudit(browser, output, inputs, samples = 20) {
           throw new Error('Single relation path drill-down failed');
         const text=await cdp.evaluate('document.querySelector("#inspector-content").textContent');
         if(!route.edgeIds.every(id=>text.includes(id))) throw new Error('Exact edge IDs missing from path inspector');
+        if(!check.demandStable) throw new Error('Single-path selection changed full-road demand');
+        const demand=await cdp.evaluate(`METROPOGITS_DATA.roadHierarchy?.segments[${JSON.stringify(target.id)}] || null`);
+        if(demand) {
+          const details=await cdp.evaluate(`Object.fromEntries([...document.querySelectorAll('#inspector-content dt')].map(e=>[e.textContent,e.nextElementSibling.textContent]))`);
+          if(details['Road grade']!==demand.label || Number(details['Full-road unique edges'])!==demand.edgeCount
+            || Number(details['Distinct endpoint files'])!==demand.buildingCount
+            || Number(details['Cross-major edges'])!==demand.crossDistrictEdgeCount)
+            throw new Error('Inspector demand counts differ from full-road provenance');
+          result.roadDemand={...demand, inspectorVerified:true};
+        }
         const capture=await cdp.send('Page.captureScreenshot',{format:'png'});
         await writeFile(join(directory,'route-inspector.png'),Buffer.from(capture.data,'base64'));
         const language=await cdp.evaluate(`(()=>{const current=METROPOGITS_DATA.ucg.entities.find(e=>e.id===${JSON.stringify(route.source)})?.language;

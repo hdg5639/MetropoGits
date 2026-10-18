@@ -971,10 +971,11 @@
     return !rectangle.networkIds || rectangle.networkIds.some(id => renderedNetworkIds.has(id));
   }
 
-  function createAccessPolicy(routing) {
+  function createAccessPolicy(routing, hierarchy = null) {
     if (!routing) return null;
     const routes = new Map(routing.routes.map(route => [route.id, route]));
-    const segments = new Map(routing.segments.map(segment => [segment.id, segment]));
+    const segments = new Map(routing.segments.map(segment => [segment.id,
+      {...segment, demand: hierarchy?.segments?.[segment.id]}]));
     const trajectories = new Map(routing.routes.map(route => {
       let distance = 0;
       const steps = route.path.slice(1).map((end, i) => {
@@ -999,7 +1000,7 @@
       const routeIds = new Set(eligible.map(route => route.id));
       const focused = ['building', 'network', 'aggregate'].includes(selected?.kind);
       const highlighted = new Set(focused ? related.map(route => route.id) : []);
-      const visibleSegments = routing.segments.map(segment => {
+      const visibleSegments = [...segments.values()].map(segment => {
         const active = segment.routeIds.filter(id => routeIds.has(id));
         return {...segment, routeIds: active, highlighted: active.some(id => highlighted.has(id))};
       }).filter(segment => segment.routeIds.length &&
@@ -1017,7 +1018,7 @@
       const segment = segments.get(id);
       if (!segment) return null;
       const contributing = segment.routeIds.filter(key => !activeRouteIds || activeRouteIds.has(key));
-      return {id, kind: segment.kind, path: [segment.start, segment.end], routeIds: contributing,
+      return {id, kind: segment.kind, path: [segment.start, segment.end], routeIds: contributing, demand:segment.demand,
         edgeIds: [...new Set(contributing.flatMap(key => routes.get(key).edgeIds))].sort()};
     }
     function choices(id, buildingIds, networkIds) {
@@ -1040,6 +1041,12 @@
   }
 
   function accessRoadStyle(segment) {
+    if (segment.demand) {
+      const profile = segment.demand, shared = ['AVENUE', 'TRUNK'].includes(profile.grade);
+      const surface = {HTTP_HIGHWAY:'#f97316', MESSAGING_PATH:'#a855f7'}[segment.kind] || profile.surface;
+      return {shared, width:Math.min(segment.width, profile.width), surface,
+        shoulder:shared?'#8c9aa8':'#4e6072', marking:shared?'#bac8d4':'#748a9e'};
+    }
     const shared = !segment.access && segment.routeIds.length >= 4;
     return {shared, width:Math.min(segment.width, .7+Math.log2(segment.routeIds.length+1)*.5),
       surface:shared?'#52677b':'#33465a', shoulder:shared?'#8c9aa8':'#617284',
@@ -1115,8 +1122,9 @@
           }
           for (const key of open.keys()) if (!active.has(key)) open.delete(key);
         }
-        const shared=incident.some(s => accessRoadStyle(s).shared);
-        surfaces.push({kind, segmentIds:incident.map(s=>s.id), surface:shared?'#52677b':'#33465a',
+        const principal = [...incident].sort((a,b)=>(b.demand?.targetWidth || 0)-(a.demand?.targetWidth || 0)
+          || Number(accessRoadStyle(b).shared)-Number(accessRoadStyle(a).shared) || a.id.localeCompare(b.id))[0];
+        surfaces.push({kind, segmentIds:incident.map(s=>s.id), surface:accessRoadStyle(principal).surface,
           rectangles:tiles.map(r=>[r[0]+x,r[1]+z,r[2]+x,r[3]+z])});
       }
     }

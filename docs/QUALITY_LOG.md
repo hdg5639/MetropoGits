@@ -3238,3 +3238,62 @@
   one work unit committed after verification; ordinary upstream push follows under
   the maintainer's reconfirmed owner exception. No force/rule changes or attribution;
   private generated artifacts and unrelated IDE caches are excluded.
+
+## Checkpoint 2026-10-18 — quantitative road demand grades
+
+- Implemented: ADR-019 stages continuous trunks, reserved parcels, curves and
+  selective roundabouts. First slice derives unique-edge/file/major-district
+  metrics and fixed access/alley/street/avenue/trunk-demand grades. WebGL, Canvas
+  and SVG share profiles; full-road grades/widths survive filters and path focus.
+  Inspector separates these counts from selected edges and explains clearance
+  limits. History handoff carries its frame's routing/profile. No topology change.
+- Fixtures / revisions: GJ3d9b53f and OJb163acd junction-merge-r1 after inputs;
+  maintained spring-positive and structural-showcase at parent f4304ae. Target
+  source, scripts and dependencies never executed. Both fresh fixture builds COMPLETE.
+- Commands: `python -m metropogits build --repo tests/fixtures/repositories/<spring-positive|structural-showcase>
+  --out ../artifacts/visual/road-demand-fixtures-r2/<spring|unknown>-study/after
+  --repo-id fixtures/<spring|unknown>`; `python ../artifacts/visual/road_demand_review.py`
+  packages GJ/OJ fixed routes into road-demand-r3. It repeats all14 after artifacts
+  byte-for-byte and checks City/UCG bytes and entire routing objects unchanged.
+  Before uses trusted current assets without profiles (legacy style), original SVGs.
+- Metrics: segment grades GJ access1273/alley1032/street2666/avenue1636;
+  OJ400/284/587/430. Clearance-limited segments3205/925. Trunk-demand segments0:
+  cross-major edges per represented segment max0/2, below16. This does NOT prove
+  no inter-service communication exists. No fabricated highways were introduced.
+- Fidelity: `node ../artifacts/visual/verify_access.mjs ../artifacts/visual/road-demand-r3/<gj|oj>/after`
+  confirms GJ4209 paths/6157 edges and OJ1381/2243; missing edges0, pavement/building
+  intersections0. Entire City/routing objects unchanged, hence no placement churn,
+  extra detours or Synthetic trajectory changes. Profiles derive once at packaging.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs` captured
+  road-demand-focus-r3 identical Detail cameras. GJ/OJ fixed-camera and showcase
+  captures inspected across r2/r3; GJ minor bright markings recede, avenues stand
+  out more. Dense orthogonal topology, district borders and silhouette remain.
+  `node ../artifacts/visual/junction_smoke.mjs`: fresh Spring WebGL and unknown SVG
+  inspected, sparse/unsupported output retained. OJ preview and GJ route Inspector
+  from road-demand-audit-r4 inspected; provenance remains readable via scrolling.
+- Browser: `node scripts/viewer_audit.mjs <Chrome> ../artifacts/visual/road-demand-audit-r4
+  ../artifacts/visual/road-demand-r3/gj/after ../artifacts/visual/road-demand-r3/oj/after`
+  passes all three LODs, real pointer selection, full-demand Inspector counts,
+  drill-down/filter reset, camera and Synthetic. CPU p95 synthetic GJ1.8/1.3/1.1ms,
+  OJ1.0/1.0/1.0ms; static rebuilds0. Chrome152 SwiftShader20 samples, not GPU FPS
+  or a controlled speedup comparison. Forced Canvas and history visuals not inspected.
+- Tests: `python -m unittest discover -s tests -q`320 run,319 pass,1 Windows symlink
+  skip; `python -m ruff check metropogits scripts tests` passes. `node --test
+  tests/access_routes.test.mjs tests/junction_geometry.test.mjs tests/viewer_audit.test.mjs
+  tests/camera_navigation.test.mjs tests/role_landmarks.test.mjs`35 pass; changed JS
+  parse checks pass. New cases cover deduplication, thresholds, major/unknown
+  ownership, kind separation, stable filters, history handoff and SVG width limits.
+- Fixes applied and reverified: browser demand assertions caught missing 3D
+  Inspector integration (r3 audit); fixed and r4 passes. Updated SVG golden only
+  after proving legacy no-profile output retains its old hash and building,
+  district and canonical-network SVG groups are identical. No failed test weakened.
+- Spec alignment: PASS, technical7–8, FR-007, AC-002/003/006/014, product5.1 and
+  DEC-005/006/007. Static demand is not runtime traffic; UCG/City/IDs intact.
+- Open risks / next actions: per-segment grades can change at branches and cannot
+  reserve wider streets. Implement continuous internal avenue/collector planning
+  with frozen bounds and explicit rejected-candidate reasons before curves or
+  roundabouts. Major structural boundaries are not asserted deployment services.
+- Commits created / pushed (main): docs f4304ae; implementation/tests/checkpoint
+  committed after checks. Ordinary upstream push follows under the maintainer's
+  explicit owner exception, without force, settings changes or agent attribution.
+  Generated private outputs/review scripts and unrelated IDE caches excluded.

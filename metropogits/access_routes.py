@@ -279,7 +279,7 @@ def derive_access_routes(scene, graph):
     return result
 
 
-def svg_access_lines(routing, project, overview=False, network_ids=None):
+def svg_access_lines(routing, project, overview=False, network_ids=None, hierarchy=None):
     """Traceable SVG polygons from the same shared segments used by the viewer."""
     routes = routing["routes"]
     indices = {route["id"]: i for i, route in enumerate(routes)}
@@ -295,6 +295,9 @@ def svg_access_lines(routing, project, overview=False, network_ids=None):
             continue
         a, b = segment["start"], segment["end"]
         width = min(segment["width"], 0.7 + math.log2(len(active)+1)*0.5)
+        profile = (hierarchy or {}).get('segments', {}).get(segment['id'])
+        if profile:
+            width = profile['width']
         horizontal = a[1] == b[1]
         dx, dz = (0, width/2) if horizontal else (width/2, 0)
         points = [project(a[0]-dx,a[1]-dz), project(b[0]-dx,b[1]-dz),
@@ -302,8 +305,14 @@ def svg_access_lines(routing, project, overview=False, network_ids=None):
         encoded = " ".join(f"{float(x):.3f},{float(y):.3f}" for x,y in points)
         references = " ".join(str(indices[r]) for r in active)
         shared = not segment["access"] and len(active) >= 4
-        color = {"HTTP_HIGHWAY": "#f97316", "MESSAGING_PATH": "#a855f7"}.get(segment["kind"], "#52677b" if shared else "#33465a")
+        surface = profile['surface'] if profile else ("#52677b" if shared else "#33465a")
+        color = {"HTTP_HIGHWAY": "#f97316", "MESSAGING_PATH": "#a855f7"}.get(segment["kind"], surface)
+        grade = f' data-road-grade="{profile["grade"]}"' if profile else ''
+        summary = (f'{profile["label"]}; {profile["edgeCount"]} unique edges, '
+                   f'{profile["buildingCount"]} files, {profile["crossDistrictEdgeCount"]} cross-major edges; '
+                   'full-road static demand; ') if profile else ''
+        visibility = 'visible ' if profile else ''
         lines.append(f'<polygon data-access-segment-id="{segment["id"]}" data-route-indexes="{references}" '
-                     f'points="{encoded}" fill="{color}"><title>{len(active)} evidenced relation paths; shared geometry only</title></polygon>')
+                     f'points="{encoded}" fill="{color}"{grade}><title>{summary}{len(active)} {visibility}evidenced relation paths; shared geometry only</title></polygon>')
     lines.append('</g>')
     return lines

@@ -136,3 +136,15 @@ coverage and false positives before adding further rules.
 
 Visual polish remains an open product goal independently of automated
 requirement coverage. See the [visual roadmap](../V1_VISUAL_COMPLETION_PLAN.md).
+
+ADR-019 adds derived `road-hierarchy/0.1` presentation alongside access routing in
+viewer data, not in UCG or City. Unique edges, endpoint files and cross-major
+edges determine fixed access/alley/street/avenue/interdistrict-trunk-demand grades.
+Full-road grades survive filtering and single-path selection. Width is capped by
+the unchanged certified segment envelope; Inspector exposes counts and clearance
+limits. WebGL, Canvas and SVG use the same profiles; older viewer payloads without
+profiles retain legacy styling. History frames carry their own routing/profiles.
+This is static demand, never measured traffic or a change in relationship kind.
+Stored paths, Synthetic trajectories and buildings are unchanged. Continuous
+trunk planning, reserved road space, curves and selective roundabouts remain future
+stages; grade labels alone do not establish highway geometry.

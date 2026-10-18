@@ -4,6 +4,7 @@ import json
 import unittest
 import xml.etree.ElementTree as element_tree
 from pathlib import Path
+from unittest.mock import patch
 
 from metropogits.layout import generate_city
 from metropogits.preview import (
@@ -38,10 +39,21 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            # Same minimal geometry; derived routing metadata now records 0.2.
-            "58073bbebb5fdf14bf90552cad54f6014ef6dba7a3a54ce5d2c92b064cbc48e5",
+            # ADR-019 changes road widths/titles, not buildings or dependency paths.
+            "c17e96f33ec0fce866e06f23d7b3ebcee340ea730bda84c15e372d0a8e2fee74",
             hashlib.sha256(first).hexdigest(),
         )
+
+    def test_demand_presentation_is_the_only_preview_baseline_change(self):
+        with patch('metropogits.preview.derive_road_hierarchy', return_value=None):
+            legacy = render_preview(self.scene, self.ucg)
+        self.assertEqual(hashlib.sha256(legacy).hexdigest(),
+                         '58073bbebb5fdf14bf90552cad54f6014ef6dba7a3a54ce5d2c92b064cbc48e5')
+        current = element_tree.fromstring(render_preview(self.scene, self.ucg))
+        old = element_tree.fromstring(legacy)
+        for identity in ['buildings', 'districts', 'networks']:
+            self.assertEqual(element_tree.tostring(current.find(f".//*[@id='{identity}']")),
+                             element_tree.tostring(old.find(f".//*[@id='{identity}']")))
 
     def test_preview_contains_buildings_districts_and_networks(self):
         preview = render_preview(self.scene, self.ucg).decode("utf-8")
