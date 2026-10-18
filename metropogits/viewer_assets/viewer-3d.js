@@ -832,23 +832,30 @@
       }
     }
 
+    const roadStyles = new Map((accessFrame?.segments || []).map(segment => [segment.id, filterEngine.accessRoadStyle(segment)]));
     for (const segment of accessFrame?.segments || []) {
       if (segment.highlighted) {
         line(accessOverlay, [segment.start[0],0.22,segment.start[1]],
           [segment.end[0],0.22,segment.end[1]], color("#67d7ff"));
       }
-      const width = Math.min(segment.width, 0.7 + Math.log2(segment.routeIds.length + 1) * 0.5);
-      roadSegment(triangles, segment.start, segment.end, width, 0.11, color("#536477"));
-      roadSegment(triangles, segment.start, segment.end, width * 0.76, 0.14, color("#202c3b"));
+      const style = roadStyles.get(segment.id), width = style.width;
+      roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
+      roadSegment(triangles, segment.start, segment.end, width * 0.76, 0.14, color(style.surface));
       if (segment.highlighted || segment.routeIds.length >= 4) {
         roadSegment(triangles, segment.start, segment.end, Math.min(0.2, width * 0.24), 0.18,
-          color(segment.highlighted ? "#67d7ff" : networkColors[segment.kind] || "#788ba2"));
+          color(segment.highlighted ? "#67d7ff" : segment.kind === "DEPENDENCY_ROAD" ? style.marking : networkColors[segment.kind]));
+      }
+      // Depth-tested 1px cartographic centerline for subpixel shared corridors.
+      // It follows the same endpoints; it is not extra pavement or an x-ray road.
+      if (style.shared && width < 1.25) {
+        line(lines, [segment.start[0],.19,segment.start[1]], [segment.end[0],.19,segment.end[1]],
+          color(segment.kind === "DEPENDENCY_ROAD" ? "#8ea4b8" : networkColors[segment.kind]));
       }
     }
     for (const junction of accessFrame?.junctions || []) {
-      const width = Math.min(...junction.segmentIds.map(id => accessPolicy.segments.get(id).width));
+      const width = Math.min(...junction.segmentIds.filter(id=>roadStyles.has(id)).map(id => roadStyles.get(id).width));
       const [x, z] = junction.point;
-      roadSegment(triangles, [x-width/2,z], [x+width/2,z], width, 0.145, color("#263548"));
+      roadSegment(triangles, [x-width/2,z], [x+width/2,z], width, 0.145, color("#52677b"));
     }
     for (const network of accessPolicy ? [] : scene.networks) {
       if (!renderedNetworkIds.has(network.id)) continue;

@@ -824,13 +824,13 @@
     for (const rectangle of accessPolicy ? [] : streetRectangles) drawStructuralStreet(rectangle);
     for (const segment of accessFrame?.segments || []) {
       const points = [segment.start, segment.end].map(p => project(...p, 0.15));
-      const width = Math.min(segment.width, 0.7 + Math.log2(segment.routeIds.length+1)*0.5);
+      const style = filterEngine.accessRoadStyle(segment), width = style.width;
       context.beginPath();
       context.moveTo(points[0].x, points[0].y);
       context.lineTo(points[1].x, points[1].y);
       context.lineCap = "butt";
       context.lineWidth = Math.max(0.5, width * baseScale() * state.zoom * 0.65);
-      context.strokeStyle = segment.highlighted ? "#67d7ff" : segment.kind === "DEPENDENCY_ROAD" ? "#35475c" : networkColors[segment.kind];
+      context.strokeStyle = segment.highlighted ? "#67d7ff" : segment.kind === "DEPENDENCY_ROAD" ? style.surface : networkColors[segment.kind];
       context.stroke();
       hitRegions.push({kind: "network", id: segment.id, points});
     }

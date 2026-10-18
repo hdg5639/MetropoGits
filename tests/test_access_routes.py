@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from collections import deque
 
-from metropogits.access_routes import AccessGrid, PITCH, derive_access_routes
+from metropogits.access_routes import AccessGrid, PITCH, derive_access_routes, svg_access_lines
 
 
 def fixture():
@@ -19,6 +19,26 @@ def fixture():
 
 
 class AccessRouteTests(unittest.TestCase):
+    def test_svg_hierarchy_preserves_paths_and_geometry(self):
+        routes = [dict(id=str(i), kind="DEPENDENCY_ROAD", source="A", target=str(i),
+                       edgeIds=[f"edge-{i}"], networkIds=[str(i)]) for i in range(4)]
+        segment = dict(id="shared", start=[0, 0], end=[7, 0], width=.5,
+                       access=False, kind="DEPENDENCY_ROAD", routeIds=[r["id"] for r in routes])
+        routing = dict(version="test", status="COMPLETE", unresolvedEdgeIds=[],
+                       routes=routes, segments=[segment])
+        original = copy.deepcopy(routing)
+        def project(x, z):
+            return x, z
+        shared = "\n".join(svg_access_lines(routing, project))
+        filtered = "\n".join(svg_access_lines(routing, project, network_ids={"0"}))
+        self.assertIn('fill="#52677b"', shared)
+        self.assertIn('fill="#33465a"', filtered)
+        self.assertIn('data-route-indexes="0 1 2 3"', shared)
+        self.assertIn('data-route-indexes="0"', filtered)
+        for output in (shared, filtered):
+            self.assertIn('points="0.000,-0.250 7.000,-0.250 7.000,0.250 0.000,0.250"', output)
+        self.assertEqual(original, routing)
+
     @unittest.skipUnless(shutil.which("node"), "Node unavailable")
     def test_shared_viewer_policy(self):
         subprocess.run(["node", "--test", str(Path(__file__).with_name("access_routes.test.mjs"))],

@@ -14,6 +14,17 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 const files=new Set(['A','B','C','D']), networks=new Set(['n']);
+test('road hierarchy uses actual path count without enlarging safe pavement',()=>{
+  for (const count of [1,3,4,100]) for (const access of [false,true]) {
+    const segment={width:.45,access,routeIds:Array.from({length:count},(_,i)=>String(i))};
+    const before=structuredClone(segment);
+    const style=globalThis.METROPOGITS_FILTERS.accessRoadStyle(segment);
+    assert.equal(style.shared,!access && count>=4);
+    assert.equal(style.surface,style.shared?'#52677b':'#33465a');
+    assert.ok(style.width<=segment.width);
+    assert.deepEqual(segment,before);
+  }
+});
 test('shared geometry never creates an A to D relation or exposes unrelated branches',()=>{
   const frame=policy.frame('detail',files,networks,{kind:'building',id:'A'});
   assert.deepEqual([...frame.routeIds],['ab']);

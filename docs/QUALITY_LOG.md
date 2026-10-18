@@ -2668,3 +2668,43 @@
 - Spec alignment: PASS; no schema, layout, evidence, safety or framework changes.
   Next separate work unit: road hierarchy/contrast without widening through files.
 - Delivery: one perf(viewer) local commit; protected-main push remains deferred.
+
+## Checkpoint 2026-10-18 — shared-road contrast after b91446e
+- Implemented: brighter trunks for four or more evidenced file-pair paths,
+  quieter access spurs, clearance-bounded pavement, junction patches bounded by
+  displayed incident widths, depth-tested centerlines for subpixel trunks.
+  Legend explicitly distinguishes path sharing from measured traffic.
+- Fixtures / revisions: trusted generated-output-filter-r1 snapshots of
+  GJ-Cloud 3d9b53f and GamjaOJ b163acd; full CLI structural-showcase fallback.
+- Commands run: `python -m unittest discover -s tests -q` (266 run, 265 pass,
+  one Windows symlink skip); Node camera_navigation/access_routes/role_landmarks/
+  viewer_audit suites (25 pass); `python -m ruff check .`; `git diff --check`.
+  `python -m metropogits build --repo tests/fixtures/repositories/structural-showcase
+  --out ../artifacts/visual/road-hierarchy-r1/unknown` completed all 12 artifacts.
+  Local `repackage_camera.py <baseline> <output> --roads` reused validated routing
+  while rerendering viewer/preview/showcase for GJ and OJ (not fresh analysis).
+  `node scripts/viewer_audit.mjs <Chrome> ../artifacts/visual/road-hierarchy-audit-r1
+  ../artifacts/visual/road-hierarchy-r1/gj ../artifacts/visual/road-hierarchy-r1/oj`.
+- Artifacts inspected: actual GJ District before/after and new preview.png,
+  OJ Detail WebGL capture in road-hierarchy-audit-r1. Shared interior corridors
+  are more visible; building/role silhouettes remain distinct. This is a
+  readability increment, not a claim that the circuit-like appearance is solved.
+  Dense narrow parcels and some empty areas remain; close views can crop the city.
+- Tests / determinism / stability: graph, scene and viewer-data bytes identical
+  to baseline for both repositories; SVG preview/showcase differ only in road
+  palette. No layout movement, edge additions or altered synthetic trajectories.
+  `verify_access.mjs` confirms 6157/2243 edges, 4209/1381 routes, zero unresolved
+  edges and zero pavement/building intersections. Projection and filter tests pass.
+  Expected preview golden updated only after verifying the palette-only delta.
+- Performance: software-rendered orbit CPU p95 GJ Overview/District/Detail
+  3.7/9.9/9.3 ms; OJ 1.1/1.7/2.5 ms. Synthetic p95 GJ 1.3/1.4/1.7 ms;
+  OJ 1.9/3.3/2.9 ms. Zero static rebuilds during synthetic checks in every LOD.
+  These are CPU submission observations, not GPU FPS guarantees.
+- Spec alignment: PASS; source evidence, stable IDs and public contracts intact.
+  Drawing contrast does not imply traffic volume or create semantic junctions.
+- Fixes applied and reverified: test lint violation corrected; full tests pass.
+- Open risks / next actions: improve spatial density and road hierarchy beyond
+  contrast without widening through buildings; unsupported fixture has no roads.
+- Commits created / pushed: separate renderer work-unit commit after b91446e;
+  local main only. No push: latest instructions prohibit direct protected-main
+  delivery; branch/workflow decision is still required.

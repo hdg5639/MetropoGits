@@ -38,8 +38,8 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            # ADR-016: shared endpoint routes replace mean-anchor road geometry.
-            "7912d5b1d4a4f38d8ddc37a0abd1667eb86f0ebdc3116533463e5b3d829e16ea",
+            # Shared-road palette distinguishes trunks without changing geometry.
+            "3a7164c722c0c5ac07dec90571833bb2b8ff9c546617de7ef0b4142b2308b058",
             hashlib.sha256(first).hexdigest(),
         )
 

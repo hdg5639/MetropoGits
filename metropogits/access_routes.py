@@ -287,7 +287,8 @@ def svg_access_lines(routing, project, overview=False, network_ids=None):
                   project(b[0]+dx,b[1]+dz), project(a[0]+dx,a[1]+dz)]
         encoded = " ".join(f"{float(x):.3f},{float(y):.3f}" for x,y in points)
         references = " ".join(str(indices[r]) for r in active)
-        color = {"HTTP_HIGHWAY": "#f97316", "MESSAGING_PATH": "#a855f7"}.get(segment["kind"], "#35475c")
+        shared = not segment["access"] and len(active) >= 4
+        color = {"HTTP_HIGHWAY": "#f97316", "MESSAGING_PATH": "#a855f7"}.get(segment["kind"], "#52677b" if shared else "#33465a")
         lines.append(f'<polygon data-access-segment-id="{segment["id"]}" data-route-indexes="{references}" '
                      f'points="{encoded}" fill="{color}"><title>{len(active)} evidenced relation paths; shared geometry only</title></polygon>')
     lines.append('</g>')

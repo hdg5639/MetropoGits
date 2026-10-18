@@ -1032,6 +1032,13 @@
       unresolved: routing.unresolvedEdgeIds.length});
   }
 
+  function accessRoadStyle(segment) {
+    const shared = !segment.access && segment.routeIds.length >= 4;
+    return {shared, width:Math.min(segment.width, .7+Math.log2(segment.routeIds.length+1)*.5),
+      surface:shared?'#52677b':'#33465a', shoulder:shared?'#8c9aa8':'#617284',
+      marking:shared?'#bac8d4':'#748a9e'};
+  }
+
   function districtBuildings(scene, districtId) {
     const children = new Map(scene.districts.map(d => [d.id, []]));
     for (const district of scene.districts) children.get(district.parentId)?.push(district.id);
@@ -1063,6 +1070,7 @@
   }
 
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    accessRoadStyle,
     districtBuildings,
     groundPan,
     cameraKeyAction,
