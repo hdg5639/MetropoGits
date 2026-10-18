@@ -10,13 +10,14 @@ from .geometry import area, centroid, partition, point, shared_boundaries
 from .infrastructure import atomic_streets, route_world
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
+from .organic import organic_slots
 from .seed import ALGORITHM, derive, draw, world_seed
 
 
 def generate_world(
     scene, graph, *, seed=None, namespace=None, previous=None, planning="grid"
 ):
-    if planning not in ("grid", "mixed", "radial"):
+    if planning not in ("grid", "mixed", "radial", "organic"):
         raise ValueError("unsupported world planning policy")
     if previous is not None:
         if (
@@ -90,7 +91,7 @@ def generate_world(
     old_districts = {d["id"]: d for d in previous["districts"]} if compatible else {}
     if any(
         d.get("planningProfile")
-        not in (("GRID",) if planning == "grid" else ("GRID", "RADIAL"))
+        not in (("GRID",) if planning == "grid" else ("GRID", "RADIAL", "ORGANIC"))
         for d in old_districts.values()
     ):
         raise ValueError("invalid previous world planning profile")
@@ -155,7 +156,11 @@ def generate_world(
                 profile = "RADIAL"
             if attempt == 0 and compatible:
                 profile = old_districts[key]["planningProfile"]
-            planner = radial_slots if profile == "RADIAL" else slots
+            elif planning == "organic":
+                profile = "ORGANIC"
+            planner = {"GRID": slots, "RADIAL": radial_slots, "ORGANIC": organic_slots}[
+                profile
+            ]
             candidates, lanes, angle = planner(polygons[key], local_seed)
             if (
                 planning == "mixed"
@@ -247,7 +252,7 @@ def generate_world(
         schemaVersion=VERSION,
         generatorVersion="flat-capacity/0.1"
         if planning == "grid"
-        else "flat-planning/0.2",
+        else ("flat-planning/0.3" if planning == "organic" else "flat-planning/0.2"),
         seed=resolved_seed,
         seedAlgorithm=ALGORITHM,
         repositoryNamespace=identity,

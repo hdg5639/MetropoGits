@@ -225,4 +225,6 @@ def populate(buildings, candidates, zone_id, entity_paths, seed, previous=None):
                 styleVariant=b["styleVariant"],
             )
         )
+        if "blockProfile" in slot:
+            result[-1]["blockProfile"] = slot["blockProfile"]
     return result

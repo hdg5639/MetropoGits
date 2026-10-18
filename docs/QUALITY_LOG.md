@@ -5609,3 +5609,46 @@
   ADR and checkpoint on current main. Verified normal delivery uses the user's
   standing owner exception; staged paths/identity and actual remote SHA are
   checked before reporting push. No force push or remote-rule change.
+
+## Checkpoint 2026-10-19 — ORGANIC planning grammar
+- Implemented: ADR-026 first unit, explicit `--planning organic`, meandering
+  local streets and oblique collectors before tangential frontage allocation.
+  Shared bounded frontage kernel checks all full-width roads/parcels. Old
+  grid/radial/mixed generation stays unchanged; additive flat-planning/0.3 enum.
+- Fixtures/revisions: same four pinned world-flat-reviewed-r2 inputs/revisions
+  listed in the preceding checkpoint; newly scanned maintained spring-positive
+  with repoId fixture/world-grammars, and controlled TS/unknown Rust additions.
+- Commands: `python -m unittest discover -s tests -q`; `node --test tests/*.test.mjs`;
+  `python -m ruff check .`; `git diff --check`; `python
+  ../artifacts/visual/world_grammars_review.py organic world-organic-r1`.
+  Fresh build: `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --repo-id fixture/world-grammars --out ../artifacts/visual/world-grammars-e2e-r1/build`;
+  then `python -m scripts.procedural_world BUILD --namespace fixture/world-grammars
+  --planning organic --out ../artifacts/visual/world-grammars-e2e-r1/organic`.
+  Actual BUILD above; browser `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/world-organic-audit-r1 INPUT...` audits four generated
+  corpus directories plus that maintained output; Chrome path as preceding log.
+- Artifacts inspected: world-organic-r1/report.json/index.html; actual WebGL
+  Overview cases 1/2/3/4 and GJ CPU showcase.png in world-organic-audit-r1.
+  Findings: rows/collectors curve and buildings follow local frontage; still a
+  strip-based organic grammar, not arbitrary irregular block subdivision.
+  Contrast/labels and generic fallback remain usable; root-label issue remains.
+- Tests/determinism/stability: Python 532 run/531 pass/one Windows symlink skip;
+  Node 56 pass; lint passes. Three new tests cover real nonorthogonal trip graph,
+  repeated packages/schema, nearby-file hint preservation and work limits.
+  Four corpora repeat byte-identically, conserve all 3,175 buildings/5,782 trips,
+  original UCG/City bytes, source ownership, zero road/building/parcel collisions
+  and all reachable doors. Browser three-LOD selection/Synthetic checks pass,
+  no exceptions, zero static rebuilds. Fresh Spring: six buildings/two trips.
+- Performance/land: GJ generation about 6.16s, packaging 5.94s, viewer-data 33.73MB
+  on this run (existing analyzed inputs, not scan time or FPS). Areas GJ/OJ/PB/
+  SQLite: 251306/154027/142683/113662 versus prior GRID
+  251306/138820/150427/97208. Explicit organic sometimes needs more land.
+- Spec alignment: PASS, technical 7/8, AC-002/003/006/011 and DEC-004/005/007/008
+  rechecked; no source execution/dependency/schema break or invented roles.
+- Fixes/reverified: extended the schema enum after its new-version rejection;
+  reran full suite and real exports. No validation gates weakened.
+- Next actions: INDUSTRIAL and HYBRID, then independently seeded world outline;
+  keep these as separate commits and avoid curve micro-tuning.
+- Delivery: atomic organic feature/checkpoint on main; normal owner-authorized
+  push outcome checked before moving to the next unit. No agent attribution.
