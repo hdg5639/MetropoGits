@@ -16,6 +16,28 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 
+test('moved three-way junction preserves each trip destination without inventing turns',()=>{
+  const r={status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],segments:[
+    {id:'a',kind:'DEPENDENCY_ROAD',start:[-10,0],end:[0,0],width:2,routeIds:['ab','ac']},
+    {id:'b',kind:'DEPENDENCY_ROAD',start:[0,0],end:[10,0],width:2,routeIds:['ab']},
+    {id:'c',kind:'DEPENDENCY_ROAD',start:[0,0],end:[0,10],width:2,routeIds:['ac']}],
+    routes:[{id:'ab',source:'A',target:'B',kind:'DEPENDENCY_ROAD',edgeIds:['e-ab'],networkIds:['n'],path:[[-10,0],[0,0],[10,0]],segmentIds:['a','b']},
+      {id:'ac',source:'A',target:'C',kind:'DEPENDENCY_ROAD',edgeIds:['e-ac'],networkIds:['n'],path:[[-10,0],[0,0],[0,10]],segmentIds:['a','c']}]};
+  const hub=[1,2],curves={corners:[],segments:{a:[[-10,0],hub],b:[hub,[10,0]],c:[hub,[0,10]]}};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(r,null,null,curves);
+  for(const route of r.routes) {
+    const end=route.path.at(-1), first=Math.hypot(11,2),last=Math.hypot(end[0]-1,end[1]-2);
+    const point=p.position(route,first/(first+last)).point;
+    assert.ok(Math.hypot(point[0]-hub[0],point[1]-hub[1])<1e-8);
+    const destination=p.position(route,1).point;
+    assert.ok(Math.hypot(destination[0]-end[0],destination[1]-end[1])<1e-8);
+  }
+  assert.deepEqual(p.network('b').edgeIds,['e-ab']);
+  const frame=p.frame('detail',new Set(['A','B','C']),new Set(['n']),{kind:'network',id:'b'});
+  assert.deepEqual([...frame.routeIds],['ab']);
+  assert.ok(!frame.segmentIds.has('c'));
+});
+
 test('diagonal chains join across moved logical corners without changing source-target pairing',()=>{
   const r={status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],segments:[
     {id:'a',kind:'DEPENDENCY_ROAD',start:[0,0],end:[10,0],width:2,routeIds:['forward','reverse']},

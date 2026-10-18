@@ -328,3 +328,52 @@ Next: compare **local junction/connector reconfiguration** with explicit entry-e
 mapping and full-width clearance, rather than decorating every corner with a
 roundabout or pretending this branch-free pass is a free-form city generator.
 No default promotion, main merge or new semantic interpretation is included.
+
+## Three-arm oblique junctions — ADR-021 continuation, 2026-10-19
+
+```powershell
+python -m scripts.street_grid BUILD --street-grid --aligned-blocks --junction-streets --out NEW_DIRECTORY
+```
+
+This option includes the diagonal baseline internally; do not combine it with
+`--diagonal-streets` or `--curved-streets`. It reconstructs all three incident
+arms together, rather than shifting one road and leaving its neighbors behind.
+Outer terminals, entrances and complete-trip endpoints stay fixed. A degree-three
+internal branch can move at most 14 world units. Each arm must be no longer than
+its diagonal-baseline length, and the three-arm total must improve by at least
+5%. Reject approaches closer than 35 degrees and full-width building/road
+collisions. Complete superseded diagonal arms are replaced atomically; unrelated
+diagonals remain. Resource caps fail explicitly instead of emitting partial plans.
+
+Derived `street-junctions/0.1` feeds the same pavement, paint, preview, picking
+and Synthetic mapping as diagonal streets. Logical adjacency, original relation
+pairings and canonical City/UCG remain unchanged. This creates neither additional
+semantic connections nor arbitrary turns between trips sharing a junction.
+
+Comparison: `artifacts/visual/oblique-junction-focus-r1/index.html`.
+Viewers: `oblique-junctions-r1/{sqlitebrowser,pocketbase,gj,oj}/{before,after}`.
+These reuse the pinned diagonal-r2 snapshots; before means the previous diagonal
+mode, not the original orthogonal layout. Fresh spring-positive CLI output is in
+`oblique-junction-e2e-r1`.
+
+| Fixture | Accepted junctions / position proposals | Local three-arm length before → after |
+| --- | --- | --- |
+| SQLite Browser | 1 / 18 | 66.50 → 51.00 |
+| PocketBase | 1 / 55 | 67.24 → 60.69 |
+| GJ Cloud | 1 / 16 | 129.50 → 122.73 |
+| GamjaOJ | 1 / 16 | 61.80 → 54.52 |
+
+SQLite, PocketBase and OJ relocate the center; GJ retains its center and straightens
+approaches. These are **local junction lengths, not whole-city reductions**.
+All 5,782 trips remain continuous with fixed complete endpoints and no increased
+length versus the diagonal baseline. Six GJ trips change physically in this pass;
+the other three junction changes are civic geometry without assigned traffic.
+Do not invent vehicles for unassigned civic streets or zero-network SQLite.
+
+Same-camera Detail captures show oblique mouths replacing short zigzags. Overview
+and README silhouettes are essentially unchanged. Most proposals fail building
+clearance (14 SQLite, 49 PocketBase, 15 GJ, 12 OJ); fixed rectangular plots still
+constrain inner streets. This is a verified local capability, **not a citywide
+escape from the grid**. Next investigate coordinated connector/parcel planning
+with explicit placement-stability limits; do not merely relax collision checks
+or add decorative roundabouts. Default behavior and branch integration are unchanged.

@@ -15,7 +15,9 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph, *, aligned=False, curves=False, diagonals=False):
+def compare(scene, graph, *, aligned=False, curves=False, diagonals=False, junctions=False):
+    if junctions and (not aligned or curves or diagonals):
+        raise ValueError('junction streets require aligned blocks and cannot combine with other geometry flags')
     if diagonals and (not aligned or curves):
         raise ValueError('diagonal streets require aligned blocks and cannot combine with corner curves')
     errors = validate_document(scene, graph)
@@ -31,6 +33,9 @@ def compare(scene, graph, *, aligned=False, curves=False, diagonals=False):
     if diagonals:
         from metropogits.street_diagonals import plan_diagonals
         after['diagonalPlan'] = plan_diagonals(scene, after)
+    if junctions:
+        from metropogits.street_junctions import plan_junctions
+        after['diagonalPlan'] = plan_junctions(scene, after)
     def identity(routing):
         return {p['id']: [p[k] for k in ('source', 'target', 'kind', 'edgeIds', 'networkIds')]
                 for p in routing['routes']}
@@ -49,6 +54,8 @@ def compare(scene, graph, *, aligned=False, curves=False, diagonals=False):
         report['curves'] = after['curvePlan']
     if diagonals:
         report['diagonals'] = after['diagonalPlan']
+    if junctions:
+        report['junctions'] = after['diagonalPlan']
     return before, after, report
 
 
@@ -59,6 +66,7 @@ def main():
     parser.add_argument('--aligned-blocks', action='store_true', help='align block streets to parcel boundaries and join geometric neighbors')
     parser.add_argument('--curved-streets', action='store_true', help='round clearance-certified non-branching bends; requires aligned blocks')
     parser.add_argument('--diagonal-streets', action='store_true', help='replace eligible branch-free street detours with collision-checked diagonal chords; requires aligned blocks')
+    parser.add_argument('--junction-streets', action='store_true', help='reconstruct three-arm junctions on the diagonal baseline; requires aligned blocks')
     parser.add_argument('--out', required=True, type=Path)
     args = parser.parse_args()
     try:
@@ -73,7 +81,7 @@ def main():
         if args.curved_streets and not args.aligned_blocks:
             raise ValueError('--curved-streets requires --aligned-blocks')
         before, after, report = compare(scene, graph, aligned=args.aligned_blocks, curves=args.curved_streets,
-                                       diagonals=args.diagonal_streets)
+                                       diagonals=args.diagonal_streets, junctions=args.junction_streets)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)

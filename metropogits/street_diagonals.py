@@ -370,7 +370,7 @@ def presentation(routing, surfaces, pavement, hierarchy):
                         def point(d):
                             return [a[j]+(b[j]-a[j])*d/length for j in (0, 1)]
                         paints[s['id']].append(dict(start=point(start), end=point(end)))
-    return output, dict(segments=pieces), dict(version='street-diagonals/0.1', segments=paths,
+    return output, dict(segments=pieces), dict(version=routing['diagonalPlan']['version'], segments=paths,
                                                corners=[], paintSegments=paints)
 
 

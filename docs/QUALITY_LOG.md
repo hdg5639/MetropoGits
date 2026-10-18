@@ -5128,3 +5128,88 @@
 - Commit/push: one atomic feature unit with ADR, implementation, tests and this
   checkpoint; intended upstream origin/experiment/street-grid. Stage explicit paths,
   verify human identity/no agent attribution, then normal push. No main merge.
+
+## Checkpoint 2026-10-19 — bounded oblique three-arm junctions
+
+- Implemented: opt-in `--junction-streets` on the ADR-021 diagonal baseline.
+  Reconstruct three arms and their central/outer mouth surfaces atomically, with
+  fixed outer terminals, pinned doors, maximum 14-unit center movement, minimum
+  35-degree approach separation, no arm length increase and at least 5% total
+  local shortening. Full-width collision checks include buildings and retained
+  roads. Overlapping proposals are reserved deterministically. Bounded resources;
+  no broad displacement field, fabricated junction connectivity or public schema change.
+- Fixtures/revisions: SQLite ae32df153a64d250de7c77a5057deeff4092a39b;
+  PocketBase 6f370ea741f33adf889eef02e3c1b884a47aa522;
+  GJ local-sha256-06eb492d57141c16; OJ local-sha256-c2e80f9d3908fec8.
+  Four existing diagonal-streets-r2 snapshots repackaged, not freshly scanned.
+  Maintained spring-positive at parent 6291e6a freshly scanned through real CLI.
+- Commands (workspace-private helpers/output under ../artifacts/visual):
+  `python ../artifacts/visual/junction_review.py oblique-junctions-r1`;
+  `node ../artifacts/visual/diagonal_paths.mjs oblique-junctions-r1`;
+  `python ../artifacts/visual/junction_verify.py` (final planner and serialization
+  exactly match inspected packages after implementation optimization).
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/oblique-junction-e2e-r1/build`;
+  `python -m scripts.street_grid ../artifacts/visual/oblique-junction-e2e-r1/build
+  --street-grid --aligned-blocks --junction-streets
+  --out ../artifacts/visual/oblique-junction-e2e-r1/streets`.
+- Actual browser commands: `node ../artifacts/visual/diagonal_focus.mjs
+  oblique-junctions-r1 oblique-junction-focus-r1 junction` produces four same-camera
+  before/after pairs. `node scripts/viewer_audit.mjs
+  'C:/Program Files/Google/Chrome/Application/chrome.exe'
+  ../artifacts/visual/oblique-junction-audit-r1` with oblique-junctions-r1/
+  {pocketbase,gj,oj}/after as three positional inputs; same audit with output
+  oblique-junction-small-audit-r1 and inputs oblique-junctions-r1/sqlitebrowser/after
+  and oblique-junction-e2e-r1/streets/after. `node
+  ../artifacts/visual/city_context_review.mjs ../artifacts/visual/oblique-junction-fallback-r1`
+  with ../artifacts/visual/oblique-junctions-r1/{sqlitebrowser,gj}/after inputs
+  exercises actual WebGL, forced Canvas and reversible structure toggling.
+- Artifacts inspected: SQLite/PocketBase/OJ before and after focus captures;
+  GJ after focus and Overview; actual SVG showcase renders for SQLite/OJ and fresh
+  spring preview; forced SQLite Canvas city capture. Gallery:
+  `artifacts/visual/oblique-junction-focus-r1/index.html`. Oblique mouths and
+  shortened approaches are visible locally, with no new building collision or
+  lost junction seam observed. README/Overview silhouettes are essentially
+  unchanged; generic repetitive towers, empty gaps and regular inner grids remain.
+- Quantitative outcome: one junction per repository, from 18/55/16/16 position
+  proposals (SQLite/PocketBase/GJ/OJ). Building rejection 14/49/15/12; remaining
+  proposals are reserved or conflict with retained roads. Local arm totals
+  66.50→51.00,67.24→60.69,129.50→122.73,61.80→54.52; NOT citywide percentages.
+  SQLite/PocketBase/OJ centers move; GJ center stays fixed. Changed polygons
+  29/32/37/27: building intersections 0, reversed faces 0. Repeated packages equal
+  byte-for-byte, canonical graph/scene and original logical routing unchanged.
+- Fidelity/performance: all 5,782 trips continuous, fixed complete endpoints,
+  preserved source/target/edge membership and no physical length increase versus
+  the previous diagonal baseline (floating-point tolerance 1e-6 world units).
+  Six GJ paths change incrementally; other new junctions are civic-only.
+  `python ../artifacts/visual/junction_evidence.py` traces one changed GJ trip:
+  Frontend/portal/app/admin/docs/page.tsx → components/docs/admin-image-url.ts,
+  RESOLVED IMPORTS, original edge b8f040e5... and evidence f5eb04d1... at line 13,
+  plus tsconfig path evidence 77fd212a.... Local source import and @/* mapping
+  inspected directly; original edge/evidence records are unchanged.
+  Synthetic stays unavailable for SQLite's zero-network output. Browser three-LOD
+  Synthetic static rebuilds 0 for applicable fixtures. CPU draw submission
+  measurements in reports are not GPU FPS or cross-hardware performance claims.
+- Tests: `node --test tests/*.test.mjs`: 53 pass. `python -m unittest discover
+  -s tests -q`: 494 run,493 pass,1 existing Windows symlink skip. New seven-test
+  junction suite also rerun after adding per-arm diagonal-baseline length assertions.
+  Ruff and git diff --check pass. Tests cover protected doors, messaging exclusion,
+  full-width obstacles, unrelated roads, ordering/reversal, already-straight stars,
+  resource limits, incompatible modes, repeated packaging and exact trip pairing.
+- Fixes applied/reverified: rejected early proposals whose central join touched an
+  unrelated arm; outer-terminal collision exemptions now belong only to that arm.
+  New JS endpoint test initially used exact floating-point equality on interpolation
+  (residual ~2e-15); corrected to explicit 1e-8 geometric tolerance, then reran both
+  Node and Python suites successfully. No connectivity or evidence assertion removed.
+- Spec alignment: PASS under ADR-020/021 opt-in experiment; technical7/8 invariants,
+  functional AC-002/003/006/011, product DEC-005/007/008/011. Canonical geography,
+  provenance, deterministic unsupported-language fallback and local static output
+  preserved. No target-repository execution, runtime service or semantic-coverage claim.
+- Open risks/next actions: safe acceptance is sparse under fixed footprints;
+  this is a local reconstruction capability, not completion of free-form urban
+  topology. Study connector/parcel co-planning with explicit stability budgets
+  before promising broader changes. No roundabouts, arbitrary multi-junction
+  merging, default promotion or main integration in this unit.
+- Commit/push: atomic feature unit includes ADR, implementation, tests and this
+  checkpoint. Intended verified delivery to existing origin/experiment/street-grid,
+  normal push after staged diff and human identity/attribution review. No main merge.
