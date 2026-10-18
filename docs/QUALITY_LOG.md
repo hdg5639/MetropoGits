@@ -3029,3 +3029,82 @@
   is a separate commit. Verified ordinary owner-authorized upstream push follows
   this checkpoint. Private artifacts, review harnesses and unrelated IDE caches
   are excluded from source control; no agent attribution added.
+
+## Checkpoint 2026-10-18 — dependency road consolidation (ADR-018)
+
+- Implemented: opt-in fixed-city pass removes parallel interior road corridors,
+  atomically reroutes all affected file pairs on remaining same-kind roads, and
+  rebuilds exact segment provenance/junctions. Door ports/spurs never move or act
+  as another file's through road. No new centerline or larger clearance envelope.
+  UCG/City bytes and default CLI/Action/parcel scoring remain unchanged; supplied
+  derived payload version is visual-access/0.3. Synthetic and selection use these
+  actual rerouted paths, not hidden baseline paths. ADR and staged plan recorded
+  before implementation in documentation commit 154e422.
+- Safety/bounds: max(N_original, floor(100*Manhattan/90)) lattice steps and at
+  most two additional bends per ORIGINAL route, frozen across accepted changes.
+  This preserves ADR-016's 100/90 shortest-lattice-path guarantee. Two extra bends
+  allow merge/exit; replacing the initial proposed zero bend-regression rule is
+  explicit in ADR-018, not a relaxation of evidence or distance safety. At most
+  1,200 candidates, 2M popped states, 100k predecessor labels/search, 100k atomic
+  road edges and 1M route steps. Failed/incomplete candidates roll back together.
+- Fixtures / revisions: readonly parcel-3d-r2 GJ (source3d9b53f) and OJ
+  (sourceb163acd), plus fresh spring-positive and structural-showcase at parent
+  154e422. No target code/build/dependencies executed. Spring 6 files/2 routes and
+  unknown 3 files/0 routes retain unchanged safe geometry with zero candidates.
+- Commands: `python -m scripts.road_consolidation
+  ../artifacts/visual/parcel-3d-r2/{gj,oj} --out
+  ../artifacts/visual/road-consolidation-r2/{gj,oj}` separately; fresh
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/road-consolidation-fixtures/spring --repo-id fixtures/spring`
+  and analogous structural-showcase/unknown, followed by the consolidation command
+  into spring-study/unknown-study. Both baseline fixture builds COMPLETE.
+- Measurements (entire city, before→after): GJ parallel30366→15631 (-48.5%),
+  centerline51481→40932 (-20.5%), travel690307→692680 (+0.34%),
+  turns24261→24055, junctions4063→2959. OJ parallel7280→3794 (-47.9%),
+  centerline12282→9569.5 (-22.1%), travel154618→155857 (+0.80%),
+  turns7476→6642, junctions1012→652. GJ615/OJ245 candidates accepted;
+  both hit 1,200 attempts (of 5,494/1,420), so not a global optimum.
+- Provenance/geometry: `node ../artifacts/visual/verify_access.mjs <after>` checks
+  each source/target, edge ID, segment incidence and pavement/building AABB.
+  GJ4,209 routes/6,157 edges and OJ1,381 routes/2,243 edges preserved; zero
+  unresolved represented edges or pavement intersections. Independent atomic-edge
+  subset checks verify no new centerline. Source facts and canonical scene bytes
+  equal inputs. Unrelated building movement is zero.
+- Determinism: `python ../artifacts/visual/verify_consolidation.py` reruns the pass
+  and renderer packaging against each baseline. All14 after artifacts repeat
+  byte-for-byte. Frozen distance/bend limits checked for EVERY route. Repeat plus
+  packaging took28.58s GJ/11.54s OJ, not a pure optimizer or frame-time benchmark.
+  Paths/segment decomposition changed for3,273/1,084 routes; no membership changes.
+- Artifacts inspected: real Chrome same-camera Detail captures in
+  road-consolidation-focus-r2/{gj,oj}-{before,after}/focused.png, produced by
+  `node ../artifacts/visual/parcel_focus_review.mjs`; GJ deployment/service leaf
+  matches the user's reported area, OJ generation/service. Identical target,
+  yaw-.68/pitch.62/distance per pair asserted. GJ distance108.302, OJ113.844,
+  viewport1500x1000. Also inspected actual GJ showcase, OJ detailed preview,
+  spring.png WebGL and unknown.png preview under road-consolidation-fixtures.
+- Visual findings: repeated parallel lanes and closely spaced crossings visibly
+  decrease without moving buildings. Main shared runs read more clearly; residual
+  orthogonal lines, square junction markings and short local approaches remain.
+  Full-city thumbnail difference is subtler than closeup. Unknown sparse margins
+  remain an existing issue. Roundabouts and unified junction meshes NOT implemented
+  or claimed; next work is approach consolidation and continuous junction surfaces.
+- Browser checks: `node scripts/viewer_audit.mjs <Chrome> <audit-output>
+  <gj/before> <gj/after> <oj/before> <oj/after>` checks three LODs, source-path
+  inspection, selection/filter behavior, pan/orbit/jump and synthetic. Audit-r1
+  completed all four cases; final audit-r2 also passed all four cases using
+  road-consolidation-r2 packages. Static mesh rebuilds during synthetic0;
+  r2 after p95 draw-submission CPU GJ1.3/1.1/1.2ms, OJ2.0/1.0/1.0ms.
+  Headless Chrome152 SwiftShader,20 samples;
+  these noisy CPU timings are not measured GPU completion/FPS or a speedup claim.
+- Tests: full unittest306 run,305 pass,1 Windows symlink skip; Ruff pass;
+  Node routing/viewer-audit/camera/role suites27 pass. Eleven new tests include
+  actual beneficial detour, independent BFS bound, cross-kind/spur rejection,
+  frozen limits, deterministic permutation, multi-route rollback, budgets,
+  strict provenance and unchanged canonical packaging. No existing tests weakened.
+- Spec alignment: PASS, technical§7–8/FR-007/AC-002/003/006/014 and
+  DEC-005/006/007/011. ADR-018 authorizes bounded derived rerouting, not new
+  dependencies, runtime traffic claims, building relocation or default adoption.
+- Commits created / pushed (main): documentation154e422; implementation/tests/
+  checkpoint separately committed after verification, followed by ordinary
+  authorized upstream push. Private generated cities/harnesses and unrelated IDE
+  caches remain excluded; no agent contributor attribution.

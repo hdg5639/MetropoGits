@@ -1,0 +1,246 @@
+"""Remove redundant pavement by rerouting on existing same-kind roads (ADR-018)."""
+from __future__ import annotations
+
+import copy
+import heapq
+from collections import defaultdict
+
+from metropogits.access_routes import PITCH, _compact_segments, _heading, _id, _pair
+
+MAX_ATTEMPTS = 1200
+MAX_SEARCH_STATES = 2_000_000
+MAX_ATOMIC_EDGES = 100_000
+MAX_ROUTE_STEPS = 1_000_000
+MAX_SEARCH_LABELS = 100_000
+
+
+def _distance(a, b):
+    return abs(a[0]-b[0]) + abs(a[1]-b[1])
+
+
+def _bends(points):
+    headings = [_heading(a, b) for a, b in zip(points, points[1:]) if a != b]
+    return sum(a != b for a, b in zip(headings, headings[1:]))
+
+
+def _node(point):
+    result = tuple(round(v/PITCH) for v in point)
+    if any(abs(result[i]*PITCH-point[i]) > 1e-8 for i in (0, 1)):
+        raise ValueError('consolidation requires original lattice geometry')
+    return result
+
+
+def _world(node):
+    return [v*PITCH for v in node]
+
+
+def _search(start, end, adjacency, blocked, limit, heading, terminal, bend_limit, budget):
+    # Pareto labels retain both length and bends. A shorter path with more bends
+    # cannot discard a longer path needed to satisfy the final turn constraint.
+    queue = [(_distance(start, end), 0, 0, start, heading, 0)]
+    records = [(start, None)]
+    labels = defaultdict(list)
+    while queue:
+        if budget[0] >= MAX_SEARCH_STATES:
+            return None
+        _, bends, steps, node, direction, record = heapq.heappop(queue)
+        budget[0] += 1
+        if node == end:
+            if bends + int(terminal != (0, 0) and direction != terminal) <= bend_limit:
+                path = []
+                while record is not None:
+                    point, record = records[record]
+                    path.append(point)
+                return list(reversed(path))
+            continue
+        for other in sorted(adjacency.get(node, ())):
+            if _pair(node, other) in blocked:
+                continue
+            new_steps = steps+1
+            if new_steps+_distance(other, end) > limit:
+                continue
+            new_direction = _heading(node, other)
+            new_bends = bends + int(direction != (0, 0) and new_direction != direction)
+            if new_bends > bend_limit:
+                continue
+            key = other, new_direction
+            old = labels[key]
+            if any(s <= new_steps and b <= new_bends for s, b in old):
+                continue
+            labels[key] = [(s, b) for s, b in old if s < new_steps or b < new_bends] + [(new_steps, new_bends)]
+            if len(records) >= MAX_SEARCH_LABELS:
+                budget[1] += 1
+                return None
+            records.append((other, record))
+            heapq.heappush(queue, (new_steps+_distance(other, end), new_bends, new_steps,
+                                   other, new_direction, len(records)-1))
+    return None
+
+
+def consolidate_routes(routing):
+    """Return independent routing; never move buildings, add pavement or lose routes."""
+    if routing['version'] != 'visual-access/0.2' or routing['status'] != 'COMPLETE':
+        raise ValueError('consolidation requires complete visual-access/0.2 routing')
+    result = copy.deepcopy(routing)
+    originals = {s['id']: s for s in result['segments']}
+    unit, users, paths, anchors, limits, bend_limits = {}, defaultdict(set), {}, {}, {}, {}
+    route_by_id = {r['id']: r for r in result['routes']}
+    step_count = 0
+    for route in result['routes']:
+        nodes = []
+        for i, identity in enumerate(route['segmentIds']):
+            segment = originals[identity]
+            if segment['access']:
+                continue
+            a, b = _node(route['path'][i]), _node(route['path'][i+1])
+            direction = _heading(a, b)
+            if direction[0] and direction[1]:
+                raise ValueError('non-orthogonal road segment')
+            count = _distance(a, b)
+            step_count += count
+            if step_count > MAX_ROUTE_STEPS:
+                raise ValueError('consolidation route-step limit exceeded')
+            expanded = [(a[0]+direction[0]*j, a[1]+direction[1]*j) for j in range(count+1)]
+            if nodes and nodes[-1] != a:
+                raise ValueError('non-contiguous road spine')
+            nodes.extend(expanded if not nodes else expanded[1:])
+            for left, right in zip(expanded, expanded[1:]):
+                key = route['kind'], _pair(left, right)
+                unit[key] = segment['width']
+                users[key].add(route['id'])
+                if len(unit) > MAX_ATOMIC_EDGES:
+                    raise ValueError('consolidation road-edge limit exceeded')
+        if not nodes:
+            continue
+        identity = route['id']
+        paths[identity] = nodes
+        anchors[identity] = (_heading(route['path'][0], _world(nodes[0])),
+                             _heading(_world(nodes[-1]), route['path'][-1]))
+        limits[identity] = max(len(nodes)-1, _distance(nodes[0], nodes[-1])*100//90)
+        bend_limits[identity] = _bends(route['path']) + 2
+
+    adjacency = defaultdict(lambda: defaultdict(set))
+    for kind, (a, b) in unit:
+        adjacency[kind][a].add(b)
+        adjacency[kind][b].add(a)
+
+    # Collinear strokes split at branches/ports: remove a real redundant link,
+    # not a decorative stripe, without swallowing a building's access node.
+    ports = {(route_by_id[r]['kind'], p) for r, nodes in paths.items() for p in (nodes[0], nodes[-1])}
+    seen, candidates = set(), []
+    for key in sorted(unit):
+        if key in seen:
+            continue
+        kind, (a, b) = key
+        stroke = {key}
+        ends = [a, b]
+        for side in (0, 1):
+            previous, current = ends[1-side], ends[side]
+            while len(adjacency[kind][current]) == 2 and (kind, current) not in ports:
+                other = next(n for n in adjacency[kind][current] if n != previous)
+                if _heading(previous, current) != _heading(current, other):
+                    break
+                extra = kind, _pair(current, other)
+                if extra in seen or extra in stroke:
+                    break
+                stroke.add(extra)
+                previous, current = current, other
+        seen.update(stroke)
+        parallel = 0
+        for _, (left, right) in stroke:
+            axis = 1 if left[1] == right[1] else 0
+            for offset in (-2, -1, 1, 2):
+                shifted = [list(left), list(right)]
+                for point in shifted:
+                    point[axis] += offset
+                parallel += (kind, _pair(tuple(shifted[0]), tuple(shifted[1]))) in unit
+        if parallel:
+            affected = set().union(*(users[k] for k in stroke))
+            candidates.append((len(affected), -parallel, -len(stroke), tuple(sorted(stroke))))
+
+    budget, attempts, accepted, rejected, removed = [0, 0], 0, 0, defaultdict(int), set()
+    for _, _, _, stroke in sorted(candidates):
+        if attempts >= MAX_ATTEMPTS or budget[0] >= MAX_SEARCH_STATES:
+            break
+        active = [key for key in stroke if users.get(key)]
+        if not active:
+            continue
+        attempts += 1
+        kind = active[0][0]
+        blocked = {pair for _, pair in active}
+        affected = sorted(set().union(*(users[k] for k in active)))
+        replacements = {}
+        for identity in affected:
+            nodes = paths[identity]
+            heading, terminal = anchors[identity]
+            previous_label_hits = budget[1]
+            path = _search(nodes[0], nodes[-1], adjacency[kind], blocked, limits[identity],
+                           heading, terminal, bend_limits[identity], budget)
+            if path is None:
+                reason = 'search_label_limit' if budget[1] > previous_label_hits else 'unreachable_or_detour_or_bend_limit'
+                rejected[reason] += 1
+                break
+            replacements[identity] = path
+        if len(replacements) != len(affected):
+            continue
+        accepted += 1
+        for identity, path in replacements.items():
+            for a, b in zip(paths[identity], paths[identity][1:]):
+                users[(kind, _pair(a, b))].discard(identity)
+            paths[identity] = path
+            for a, b in zip(path, path[1:]):
+                users[(kind, _pair(a, b))].add(identity)
+        orphaned = [key for key in users if key[0] == kind and not users[key] and key not in removed]
+        for key in orphaned:
+            a, b = key[1]
+            adjacency[kind][a].discard(b)
+            adjacency[kind][b].discard(a)
+            removed.add(key)
+
+    # Rebuild all memberships and intersections from final complete routes.
+    segments = {}
+    def add(kind, a, b, width, access, identity):
+        if a == b:
+            return None
+        start, end = sorted((a, b))
+        key = _id('access-segment', [kind, start, end])
+        if key not in segments:
+            segments[key] = dict(id=key, kind=kind, start=start, end=end,
+                                 width=width, access=access, routeIds=[])
+        segments[key]['routeIds'].append(identity)
+        return key
+    for identity, route in sorted(route_by_id.items()):
+        if identity not in paths:
+            for sid in route['segmentIds']:
+                old = originals[sid]
+                add(old['kind'], old['start'], old['end'], old['width'], old['access'], identity)
+            continue
+        nodes, kind = paths[identity], route['kind']
+        start, end = route['path'][0], route['path'][-1]
+        ids = [add(kind, start, _world(nodes[0]), .7, True, identity)]
+        ids += [add(kind, _world(a), _world(b), unit[(kind, _pair(a, b))], False, identity)
+                for a, b in zip(nodes, nodes[1:])]
+        ids.append(add(kind, _world(nodes[-1]), end, .7, True, identity))
+        points = [start, *map(_world, nodes), end]
+        route.update(path=[p for i, p in enumerate(points) if i == 0 or p != points[i-1]],
+                     segmentIds=[s for s in ids if s], latticeSteps=len(nodes)-1)
+    result['routes'].sort(key=lambda r: (r['kind'], r['source'], r['target']))
+    segments = _compact_segments(segments, result['routes'])
+    result['segments'] = sorted(segments.values(), key=lambda s: s['id'])
+    incidence = defaultdict(list)
+    for segment in result['segments']:
+        for point in (segment['start'], segment['end']):
+            incidence[(segment['kind'], *point)].append(segment['id'])
+    result['junctions'] = [dict(id=_id('access-junction', [kind, x, z]), kind=kind,
+                                point=[x, z], segmentIds=sorted(ids))
+                           for (kind, x, z), ids in sorted(incidence.items()) if len(ids) >= 3]
+    result['version'] = 'visual-access/0.3'
+    result['consolidation'] = dict(candidates=len(candidates), attempts=attempts, accepted=accepted,
+                                 removedLatticeEdges=len(removed), searchStates=budget[0],
+                                 limitReached=attempts >= MAX_ATTEMPTS or budget[0] >= MAX_SEARCH_STATES or budget[1] > 0,
+                                 rejected=dict(sorted(rejected.items())), maxAttempts=MAX_ATTEMPTS,
+                                 maxSearchStates=MAX_SEARCH_STATES, maxSearchLabels=MAX_SEARCH_LABELS,
+                                 additionalBends=2)
+    if budget[1]:
+        result['consolidation']['searchLabelLimitHits'] = budget[1]
+    return result

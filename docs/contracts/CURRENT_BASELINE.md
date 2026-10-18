@@ -72,6 +72,18 @@ not a random walk or measured traffic. Partial routing is disclosed in viewer,
 SVG metadata and CLI manifest diagnostics. Java nested imports remain unresolved
 work; communication-renderer changes were deferred at maintainer direction.
 
+[ADR-018](../adr/ADR-018.md) adds opt-in `visual-access/0.3` consolidation through
+`python -m scripts.road_consolidation <build> --out <new-directory>`. Default
+derivation remains 0.2. The command emits before/after packages with identical
+canonical UCG/City and fixed building entrances. It reroutes dependencies over
+remaining same-kind roads and removes redundant parallel pavement atomically.
+The original 100/90 lattice-distance bound is preserved; at most two additional
+bends per original route are permitted. Total individual travel can increase
+slightly while global paved centerline/parallel overlap cannot increase. All
+consumers, selection and synthetic use the consolidated stored paths, not hidden
+old lines. Junction surface unification and selective roundabouts are subsequent
+work, not delivered by this pass. Inputs with partial routing are rejected.
+
 ADR-017 exposes the measured parcel candidate through `scripts.parcel_viewer`.
 Only one selected leaf changes file coordinates; all directory geometry, file
 ownership and semantic facts remain intact. Canonical network paths and the
