@@ -255,3 +255,30 @@ need a coherent corridor/junction replacement with complete entry-exit tracing,
 adequate full-width clearance and unchanged source/destination pairing. Never
 add a roundabout disk over paths that still cross its center. Compare local
 bends and overview separately; a better local curve is not a transformed skyline.
+
+## Whole-corridor deformation trial rejected, 2026-10-18
+
+Tried a shared cubic Hermite deformation of monotone degree-two staircase chains,
+with disjoint building-free support strips and unchanged canonical City/UCG and
+logical routes. All pavement, paint and paths used the same bounded map. This
+was a private prototype, NOT an accepted option or a new supported contract.
+
+GJ accepted0/4 candidates, OJ0/12, PocketBase1/12. All three retained exact
+canonical buildings/relations, repeated package bytes, continuous trip endpoints,
+zero building collisions and zero inverted surface triangles. Nevertheless the
+actual PocketBase before/after WebGL capture showed wider neighboring roads
+pinching and bulging inside the deformation support. The mathematical centerline
+improved while the complete road surface looked worse. Reject the implementation;
+do not ship a `--smooth-corridors` flag or street-curves/0.2 contract.
+
+Private evidence: `artifacts/visual/corridor-curves-r1` (data/geometry report),
+`corridor-curves-focus-r1/index.html` (same-camera rejected experiment),
+`corridor-browser-r1` (browser audit). These are experimental archive outputs,
+not recommended viewers. Product code remains the verified local-bend version.
+
+Next corridor attempt must reconstruct a full-width corridor and its neighboring
+junction mouths, certify street-to-street geometry as well as building clearance,
+and compare actual surfaces before calling it an improvement. Do not distort
+nearby roads with a broad displacement field. In the meantime prioritize the
+cross-repository Overview silhouette/framing regression rather than another
+unsafe expansion of road smoothing.

@@ -4963,3 +4963,33 @@
 - Commits:660c0e1 benchmark tooling already pushed; Qt fix gets its own conventional
   commit and ordinary upstream push on experiment/street-grid after staged review.
   Private corpus/artifacts and unrelated IDE caches are not staged.
+
+## Checkpoint 2026-10-18 — rejected whole-corridor spike
+- Implemented experimentally: common cubic strip deformation, shared CPU/JS
+  paint/path map and an opt-in prototype flag. Removed all prototype source,
+  flag and tests after actual surface rendering failed the visual gate. Existing
+  local bend implementation remains unchanged; no new public/derived contract.
+- Inputs: archived GJ/OJ urban-street-r1 scenes and PocketBase cross-repository-r2
+  (6f370ea741f33adf889eef02e3c1b884a47aa522); maintained spring-positive fresh build.
+- Commands: `python ../artifacts/visual/corridor_review.py corridor-curves-r1`;
+  `python ../artifacts/visual/corridor_geometry.py corridor-curves-r1`;
+  `node ../artifacts/visual/corridor_focus.mjs corridor-curves-r1 corridor-curves-focus-r1`.
+  Fresh E2E: `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/corridor-e2e-r1/build`, followed by prototype street_grid.
+- Actual images inspected: corridor-curves-focus-r1/{before,after}/focus.png.
+  The sole accepted PocketBase corridor smoothed its centerline but deformed
+  adjacent road surfaces into visible pinches/bulges. Visual gate: FAIL.
+  GJ0/4 and OJ0/12 accepted; no citywide improvement claimed.
+- Geometry: all canonical graphs/scenes and logical paths unchanged, repeated
+  packages identical;28239/9950/13939 polygons checked for GJ/OJ/PocketBase,
+  zero building collisions or backfaces. These checks did NOT detect ugliness.
+- Prototype validation: Python486 run/485 pass/1 existing Windows symlink skip,
+  Node49 pass, Ruff pass; fresh Spring browser three-LOD Synthetic static rebuilds0.
+  Prototype-only tests were removed together with the rejected implementation,
+  not weakened to approve it. Product baseline tests rerun in the next checkpoint.
+- Spec alignment: semantic invariants PASS; visual quality FAIL, so not Done.
+  Archive artifacts remain private and clearly described here as rejected.
+- Next action: repair cross-repository Overview proportions/framing; future full
+  corridor reconstruction must preserve street surfaces and junction mouths.
+- Commit: documentation-only record of rejected experiment, separate from the
+  subsequent viewer correction; normal feature-branch push at verified checkpoint.
