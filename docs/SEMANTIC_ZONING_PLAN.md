@@ -1,5 +1,9 @@
 # Hierarchical semantic zoning implementation plan
 
+Start each continuation with [WORLD_EXECUTION_LEDGER](WORLD_EXECUTION_LEDGER.md):
+the consolidated requirements, rejected directions, retained work and active
+delivery gates. Latest feedback adds constraints; it does not erase earlier work.
+
 Source proposal: `MetropoGits_Hierarchical_Voronoi_Semantic_Zoning_Design.md`
 (workspace `MetropoGits_Docs`, proposal v0.1). Incorporation requested by the
 maintainer on 2026-10-19. This extends, rather than replaces, the procedural
