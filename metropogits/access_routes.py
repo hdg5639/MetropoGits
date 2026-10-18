@@ -282,6 +282,14 @@ def derive_access_routes(scene, graph):
 
 def svg_access_lines(routing, project, overview=False, network_ids=None, hierarchy=None):
     """Traceable SVG polygons from the same shared segments used by the viewer."""
+    from metropogits.street_demand import demand_pavement, clip_paint
+    from metropogits.street_curves import curved_presentation, CurveMap
+    from metropogits.structural_streets import street_rectangles
+    pavement = demand_pavement(routing, hierarchy)
+    paint_pavement = pavement
+    surfaces = street_rectangles(routing) if 'streetGrid' in routing else None
+    surfaces, pavement, physical = curved_presentation(routing, surfaces, pavement, hierarchy)
+    mapper = CurveMap(routing.get('curvePlan'))
     routes = routing["routes"]
     indices = {route["id"]: i for i, route in enumerate(routes)}
     allowed = {r["id"] for r in routes if network_ids is None or set(r["networkIds"]) & network_ids}
@@ -290,10 +298,25 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
                     routes=[{k: r[k] for k in ("id", "kind", "source", "target", "edgeIds", "networkIds")} for r in routes])
     lines = ['<metadata id="access-routing">' + html.escape(canonical_json_bytes(metadata).decode()) + '</metadata>',
              '<g id="shared-access-roads" aria-label="Shared geometry, not additional relationships">']
+    structural = routing.get('streetGrid')
+    if structural:
+        from metropogits.structural_streets import street_rectangles
+        assigned = set(structural['assignment']['assignedRouteIds'])
+        allowed &= assigned
+        lines.append('<metadata id="street-assignment">' + html.escape(canonical_json_bytes(
+            structural['assignment']).decode()) + '</metadata>')
+        lines.append('<g id="civic-infrastructure" aria-label="Structural streets: visual, not source relationships">')
+        for rect in surfaces:
+            x, z, w, d = (rect[k] for k in ('x', 'z', 'width', 'depth'))
+            polygon = rect.get('points', [[x,z], [x+w,z], [x+w,z+d], [x,z+d]])
+            points = [project(a,b) for a,b in polygon]
+            encoded = ' '.join(f'{float(a):.3f},{float(b):.3f}' for a,b in points)
+            lines.append(f'<polygon points="{encoded}" fill="{rect["color"]}" data-civic-street="{rect["id"]}"/>')
+        lines.append('</g>')
     visible, widths, paints = [], {}, []
     for segment in routing["segments"]:
         active = [r for r in segment["routeIds"] if r in allowed]
-        if not active or (overview and (segment["access"] or len(active) < 4)):
+        if not active or (not structural and overview and (segment["access"] or len(active) < 4)):
             continue
         a, b = segment["start"], segment["end"]
         width = min(segment["width"], 0.7 + math.log2(len(active)+1)*0.5)
@@ -316,18 +339,33 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
                    f'{profile["buildingCount"]} files, {profile["crossDistrictEdgeCount"]} cross-major edges; '
                    'full-road static demand; ') if profile else ''
         visibility = 'visible ' if profile else ''
-        lines.append(f'<polygon data-access-segment-id="{segment["id"]}" data-route-indexes="{references}" '
-                     f'points="{encoded}" fill="{color}"{grade}><title>{summary}{len(active)} {visibility}evidenced relation paths; shared geometry only</title></polygon>')
+        polygons = ([p['points'] for p in pavement['segments'][segment['id']]]
+                    if pavement and segment['id'] in pavement['segments'] else None)
+        encodings = [' '.join(f'{float(x):.3f},{float(y):.3f}' for x,y in
+                     (project(a,b) for a,b in polygon)) for polygon in polygons] if polygons else [encoded]
+        for encoding in encodings:
+            lines.append(f'<polygon data-access-segment-id="{segment["id"]}" data-route-indexes="{references}" '
+                         f'points="{encoding}" fill="{color}"{grade}><title>{summary}{len(active)} {visibility}evidenced relation paths; shared geometry only</title></polygon>')
         if profile and segment['kind'] == 'DEPENDENCY_ROAD' and profile.get('lanePattern') == 'DASHED' and width >= 1.25:
             paints.append((segment, profile.get('marking', '#d4c6a5')))
     trims = junction_trims(routing, visible, widths)
     for segment, color in paints:
-        for paint in dash_segments(segment['start'], segment['end'], trims.get(segment['id'], (0, 0))):
+        mapped = (physical or {}).get('paintSegments', {}).get(segment['id'])
+        if mapped is not None:
+            from metropogits.street_diagonals import ribbon
+            for paint in mapped:
+                polygon = ribbon(paint['start'], paint['end'], .13)
+                encoded = ' '.join(f'{float(x):.3f},{float(y):.3f}' for x,y in (project(*p) for p in polygon))
+                lines.append(f'<polygon data-road-paint="arterial-dash" points="{encoded}" fill="{color}" aria-hidden="true"/>')
+            continue
+        raw = dash_segments(segment['start'], segment['end'], trims.get(segment['id'], (0, 0)))
+        pieces = paint_pavement['segments'].get(segment['id']) if paint_pavement else None
+        for paint in (part for item in raw for part in clip_paint(item,pieces)):
             a, b = paint['start'], paint['end']
             dx, dz = (0, .065) if a[1] == b[1] else (.065, 0)
-            points = [project(a[0]-dx, a[1]-dz), project(b[0]-dx, b[1]-dz),
-                      project(b[0]+dx, b[1]+dz), project(a[0]+dx, a[1]+dz)]
-            encoded = ' '.join(f'{float(x):.3f},{float(y):.3f}' for x, y in points)
-            lines.append(f'<polygon data-road-paint="arterial-dash" points="{encoded}" fill="{color}" aria-hidden="true"/>')
+            polygon = [[a[0]-dx,a[1]-dz],[b[0]-dx,b[1]-dz],[b[0]+dx,b[1]+dz],[a[0]+dx,a[1]+dz]]
+            for part in mapper.polygon(polygon):
+                encoded = ' '.join(f'{float(x):.3f},{float(y):.3f}' for x,y in (project(*p) for p in part))
+                lines.append(f'<polygon data-road-paint="arterial-dash" points="{encoded}" fill="{color}" aria-hidden="true"/>')
     lines.append('</g>')
     return lines

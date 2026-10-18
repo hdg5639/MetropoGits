@@ -76,6 +76,45 @@
     };
   }
 
+  function fitPerspective(points, camera, policy, aspect, minimumDistance = 8) {
+    if (!points.length) return {...camera};
+    const cy = Math.cos(camera.yaw), sy = Math.sin(camera.yaw);
+    const cp = Math.cos(camera.pitch), sp = Math.sin(camera.pitch);
+    const right = [cy, 0, -sy], up = [-sp * sy, cp, -sp * cy];
+    const forward = [cp * sy, sp, cp * cy];
+    const dot = (a,b) => a.reduce((sum,value,i)=>sum+value*b[i],0);
+    const horizontal = Math.tan(policy.fieldOfView / 2) * aspect * policy.horizontalMargin;
+    const vertical = Math.tan(policy.fieldOfView / 2) * policy.verticalMargin;
+    let left = Infinity, rightmost = -Infinity, bottom = Infinity, top = -Infinity, nearest = -Infinity;
+    for (const point of points) {
+      const x=dot(point,right), y=dot(point,up), z=dot(point,forward);
+      left=Math.min(left,x-horizontal*z); rightmost=Math.max(rightmost,x+horizontal*z);
+      bottom=Math.min(bottom,y-vertical*z); top=Math.max(top,y+vertical*z);
+      nearest=Math.max(nearest,z);
+    }
+    const x=(rightmost+left)/2, y=(top+bottom)/2;
+    // Slide the orbit target along the view ray to preserve its ground-relative
+    // height. Otherwise a good initial fit can put the zoom pivot underground.
+    const depth=Math.abs(sp)>1e-6 ? (camera.targetY-up[1]*y)/sp
+      : dot([camera.targetX,camera.targetY,camera.targetZ],forward);
+    // Intersect perspective-frustum inequalities, allowing lateral framing to
+    // move. Keeping the world AABB center fixed can waste half the viewport.
+    const eyeDepth=Math.max((rightmost-left)/(2*horizontal),(top-bottom)/(2*vertical),
+      depth+minimumDistance,nearest+Math.max(1,minimumDistance/100));
+    const target=right.map((value,i)=>value*x+up[i]*y+forward[i]*depth);
+    return {...camera,targetX:target[0],targetY:target[1],targetZ:target[2],distance:(eyeDepth-depth)*1.01};
+  }
+
+  function lodFramingPoints(buildings, facilities) {
+    // Fit the union of all LOD silhouettes. A small scene can still contain a
+    // promoted role facility; changing LOD must not reveal a clipped roof.
+    return [...buildings.map(b => ({...b, top:b.height})),
+      ...facilities.map(f => ({...f, top:f.height+2.4}))].flatMap(b => [
+      [b.x,b.top,b.z], [b.x+b.width,b.top,b.z],
+      [b.x+b.width,b.top,b.z+b.depth], [b.x,b.top,b.z+b.depth],
+    ]);
+  }
+
   function stableVariant(value, count) {
     let hash = 2166136261;
     for (const character of String(value)) {
@@ -208,6 +247,8 @@
   });
 
   globalThis.METROPOGITS_WEBGL_MATH = Object.freeze({
+    fitPerspective,
+    lodFramingPoints,
     lookAt,
     multiply,
     perspective,
@@ -285,6 +326,7 @@
   if (typeof document === "undefined") return;
 
   const data = globalThis.METROPOGITS_DATA;
+  const orientedBuildings = data?.routing?.parcelPlan?.buildings || {};
   const filterEngine = globalThis.METROPOGITS_FILTERS;
   const activityEngine = globalThis.METROPOGITS_ACTIVITY;
   const canvas = document.getElementById("city-canvas");
@@ -394,7 +436,7 @@
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
-  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy);
+  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand, data.streetCurves);
   let accessFrame = null;
   function networkForId(id) {
     return accessPolicy?.network(id, accessFrame?.routeIds) || scene.networks.find(network => network.id === id);
@@ -482,6 +524,12 @@
   const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets, ucg);
   const expandedAggregateIds = new Set();
   let showAllNetworks = false;
+  let structureOverlay = false;
+  const urbanContext = data.cityContext;
+  function contextVisible(id) {
+    return filterEngine.contextDetailVisible(Boolean(urbanContext),structureOverlay,
+      majorDistrictIds.has(id),id,state.selected?.kind==='district' ? state.selected.id : null);
+  }
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -615,6 +663,16 @@
     vertex(target, end, [0, 1, 0], vertexColor);
   }
 
+  function orientedBox(target, footprint, y, height, vertexColor) {
+    const top=footprint.map(([x,z])=>[x,y+height,z]);
+    quad(target,[top[0],top[3],top[2],top[1]],[0,1,0],vertexColor);
+    for(let i=0;i<4;i++) {
+      const a=footprint[i],b=footprint[(i+1)%4],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+      quad(target,[[a[0],y,a[1]],top[i],top[(i+1)%4],[b[0],y,b[1]]],
+        [(b[1]-a[1])/length,0,(a[0]-b[0])/length],vertexColor);
+    }
+  }
+
   function roadSegment(target, start, end, width, y, vertexColor) {
     const deltaX = end[0] - start[0];
     const deltaZ = end[1] - start[1];
@@ -663,44 +721,15 @@
         );
       }
     }
-    if (scene.buildings.length < 256) {
-      for (const building of scene.buildings) {
-        points.push(
-          [building.x, building.height, building.z],
-          [building.x + building.width, building.height, building.z],
-          [building.x + building.width, building.height, building.z + building.depth],
-          [building.x, building.height, building.z + building.depth],
-        );
-      }
+    for (const point of lodFramingPoints(scene.buildings,[...aggregateFacilities.values()])) points.push(point);
+    for(const parcel of Object.values(orientedBuildings))for(const part of parcel.parts)
+      for(const [x,z] of part.footprint)points.push([x,part.y+part.height,z]);
+    const fitted=fitPerspective(points,state,cameraPolicy,viewportWidth/viewportHeight,Math.max(8,tallestBuilding));
+    for (const key of ['targetX','targetY','targetZ']) {
+      state[key]=fitted[key];
+      initialCamera[key]=fitted[key];
     }
-    if (scene.buildings.length >= 256) {
-      for (const facility of aggregateFacilities.values()) {
-        points.push(
-          [facility.x, facility.height + 2.4, facility.z],
-          [facility.x + facility.width, facility.height + 2.4, facility.z],
-          [facility.x + facility.width, facility.height + 2.4, facility.z + facility.depth],
-          [facility.x, facility.height + 2.4, facility.z + facility.depth],
-        );
-      }
-    }
-    function fits(distance) {
-      const matrix = cameraMatrixAtDistance(distance);
-      return points.every((point) => {
-        const clip = transformPoint(matrix, point);
-        if (clip[3] <= 0) return false;
-        return Math.abs(clip[0] / clip[3]) <= cameraPolicy.horizontalMargin
-          && Math.abs(clip[1] / clip[3]) <= cameraPolicy.verticalMargin;
-      });
-    }
-    let low = Math.max(8, tallestBuilding);
-    let high = Math.max(initialCamera.distance, low * 2);
-    while (!fits(high) && high < worldSpan * 20) high *= 1.35;
-    for (let iteration = 0; iteration < 24; iteration += 1) {
-      const middle = (low + high) / 2;
-      if (fits(middle)) high = middle;
-      else low = middle;
-    }
-    return high * 1.01;
+    return fitted.distance;
   }
 
   function selected(kind, id) {
@@ -718,7 +747,18 @@
     const triangles = [];
     const lines = [];
     const accessOverlay = [];
+    if(data.occupiedGround && !structureOverlay) {
+      const majorOrder=[...majorDistrictIds].sort();
+      for(const pad of data.occupiedGround.pads) {
+        let owner=districts.get(pad.districtId);
+        while(owner && !majorDistrictIds.has(owner.id))owner=districts.get(owner.parentId);
+        const tint=color(owner?urbanContext.majorColors[majorOrder.indexOf(owner.id)%urbanContext.majorColors.length]:urbanContext.ground);
+        for(const p of pad.polygons)for(let i=1;i<p.length-1;i++)
+          quad(triangles,[p[0],p[i],p[i+1],p[i+1]].map(([x,z])=>[x,-.03,z]),[0,1,0],tint);
+      }
+    }
     for (const district of framingDistricts) {
+      if(data.occupiedGround && !structureOverlay) continue;
       for (const rectangle of districtTerritory(district).rectangles) {
         box(
           triangles,
@@ -728,16 +768,19 @@
           rectangle.width,
           0.5,
           rectangle.depth,
-          color("#182337"),
+          color(urbanContext && !structureOverlay ? urbanContext.ground : "#182337"),
         );
       }
     }
 
     for (const districtId of [...majorDistrictIds].sort()) {
+      if(data.occupiedGround && !structureOverlay) continue;
       const district = districts.get(districtId);
       if (!district) continue;
       const territory = districtTerritory(district);
-      const districtColor = color(majorDistrictColorById.get(districtId));
+      const index=[...majorDistrictIds].sort().indexOf(districtId);
+      const districtColor = color(urbanContext && !structureOverlay
+        ? urbanContext.majorColors[index % urbanContext.majorColors.length] : majorDistrictColorById.get(districtId));
       for (const rectangle of territory.rectangles) {
         box(
           triangles,
@@ -752,6 +795,10 @@
       }
       const borderColor = lighten(districtColor, 0.48);
       for (const segment of territory.boundary) {
+        if (urbanContext && !structureOverlay) {
+          line(lines,[segment[0][0],.09,segment[0][1]],[segment[1][0],.09,segment[1][1]],borderColor);
+          continue;
+        }
         roadSegment(triangles, segment[0], segment[1], 1.2, 0.09, borderColor);
       }
     }
@@ -763,8 +810,13 @@
       STREET: "#172437",
     };
     for (const rectangle of streetRectangles) {
-      if (accessPolicy) break;
+      if (accessPolicy && !data.streets?.structural) break;
       if (!filterEngine.corridorVisible(rectangle, renderedNetworkIds)) continue;
+      if (rectangle.points) {
+        quad(triangles, rectangle.points.map(([x,z]) => [x, rectangle.elevation ?? 0.08, z]),
+          [0,1,0], color(rectangle.color || streetColors.STREET));
+        continue;
+      }
       roadSegment(
         triangles,
         [rectangle.x, rectangle.z + rectangle.depth / 2],
@@ -775,7 +827,7 @@
       );
     }
 
-    if (currentDetailLevel === "detail") {
+    if (currentDetailLevel === "detail" && (!urbanContext || structureOverlay)) {
       for (const block of civicBlocks) {
         const blockColor = color("#243248");
         const curbColor = color("#52637b");
@@ -804,6 +856,7 @@
 
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
+      if (!contextVisible(district.id)) continue;
       const depth = districtDepths.get(district.id) || 0;
       const y = 0.06 + depth * 0.025;
       const districtColor = selected("district", district.id)
@@ -836,12 +889,20 @@
     const junctionGeometry = filterEngine.accessJunctionGeometry(accessFrame);
     for (const segment of accessFrame?.segments || []) {
       if (segment.highlighted) {
-        line(accessOverlay, [segment.start[0],0.22,segment.start[1]],
-          [segment.end[0],0.22,segment.end[1]], color("#67d7ff"));
+        for(let i=1;i<segment.path.length;i++) {
+          const a=segment.path[i-1],b=segment.path[i];
+          line(accessOverlay,[a[0],.22,a[1]],[b[0],.22,b[1]],color("#67d7ff"));
+        }
       }
       const style = roadStyles.get(segment.id), width = style.width;
-      roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
-      roadSegment(triangles, segment.start, segment.end, width * 0.82, 0.14, color(style.surface));
+      if (segment.pavement) {
+        for (const piece of segment.pavement) {
+          quad(triangles, piece.points.map(([x,z]) => [x,.14,z]), [0,1,0], color(style.surface));
+        }
+      } else {
+        roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
+        roadSegment(triangles, segment.start, segment.end, width * 0.82, 0.14, color(style.surface));
+      }
       for (const marking of filterEngine.accessMarkingSegments(segment, junctionGeometry.trims)) {
         roadSegment(triangles, marking.start, marking.end, Math.min(0.13, width * 0.12), 0.18,
           color(segment.kind === "DEPENDENCY_ROAD" ? style.marking : networkColors[segment.kind]));
@@ -894,7 +955,12 @@
       const selectedColor = selected("building", building.entityId)
         ? lighten(baseColor, 0.62)
         : baseColor;
-      for (const part of buildingParts(building, currentDetailLevel === "district")) {
+      const oriented=orientedBuildings[building.entityId];
+      for (const part of oriented?.parts || buildingParts(building, currentDetailLevel === "district")) {
+        if (part.footprint) {
+          orientedBox(triangles,part.footprint,.2+part.y,part.height,part.shade ? lighten(selectedColor,part.shade) : selectedColor);
+          continue;
+        }
         box(
           triangles,
           part.x,
@@ -907,6 +973,13 @@
         );
       }
       if (selected("building", building.entityId)) {
+        if (oriented) {
+          for(let i=0;i<4;i++) {
+            const a=oriented.footprint[i],b=oriented.footprint[(i+1)%4];
+            for(const y of [.24,building.height+.65])line(lines,[a[0],y,a[1]],[b[0],y,b[1]],color("#f8fafc"));
+          }
+          continue;
+        }
         const x0 = building.x - 0.45;
         const x1 = building.x + building.width + 0.45;
         const z0 = building.z - 0.45;
@@ -936,7 +1009,7 @@
         && facility.memberEntityIds.includes(state.selected.id)
         ? scene.buildings.find(b => b.entityId === state.selected.id) : null;
       const isSelected = selected("aggregate", facility.id) || Boolean(selectedMember);
-      for (const plot of facility.plots || [facility]) {
+      for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         box(
           triangles,
           plot.x,
@@ -967,7 +1040,7 @@
         }
       }
       const borderColor = color(isSelected ? "#f8fafc" : "#fbbf24");
-      for (const plot of facility.plots || [facility]) {
+      for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         const x0 = plot.x - 0.55;
         const x1 = plot.x + plot.width + 0.55;
         const z0 = plot.z - 0.55;
@@ -1075,7 +1148,7 @@
         }
       }
     }
-    for (const network of accessFrame ? accessFrame.segments.map(s => ({id: s.id, path: [s.start, s.end]})) : scene.networks) {
+    for (const network of accessFrame ? accessFrame.segments.map(s => ({id: s.id, path: s.path})) : scene.networks) {
       if (!accessFrame && !renderedNetworkIds.has(network.id)) continue;
       const points = network.path.map((point) => [point[0], 0.22, point[1]]);
       if (points.every(Boolean)) {
@@ -1090,12 +1163,17 @@
     for (const building of scene.buildings) {
       if (!renderedBuildingIds.has(building.entityId)) continue;
       const corners = [];
+      const oriented=orientedBuildings[building.entityId];
+      if(oriented) {
+        for(const [x,z] of oriented.footprint)for(const y of [.2,building.height+.2])corners.push([x,y,z]);
+      } else {
       for (const x of [building.x, building.x + building.width]) {
         for (const y of [0.2, building.height + 0.2]) {
           for (const z of [building.z, building.z + building.depth]) {
             corners.push([x, y, z]);
           }
         }
+      }
       }
       if (corners.length === 8) {
         regions.push({
@@ -1108,7 +1186,7 @@
     }
     for (const aggregateId of renderedAggregateIds) {
       const facility = aggregateFacilities.get(aggregateId);
-      for (const plot of facility.plots || [facility]) {
+      for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         const corners = [];
         for (const x of [plot.x, plot.x + plot.width]) {
           for (const y of [0.2, facility.height + 2.4]) {
@@ -1185,6 +1263,7 @@
     const candidates = [];
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
+      if (!contextVisible(district.id)) continue;
       const territory = districtTerritory(district);
       const anchor = projected([
         territory.labelAnchor[0],
@@ -1347,7 +1426,7 @@
     const selectionKey = state.selected
       ? `${state.selected.kind}:${state.selected.id}:${state.selected.routeId || ""}`
       : "none";
-    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${[...expandedAggregateIds].sort().join('|')}`;
+    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${structureOverlay}:${[...expandedAggregateIds].sort().join('|')}`;
     if (nextCacheKey === lodCacheKey) return;
     currentDetailLevel = nextDetailLevel;
     lodCacheKey = nextCacheKey;
@@ -1391,7 +1470,7 @@
       const routingStatus = accessFrame
         ? `${accessFrame.routes.length} relation paths / ${accessFrame.segments.length} shared segments${accessPolicy.unresolved ? ` · ${accessPolicy.unresolved} unrouted edges` : ""}`
         : `${renderedNetworkIds.size}/${visibleNetworkIds.size} ${routeLabel}`;
-      const status = `${label} · ${subject} · ${routingStatus}${accessFrame?.focused ? " · Selected paths (x-ray)" : ""}`;
+      const status = `${label} · ${subject} · ${routingStatus}${accessFrame?.focused ? " · Selected paths (x-ray)" : ""}${accessPolicy?.streetStatus || ''}`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
     }
   }
@@ -1603,6 +1682,12 @@
     detailRow(details, "Archetype", building.archetype);
     detailRow(details, "Language", entity.language || "Unknown");
     detailRow(details, "Height", building.height);
+    const parcel=orientedBuildings[entityId];
+    if(parcel) {
+      detailRow(details,"Street-facing rotation",`${(parcel.angle*180/Math.PI).toFixed(1)}° · visual, not geographic north`);
+      detailRow(details,"Local displacement",`${parcel.displacement.toFixed(2)} world units`);
+      detailRow(details,"Frontage street",parcel.streetId);
+    }
     detailRow(details, "District", districtLabel(districts.get(building.districtId)));
     inspector.append(details);
     const facility = lodPolicy.facilityForEntity(entityId);
@@ -1665,6 +1750,37 @@
     ));
   }
 
+  function showStreetDiagnostics(offset=0, reason='') {
+    if (!data.routing?.streetGrid) return;
+    const page=accessPolicy.failurePage(visibleBuildingIds,visibleNetworkIds,offset,reason);
+    inspector.replaceChildren();
+    inspector.append(element('p','STREET ASSIGNMENT','eyebrow'));
+    inspector.append(element('h2','Original paths retained'));
+    inspector.append(element('p','These relationships are not lost. Select a path to inspect its original source, destination and evidence. Counts respect the current filters.','muted'));
+    for (const item of [{reason:'',label:'All fallback reasons',count:null},...page.counts]) {
+      const button=element('button',item.label+(item.count===null?'':` · ${item.count}`),'focus-button');
+      button.type='button';
+      button.addEventListener('click',()=>showStreetDiagnostics(0,item.reason));
+      inspector.append(button);
+    }
+    inspector.append(element('p',page.total?`${page.offset+1}–${page.offset+page.rows.length} of ${page.total} paths`:'No fallback paths match these filters.','section-title'));
+    for (const route of page.rows) {
+      const button=element('button',`${entities.get(route.source)?.path || route.source} → ${entities.get(route.target)?.path || route.target}`,'focus-button fallback-route');
+      button.type='button';
+      button.dataset.routeId=route.id;
+      button.addEventListener('click',()=>showSelection({kind:'network',
+        id:route.networkIds.find(id=>visibleNetworkIds.has(id)),routeId:route.id}));
+      inspector.append(button,element('p',accessPolicy.assignmentReason(route.id).label,'muted'));
+    }
+    for (const [label,next] of [['Previous',page.offset-25],['Next',page.offset+25]]) {
+      if (next<0 || next>=page.total) continue;
+      const button=element('button',label,'focus-button');
+      button.type='button';button.addEventListener('click',()=>showStreetDiagnostics(next,reason));
+      inspector.append(button);
+    }
+  }
+  document.getElementById('street-diagnostics')?.addEventListener('click',()=>showStreetDiagnostics());
+
   function showNetwork(networkId) {
     const choices = accessPolicy?.choices(networkId, visibleBuildingIds, visibleNetworkIds) || [];
     const chosen = choices.find(route => route.id === state.selected?.routeId);
@@ -1676,6 +1792,12 @@
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Graph edges", network.edgeIds.length);
     detailRow(details, "Route points", network.path.length);
+    if (chosen && data.routing?.streetGrid) {
+      const diagnostic=accessPolicy.assignmentReason(chosen.id);
+      detailRow(details,'Street assignment',diagnostic.label);
+      if (diagnostic.latticeStepLimit !== undefined) detailRow(details,'Street-grid distance limit (steps)',diagnostic.latticeStepLimit);
+      if (diagnostic.shortestLatticeSteps !== undefined) detailRow(details,'Shortest street-grid distance (steps)',diagnostic.shortestLatticeSteps);
+    }
     if (network.routeIds) {
       detailRow(details, "Shared relation paths", network.routeIds.length);
       inspector.append(element("p", "Shared geometry does not create new relationships. Highlighted paths retain their own source and destination.", "muted"));
@@ -1689,7 +1811,9 @@
       detailRow(details, "Major structural districts", demand.majorDistrictCount);
       detailRow(details, "Cross-major edges", demand.crossDistrictEdgeCount);
       detailRow(details, "Files outside major districts", demand.unassignedBuildingCount);
-      detailRow(details, "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
+      const pavementWidth=accessPolicy?.network(networkId)?.pavementWidth;
+      detailRow(details, pavementWidth ? "Demand cap / target width" : "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
+      if (pavementWidth) detailRow(details,data.streetCurves ? "Approach width range" : "Physical width range",`${pavementWidth.min.toFixed(2)} – ${pavementWidth.max.toFixed(2)} · shared street envelope`);
       inspector.append(element("p", "Grade uses full-road static dependency demand, not runtime traffic. Filters and path selection do not change it. Trunk demand does not imply highway geometry.", "muted"));
     }
     inspector.append(details);
@@ -1772,6 +1896,11 @@
   }
 
   function runAction(action) {
+    if (action === "toggle-structure" && urbanContext) {
+      structureOverlay = !structureOverlay;
+      document.querySelector('[data-action="toggle-structure"]').setAttribute('aria-pressed',String(structureOverlay));
+      projectionDirty = true;
+    }
     if (action === "toggle-pan") {
       state.moveMode = !state.moveMode;
       document.querySelector('[data-action="toggle-pan"]').setAttribute("aria-pressed", String(state.moveMode));

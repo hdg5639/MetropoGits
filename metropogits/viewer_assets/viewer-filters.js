@@ -368,7 +368,9 @@
             ),
           depth: Math.max(2, maxZ - z),
           districtId,
-          height: Math.min(64, 14 + Math.log2(members.length + 1) * 4.5),
+          // Overview is a summary of existing buildings, not a file-count tower.
+          // Keep its skyline inside the source scene's height envelope.
+          height: Math.max(...members.map(building => building.height)),
           id: `visual:block:${majorDistrictId}:${String(index).padStart(3, "0")}`,
           labelX: labelPlot.x + labelPlot.width / 2,
           labelZ: labelPlot.z + labelPlot.depth / 2,
@@ -495,6 +497,12 @@
       result.push(...promoted);
     }
     return result.sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  function aggregateGroundPlots(facility, compact = false) {
+    if (!compact) return facility.plots || [facility];
+    // Each mass already fits its allocated plot. Never widen it into a road.
+    return aggregateParts(facility).map(p => ({x:p.x,z:p.z,width:p.width,depth:p.depth}));
   }
 
   function aggregateParts(facility) {
@@ -682,10 +690,11 @@
       (territoryData?.districts || []).map((territory) => [territory.id, territory]),
     );
     const majorIds = new Set(majorDistrictIds(scene));
+    const orientedIds = new Set(streetData?.orientedEntityIds || []);
     const aggregates = roleFacilities(
       aggregateFacilities(scene, majorIds, districts, territories, streetData?.rectangles || []), scene, ucg,
       streetData?.rectangles || [],
-    );
+    ).filter(a => !a.memberEntityIds.some(id => orientedIds.has(id)));
     const aggregateIds = new Set(aggregates.map((aggregate) => aggregate.id));
     const roleByMember = new Map(aggregates.filter(a => a.role)
       .flatMap(a => a.memberEntityIds.map(id => [id, a])));
@@ -971,18 +980,56 @@
     return !rectangle.networkIds || rectangle.networkIds.some(id => renderedNetworkIds.has(id));
   }
 
-  function createAccessPolicy(routing, hierarchy = null) {
+  function contextDetailVisible(enabled, overlay, major, identity, selectedIdentity) {
+    return !enabled || overlay || major || identity === selectedIdentity;
+  }
+
+  function createAccessPolicy(routing, hierarchy = null, pavement = null, curves = null) {
     if (!routing) return null;
+    const assigned = routing.streetGrid ? new Set(routing.streetGrid.assignment.assignedRouteIds) : null;
+    const fallbackIds = new Set(routing.streetGrid?.assignment.fallbackRouteIds || []);
+    const fallbackReasons = new Map((routing.streetGrid?.assignment.fallbackReasons || []).map(r=>[r.routeId,r]));
+    const reasonLabels = {
+      assigned:'Assigned to structural streets', distance_limit:'Street detour exceeds distance limit',
+      joint_constraints:'Distance fits; no path found under combined bend/simple-path constraints',
+      missing_access:'Endpoint has no street access', disconnected_streets:'Endpoints lie on disconnected streets',
+      connector_search_limit:'Access search capped; feasibility unknown', route_search_limit:'Route search capped; feasibility unknown',
+      diagnostic_search_limit:'Diagnostic search capped; cause unknown', access_only:'Original path has no lattice road segment',
+      no_structural_streets:'No structural street geometry', unrecorded:'Legacy artifact: cause not recorded',
+    };
+    function assignmentReason(id) {
+      if (!assigned || !routes.has(id)) return null;
+      const record = assigned.has(id) ? {reason:'assigned'} : fallbackReasons.get(id) || {reason:'unrecorded'};
+      return {...record, label:reasonLabels[record.reason] || reasonLabels.unrecorded};
+    }
+    function failurePage(buildingIds, networkIds, offset=0, reason='') {
+      const failures = [...routes.values()].filter(r=>fallbackIds.has(r.id) && buildingIds.has(r.source)
+        && buildingIds.has(r.target) && r.networkIds.some(id=>networkIds.has(id))).sort((a,b)=>a.id.localeCompare(b.id));
+      const counts = {};
+      for (const route of failures) {
+        const key=assignmentReason(route.id).reason;
+        counts[key]=(counts[key] || 0)+1;
+      }
+      const matching=failures.filter(r=>!reason || assignmentReason(r.id).reason===reason);
+      const start=Math.max(0,Math.min(Math.floor(Number.isFinite(offset)?offset:0),Math.max(0,matching.length-1)));
+      return {total:matching.length, offset:start, rows:matching.slice(start,start+25),
+        counts:Object.keys(counts).sort().map(key=>({reason:key,label:reasonLabels[key] || reasonLabels.unrecorded,count:counts[key]}))};
+    }
     const routes = new Map(routing.routes.map(route => [route.id, route]));
     const segments = new Map(routing.segments.map(segment => [segment.id,
-      {...segment, demand: hierarchy?.segments?.[segment.id]}]));
+      {...segment, demand: hierarchy?.segments?.[segment.id], pavement: pavement?.segments?.[segment.id],
+        path:curves?.segments?.[segment.id] || [segment.start,segment.end], curves}]));
     const trajectories = new Map(routing.routes.map(route => {
       let distance = 0;
-      const steps = route.path.slice(1).map((end, i) => {
-        const start = route.path[i], length = Math.hypot(end[0]-start[0], end[1]-start[1]);
-        const step = {start, end, length, distance, segmentId: route.segmentIds[i]};
-        distance += length;
-        return step;
+      const steps = route.path.slice(1).flatMap((end, i) => {
+        const segment=segments.get(route.segmentIds[i]);
+        const path=curves?.segments?.[route.segmentIds[i]];
+        const forward=path && segment.start[0]===route.path[i][0] && segment.start[1]===route.path[i][1];
+        const points=path ? (forward ? path : [...path].reverse()) : [route.path[i],end];
+        return points.slice(1).map((end,j)=>{
+          const start=points[j],length=Math.hypot(end[0]-start[0],end[1]-start[1]);
+          const step={start,end,length,distance,segmentId:route.segmentIds[i]};distance+=length;return step;
+        });
       });
       return [route.id, {steps, distance}];
     }));
@@ -996,15 +1043,16 @@
         && (selected?.kind !== 'aggregate' || memberIds.has(route.source) || memberIds.has(route.target))
         && (selected?.kind !== 'network' || ((selectedRoutes ? selectedRoutes.has(route.id) : route.networkIds.includes(selected.id))
           && (!selected.routeId || selected.routeId === route.id))));
-      const eligible = showAll ? candidates : related;
-      const routeIds = new Set(eligible.map(route => route.id));
       const focused = ['building', 'network', 'aggregate'].includes(selected?.kind);
+      const eligible = (showAll ? candidates : related).filter(route =>
+        !assigned || focused || showAll || assigned.has(route.id));
+      const routeIds = new Set(eligible.map(route => route.id));
       const highlighted = new Set(focused ? related.map(route => route.id) : []);
       const visibleSegments = [...segments.values()].map(segment => {
         const active = segment.routeIds.filter(id => routeIds.has(id));
         return {...segment, routeIds: active, highlighted: active.some(id => highlighted.has(id))};
       }).filter(segment => segment.routeIds.length &&
-        (level !== 'overview' || focused || showAll || (!segment.access && segment.routeIds.length >= 4)));
+        (assigned || level !== 'overview' || focused || showAll || (!segment.access && segment.routeIds.length >= 4)));
       const segmentIds = new Set(visibleSegments.map(segment => segment.id));
       const representedRoutes = new Set(visibleSegments.flatMap(segment => segment.routeIds));
       const animated = eligible.filter(route => representedRoutes.has(route.id));
@@ -1018,7 +1066,9 @@
       const segment = segments.get(id);
       if (!segment) return null;
       const contributing = segment.routeIds.filter(key => !activeRouteIds || activeRouteIds.has(key));
-      return {id, kind: segment.kind, path: [segment.start, segment.end], routeIds: contributing, demand:segment.demand,
+      return {id, kind: segment.kind, path: segment.path, routeIds: contributing, demand:segment.demand,
+        pavementWidth:segment.pavement ? {min:Math.min(...segment.pavement.map(p=>p.width)),
+          max:Math.max(...segment.pavement.map(p=>p.maxWidth ?? p.width))} : null,
         edgeIds: [...new Set(contributing.flatMap(key => routes.get(key).edgeIds))].sort()};
     }
     function choices(id, buildingIds, networkIds) {
@@ -1036,7 +1086,8 @@
       return {segmentId: step.segmentId, point: [step.start[0] + (step.end[0]-step.start[0])*fraction,
         step.start[1] + (step.end[1]-step.start[1])*fraction]};
     }
-    return Object.freeze({frame, network, choices, position, segments, routes, status: routing.status,
+    return Object.freeze({frame, network, choices, position, segments, routes, assignmentReason, failurePage, status: routing.status,
+      streetStatus: assigned ? ` · Street assignment ${assigned.size}/${routing.routes.length} · ${routing.streetGrid.assignment.fallbackRouteIds.length} legacy paths: select a building or All routes` : '',
       unresolved: routing.unresolvedEdgeIds.length});
   }
 
@@ -1090,7 +1141,7 @@
           trim[side] = Math.max(trim[side], extent);
           trims.set(segment.id, trim);
         }
-        if (rectangles.length < 3) continue;
+        if (rectangles.length < 3 || incident.some(s=>s.pavement)) continue;
         const inside = (a,b) => rectangles.some(r => a>r[0]-1e-9 && a<r[2]+1e-9 && b>r[1]-1e-9 && b<r[3]+1e-9);
         const xs = unique(rectangles.flatMap(r => [r[0],r[2]]));
         const zs = unique(rectangles.flatMap(r => [r[1],r[3]]));
@@ -1142,6 +1193,31 @@
   }
 
   function accessMarkingSegments(segment, trims) {
+    const physical = segment.curves?.paintSegments?.[segment.id];
+    if (physical) return physical;
+    const original=rawAccessMarkingSegments(segment,trims);
+    if (!segment.curves) return original;
+    return original.flatMap(p=>{
+      const points=curveLine(p.start,p.end,segment.curves);
+      return points.slice(1).map((end,i)=>({start:points[i],end}));
+    });
+  }
+
+  function curveLine(a,b,curves) {
+    const relevant=curves.corners.filter(c=>[0,1].every(j=>Math.min(a[j],b[j])<c.point[j]+c.radius && Math.max(a[j],b[j])>c.point[j]-c.radius));
+    if (!relevant.length) return [a,b];
+    const count=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.75));
+    return Array.from({length:count+1},(_,i)=>{
+      const p=a.map((v,j)=>v+(b[j]-v)*i/count);
+      for(const c of relevant) {
+        const x=Math.abs(p[0]-c.point[0])/c.radius,z=Math.abs(p[1]-c.point[1])/c.radius;
+        if(x<1 && z<1) {const d=c.radius/4*((1-x)*(1-z))**2;return p.map((v,j)=>v+c.direction[j]*d);}
+      }
+      return p;
+    });
+  }
+
+  function rawAccessMarkingSegments(segment, trims) {
     const style=accessRoadStyle(segment), run=accessMarkingSegment(segment,trims);
     if (!run || segment.access || !style.shared || style.width<1.25) return [];
     if (segment.kind!=='DEPENDENCY_ROAD') return [run];
@@ -1158,7 +1234,14 @@
       const start=[...run.start], end=[...run.start];start[axis]=a;end[axis]=b;
       pieces.push({start,end});
     }
-    return pieces;
+    if (!segment.pavement) return pieces;
+    return pieces.flatMap(paint => (segment.curves?.paintPieces?.[segment.id] || segment.pavement).filter(p=>p.width>=1.25).flatMap(p=>{
+      const a=Math.max(paint.start[axis],Math.min(p.start[axis],p.end[axis]));
+      const b=Math.min(paint.end[axis],Math.max(p.start[axis],p.end[axis]));
+      if (b-a<1e-8) return [];
+      const start=[...paint.start],end=[...paint.end];start[axis]=a;end[axis]=b;
+      return [{start,end}];
+    }));
   }
 
   function districtBuildings(scene, districtId) {
@@ -1196,12 +1279,14 @@
     accessMarkingSegment,
     accessMarkingSegments,
     accessRoadStyle,
+    contextDetailVisible,
     districtBuildings,
     groundPan,
     cameraKeyAction,
     createAccessPolicy,
     corridorVisible,
     aggregateParts,
+    aggregateGroundPlots,
     aggregateLabel,
     roleVolumes,
     createLodPolicy,

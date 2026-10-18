@@ -348,3 +348,134 @@ routes and1M expanded steps. Caps retain complete valid routes. Repeated input
 is deterministic; a refinement result cannot be refined again. Default CLI,
 UCG/City schemas, positions and evidence stay unchanged. This remains an explicit
 developer comparison rather than a default production pipeline.
+
+### ADR-020 opt-in structural infrastructure (not the default)
+
+`python -m scripts.street_grid BUILD --street-grid --out NEW_DIRECTORY` creates
+an original-access/0.2 versus structural-assignment comparison. Public City/UCG,
+canonical positions, IDs and normal CLI behavior do not change.
+
+Derived access/0.3 may carry `streetGrid` with version `structural-streets/0.1`,
+`semantic:false`, directory/geography basis, safe-width segments, entrances,
+block ownership, diagnostics/status and assignment data. Geometry generation
+does not read networks or UCG edges. A bounded directory frontier (up to64 files
+where hierarchy permits) gets28-unit seed streets, obstacle-clear connectors
+and one geometric entrance per building. A directory with more than64 direct
+files remains one group;64 is a frontier target, not a hard building cap.
+
+Assignment retains original doors, all relationships and original0.2 trip
+length/bend limits. At most4-step connections attach original ports to the
+skeleton; these are evidenced access connectors, not extra structural claims.
+`assignedRouteIds` and `fallbackRouteIds` partition all routes. Fallback routes
+keep their original geometry. Consumers show assigned demand by default, disclose
+counts and allow selection/All routes to expose exact fallback paths. Synthetic
+follows the same stored paths; it never randomly branches. This is static demand,
+not runtime traffic. SVG metadata retains all routes; visible captions disclose
+structural meaning and partial assignment.
+
+Caps:10000 buildings,250000 bounding lattice cells,500000 seed steps,2M BFS
+states for infrastructure, another2M for original-port connections,20000 routes,
+3M route search states (per-trip12000 states/60000 labels), existing1M route
+expansion limit. Hard input caps fail; exhausted searches report partial streets
+or retain fallback relationships. No default schema/config migration or claim of
+incremental street stability. LOD obstacle rectangles stay at the legacy value
+for controlled comparisons; new surfaces do not retile aggregate facilities.
+
+Assignment diagnostics are additive under
+`diagnosticsVersion: street-assignment-diagnostics/0.1`: `fallbackReasons`
+contains one `{routeId, reason}` per fallback, `fallbackReasonCounts` aggregates
+them, and `diagnosticSearchStates` reports a separate global1M-state budget.
+Optional `latticeStepLimit` and `shortestLatticeSteps` are lattice distances,
+not world lengths or traffic. This diagnostic budget cannot change routed trips.
+
+Reasons distinguish `distance_limit`, `joint_constraints`, `missing_access`,
+`disconnected_streets`, `access_only`, `no_structural_streets`, and connector,
+route or diagnostic search limits. Capped searches mean unknown feasibility;
+joint constraints mean a distance-feasible path exists but the combined
+bend/simple-path search did not return one, not proven bend-only infeasibility.
+Older artifacts lacking reasons display `unrecorded` rather than an invented
+diagnosis. The opt-in viewer's Review fallbacks panel respects current endpoint
+and network filters, renders at most25 paths per page, and opens exact original
+path evidence. Default viewers do not gain this experimental control.
+
+`--aligned-blocks` optionally selects `structural-streets/0.2`, with basis
+`aligned-block-boundaries-and-building-geography`. It uses zero half-cell padding
+on block seed bounds, preserving the28-world-unit interior line period. A
+simultaneous, deterministic nearest-component wavefront retains one link per
+geometric wave-neighbor pair. Local alternate circuits are structural, not
+source relationships. Infrastructure search remains bounded by2M popped states,
+with the existing area/building/seed limits; incomplete exploration is PARTIAL.
+Original0.1 mode, City/UCG, canonical positions and original trip doors/budgets
+are unchanged. No full incremental stability guarantee for derived streets is
+introduced; geometry changes can change wave ownership and connector choices.
+
+### Perspective framing (viewer only)
+
+Initial WebGL fitting solves the perspective-frustum inequalities over the same
+district/building/aggregate extent points instead of moving backward around a
+fixed world-AABB center. Yaw, pitch, margins, point membership and rendered LOD
+are unchanged. The target may translate in X/Z; its ground-relative Y is retained
+so zoom never starts with an underground orbit pivot. A1% distance guard remains.
+Reset restores this fitted target. This changes neither scene/routing data nor
+CPU preview/Canvas projection, and does not crop outlier buildings to enlarge
+the city. Subsequent manual camera movement remains user-controlled.
+
+### Structural pavement presentation
+
+For `structural-streets/0.2`, renderer-derived `streets.surfaces` may contain
+four X/Z `points` and `segmentId` plus the existing bounding rectangle. All three
+renderers consume the points; bounds are not a substitute for the polygon.
+This is packaged viewer geometry, not a City/UCG schema field or new relation.
+Routing segments retain original clear widths and existing IDs/paths.
+
+On the structural3.5-unit lattice, remove short straight-run width expansions
+with two-step erosion/dilation, then constrain full-width growth to0.25 per
+world unit. End neighborhoods truncate; door stubs do not constrain trunk
+width. Polygons remain subsets of previous clearance rectangles. Sampling is
+capped at500000 with an explicit error, not silent street truncation.
+Equal-slope pieces coalesce; order is deterministic. Legacy structural0.1 and
+normal nonexperimental output retain their prior form.
+
+`streetDemand` (`street-demand-surfaces/0.1`) is optional renderer data for the
+aligned experiment. Its segment-ID-keyed polygons intersect each dependency
+segment's demand/clearance cap with collinear structural pavement. Perpendicular
+crossings do not count as coverage. Uncovered intervals remain intact at their
+original certified width; HTTP/messaging retain their category geometry.
+No path, identity, source/destination, grade or assignment changes. Inspector
+separates physical width range from demand cap/target. Paint clips to sufficiently
+wide pieces and junction fills cannot enlarge the resulting envelope. All
+renderers use the same polygons; the500000-piece cap fails explicitly.
+
+### Experimental city context
+
+Aligned structural0.2 output optionally packages `cityContext` version
+`city-context/0.1`: neutral `ground` and ordered `majorColors` presentation
+values, not UCG/City facts. WebGL/Canvas initially suppress minor directory
+outlines, civic curbs and minor labels. Major identities and selected district
+context remain; district picking, buildings, aggregates and route membership
+are unchanged. Structure overlay restores full context and participates in
+static geometry cache invalidation, not per-frame Synthetic work.
+
+CPU showcase uses the same palette and removes decorative plot outlines.
+Accessible preview deliberately retains its detailed structural-diagram style.
+Neither changes canonical position/shape, road paths or evidence. Default and
+structural0.1 viewers do not gain this experimental toggle or styling.
+
+### Opt-in curved streets
+
+`scripts.street_grid --curved-streets` requires aligned structural0.2. Optional
+derived `routing.curvePlan` version `street-curves/0.1` contains geography-only
+degree-two bend supports (`point`, `radius`, `direction`). It does not rewrite
+canonical City/UCG or original route records. Viewer-only `streetCurves` has
+sampled paths keyed by unchanged segment ID and original paint-width pieces.
+Routes follow these paths in their original direction, including reverse trips.
+All scene/relationship IDs and endpoint provenance remain intact.
+
+Support squares are building-free, disjoint and bounded by half the approach to
+the next structural branch/turn. The common quadratic map is identity outside
+them. Surfaces are subdivided before mapping; round corner joins remain inside
+the certified empty support. Source selection, picking, highlight and Synthetic
+consume the same mapped centerlines. CPU SVG maps pavement and paint as well.
+Planning caps500000 nodes/5M clearance checks; presentation caps500000 pieces.
+Limits raise an error rather than silently omitting paths. Legacy/default modes
+are unchanged. This version does not reroute a staircase chain or create rotaries.

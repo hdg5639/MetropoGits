@@ -15,7 +15,131 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
   {id:'shared',routeIds:['ab','cd'],access:false,kind:'DEPENDENCY_ROAD',start:[0,7],end:[7,7]}
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
+
+test('moved three-way junction preserves each trip destination without inventing turns',()=>{
+  const r={status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],segments:[
+    {id:'a',kind:'DEPENDENCY_ROAD',start:[-10,0],end:[0,0],width:2,routeIds:['ab','ac']},
+    {id:'b',kind:'DEPENDENCY_ROAD',start:[0,0],end:[10,0],width:2,routeIds:['ab']},
+    {id:'c',kind:'DEPENDENCY_ROAD',start:[0,0],end:[0,10],width:2,routeIds:['ac']}],
+    routes:[{id:'ab',source:'A',target:'B',kind:'DEPENDENCY_ROAD',edgeIds:['e-ab'],networkIds:['n'],path:[[-10,0],[0,0],[10,0]],segmentIds:['a','b']},
+      {id:'ac',source:'A',target:'C',kind:'DEPENDENCY_ROAD',edgeIds:['e-ac'],networkIds:['n'],path:[[-10,0],[0,0],[0,10]],segmentIds:['a','c']}]};
+  const hub=[1,2],curves={corners:[],segments:{a:[[-10,0],hub],b:[hub,[10,0]],c:[hub,[0,10]]}};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(r,null,null,curves);
+  for(const route of r.routes) {
+    const end=route.path.at(-1), first=Math.hypot(11,2),last=Math.hypot(end[0]-1,end[1]-2);
+    const point=p.position(route,first/(first+last)).point;
+    assert.ok(Math.hypot(point[0]-hub[0],point[1]-hub[1])<1e-8);
+    const destination=p.position(route,1).point;
+    assert.ok(Math.hypot(destination[0]-end[0],destination[1]-end[1])<1e-8);
+  }
+  assert.deepEqual(p.network('b').edgeIds,['e-ab']);
+  const frame=p.frame('detail',new Set(['A','B','C']),new Set(['n']),{kind:'network',id:'b'});
+  assert.deepEqual([...frame.routeIds],['ab']);
+  assert.ok(!frame.segmentIds.has('c'));
+});
+
+test('diagonal chains join across moved logical corners without changing source-target pairing',()=>{
+  const r={status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],segments:[
+    {id:'a',kind:'DEPENDENCY_ROAD',start:[0,0],end:[10,0],width:2,routeIds:['forward','reverse']},
+    {id:'b',kind:'DEPENDENCY_ROAD',start:[10,0],end:[10,10],width:2,routeIds:['forward','reverse']}],
+    routes:[{id:'forward',source:'A',target:'B',kind:'DEPENDENCY_ROAD',edgeIds:['e1'],networkIds:['n'],path:[[0,0],[10,0],[10,10]],segmentIds:['a','b']},
+      {id:'reverse',source:'B',target:'A',kind:'DEPENDENCY_ROAD',edgeIds:['e2'],networkIds:['n'],path:[[10,10],[10,0],[0,0]],segmentIds:['b','a']}]};
+  const physical={segments:{a:[[0,0],[5,5]],b:[[5,5],[10,10]]},corners:[]};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(r,null,null,physical);
+  for(let i=0;i<=20;i++) {
+    const a=p.position(r.routes[0],i/20),b=p.position(r.routes[1],1-i/20);
+    assert.ok(Math.hypot(a.point[0]-b.point[0],a.point[1]-b.point[1])<1e-8);
+    assert.ok(Math.abs(a.point[0]-a.point[1])<1e-8);
+  }
+  assert.deepEqual(p.network('a').edgeIds,['e1','e2']);
+  assert.deepEqual(p.position(r.routes[0],.5).point,[5,5]);
+});
+
+test('curved shared segments drive exact inspection and forward/reverse synthetic trips',()=>{
+  const r={status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],segments:[
+    {id:'curve',kind:'DEPENDENCY_ROAD',start:[0,0],end:[10,0],width:2,routeIds:['forward','reverse']}],
+    routes:[{id:'forward',source:'A',target:'B',kind:'DEPENDENCY_ROAD',edgeIds:['e1'],networkIds:['n'],path:[[0,0],[10,0]],segmentIds:['curve']},
+      {id:'reverse',source:'B',target:'A',kind:'DEPENDENCY_ROAD',edgeIds:['e2'],networkIds:['n'],path:[[10,0],[0,0]],segmentIds:['curve']}]};
+  const path=[[0,0],[4,3],[6,3],[10,0]];
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(r,null,null,{segments:{curve:path},corners:[]});
+  assert.deepEqual(p.network('curve').path,path);
+  assert.deepEqual(p.network('curve').edgeIds,['e1','e2']);
+  assert.deepEqual(p.position(r.routes[0],.5).point,[5,3]);
+  assert.deepEqual(p.position(r.routes[1],.5).point,[5,3]);
+  for(let i=0;i<=20;i++) {
+    const a=p.position(r.routes[0],i/20),b=p.position(r.routes[1],1-i/20);
+    assert.ok(Math.hypot(a.point[0]-b.point[0],a.point[1]-b.point[1])<1e-8);
+    assert.equal(a.segmentId,'curve');
+  }
+  const f=p.frame('detail',new Set(['A','B']),new Set(['n']),{kind:'network',id:'curve',routeId:'forward'});
+  assert.deepEqual([...f.routeIds],['forward']);
+});
 const files=new Set(['A','B','C','D']), networks=new Set(['n']);
+
+test('city context hides minor decoration only and always exposes selected structure',()=>{
+  const visible=globalThis.METROPOGITS_FILTERS.contextDetailVisible;
+  assert.equal(visible(true,false,false,'minor',null),false);
+  assert.equal(visible(true,false,true,'major',null),true);
+  assert.equal(visible(true,false,false,'minor','minor'),true);
+  assert.equal(visible(true,true,false,'minor',null),true);
+  assert.equal(visible(false,false,false,'minor',null),true);
+});
+
+test('shared pavement is presentation only and survives exact filtering and animation',()=>{
+  const pavement={segments:{shared:[{points:[[0,6],[7,6],[7,8],[0,8]],start:[0,7],end:[7,7],width:2,structural:true}]}};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing,null,pavement);
+  const frame=p.frame('detail',files,networks,{kind:'building',id:'A'});
+  assert.deepEqual([...frame.routeIds],['ab']);
+  assert.deepEqual(frame.segments.find(s=>s.id==='shared').pavement,pavement.segments.shared);
+  assert.deepEqual(p.position(frame.animated[0],1).point,[7,0]);
+  assert.deepEqual(p.network('shared',frame.routeIds).edgeIds,['edge-ab']);
+  assert.equal(p.frame('detail',new Set(['C','D']),networks,{kind:'building',id:'A'}).routes.length,0);
+});
+
+test('paint never crosses a narrowed pavement throat',()=>{
+  const s={id:'s',start:[0,0],end:[14,0],width:3.5,kind:'DEPENDENCY_ROAD',routeIds:['a'],
+    demand:{grade:'AVENUE',width:2.5,lanePattern:'DASHED'},
+    pavement:[{start:[0,0],end:[7,0],width:.75},{start:[7,0],end:[14,0],width:2.5}]};
+  const paint=globalThis.METROPOGITS_FILTERS.accessMarkingSegments(s,new Map());
+  assert.ok(paint.length);
+  assert.ok(paint.every(p=>p.start[0]>=7&&p.end[0]<=14));
+});
+test('fallback review is paged, filter-aware and honest for legacy artifacts',()=>{
+  const input=structuredClone(routing);
+  input.routes=Array.from({length:70},(_,i)=>({...input.routes[1],id:`r${i}`}));
+  input.streetGrid={assignment:{assignedRouteIds:[],fallbackRouteIds:input.routes.map(r=>r.id),
+    fallbackReasons:input.routes.slice(0,35).map(r=>({routeId:r.id,reason:'distance_limit',latticeStepLimit:6}))}};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(input);
+  const first=p.failurePage(files,networks), second=p.failurePage(files,networks,25);
+  assert.equal(first.total,70); assert.equal(first.rows.length,25); assert.equal(second.rows.length,25);
+  assert.ok(first.rows.every(a=>second.rows.every(b=>a.id!==b.id)));
+  assert.deepEqual(first.counts.map(c=>[c.reason,c.count]),[['distance_limit',35],['unrecorded',35]]);
+  assert.equal(p.failurePage(files,networks,0,'distance_limit').total,35);
+  assert.equal(p.failurePage(new Set(['A','B']),networks).total,0);
+  assert.equal(p.failurePage(files,new Set()).total,0);
+  assert.equal(p.assignmentReason('r0').latticeStepLimit,6);
+  assert.match(p.assignmentReason('r69').label,/not recorded/);
+  assert.equal(p.assignmentReason('missing'),null);
+  assert.equal(policy.assignmentReason('ab'),null);
+});
+test('structural mode discloses fallback and preserves inspection and exact synthetic paths',()=>{
+  const input=structuredClone(routing);
+  input.streetGrid={assignment:{assignedRouteIds:['ab'],fallbackRouteIds:['cd']}};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(input);
+  const frame=p.frame('detail',files,networks,null);
+  assert.deepEqual([...frame.routeIds],['ab']);
+  assert.deepEqual(frame.animated.map(r=>r.id),['ab']);
+  assert.match(p.streetStatus,/1\/2.*1 legacy paths/);
+  for(const selected of [{kind:'building',id:'C'},{kind:'network',id:'c'}]) {
+    const inspected=p.frame('overview',files,networks,selected);
+    assert.deepEqual([...inspected.routeIds],['cd']);
+    assert.equal(inspected.segmentIds.size,3);
+    assert.deepEqual(p.position(inspected.animated[0],1).point,[14,7]);
+  }
+  assert.equal(p.frame('detail',files,networks,null,true).routes.length,2);
+  assert.equal(p.frame('detail',new Set(['A','B']),networks,{kind:'building',id:'C'}).routes.length,0);
+  assert.equal(p.choices('n',files,networks).length,2);
+});
 test('road hierarchy uses actual path count without enlarging safe pavement',()=>{
   for (const count of [1,3,4,100]) for (const access of [false,true]) {
     const segment={width:.45,access,routeIds:Array.from({length:count},(_,i)=>String(i))};

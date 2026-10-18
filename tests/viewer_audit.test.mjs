@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { Script } from 'node:vm';
 import '../metropogits/viewer_assets/viewer-3d.js';
 import '../metropogits/viewer_assets/viewer-filters.js';
-import { Cdp, instrument, replaceOnce, summarize, reportHtml, prepare } from '../scripts/viewer_audit.mjs';
+import { Cdp, instrument, replaceOnce, summarize, reportHtml, prepare, syntheticFrames } from '../scripts/viewer_audit.mjs';
 
 test('corridor visibility follows its actual contributing routes across filters and LOD', () => {
   const visible = globalThis.METROPOGITS_FILTERS.corridorVisible;
@@ -83,6 +83,8 @@ test('instrumentation is isolated, parseable and fails closed on marker drift', 
   assert.equal(modified.match(/globalThis\.__METRO_AUDIT__ =/g).length, 1);
   assert.ok(modified.includes('auditLod || lodPolicy.levelForZoom'));
   assert.ok(modified.includes('geometryMs: auditGeometryEnd - auditStart'));
+  assert.ok(modified.includes('drawCalls: auditDrawCalls - auditBeforeDrawCalls'));
+  assert.ok(modified.includes('point.choices.length>0'));
   assert.throws(() => instrument(source.replace('    renderLabels();', '    renderLabels(0);')), /marker changed/);
   assert.throws(() => replaceOnce('x x', 'x', 'y'), /marker changed/);
   assert.throws(() => instrument(modified), /marker changed/);
@@ -92,6 +94,26 @@ test('timing percentiles retain sample count and reject invalid samples', () => 
   assert.deepEqual(summarize([3, 1, 2]), {count: 3, median: 2, p95: 3, max: 3});
   assert.equal(summarize(Array.from({length:20}, (_, i) => i + 1)).p95, 19);
   for (const samples of [[], [NaN], [Infinity], [-1]]) assert.throws(() => summarize(samples));
+});
+
+test('unsupported cities report synthetic not applicable without weakening network checks', async () => {
+  const cdp = networks => ({evaluate: async expression => {
+    if (expression.includes('snapshot')) return {frames:[]};
+    if (expression.includes('.disabled')) return true;
+    if (expression.includes('scene.networks.length')) return networks;
+    throw new Error('Unexpected browser mutation');
+  }});
+  const result = await syntheticFrames(cdp(0), 20);
+  assert.equal(result.status, 'NOT_APPLICABLE');
+  assert.ok(!('cpuMs' in result));
+  await assert.rejects(syntheticFrames(cdp(1),20), /despite evidenced networks/);
+  const hidden = {evaluate:async expression => {
+    if (expression.includes('snapshot')) return {frames:[]};
+    if (expression.includes('.disabled')) return false;
+    if (expression.includes('accessState')) return {animationBound:0};
+    throw new Error('Unexpected mutation');
+  }};
+  assert.match((await syntheticFrames(hidden,20)).reason, /LOD/);
 });
 
 test('CDP resolves results, records exceptions, rejects protocol errors and disconnects', async () => {

@@ -275,7 +275,7 @@ button:hover, button:focus-visible { border-color: var(--accent); outline: none;
   color: var(--text); background: var(--panel); border: 1px solid var(--border);
   border-radius: 0.35rem; font: inherit; font-size: 0.8rem;
 }
-.route-endpoint { white-space: normal; overflow-wrap: anywhere; text-align: left; }
+.route-endpoint, .fallback-route { white-space: normal; overflow-wrap: anywhere; text-align: left; }
 
 .legend {
   position: relative;

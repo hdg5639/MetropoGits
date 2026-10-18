@@ -485,7 +485,8 @@ def render_preview(
         "  <g id=\"districts\">",
     ]
 
-    for district in scene["districts"]:
+    compact_ground = (routing or {}).get('groundPlan')
+    for district in ([] if compact_ground else scene["districts"]):
         if district["id"] not in drawable_district_ids:
             continue
         territory = territories[district["id"]]
@@ -535,7 +536,7 @@ def render_preview(
         for index, district_id in enumerate(sorted(major_district_ids))
     }
     lines.append('  <g id="major-districts">')
-    for district_id in sorted(major_district_ids):
+    for district_id in ([] if compact_ground else sorted(major_district_ids)):
         territory = territories[district_id]
         full_label = district_labels.get(district_id, district_id)
         color = major_color_by_id[district_id]
@@ -577,7 +578,7 @@ def render_preview(
     lines.append(
         '  <g id="civic-blocks" aria-label="Decorative civic blocks; not dependency evidence">'
     )
-    for district_id in sorted(buildings_by_district):
+    for district_id in ([] if compact_ground else sorted(buildings_by_district)):
         members = buildings_by_district[district_id]
         min_block_x = min(float(item["x"]) for item in members) - 1.1
         min_block_z = min(float(item["z"]) for item in members) - 1.1
@@ -604,6 +605,13 @@ def render_preview(
         )
     lines.append("  </g>")
 
+    if compact_ground:
+        lines.append('<g id="occupied-ground" aria-label="Visual occupied ground, not allocated directory area">')
+        for pad in compact_ground['pads']:
+            for poly in pad['polygons']:
+                points = ' '.join(f'{_fmt(project(x,z)[0])},{_fmt(project(x,z)[1])}' for x,z in poly)
+                lines.append(f'<polygon data-district-id="{_escape(pad["districtId"])}" points="{points}" fill="{palette["district"]}"/>')
+        lines.append('</g>')
     routing = routing if routing is not None else derive_access_routes(scene, ucg)
     lines.extend(svg_access_lines(routing, project, hierarchy=derive_road_hierarchy(scene, routing)))
     # Keep canonical group identities discoverable; these are not legacy paths.
@@ -616,6 +624,51 @@ def render_preview(
     lines.append("  <g id=\"buildings\">")
     for building in scene["buildings"]:
         x, y = project(building["x"], building["z"])
+        parcel = (
+            routing.get("parcelPlan", {}).get("buildings", {}).get(building["entityId"])
+        )
+        if parcel:
+            colors = ARCHETYPE_COLORS.get(
+                building["archetype"], ARCHETYPE_COLORS["GENERIC_BUILDING"]
+            )
+            vertical = max(3.0, min(16.0, float(building["height"]) * 0.8)) / float(
+                building["height"]
+            )
+            lines.append(
+                f'<g data-entity-id="{_escape(building["entityId"])}" data-archetype="{_escape(building["archetype"])}" data-placement="street-frontage">'
+            )
+            lines.append(
+                f"<title>{_escape(entities.get(building['entityId'], {}).get('path', building['entityId']))} · street-derived orientation</title>"
+            )
+            faces = []
+            for part in parcel["parts"]:
+
+                def ring(height):
+                    return [
+                        (
+                            project(px, pz)[0] - height * vertical * 0.45,
+                            project(px, pz)[1] - height * vertical,
+                        )
+                        for px, pz in part["footprint"]
+                    ]
+
+                bottom, top = ring(part["y"]), ring(part["y"] + part["height"])
+                for i in range(4):
+                    a, b = part["footprint"][i], part["footprint"][(i + 1) % 4]
+                    if (b[1] - a[1]) * 0.45 - (b[0] - a[0]) <= 0:
+                        continue
+                    points = [bottom[i], bottom[(i + 1) % 4], top[(i + 1) % 4], top[i]]
+                    text = " ".join(f"{_fmt(px)},{_fmt(py)}" for px, py in points)
+                    depth = vertical * (0.45 * (a[0] + b[0]) + a[1] + b[1]) / 2
+                    depth += scale * (part["y"] + part["height"] / 2)
+                    faces.append((depth, f'<polygon points="{text}" fill="{colors[1 + i % 2]}"/>'))
+                text = " ".join(f"{_fmt(px)},{_fmt(py)}" for px, py in top)
+                depth = sum(vertical * (0.45 * px + pz) for px, pz in part["footprint"]) / 4
+                depth += scale * (part["y"] + part["height"])
+                faces.append((depth, f'<polygon points="{text}" fill="{colors[0]}" stroke="#0f172a" stroke-width=".75"/>'))
+            lines.extend(face for _, face in sorted(faces, key=lambda item: item[0]))
+            lines.append("</g>")
+            continue
         building_width = max(float(building["width"]) * scale, 2.0)
         building_depth = max(float(building["depth"]) * scale, 2.0)
         extrusion = max(3.0, min(16.0, float(building["height"]) * 0.8))
@@ -691,7 +744,12 @@ def render_preview(
             'font-family="system-ui, sans-serif" font-size="13" '
             f'font-weight="800">{_escape(label)}</text>'
         )
-    lines.extend(["  </g>", "  </g>", "</svg>"])
+    lines.extend(["  </g>", "  </g>"])
+    if 'streetGrid' in routing:
+        assigned = len(routing['streetGrid']['assignment']['assignedRouteIds'])
+        lines.append(f'<text x="{PADDING}" y="{height-8}" fill="{palette["muted"]}" font-family="sans-serif" '
+                     f'font-size="10">Structural streets (visual) · {assigned}/{len(routing["routes"])} trips assigned · Legacy paths in viewer</text>')
+    lines.append('</svg>')
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 

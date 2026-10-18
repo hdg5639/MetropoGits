@@ -18,6 +18,24 @@ const policy = ({scene, ucg}, streets = []) => engine.createLodPolicy(scene, nul
 const intersects = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width
   && a.z < b.z + b.depth && b.z < a.z + a.depth;
 
+test('changed physical footprints expand only affected aggregates without losing files', () => {
+  const f = fixture(), baseline = policy(f), changed = baseline.aggregates[0];
+  const p = engine.createLodPolicy(f.scene, null,
+    {rectangles: [], orientedEntityIds: [changed.memberEntityIds[0]]}, f.ucg);
+  assert.deepEqual(p.aggregates, baseline.aggregates.filter(a => a.id !== changed.id));
+  const ids = f.scene.buildings.map(b => b.entityId);
+  for (const level of ['overview', 'district', 'detail']) {
+    const v = p.visibility(level, ids, []);
+    assert.ok(changed.memberEntityIds.every(id => v.buildingIds.includes(id)));
+    const represented = [...v.buildingIds, ...p.aggregates.filter(a => v.aggregateIds.includes(a.id))
+      .flatMap(a => a.memberEntityIds)];
+    assert.deepEqual(represented.sort(), ids.slice().sort());
+  }
+  const partial = p.visibility('overview', [changed.memberEntityIds[0]], []);
+  assert.deepEqual(partial.buildingIds, [changed.memberEntityIds[0]]);
+  assert.deepEqual(partial.aggregateIds, []);
+});
+
 test('same-role facilities promote in stages, keep exact membership and original geometry', () => {
   const f = fixture(), original = JSON.stringify(f), p = policy(f);
   const roles = p.aggregates.filter(a => a.role);
@@ -98,6 +116,23 @@ test('District retains all files instead of sampling generic buildings', () => {
   const ids = f.scene.buildings.map(b => b.entityId);
   assert.deepEqual(p.visibility('district', ids, []).buildingIds, p.visibility('detail', ids, []).buildingIds);
   assert.equal(p.visibility('district', ids, []).buildingIds.length, 400);
+});
+
+test('ordinary Overview masses retain source height bounds even for single-file plots',()=>{
+  for(const count of [1,6,42,400]) {
+    const f=fixture('unknown','GENERIC_BUILDING');
+    f.scene.buildings=f.scene.buildings.slice(0,count);
+    f.scene.buildings.forEach((b,i)=>{b.height=i%3===0?14:10;});
+    const original=structuredClone(f), p=policy(f);
+    const buildings=new Map(f.scene.buildings.map(b=>[b.entityId,b]));
+    for(const a of p.aggregates) {
+      assert.equal(a.height,Math.max(...a.memberEntityIds.map(id=>buildings.get(id).height)));
+      const parts=engine.aggregateParts(a);
+      assert.ok(parts.every(part=>part.height>0 && part.height<=a.height));
+      assert.equal(parts.reduce((sum,part)=>sum+part.representedCount,0),a.memberEntityIds.length);
+    }
+    assert.deepEqual(f,original);
+  }
 });
 
 test('page, API and test evidence never mix; module boundaries remain separate', () => {

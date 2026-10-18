@@ -4,6 +4,7 @@
   if (globalThis.METROPOGITS_RENDERER === "webgl") return;
 
   const data = globalThis.METROPOGITS_DATA;
+  const orientedBuildings=data?.routing?.parcelPlan?.buildings || {};
   const filterEngine = globalThis.METROPOGITS_FILTERS;
   const canvas = document.getElementById("city-canvas");
   const context = canvas.getContext("2d");
@@ -45,7 +46,7 @@
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
-  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy);
+  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand, data.streetCurves);
   let accessFrame = null;
   let accessPaint = new Map();
   function networkForId(id) {
@@ -133,6 +134,12 @@
   const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets, ucg);
   const expandedAggregateIds = new Set();
   let showAllNetworks = false;
+  let structureOverlay = false;
+  const urbanContext = data.cityContext;
+  function contextVisible(id) {
+    return filterEngine.contextDetailVisible(Boolean(urbanContext),structureOverlay,
+      majorDistrictIds.has(id),id,state.selected?.kind==='district' ? state.selected.id : null);
+  }
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -278,7 +285,7 @@
     const selectionKey = state.selected
       ? `${state.selected.kind}:${state.selected.id}:${state.selected.routeId || ""}`
       : "none";
-    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${[...expandedAggregateIds].sort().join('|')}`;
+    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${structureOverlay}:${[...expandedAggregateIds].sort().join('|')}`;
     if (nextCacheKey === lodCacheKey) return;
     currentDetailLevel = nextDetailLevel;
     lodCacheKey = nextCacheKey;
@@ -325,7 +332,7 @@
       const routingStatus = accessFrame
         ? `${accessFrame.routes.length} relation paths / ${accessFrame.segments.length} shared segments${accessPolicy.unresolved ? ` · ${accessPolicy.unresolved} unrouted edges` : ""}`
         : `${renderedNetworkIds.size}/${visibleNetworkIds.size} ${routeLabel}`;
-      const status = `${label} · ${subject} · ${routingStatus}${accessFrame?.focused ? " · Selected paths (x-ray)" : ""}`;
+      const status = `${label} · ${subject} · ${routingStatus}${accessFrame?.focused ? " · Selected paths (x-ray)" : ""}${accessPolicy?.streetStatus || ''}`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
     }
   }
@@ -472,6 +479,7 @@
   function drawGrid() {
     context.fillStyle = "#070b14";
     context.fillRect(0, 0, viewportWidth, viewportHeight);
+    if (urbanContext && !structureOverlay) return;
     context.strokeStyle = "rgba(56, 189, 248, 0.075)";
     context.lineWidth = 1;
     const spacing = Math.max(24, 42 * state.zoom);
@@ -503,8 +511,8 @@
     const territory = districtTerritory(district);
     context.fillStyle = selected("district", district.id)
       ? "rgba(14, 165, 233, 0.24)"
-      : "rgba(30, 41, 59, 0.72)";
-    for (const rectangle of territory.rectangles) {
+      : urbanContext && !structureOverlay ? urbanContext.ground : "rgba(30, 41, 59, 0.72)";
+    for (const rectangle of data.occupiedGround && !structureOverlay ? [] : territory.rectangles) {
       const points = [
         project(rectangle.x, rectangle.z),
         project(rectangle.x + rectangle.width, rectangle.z),
@@ -515,6 +523,7 @@
       context.fill();
       hitRegions.push({ kind: "district", id: district.id, points });
     }
+    if (!contextVisible(district.id)) return;
     context.strokeStyle = selected("district", district.id) ? "#38bdf8" : "#34445e";
     context.lineWidth = selected("district", district.id) ? 2.5 : 1;
     for (const segment of territory.boundary) {
@@ -550,9 +559,13 @@
   }
 
   function drawMajorDistrict(district) {
+    if(data.occupiedGround && !structureOverlay) return;
     const territory = districtTerritory(district);
-    const channels = majorDistrictColorById.get(district.id) || [24, 50, 74];
-    context.fillStyle = `rgba(${channels.join(", ")}, 0.24)`;
+    const index=[...majorDistrictIds].sort().indexOf(district.id);
+    const tint=urbanContext?.majorColors[index % urbanContext.majorColors.length];
+    const channels = urbanContext && !structureOverlay
+      ? [1,3,5].map(i=>parseInt(tint.slice(i,i+2),16)) : majorDistrictColorById.get(district.id) || [24, 50, 74];
+    context.fillStyle = `rgba(${channels.join(", ")}, ${urbanContext && !structureOverlay ? 1 : .24})`;
     for (const rectangle of territory.rectangles) {
       polygonPath([
         project(rectangle.x, rectangle.z, 0.04),
@@ -563,7 +576,7 @@
       context.fill();
     }
     context.strokeStyle = `rgba(${channels.map((value) => Math.min(255, value + 90)).join(", ")}, 0.95)`;
-    context.lineWidth = 3;
+    context.lineWidth = urbanContext && !structureOverlay ? 1 : 3;
     for (const segment of territory.boundary) {
       const start = project(segment[0][0], segment[0][1], 0.04);
       const end = project(segment[1][0], segment[1][1], 0.04);
@@ -633,7 +646,7 @@
       ROUTE_ACCESS: "#1c293b",
       STREET: "#172437",
     };
-    const points = [
+    const points = rectangle.points ? rectangle.points.map(([x,z]) => project(x,z,rectangle.elevation ?? 0.09)) : [
       project(rectangle.x, rectangle.z, 0.09),
       project(rectangle.x + rectangle.width, rectangle.z, 0.09),
       project(rectangle.x + rectangle.width, rectangle.z + rectangle.depth, 0.09),
@@ -706,9 +719,10 @@
   }
 
   function buildingDepth(building) {
+    const physical = orientedBuildings[building.entityId]?.center;
     const rotated = rotatePoint(
-      building.x + building.width / 2,
-      building.z + building.depth / 2,
+      physical?.[0] ?? building.x + building.width / 2,
+      physical?.[1] ?? building.z + building.depth / 2,
     );
     return rotated.x + rotated.z;
   }
@@ -745,6 +759,28 @@
   }
 
   function drawBuilding(building) {
+    const oriented=orientedBuildings[building.entityId];
+    if(oriented) {
+      const palette=colors[building.archetype] || colors.GENERIC_BUILDING;
+      const faces=[];
+      for(const part of oriented.parts) {
+        const bottom=part.footprint.map(([x,z])=>project(x,z,part.y));
+        const top=part.footprint.map(([x,z])=>project(x,z,part.y+part.height));
+        const depth=part.footprint.map(([x,z])=>{const r=rotatePoint(x,z);return r.x+r.z;});
+        for(let i=0;i<4;i++)faces.push({points:[bottom[i],bottom[(i+1)%4],top[(i+1)%4],top[i]],
+          depth:(depth[i]+depth[(i+1)%4])/2+part.y+part.height/2,color:palette[1+i%2]});
+        faces.push({points:top,depth:depth.reduce((a,b)=>a+b,0)/4+part.y+part.height,color:palette[0],roof:true});
+      }
+      for(const face of faces.sort((a,b)=>a.depth-b.depth)) {
+        polygonPath(face.points);context.fillStyle=face.color;context.fill();
+        if(face.roof) {
+          context.strokeStyle=selected("building",building.entityId)?"#f8fafc":"rgba(203,213,225,.62)";
+          context.lineWidth=selected("building",building.entityId)?2.5:1;context.stroke();
+        }
+        hitRegions.push({kind:"building",id:building.entityId,points:face.points});
+      }
+      return;
+    }
     const outline = drawVolume(
       building,
       colors[building.archetype] || colors.GENERIC_BUILDING,
@@ -761,7 +797,7 @@
       && facility.memberEntityIds.includes(state.selected.id)
       ? scene.buildings.find(b => b.entityId === state.selected.id) : null;
     const isSelected = selected("aggregate", facility.id) || Boolean(selectedMember);
-    const outlines = (facility.plots || [facility]).map((plot) => drawVolume(
+    const outlines = filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay)).map((plot) => drawVolume(
       { ...plot, height: 2.2 },
       ["#475569", "#263449", "#172033"],
       isSelected ? "#f8fafc" : "#fbbf24",
@@ -821,6 +857,18 @@
     districtLabelCandidates = [];
     context.clearRect(0, 0, viewportWidth, viewportHeight);
     drawGrid();
+    if(data.occupiedGround && !structureOverlay) {
+      const majorOrder=[...majorDistrictIds].sort();
+      for(const pad of data.occupiedGround.pads) {
+        let owner=districts.get(pad.districtId);
+        while(owner && !majorDistrictIds.has(owner.id))owner=districts.get(owner.parentId);
+        context.fillStyle=owner?urbanContext.majorColors[majorOrder.indexOf(owner.id)%urbanContext.majorColors.length]:urbanContext.ground;
+        for(const poly of pad.polygons) {
+          const points=poly.map(([x,z])=>project(x,z));polygonPath(points);context.fill();
+          hitRegions.push({kind:'district',id:pad.districtId,points});
+        }
+      }
+    }
     for (const district of scene.districts) {
       if (renderedDistrictIds.has(district.id)) drawDistrict(district);
     }
@@ -828,13 +876,32 @@
       const district = districts.get(districtId);
       if (district) drawMajorDistrict(district);
     }
-    if (currentDetailLevel === "detail") {
+    if (urbanContext && !structureOverlay && state.selected?.kind==='district') {
+      const district=districts.get(state.selected.id);
+      if (district && renderedDistrictIds.has(district.id)) {
+        context.strokeStyle='#38bdf8';context.lineWidth=2.5;
+        for (const [a,b] of districtTerritory(district).boundary) {
+          const start=project(...a,.1),end=project(...b,.1);
+          context.beginPath();context.moveTo(start.x,start.y);context.lineTo(end.x,end.y);context.stroke();
+        }
+      }
+    }
+    if (currentDetailLevel === "detail" && (!urbanContext || structureOverlay)) {
       for (const block of civicBlocks) drawCivicBlock(block);
     }
-    for (const rectangle of accessPolicy ? [] : streetRectangles) drawStructuralStreet(rectangle);
+    for (const rectangle of accessPolicy && !data.streets?.structural ? [] : streetRectangles) drawStructuralStreet(rectangle);
     for (const segment of accessFrame?.segments || []) {
-      const points = [segment.start, segment.end].map(p => project(...p, 0.15));
+      const points = segment.path.map(p => project(...p, 0.15));
       const style = filterEngine.accessRoadStyle(segment), width = style.width;
+      if (segment.pavement) {
+        for (const piece of segment.pavement) {
+          polygonPath(piece.points.map(([x,z]) => project(x,z,.14)));
+          context.fillStyle = style.surface;
+          context.fill();
+        }
+        hitRegions.push({kind:"network",id:segment.id,points});
+        continue;
+      }
       context.beginPath();
       context.moveTo(points[0].x, points[0].y);
       context.lineTo(points[1].x, points[1].y);
@@ -868,9 +935,8 @@
     }
     for (const segment of accessFrame?.segments || []) {
       if (!segment.highlighted) continue;
-      const a=project(...segment.start,0.22), b=project(...segment.end,0.22);
       context.beginPath();
-      context.moveTo(a.x,a.y); context.lineTo(b.x,b.y);
+      segment.path.forEach((p,i)=>{const q=project(...p,.22);if(i) context.lineTo(q.x,q.y);else context.moveTo(q.x,q.y);});
       context.lineWidth=1.5; context.strokeStyle="#67d7ff"; context.stroke();
     }
     drawDistrictLabels();
@@ -1074,6 +1140,12 @@
     detailRow(details, "Archetype", building.archetype);
     detailRow(details, "Language", entity.language || "Unknown");
     detailRow(details, "Height", building.height);
+    const parcel=orientedBuildings[entityId];
+    if(parcel) {
+      detailRow(details,"Street-facing rotation",`${(parcel.angle*180/Math.PI).toFixed(1)}° · visual, not geographic north`);
+      detailRow(details,"Local displacement",`${parcel.displacement.toFixed(2)} world units`);
+      detailRow(details,"Frontage street",parcel.streetId);
+    }
     detailRow(details, "District", districtLabel(districts.get(building.districtId)));
     inspector.append(details);
     const facility = lodPolicy.facilityForEntity(entityId);
@@ -1149,6 +1221,37 @@
     );
   }
 
+  function showStreetDiagnostics(offset=0, reason='') {
+    if (!data.routing?.streetGrid) return;
+    const page=accessPolicy.failurePage(visibleBuildingIds,visibleNetworkIds,offset,reason);
+    inspector.replaceChildren();
+    inspector.append(element('p','STREET ASSIGNMENT','eyebrow'));
+    inspector.append(element('h2','Original paths retained'));
+    inspector.append(element('p','These relationships are not lost. Select a path to inspect its original source, destination and evidence. Counts respect the current filters.','muted'));
+    for (const item of [{reason:'',label:'All fallback reasons',count:null},...page.counts]) {
+      const button=element('button',item.label+(item.count===null?'':` · ${item.count}`),'focus-button');
+      button.type='button';
+      button.addEventListener('click',()=>showStreetDiagnostics(0,item.reason));
+      inspector.append(button);
+    }
+    inspector.append(element('p',page.total?`${page.offset+1}–${page.offset+page.rows.length} of ${page.total} paths`:'No fallback paths match these filters.','section-title'));
+    for (const route of page.rows) {
+      const button=element('button',`${entities.get(route.source)?.path || route.source} → ${entities.get(route.target)?.path || route.target}`,'focus-button fallback-route');
+      button.type='button';
+      button.dataset.routeId=route.id;
+      button.addEventListener('click',()=>showSelection({kind:'network',
+        id:route.networkIds.find(id=>visibleNetworkIds.has(id)),routeId:route.id}));
+      inspector.append(button,element('p',accessPolicy.assignmentReason(route.id).label,'muted'));
+    }
+    for (const [label,next] of [['Previous',page.offset-25],['Next',page.offset+25]]) {
+      if (next<0 || next>=page.total) continue;
+      const button=element('button',label,'focus-button');
+      button.type='button';button.addEventListener('click',()=>showStreetDiagnostics(next,reason));
+      inspector.append(button);
+    }
+  }
+  document.getElementById('street-diagnostics')?.addEventListener('click',()=>showStreetDiagnostics());
+
   function showNetwork(networkId) {
     const choices = accessPolicy?.choices(networkId, visibleBuildingIds, visibleNetworkIds) || [];
     const chosen = choices.find(route => route.id === state.selected?.routeId);
@@ -1160,6 +1263,12 @@
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Graph edges", network.edgeIds.length);
     detailRow(details, "Route points", network.path.length);
+    if (chosen && data.routing?.streetGrid) {
+      const diagnostic=accessPolicy.assignmentReason(chosen.id);
+      detailRow(details,'Street assignment',diagnostic.label);
+      if (diagnostic.latticeStepLimit !== undefined) detailRow(details,'Street-grid distance limit (steps)',diagnostic.latticeStepLimit);
+      if (diagnostic.shortestLatticeSteps !== undefined) detailRow(details,'Shortest street-grid distance (steps)',diagnostic.shortestLatticeSteps);
+    }
     if (network.routeIds) {
       detailRow(details, "Shared relation paths", network.routeIds.length);
       inspector.append(element("p", "Shared geometry does not create new relationships. Highlighted paths retain their own source and destination.", "muted"));
@@ -1173,7 +1282,9 @@
       detailRow(details, "Major structural districts", demand.majorDistrictCount);
       detailRow(details, "Cross-major edges", demand.crossDistrictEdgeCount);
       detailRow(details, "Files outside major districts", demand.unassignedBuildingCount);
-      detailRow(details, "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
+      const pavementWidth=accessPolicy?.network(networkId)?.pavementWidth;
+      detailRow(details, pavementWidth ? "Demand cap / target width" : "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
+      if (pavementWidth) detailRow(details,data.streetCurves ? "Approach width range" : "Physical width range",`${pavementWidth.min.toFixed(2)} – ${pavementWidth.max.toFixed(2)} · shared street envelope`);
       inspector.append(element("p", "Grade uses full-road static dependency demand, not runtime traffic. Filters and path selection do not change it. Trunk demand does not imply highway geometry.", "muted"));
     }
     inspector.append(details);
@@ -1315,6 +1426,10 @@
   );
 
   function runAction(action) {
+    if (action === "toggle-structure" && urbanContext) {
+      structureOverlay = !structureOverlay;
+      document.querySelector('[data-action="toggle-structure"]').setAttribute('aria-pressed',String(structureOverlay));
+    }
     if (action === "toggle-pan") {
       state.moveMode = !state.moveMode;
       document.querySelector('[data-action="toggle-pan"]').setAttribute("aria-pressed", String(state.moveMode));

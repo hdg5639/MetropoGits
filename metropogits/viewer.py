@@ -9,6 +9,10 @@ from metropogits.territory import derive_district_territories
 from metropogits.streets import derive_street_grid
 from metropogits.access_routes import derive_access_routes
 from metropogits.road_hierarchy import derive_road_hierarchy
+from metropogits.structural_streets import street_rectangles
+from metropogits.street_demand import demand_pavement
+from metropogits.city_context import city_context
+from metropogits.street_curves import curved_presentation
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
@@ -38,13 +42,23 @@ def _javascript_assignment(name: str, document: Any) -> bytes:
 
 def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> bytes:
     routing = routing if routing is not None else derive_access_routes(scene, ucg)
+    hierarchy = derive_road_hierarchy(scene, routing)
+    surfaces = street_rectangles(routing) if 'streetGrid' in routing else None
+    pavement = demand_pavement(routing, hierarchy, surfaces)
+    surfaces, pavement, curves = curved_presentation(routing, surfaces, pavement, hierarchy)
     return _javascript_assignment(
         "METROPOGITS_DATA",
         {
             "scene": scene,
             "routing": routing,
-            "roadHierarchy": derive_road_hierarchy(scene, routing),
-            "streets": derive_street_grid(scene),
+            "roadHierarchy": hierarchy,
+            **({"streetCurves": curves} if curves else {}),
+            **({"streetDemand": pavement} if pavement is not None else {}),
+            **({"cityContext": city_context(routing)} if city_context(routing) else {}),
+            **({'occupiedGround': routing['groundPlan']} if 'groundPlan' in routing else {}),
+            "streets": ({**derive_street_grid(scene), "structural": True, "surfaces": surfaces,
+                         **({'orientedEntityIds': routing['parcelPlan']['changedFootprintIds']} if 'parcelPlan' in routing else {})}
+                        if 'streetGrid' in routing else derive_street_grid(scene)),
             "territories": derive_district_territories(scene),
             "ucg": ucg,
         },
@@ -75,6 +89,23 @@ def render_viewer(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> d
     if scene['layoutAlgorithm'] == 'hierarchical-parcel/0.1-experimental':
         result['index.html'] = result['index.html'].replace(
             b'METROPOGITS / STATIC CITY', b'METROPOGITS / EXPERIMENTAL PARCEL LAYOUT', 1)
+    if routing is not None and 'parcelPlan' in routing:
+        result['parcel-plan.json'] = canonical_json_bytes(routing['parcelPlan'])
+    if routing is not None and 'blockPlan' in routing:
+        result['block-plan.json'] = canonical_json_bytes(routing['blockPlan'])
+        result['occupied-ground.json'] = canonical_json_bytes(routing['groundPlan'])
+        result['index.html'] = result['index.html'].replace(b'Civic block (visual)', b'Occupied ground (visual; full bounds in Structure overlay)')
+    if routing is not None and 'streetGrid' in routing:
+        result['index.html'] = result['index.html'].replace(
+            b'METROPOGITS / STATIC CITY', b'METROPOGITS / STRUCTURAL STREET EXPERIMENT').replace(
+            b'METROPOGITS / EXPERIMENTAL PARCEL LAYOUT', b'METROPOGITS / STRUCTURAL STREET EXPERIMENT').replace(
+            b'Route corridor (derived)', b'Structural street (visual, not a relationship)').replace(
+            b'Dependency road \xc2\xb7 width / paint = static demand', b'Assigned dependency demand (not runtime traffic)').replace(
+            b'<span id="renderer-mode"', b'<button type="button" id="street-diagnostics">Review fallbacks</button><span id="renderer-mode"')
+    if routing is not None and city_context(routing):
+        result['index.html'] = result['index.html'].replace(
+            b'<span id="renderer-mode"',
+            b'<button type="button" data-action="toggle-structure" aria-pressed="false" title="Show all directory outlines and labels without changing buildings or relationships">Structure overlay</button><span id="renderer-mode"')
     return dict(sorted(result.items()))
 
 

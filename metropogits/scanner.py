@@ -145,6 +145,25 @@ SAFE_CONFIG_SIGNATURES = {
 }
 
 
+def _is_xml_ts(prefix: bytes) -> bool:
+    """Disambiguate Qt's .ts documents without parsing XML or loading entities.
+
+    Only the already bounded UTF-8 sniff buffer is examined. TypeScript strings,
+    comments, type assertions and TSX files must not become XML by substring.
+    """
+    text = prefix.removeprefix(codecs.BOM_UTF8).lstrip()
+    while text.startswith(b'<!--'):
+        end = text.find(b'-->')
+        if end < 0:
+            return False
+        text = text[end+3:].lstrip()
+    return bool(
+        re.match(rb'<\?xml\s[^?]*\?>', text)
+        or re.match(rb'<!DOCTYPE\s+TS(?:\s|>)', text)
+        or re.match(rb'<TS\s+version\s*=\s*[\"\'][0-9]+\.[0-9]+[\"\']', text)
+    )
+
+
 class ScannerError(ValueError):
     """Raised when a repository cannot be scanned safely."""
 
@@ -917,6 +936,12 @@ def scan_repository(
                 )
                 continue
 
+            if extension == '.ts' and _is_xml_ts(prefix):
+                language = 'xml'
+                diagnostics.append(_diagnostic(
+                    'SOURCE_FORMAT_DISAMBIGUATED', 'INFO',
+                    'XML .ts document retained structurally; not TypeScript source', relative_path,
+                ))
             files.append(ScannedFile(relative_path, language, entry_stat.st_size))
             total_bytes += entry_stat.st_size
 

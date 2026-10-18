@@ -6,6 +6,11 @@ const engine=globalThis.METROPOGITS_FILTERS;
 const fixture=JSON.parse(readFileSync(new URL('./fixtures/road-paint.json',import.meta.url),'utf8'));
 function road(extra={}) {return {id:'s',kind:'DEPENDENCY_ROAD',access:false,width:2.5,routeIds:['r'],
   start:[0,0],end:[10,0],demand:{grade:'AVENUE',width:2.5,surface:'#404c58',lanePattern:'DASHED'},...extra};}
+test('diagonal paint uses the shared physical path instead of the old orthogonal line',()=>{
+  const paint=[{start:[2,2],end:[3,3]}];
+  assert.deepEqual(engine.accessMarkingSegments(road({curves:{paintSegments:{s:paint},corners:[]}}),new Map()),paint);
+  assert.deepEqual(engine.accessMarkingSegments(road({curves:{paintSegments:{s:[]},corners:[]}}),new Map()),[]);
+});
 test('arterial dashes match the CPU contract at negative coordinates, reversal and trims',()=>{
   for(const c of fixture) {
     const segment=road({start:c.start,end:c.end}), frozen=structuredClone(segment);

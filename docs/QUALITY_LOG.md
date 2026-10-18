@@ -4390,3 +4390,992 @@
 - Commit / push: one coherent feature/test/docs work unit on main; normal
   owner-authorized push after final staged review. Generated/private outputs and
   pre-existing .gradle/target IDE caches excluded; no agent attribution.
+
+## Checkpoint 2026-10-18 — ADR-020 structural street prototype
+- Implemented: geography-only infrastructure, safe-width per-building access,
+  bounded assignment of original evidenced trips, explicit fallback partition,
+  opt-in `scripts.street_grid --street-grid`, WebGL/Canvas/SVG structural layer
+  and visible disclosure. Original IDs/provenance, City/UCG and normal CLI stay
+  unchanged. ADR/plan committed first as0cf8d0e on experiment/street-grid.
+- Fixtures / revisions: existing pinned GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766
+  hinted and cold cities; GamjaOJ b163acd2b5fe41edfc1e7fc7d367362851241896.
+  Fresh maintained spring-positive and structural-showcase inputs at basebe6f1c3,
+  catalog0.4.0. No target code execution/dependency installation.
+- Commands run (repo root):
+  `python -m scripts.street_grid ../artifacts/visual/frontage-refinement-r2/NAME/after
+  --street-grid --out ../artifacts/visual/street-grid-r1/NAME` for gj/cold/oj;
+  `python ../artifacts/visual/street_grid_review.py` repeats assignment, uses an
+  independent full-trip/membership/clearance oracle, removes networks to verify
+  structural independence, and packages latest-baseline comparisons tostreet-grid-r3.
+  `python ../artifacts/visual/street_grid_refresh.py` refreshes those owned
+  artifacts after final visible SVG disclosure edits; it does not reroute.
+- Fresh source-to-render commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --out
+  ../artifacts/visual/street-grid-fixtures/spring`; same for structural-showcase
+  to unknown. Then `python -m scripts.street_grid BUILD --street-grid --out
+  ../artifacts/visual/street-grid-fixtures/NAME-study` and
+  `node ../artifacts/visual/junction_smoke.mjs street-grid-fixtures`.
+  An initial guessed unknown-language path did not exist; command failed before
+  output. Located and used the maintained structural-showcase fixture instead.
+- Results (hintedGJ / coldGJ / OJ): assigned2487/4209,2483/4209,547/1381;
+  fallback1722/1726/834; structural entrances1324/1324/681; canonical building
+  and routing full-width intersections0. Infrastructure one connected component
+  in each. Repeated routing identical; unchanged network-free infrastructure.
+  Assignment search states1281862/1294438/234734; capped searches0. Local
+  assignment time18.405/17.130/3.478s, excluding independent oracle/packaging.
+  Spring assigns0/2 and preserves both fallback paths; unknown has0 relationships
+  and3 structural entrances. No fabricated dependencies.
+- Regression metrics: structural centerline34419.5/34419.5/14393 versus prior
+  evidenced pavement23446/23302.5/6076.5 (different coverage/meaning). New
+  all-trip geometry including fallback54998.5/55558.5/14522. These overlapping
+  lengths must not be added. **Not a road-length reduction or visual victory.**
+  Default hides legacy fallbacks with an explicit count; selection/All routes
+  exposes them. Fewer displayed trips must not be reported as route simplification.
+- Artifacts inspected: actual matched-camera WebGL captures in
+  street-grid-focus-r3/{gj,oj}-{before,after}/focused.png;
+  street-grid-cold-focus-r1/cold-after/showcase.png (real Chrome SVG rasterization);
+  street-grid-gj-focus-r2/gj-{before,after}/focused.png and showcase.png;
+  street-grid-fixtures/unknown.png; street-grid-canvas-r1/gj/canvas.png.
+  Private captures remain outside Git. Structural surfaces are more continuous
+  around some buildings but grid repetition/empty parcels remain; small unknown
+  has overly broad grid coverage. Canvas overview's aggregate outlines are noisy.
+  Frozen LOD obstacle rectangles prevent unrelated compound silhouette changes.
+- Browser commands: `node scripts/viewer_audit.mjs
+  'C:/Program Files/Google/Chrome/Application/chrome.exe' OUT INPUT` for
+  street-grid-r3/{gj,oj,cold}/after to street-grid-{gj-audit-r2,oj-audit-r1,cold-audit-r1}.
+  All pass overview/district/detail, exact-route inspection, filters/navigation.
+  Synthetic static rebuilds0; local CPU p95 GJ1.2/1.1/1.5ms,
+  OJ1.3/1.2/1.3ms, cold1.3/1.4/1.3ms. CPU submission timings, not GPU FPS/SLA.
+  `node ../artifacts/visual/street_grid_canvas.mjs` forces WebGL unavailable and
+  captures both real Canvas fallbacks with Synthetic; no browser exceptions.
+  `parcel_focus_review.mjs street-grid-r3 street-grid-focus-r3` plus cold Portal
+  suffix command verify identical Detail camera per before/after pair.
+- Tests / fixes: Python439 run,438 pass,1 existing Windows symlink skip; six
+  maintained Node suites39 pass; Ruff/whitespace pass. New tests cover geometry
+  independence, caps, clearance/access, exact identities/bounds, fallback honesty,
+  deterministic input order/repeat, opt-in rendering and default LOD preservation.
+  Fixed strict-JSON Decimal normalization before geometry; fixed missing LOD
+  rectangles that changed compound counts; added visible SVG structural labels.
+  Initial review harness digest used bytes instead of a document; corrected and
+  reran successfully. Early capture attempts before package completion failed
+  with missing files; completed matched-camera/audit runs supersede them.
+- Spec alignment: approved experimental deviation under ADR-020 from technical7,
+  FR-007/AC-006 and product5.1/DEC-011; only non-semantic infrastructure changes
+  meaning. AC-002/009/014, source evidence and original trip budgets retained.
+  No schema/identity/default changes. No claim of infrastructure incremental
+  locality or aggregate-to-street clearance; canonical buildings remain fixed.
+- Open risks / next: incomplete assignment and redundant structural loops block
+  promotion. Record individual fallback reasons; reduce infrastructure with
+  frontage/connectivity constraints independently of dependencies. Evaluate a
+  bounded street-first parcel experiment only with explicit stability review.
+  Do not resume small frontage tweaks or call the circuit-like problem solved.
+- Commit / push: documentation0cf8d0e precedes this coherent prototype/test/docs
+  work unit on experiment/street-grid. Final staged review and normal feature
+  branch push follow this checkpoint; no main merge, force push, attribution or
+  generated/private artifacts. Delivery hash/push result are recorded in handoff.
+
+## Checkpoint 2026-10-18 — structural street fallback diagnostics
+- Implemented: additive bounded failure explanations, filtered25-row fallback
+  review in WebGL/Canvas, and exact original-path/evidence navigation. No route,
+  street, building, UCG or public City geometry changed. Existing artifacts with
+  no diagnostics display an explicit unrecorded cause.
+- Fixtures / revisions: GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766
+  (hinted and cold), GamjaOJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  maintained spring-positive and structural-showcase at base34a5eb4, catalog0.4.0.
+- Commands: `python ../artifacts/visual/street_pruning_probe.py` rejected a
+  conservative terminal-free bridge-subtree deletion trial: protecting all
+  geometry-eligible access and selected entrances leaves GJ9645/OJ4015 lattice
+  edges unchanged. Zero improvement; this pruning pass is not shipped.
+  `python ../artifacts/visual/street_diagnostics_review.py` packages
+  street-diagnostics-r1/{gj,cold,oj}, asserts canonical routes/segments/junctions
+  and infrastructure equality to street-grid-r3 and repeats GJ assignment.
+  `python ../artifacts/visual/street_diagnostics_refresh.py` repackages the same
+  owned geometry after the long-path CSS fix, without rerouting.
+- Results (hintedGJ / coldGJ / OJ): distance_limit1392/1390/706;
+  joint_constraints324/331/124; access_only6/5/4. Assignment remains
+  2487/4209,2483/4209,547/1381. Independent diagnostic A* states
+  166624/168154/74605, below its separate1M cap. No access/disconnection or
+  search-cap diagnoses observed. Joint constraints do not prove bend-only
+  infeasibility. Capped checks explicitly report unknown, not impossible.
+- Fresh source-to-output commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --out
+  ../artifacts/visual/street-diagnostics-fixtures/spring`; same command for
+  structural-showcase to unknown. `python -m scripts.street_grid BUILD
+  --street-grid --out ../artifacts/visual/street-diagnostics-fixtures/NAME-study`
+  for both. Spring retains2/2 fallback paths; unknown has0 logical relations.
+- Browser commands: `node scripts/viewer_audit.mjs
+  'C:/Program Files/Google/Chrome/Application/chrome.exe'
+  ../artifacts/visual/street-diagnostics-browser-r1
+  ../artifacts/visual/street-diagnostics-r1/gj
+  ../artifacts/visual/street-diagnostics-r1/oj
+  ../artifacts/visual/street-diagnostics-r1/cold` passes three LODs, filters,
+  navigation, exact route tracing and Synthetic (static rebuilds0 throughout).
+  These are CPU/browser checks, not a hardware GPU FPS claim.
+  `node ../artifacts/visual/junction_smoke.mjs street-diagnostics-fixtures`
+  renders real WebGL and SVG previews for both fresh fixtures.
+  `node ../artifacts/visual/street_diagnostics_ui.mjs OUT INPUT...` runs with
+  large gj/oj and small spring-study/after,unknown-study/after inputs to
+  street-diagnostics-{large,small}-ui-r2. WebGL and forced Canvas pass reason
+  selection, exact-path navigation,25-row bound, pagination, empty state,
+  horizontal-overflow assertions and no browser exceptions.
+- Artifacts inspected: street-diagnostics-small-ui-r1/webgl-0/selected-fallback.png;
+  street-diagnostics-large-ui-r2/webgl-0/fallbacks.png;
+  street-diagnostics-large-ui-r1/canvas-1/selected-fallback.png;
+  street-diagnostics-fixtures/unknown-preview.png (actual SVG rasterization).
+  Initial GJ fallback list clipped long paths; fixed wrapping and reran both
+  browser modes with overflow assertions. Panel now legible without horizontal
+  scroll. City remains small at overview; Canvas aggregate outlines remain
+  crowded and sparse unknown has excessively broad streets. No visual road
+  improvement claimed, and these existing issues still block promotion.
+- Tests / determinism / stability: Python444 run,443 pass,1 existing Windows
+  symlink skip via `python -m unittest discover -s tests -q`; Node40 pass via
+  `node --test tests/access_routes.test.mjs tests/junction_geometry.test.mjs
+  tests/road_paint.test.mjs tests/viewer_audit.test.mjs
+  tests/camera_navigation.test.mjs tests/role_landmarks.test.mjs`.
+  Independent seeded unit-graph BFS checks shortest-distance diagnoses. Zero
+  diagnostic budget cannot alter routed geometry. Exact repeated GJ output and
+  unchanged real-city geometry pass. `python -m ruff check .` and Git diff check
+  pass. No neighboring-revision relayout needed: this unit changes no positions.
+- Spec alignment: PASS within the approved ADR-020 experiment; technical7,
+  FR-007/AC-006 and product5.1/DEC-011 remain the documented experimental
+  deviation, not a silently changed default. Source evidence, deterministic
+  contracts, unsupported-input behavior and no untrusted execution retained.
+- Open risks / next: roughly81% of hintedGJ and85% of OJ fallbacks violate
+  distance limits on this skeleton. Further edge deletion cannot shorten paths
+  in the same graph. Prioritize a bounded street-first block/access comparison,
+  with assignment, infrastructure length and relocation measurements; do not
+  replace independent infrastructure with dependency-driven shortcut paving.
+- Commit / push: coherent diagnostic capability, tests and findings staged as
+  one work unit on experiment/street-grid after verification. Normal upstream
+  push follows; exact delivery hash/result recorded in handoff. Private sources,
+  captures, generated cities and unrelated IDE caches excluded.
+
+## Checkpoint 2026-10-18 — aligned block street experiment
+- Implemented: opt-in `--aligned-blocks` removes the half-cell seed offset and
+  joins geometry-neighbor wavefronts with local alternate paths. Derived streets
+  version0.2; public City/UCG, buildings, original doors and trip budgets fixed.
+  Rejected per-trip entrance reorientation after the existing single-door oracle
+  failed. Rejected per-building perimeter roads: even with local loops their
+  GJ infrastructure54282 exceeded the prior34419.5. Neither trial is shipped.
+- Fixtures / revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766 (hinted/cold),
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896; spring-positive and unsupported
+  structural-showcase at base20053f7. Catalog0.4.0.
+- Commands: `python ../artifacts/visual/street_access_probe.py` for local
+  candidate measurements (latest script reproduces adopted aligned variant).
+  `python ../artifacts/visual/aligned_streets_review.py` with PYTHONPATH=.;tests
+  repeats all three assignments, checks unchanged canonical scenes, original
+  endpoint coordinates, complete budgets, exact segment memberships, no
+  full-width building intersections and network-independent infrastructure.
+  Packages `aligned-streets-r1/{gj,oj,cold}/{before,after}`. No source repo code
+  executed, no dependencies installed, no private artifacts staged.
+- Results (GJ/cold/OJ): assigned3642/3642/1113, fallback567/567/268; all
+  4209/4209/1381 original routes retained. Street infrastructure COMPLETE,
+  entrances1324/1324/681, infrastructure search states44407/44407/17119.
+  Assignment search states864991/839707/146564, capped searches0. Full numeric
+  before/after table is in STREET_GRID_PLAN. Structural length reduces6.75%/6.75%/
+  7.98%, all-trip pavement20.47%/21.39%/13.18%, all-trip junctions27.05%/27.39%/
+  18.70%. Complete trip length sums increase1.41%/1.31%/4.22%; original individual
+  bounds still pass. Overlapping infrastructure and relation length are not added.
+- Fresh E2E: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --out
+  ../artifacts/visual/aligned-streets-fixtures/spring`; same for structural-showcase
+  to unknown. `python -m scripts.street_grid BUILD --street-grid --aligned-blocks
+  --out ../artifacts/visual/aligned-streets-fixtures/NAME-study` for both.
+  Spring assignment1/2 (previous0/2); unsupported0 relations, no fabricated trips.
+  `node ../artifacts/visual/junction_smoke.mjs aligned-streets-fixtures` passes
+  real WebGL and SVG capture without browser exceptions.
+- Browser / images: `node ../artifacts/visual/parcel_focus_review.mjs
+  aligned-streets-r1 aligned-streets-focus-r1` asserts identical before/after
+  camera and Detail LOD. Inspected gj-before/focused.png, gj-after/focused.png,
+  oj-after/showcase.png, aligned-streets-fixtures/spring.png and
+  unknown-preview.png. Ops has fewer wide parallel surfaces while displaying
+  more assigned trips. OJ showcase is readable; sparse unknown still shows abrupt
+  safe-width transitions, and city overview whitespace/regular grids remain.
+  No universal city-like appearance or default promotion claimed.
+- Browser checks: `node scripts/viewer_audit.mjs CHROME OUT INPUT...` with
+  CHROME=C:/Program Files/Google/Chrome/Application/chrome.exe and inputs
+  aligned-streets-r1/{gj,oj}/after to aligned-streets-audit-r1; cold/after to
+  aligned-streets-cold-audit-r1. All three LODs, navigation, filters and exact
+  route inspection pass; Synthetic static rebuilds0. CPU submission checks are
+  not GPU FPS measurements. `node ../artifacts/visual/street_diagnostics_ui.mjs
+  ../artifacts/visual/aligned-streets-canvas-r1 GJ_AFTER OJ_AFTER` verifies WebGL
+  and forced Canvas fallback pagination/evidence with no browser exceptions.
+- Tests: `python -m unittest discover -s tests -q`:450 run,449 pass,1 existing
+  Windows symlink skip. Six maintained Node suites(access_routes,
+  junction_geometry,road_paint,viewer_audit,camera_navigation,role_landmarks):40
+  pass. `python -m ruff check .` and Git whitespace checks pass. New tests cover
+  aligned continuous gap streets, input-order/semantic independence, exact trip
+  bounds/doors/membership, bounded wave-neighbor loops, unknown/no-edge output,
+  optional legacy mode and no canonical mutation. Repeat large assignments
+  identical. All canonical positions unchanged; no claim of incremental locality
+  for connector geometry after future building edits.
+- Spec alignment: PASS within ADR-020 approved experiment; original semantic
+  deviation remains documented under technical7, FR-007/AC-006, DEC-011. No
+  schema migration, execution, relaxed evidence or hidden relation deletion.
+- Open risks / next: remaining fallbacks and sparse width transitions; improve
+  framing without changing geography or hiding entities, then assess block-level
+  aesthetics rather than reverting to per-relation shortcut roads.
+- Commit / push: separate verified feature unit on experiment/street-grid;
+  staged diff and ordinary upstream push follow this checkpoint. Delivery hash
+  recorded in handoff; no merge/main push or agent attribution.
+
+## Checkpoint 2026-10-18 — perspective-aware initial city framing
+- Implemented: analytic perspective fitting of the unchanged framing point set,
+  allowing X/Z target translation instead of backing away from a fixed map
+  center. Original yaw/pitch/margins and orbit target height preserved; Reset
+  restores the fitted pose. No entity omission, scene change or road rerouting.
+- Fixtures / revisions: same GJ/OJ pinned revisions as the preceding checkpoint,
+  hinted/cold variants at62c8d22; fresh spring-positive and structural-showcase.
+- Commands / artifacts: `node ../artifacts/visual/framing_review.mjs OUT INPUT...`
+  captured framing-before-r1 from aligned-streets-r1/{gj,oj}/after and the two
+  aligned-streets-fixtures outputs before editing. `python
+  ../artifacts/visual/framed_streets_export.py` packages aligned-framing-r2/{gj,oj,cold}
+  and asserts unchanged scene/graph/routing bytes. Current captures are
+  framing-after-r2 with those gj/oj inputs plus
+  aligned-framing-fixtures/{spring,unknown}-ground-pivot/after.
+  `node ../artifacts/visual/framing_metrics.mjs` independently projects every
+  canonical building corner, checks unchanged LOD/counts/orbit height and zero
+  out-of-frustum corners. Private framing-comparison-r1/index.html links captures.
+- Visual findings: inspected framing-before-r1/0/initial.png and
+  framing-after-r2/0/initial.png (GJ), framing-after-r1/1/initial.png (OJ initial
+  candidate), and real Spring/unknown previews from the fresh pipeline. Same
+  1500x1000 viewport and Overview membership. Final projected building-bound
+  width GJ53.4%→74.4%, OJ65.2%→85.9%; height67.4%→87.5%,69.7%→83.7%.
+  Bounding spans, not filled pixel area. All canonical corners remain inside;
+  no buildings deleted to manufacture improvement. Broad surfaces/regular grids
+  and aggregate silhouettes remain separate visual shortcomings.
+- Fixes: initial lateral fit moved the orbit target below ground; corrected by
+  sliding the target along its view ray to retain original Y. Added regression
+  assertion for orbit height, including low/high pitch. Initial Windows test
+  output decoding raised a cp949 reader-thread error despite success status;
+  set explicit UTF-8 and reran the full suite without that exception.
+- E2E: fresh `python -m metropogits build --repo FIXTURE --out OUTPUT` for
+  spring-positive/structural-showcase to aligned-framing-fixtures/spring,unknown;
+  `python -m scripts.street_grid BUILD --street-grid --aligned-blocks --out OUT`
+  produces *-ground-pivot after the fix. `junction_smoke.mjs aligned-framing-fixtures`
+  produced WebGL and SVG captures before the pivot correction (SVG unaffected).
+  Fresh default build framing-default-spring-r1 and framing-default-audit-r1
+  verify ordinary non-street-mode loading with the corrected camera.
+- Browser: `node scripts/viewer_audit.mjs CHROME OUT INPUT...` for final
+  aligned-framing-r2/gj,oj → aligned-framing-audit-r2 and cold →
+  aligned-framing-cold-audit-r2. Same installed Chrome executable as preceding
+  checkpoint. Three LODs, filters, pan/orbit, route inspection and Synthetic pass;
+  static rebuilds0. These CPU checks do not establish GPU FPS/performance gains.
+- Tests / stability: Python451 run,450 pass,1 existing Windows symlink skip via
+  `python -m unittest discover -s tests -q`. Seven Node suites43 pass (prior six
+  plus camera_framing). Independent projection tests cover rotations, aspect
+  ratios, displaced cities, outliers, degeneracy, near/far clipping and order
+  determinism. Ruff and whitespace checks pass. Get-FileHash comparison confirms
+  City/UCG/preview.svg/showcase.svg unchanged for GJ/cold/OJ; package comparison
+  confirms identical routing. No changed geography requiring neighbor churn tests.
+- Spec alignment: PASS, technical8 / FR-012 / AC-011, same structural experiment
+  meaning under ADR-020. Public contracts/evidence unchanged. Camera code is shared
+  by normal WebGL output; Canvas and CPU previews remain unchanged.
+- Open risks / next: improve physical width transitions and block readability;
+  framing does not solve these or justify default promotion of the street mode.
+- Commit / push: second independently verified work unit on experiment/street-grid;
+  stage review and normal upstream push follow. Exact hash/result in handoff.
+
+## Checkpoint 2026-10-18 — structural pavement width continuity
+
+- Implemented: short-bulge suppression and gradual safe width transitions shared
+  by WebGL/Canvas/SVG. No route, entrance, evidence or canonical placement edits.
+- Fixtures / revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766 and
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896, catalog0.4.0, fixed
+  aligned-framing-r2 inputs. Maintained spring-positive and structural-showcase
+  at parent61a5986 plus this work unit run through the fresh real pipeline.
+- Commands: `python -m metropogits build --repo tests/fixtures/repositories/NAME
+  --out ../artifacts/visual/street-width-fixtures-r2/LABEL`, with NAME/LABEL
+  spring-positive/spring and structural-showcase/unknown. Then
+  `python -m scripts.street_grid BUILD --street-grid --aligned-blocks --out OUT`
+  to LABEL-study. `python ../artifacts/visual/street_width_review.py street-width-r2`
+  packages GJ/OJ before/after, verifies identical scene/UCG/routing bytes,
+  repeated surfaces, and each polygon inside its original cleared rectangle.
+- Artifacts inspected: street-width-focus-r3/gj-{before,after}/focused.png,
+  oj-after/showcase.png and street-width-fixtures-r2/unknown-preview.png;
+  Spring WebGL also inspected. `node ../artifacts/visual/parcel_focus_review.mjs
+  street-width-r2 street-width-focus-r3` asserts identical Detail cameras.
+  `node ../artifacts/visual/junction_smoke.mjs street-width-fixtures-r2`
+  captures actual fresh WebGL/SVG. No target repository code executed.
+- Visual findings: sparse streets no longer have isolated broad rectangles;
+  sustained expansions taper. Less unpainted slab area in GJ Detail, but dense
+  README thumbnail change is modest and grid character remains. Initial r1
+  taper-only diamonds rejected; r2 adds short-bulge suppression. First focus
+  invocation lost empty PowerShell arguments; rerun without placeholders passed.
+- Browser: `node scripts/viewer_audit.mjs CHROME OUT INPUT...` for
+  street-width-r2/{gj,oj}/after -> street-width-audit-r2, corresponding before
+  -> street-width-before-audit-r2. CHROME:
+  C:/Program Files/Google/Chrome/Application/chrome.exe,152.0.7977.84,SwiftShader.
+  Three LODs, navigation, filters, relation selection and Synthetic pass; static
+  rebuilds0 before/after. GJ Synthetic CPU p95 after1.1-1.3ms, before1.3-1.4ms:
+  single-run JS submission timings, not GPU FPS or a speedup conclusion.
+- `node ../artifacts/visual/street_diagnostics_ui.mjs OUT INPUT...` on fresh
+  Spring/unknown after outputs -> street-width-fallback-audit-r2 verifies real
+  WebGL and forced Canvas, exact fallback inspection and empty disclosure.
+  No exceptions. Spring assignment1/2; unknown0 relations, not fabricated roads.
+- Tests / stability: full Python discovery, seven Node suites43 pass, Ruff and
+  diff whitespace checks. Surface tests cover T/X junctions, reversal, order,
+  containment, door isolation, caps, legacy rendering, bulges and SVG parity.
+  Closing Python discovery:457 run,456 pass,1 Windows symlink skip. Large GJ/OJ retain
+  all4209/1381 trips and567/268 fallbacks. Canonical positions and routing bytes
+  are identical; no layout churn. All polygon points remain inside old clearance.
+- Costs / risks: structural quads GJ3679->4781, OJ1536->1903; extra mesh/storage
+  remains despite unchanged static cache behavior. The semantic demand overlay
+  still uses rectangular widths and may overlie narrower structural pavement.
+  Continuity claims apply to structural surfaces only.
+- Spec alignment: PASS under ADR-020, technical8, FR-011/012, AC-002/006/011/014.
+  No public schema/ID/evidence changes, external service or default promotion.
+  Next: shared layer envelope, then broader block/parcel readability.
+- Commit / push: one atomic work unit on experiment/street-grid; normal upstream
+  push after closing checks. No private fixture artifacts or IDE caches staged.
+
+## Checkpoint 2026-10-18 — shared structural and dependency pavement
+
+- Implemented: a renderer-only intersection envelope, clipped paint and no
+  double shoulders/junction slabs. Every original centerline interval remains;
+  unchanged canonical scene/UCG/routing verified on GJ/OJ. Grade and measured
+  physical width range are now separately labeled in both inspectors.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896; catalog0.4.0. Fresh maintained
+  spring-positive/structural-showcase at parentffbe40a plus this work unit.
+- Commands: `python ../artifacts/visual/shared_street_review.py shared-street-r2`;
+  `python -m metropogits build --repo tests/fixtures/repositories/NAME --out OUT`
+  to shared-street-fixtures/{spring,unknown}; `python -m scripts.street_grid
+  BUILD --street-grid --aligned-blocks --out OUT` to spring-r2/unknown-r2 there.
+  Repeated polygons, source bytes and full per-segment length/clearance checked.
+- Actual visuals: `node ../artifacts/visual/parcel_focus_review.mjs shared-street-r2
+  shared-street-focus-r2`. Inspected gj-after/focused.png and oj-after/showcase.png.
+  Same cameras asserted; interrupted road-edge strips reduced, but large empty
+  parcels, repeated labels and district outlines remain. No grand city-completion
+  claim. Shared envelope introduces9209/2632 polygons, not additional relations.
+- Browser: `node scripts/viewer_audit.mjs CHROME OUT INPUT...` on GJ/OJ after
+  -> shared-street-audit-r2; Chrome152.0.7977.84 at
+  C:/Program Files/Google/Chrome/Application/chrome.exe, SwiftShader. Three LODs,
+  pan/orbit, filter, route inspection and Synthetic pass; static rebuilds0.
+  GJ Synthetic CPU p95=1.2-1.5ms, OJ1.5-1.9ms; not GPU FPS or a speedup claim.
+  `street_diagnostics_ui.mjs` on fresh spring-r2/unknown-r2 after directories
+  -> shared-street-canvas-r2 verifies real WebGL and forced Canvas, exact fallback
+  selection and empty unknown state without exceptions. Fresh WebGL/SVG also
+  captured through junction_smoke.mjs shared-street-fixtures.
+- Regression:462 Python tests,461 pass/1 existing Windows symlink skip;
+  seven Node suites45 pass; Ruff/diff checks. Tests cover complete interval
+  preservation, cap/clearance, non-overlapping crossings, legacy modes, source
+  metadata, paint clipping, filter-safe membership and Synthetic endpoints.
+- Spec alignment: PASS ADR-020/FR-011/012/AC-002/006/011/014. No schema, stable
+  ID, grade, route, assignment or source changes. No target code execution.
+- Next: default city view should not draw directory boundaries as additional
+  roads. Preserve exact selection/overlay access rather than deleting structure.
+- Commit/push: independently verified unit on experiment/street-grid; normal
+  upstream push after stage review, no private artifacts or agent attribution.
+
+## Checkpoint 2026-10-18 — city context without boundary-as-road clutter
+
+- Implemented: optional aligned-experiment city context, neutral ground,
+  major/selected-only directory context and reversible Structure overlay in
+  WebGL and Canvas. Showcase omits decorative plot outlines. Detailed preview
+  intentionally remains a structural diagram. No buildings or paths removed.
+- Fixtures: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896; catalog0.4.0;
+  maintained spring-positive and structural-showcase at parentc241550 plus
+  this unit. No target repository code/dependency installation executed.
+- Commands: `python ../artifacts/visual/shared_street_review.py urban-street-r1`;
+  `python -m metropogits build --repo tests/fixtures/repositories/NAME --out OUT`
+  to urban-street-fixtures/{spring,unknown}; `python -m scripts.street_grid
+  BUILD --street-grid --aligned-blocks --out OUT` to their -study directories.
+  Large canonical scene/UCG/routing equality and full path coverage checked.
+- Actual output: `node ../artifacts/visual/parcel_focus_review.mjs urban-street-r1
+  urban-street-focus-r1`; `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/urban-context-focus-r1 INPUT...` for GJ/OJ after directories;
+  `node ../artifacts/visual/junction_smoke.mjs urban-street-fixtures` for small
+  WebGL/SVG. Inspected Portal city/structure and Canvas captures, Ops focus,
+  OJ showcase, unknown WebGL/preview. All are actual renderer output.
+- Visual findings: Portal labels22->1, line vertices3300->568; OJ29->2 and
+  874->196 at identical cameras. Counts of buildings, aggregates, districts,
+  networks and camera state remain equal through both toggle transitions.
+  Restoring city mode restores exact geometry counts. Less false road/label
+  clutter; repeated gray towers, empty parcels and regular grid still visible.
+  Unknown fixture retains3 generic buildings and0 source relationships.
+- Browser: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/urban-street-audit-r1 INPUT...` on both after directories.
+  CHROME=C:/Program Files/Google/Chrome/Application/chrome.exe,
+  152.0.7977.84/SwiftShader. All three LODs, navigation, filtering, exact route
+  inspection and Synthetic pass; static rebuilds0. CPU Synthetic p95 GJ1.1-2.8ms,
+  OJ1.1-1.3ms. These are submission timings, not GPU FPS or a speedup claim.
+  Separate real forced-Canvas toggle checks pass without browser exceptions.
+- Regression: `python -m unittest discover -s tests -q`:463 run,462 pass,
+  1 existing Windows symlink skip; seven Node suites46 pass; Ruff and diff
+  checks pass. Optional controls, deterministic packaging, source immutability
+  and visibility policy tested. Every GJ/OJ4209/1381 original trip retained;
+  assignment/fallback counts3642/567 and1113/268 unchanged. No layout churn.
+- Spec alignment: PASS ADR-020, technical8, FR-011/012 and AC-002/006/011/014.
+  Renderer-only presentation; no schema, IDs, evidence/security or default-mode
+  changes. Next: remaining parcel/skyline readability, not more per-trip tuning.
+- Commit/push: preceding pavement unitc241550 pushed normally to
+  origin/experiment/street-grid. This independently verified context unit is
+  committed/pushed on the same experimental branch after closing stage checks;
+  no private artifacts, IDE caches or agent attribution included.
+
+## Checkpoint 2026-10-18 — shared curved street presentation
+
+- Implemented: opt-in --curved-streets on aligned structural streets. Geography
+  determines56 GJ and25 OJ clearance-certified degree-two bend supports; branches
+  are not replaced with rotaries. Shared pavement, paint, picking, exact-path
+  highlight and Synthetic follow the same quadratic map. Public City/UCG and
+  original semantic route records remain unchanged. Approach widths are labeled
+  separately from the curved cross-section. Default/straight modes remain.
+- Fixtures/revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896, catalog0.4.0; maintained
+  spring-positive and structural-showcase on parent0a6c2b4 plus this unit.
+- Commands: `python ../artifacts/visual/curve_street_review.py curved-streets-r5`;
+  `python -m metropogits build --repo tests/fixtures/repositories/NAME --out OUT`
+  -> curved-street-fixtures/{spring,unknown}; `python -m scripts.street_grid
+  BUILD --street-grid --aligned-blocks --curved-streets --out OUT`
+  -> curved-street-fixtures-r5/{spring,unknown}-study. Targets are read-only;
+  no target code/build/dependency installation was run.
+- Actual artifacts: curved-streets-r5/{gj,oj}/{before,after}; same-camera gallery
+  `artifacts/visual/curved-streets-focus-r7/index.html` from
+  `node ../artifacts/visual/curve_focus_review.mjs curved-streets-r5
+  curved-streets-focus-r7`. Reviewed GJ/OJ local bend captures and actual OJ
+  showcase SVG capture. Unknown WebGL and OJ forced-Canvas also inspected.
+- Visual fixes: r1 exposed an outside-corner gap; r3 revealed the added joint
+  was backface-culled; r4's square joint produced a spike. r5 uses upward-facing
+  round joins inside certified empty supports. Added a winding/support regression
+  test. Rounded connections are visible locally, but minor width bulges, empty
+  land, orthogonal internal grids and whole staircase chains remain. No claim
+  that the skyline/thumbnail is radically transformed. Roundabouts remain0.
+  An early review helper captured a missing showcase path; fixed it to capture
+  the real artifact, not the viewer-only audit copy. Missing-file capture rejected.
+- Geometry: `python ../artifacts/visual/curve_geometry_audit.py curved-streets-r5`
+  recomputes identical presentation and checks all rendered triangles, upward
+  winding and positive-area building overlaps. GJ28239/OJ9950 total structural+
+  demand quads,91884/38410 broad-phase building checks,0 overlaps. Full route
+  endpoints, direction and segment continuity checked for all4209/1381 trips.
+  Assignment3642/567 and1113/268 unchanged. Sampled trip length sums
+  762890->762620.5773 and174351->174342.1762; these are visual lengths, not runtime
+  throughput.209 GJ trips grow slightly (maximum0.4295 units) while totals shrink;
+  checked against freshly derived original whole-trip allowances:0 violations.
+- Browser: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/curved-streets-audit-r5 INPUT...` on both after directories;
+  Chrome152.0.7977.84/SwiftShader at
+  C:/Program Files/Google/Chrome/Application/chrome.exe. Three LODs, navigation,
+  filters, exact-route inspection and Synthetic pass. Static rebuilds0;
+  Synthetic CPU p95 GJ1.2-1.7ms/OJ1.1-1.5ms, not GPU FPS. GJ first submission
+  1192.6ms/OJ443.2ms; more tessellation is a real cost, not a performance win.
+  The focus-r7 harness also clicks actual curved road hit regions and selects
+  one contributing route on both cities. All-routes was disabled for exact-only
+  assertions; keeping it enabled deliberately retains context, not a product bug.
+- Fallbacks: `city_context_review.mjs` -> curved-streets-canvas-r5 verifies
+  WebGL/forced Canvas and reversible overlay with unchanged counts/cameras.
+  `junction_smoke.mjs curved-street-fixtures-r5` captures fresh small WebGL/SVG;
+  `street_diagnostics_ui.mjs` -> curved-street-fixtures-ui-r5 checks exact Spring
+  fallback and empty unknown states in both renderers without exceptions.
+- Tests: full Python discovery471 run,470 pass/1 existing Windows symlink skip;
+  seven Node suites47 pass; Ruff/diff checks pass. Targeted eight curve tests
+  re-run after adding pre-allocation sampling caps. Tests cover determinism,
+  source immutability, support clearance, branch exclusion, C1 centerline tangent,
+  winding, limits, repeated real packaging/SVG and forward/reverse Synthetic.
+- Spec alignment: PASS user-approved ADR-020 extension, technical7/8,
+  FR-007/011/012 and AC-002/003/006/011/014. No schema/identity/security change,
+  no invented relationships, no default promotion. Next: coherent whole-corridor
+  staircase replacement and separately certified entry/exit junction geometry.
+- Commit/push: one verified curved-street work unit on experiment/street-grid;
+  normal upstream push after staged diff/identity review. Private artifacts and
+  unrelated IDE caches excluded; no agent attribution.
+
+## Checkpoint 2026-10-18 — cross-repository benchmark
+
+- Implemented: repeatable local benchmark using the real build pipeline, per-language
+  adapter/structural coverage, edge type/confidence and unresolved diagnostics,
+  profiled stages, unprofiled repeat timing, all-artifact hashes and position checks.
+  Optional aligned curved street artifacts are also regenerated twice. No source
+  builds, dependency installs or runtime language-support expansion.
+- Fixtures/revisions: all seven locally supplied clones pinned in
+  CROSS_REPOSITORY_BENCHMARK.md; tracked trees clean. Actual base and street
+  artifacts under `artifacts/visual/cross-repository-r2/NAME/{first,repeat,streets}`.
+  Full commands and limitations are in that document. All seven repeat identically.
+- Browser: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/cross-repository-audit-r7 INPUT...` using all seven streets
+  directories. Chrome/SwiftShader,1280x800,DPR1; three explicit LODs, natural-default
+  capture, exact common-distance comparison, navigation, JS heap and draw-call
+  observations. Actual source-edge drilldown succeeds on Realworld/PocketBase;
+  zero-network cases correctly disable Synthetic. Active Synthetic static rebuilds0.
+  Measurements are CPU submission and JS heap, NOT GPU FPS or process memory.
+- Artifacts inspected: Realworld default and forced Overview, Bat Overview,
+  PocketBase Overview/showcase, Lazygit default, SQLite Browser default,
+  FastAPI showcase. Cities differ geometrically but remain generic/repetitive.
+  Small-city forced aggregates can clip; default Realworld uses Detail correctly.
+  No claim of large visual improvement from this measurement tool.
+- Audit corrections: replaced large-city-only natural-LOD assumptions with explicit
+  comparison LODs; sparse roads can be inspected at a higher local camera angle;
+  keyboard guard tests focus enabled controls; zero-network/zero-visible-trajectory
+  animation is explicitly not applicable. Existing movement/cache failures still
+  block where activity is actually present. Default camera captures stay unmodified.
+- Tests: Python475 run,474 pass/1 existing Windows symlink skip; Node48 pass;
+  Ruff passed. Fresh spring-positive and structural-showcase builds generated in
+  cross-repository-fixtures. The initial supplementary browser regression hit an
+  audit assumption about animated paths at forced Overview; recorded/fixed.
+  cross-repository-regression-r2 passes GJ plus both maintained fixtures, including
+  Spring District/Detail animation and exact-route inspection; generic traffic N/A.
+- Findings: Go/Rust/Python/C++ remain structural-only; samples/assets can account
+  for JS/Java coverage. Qt `.ts` translation files are incorrectly classified as
+  TypeScript in the baseline; prioritized scanner correction next. No universal
+  semantic-support or resolution-accuracy claim. Pipeline COMPLETE != L4 coverage.
+- Spec alignment: PASS for benchmark/AC-001/002/007/012/014. Public UCG/City,
+  source evidence, layout and security defaults unchanged by this tooling unit.
+- Commit/push: benchmark tooling/checkpoint committed separately on
+  experiment/street-grid; only tracked tool/tests/docs, never corpus/artifacts or
+  unrelated IDE caches. Ordinary upstream push after verification.
+
+## Checkpoint 2026-10-18 — Qt translation content-type correction
+
+- Implemented: bounded `.ts` XML/Qt-header discrimination; retain generic FILE
+  identities and buildings as language xml, with INFO provenance for the format
+  correction. No XML/DTD/entity resolution, target execution or dependency install.
+  TypeScript strings/comments/type assertions and TSX remain negative fixtures.
+- Fixture/revision: sqlitebrowser ae32df153a64d250de7c77a5057deeff4092a39b;
+  new positive/negative scanner and analyzer integration tests; parent660c0e1.
+- Commands: `python -m scripts.repository_benchmark --repo
+  ../visual_test_proj/sqlitebrowser --out
+  ../artifacts/visual/cross-repository-qt-r1 --streets`; browser audit with CHROME,
+  output cross-repository-qt-audit-r1 and corrected sqlitebrowser/streets input.
+  Full corpus reanalysis compared canonical UCG hashes to cross-repository-r2.
+- Results:27 XML documents correctly retained, false adapter count24->0;
+ 506 buildings/27 districts unchanged in ID, position, size and archetype.
+ 27 language-derived styleVariant values change to xml; scene ucgDigest changes.
+  Zero dependencies remain zero. Structural street routing digest unchanged.
+  All base/curved artifacts repeat byte-identically. Other six graph hashes match.
+- Actual artifacts inspected: corrected default WebGL capture; same skyline,
+  no invented traffic. Three explicit LODs, navigation, preview/showcase captures
+  complete without browser exceptions. Synthetic N/A because networks0, not a
+  moving-traffic success claim. Updated seven-case gallery is
+  cross-repository-reviewed-r1/index.html; historical baseline remains intact.
+- Tests: full Python478 run,477 pass/1 existing Windows symlink skip; Node48 pass;
+  Ruff and diff checks pass. Small maintained Spring/unknown E2E and large GJ
+  browser regression were verified in the preceding checkpoint; full unit suite
+  rerun after scanner change. No failing tests suppressed.
+- Spec alignment: PASS FR-001/002/003/010/015, AC-001/002/012/014. Existing string
+  language contract, stable IDs and canonical layout unchanged. No framework-role
+  inference from filenames or new semantic adapter. Bounded sniff limitation
+  explicitly documented; headers beyond the window remain unrecognized.
+- Open work: oversized forced-Overview aggregates, coherent whole-staircase
+  corridor reconstruction, separately certified roundabouts, and language support.
+  These are not delivered by this benchmark/bug-fix milestone.
+- Commits:660c0e1 benchmark tooling already pushed; Qt fix gets its own conventional
+  commit and ordinary upstream push on experiment/street-grid after staged review.
+  Private corpus/artifacts and unrelated IDE caches are not staged.
+
+## Checkpoint 2026-10-18 — rejected whole-corridor spike
+- Implemented experimentally: common cubic strip deformation, shared CPU/JS
+  paint/path map and an opt-in prototype flag. Removed all prototype source,
+  flag and tests after actual surface rendering failed the visual gate. Existing
+  local bend implementation remains unchanged; no new public/derived contract.
+- Inputs: archived GJ/OJ urban-street-r1 scenes and PocketBase cross-repository-r2
+  (6f370ea741f33adf889eef02e3c1b884a47aa522); maintained spring-positive fresh build.
+- Commands: `python ../artifacts/visual/corridor_review.py corridor-curves-r1`;
+  `python ../artifacts/visual/corridor_geometry.py corridor-curves-r1`;
+  `node ../artifacts/visual/corridor_focus.mjs corridor-curves-r1 corridor-curves-focus-r1`.
+  Fresh E2E: `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/corridor-e2e-r1/build`, followed by prototype street_grid.
+- Actual images inspected: corridor-curves-focus-r1/{before,after}/focus.png.
+  The sole accepted PocketBase corridor smoothed its centerline but deformed
+  adjacent road surfaces into visible pinches/bulges. Visual gate: FAIL.
+  GJ0/4 and OJ0/12 accepted; no citywide improvement claimed.
+- Geometry: all canonical graphs/scenes and logical paths unchanged, repeated
+  packages identical;28239/9950/13939 polygons checked for GJ/OJ/PocketBase,
+  zero building collisions or backfaces. These checks did NOT detect ugliness.
+- Prototype validation: Python486 run/485 pass/1 existing Windows symlink skip,
+  Node49 pass, Ruff pass; fresh Spring browser three-LOD Synthetic static rebuilds0.
+  Prototype-only tests were removed together with the rejected implementation,
+  not weakened to approve it. Product baseline tests rerun in the next checkpoint.
+- Spec alignment: semantic invariants PASS; visual quality FAIL, so not Done.
+  Archive artifacts remain private and clearly described here as rejected.
+- Next action: repair cross-repository Overview proportions/framing; future full
+  corridor reconstruction must preserve street surfaces and junction mouths.
+- Commit: documentation-only record of rejected experiment, separate from the
+  subsequent viewer correction; normal feature-branch push at verified checkpoint.
+
+## Checkpoint 2026-10-18 — source-bounded Overview and all-LOD framing
+- Implemented: CPU/shared browser ordinary aggregate heights use the constituent
+  scene height envelope, not file count. WebGL frames file and aggregate roofs
+  together regardless of population. Evidence-backed role facilities, their
+  membership, explicit expansion, paths and source records remain unchanged.
+- Fixtures/revisions: seven pinned corpus inputs from CROSS_REPOSITORY_BENCHMARK,
+  using corrected cross-repository-qt-r1 SQLite; GJ/OJ urban-street-r1 canonical
+  snapshots; maintained spring-positive fixture at770689b rebuilt from source.
+  Nine large/corpus inputs were repackaged, not freshly rescanned this checkpoint.
+- Commands: `python ../artifacts/visual/overview_review.py overview-proportions-r1`
+  (nine packages twice, exact canonical scene/UCG/routing equality assertions);
+  `node ../artifacts/visual/overview_gallery.mjs` (old/new membership comparison).
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/overview-e2e-r1/build`;
+  `python -m scripts.street_grid ../artifacts/visual/overview-e2e-r1/build
+  --street-grid --aligned-blocks --curved-streets
+  --out ../artifacts/visual/overview-e2e-r1/streets`.
+- Actual browser: `node scripts/viewer_audit.mjs
+  'C:/Program Files/Google/Chrome/Application/chrome.exe' OUTPUT INPUTS...`:
+  overview-small-audit-r1 takes overview-proportions-r1/{realworld,bat};
+  overview-corpus-audit-r1 takes {pocketbase,fastapi-realworld-example-app,ratatui,
+  lazygit,sqlitebrowser} plus overview-e2e-r1/streets/after;
+  overview-gamja-audit-r1 takes overview-proportions-r1/{gj,oj}.
+  All paths are under ../artifacts/visual. Reports retain exact expanded inputs,
+  browser/environment, asset hashes, natural/forced LOD and timing definitions.
+  `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/overview-fallback-r1
+  ../artifacts/visual/overview-proportions-r1/realworld
+  ../artifacts/visual/overview-proportions-r1/gj` exercises WebGL/forced Canvas.
+- Artifacts inspected: old/new RealWorld Overview actual WebGL images, new GJ
+  Overview, Ratatui rendered showcase, RealWorld forced Canvas capture. Gallery:
+  overview-proportions-reviewed-r1/index.html. RealWorld roof clipping corrected;
+  ordinary masses no longer inflate small scenes. GJ role landmarks stand above
+  lower generic masses. Flat repeated generic forms and empty plots remain.
+  Comparison cameras use each version's fit; no identical-camera claim.
+- Quantitative findings: maximum ordinary height25.63->10 RealWorld,
+  37.44->10 PocketBase,38.86->18 GJ,37.26->18 OJ. All nine memberships and original
+  graph/scene/routing unchanged, repeated package bytes equal. No layout migration.
+- Tests: `python -m unittest discover -s tests -q`:478 run/477 pass/1 existing
+  Windows symlink skip. `node --test tests/camera_framing.test.mjs
+  tests/access_routes.test.mjs tests/junction_geometry.test.mjs tests/road_paint.test.mjs
+  tests/viewer_audit.test.mjs tests/camera_navigation.test.mjs
+  tests/role_landmarks.test.mjs`:50 pass. Ruff and git diff --check pass.
+  CPU/JS projection parity, golden fixtures and deterministic outputs pass without
+  changing golden hashes. No tests weakened. Actual browser three-LOD Synthetic
+  static rebuilds0 wherever evidenced animation applies; zero-network cases N/A.
+  Road selection/exact-route inspection, navigation and Canvas toggle restore pass.
+- Spec alignment: PASS technical rendering/LOD and T-01/02/03/05/06/07/08;
+  functional structural baseline/repeatability/unknown-tech fallback and product
+  evidence-first principles. No runtime dependency, public schema, stable ID or
+  semantic classification change. No claim that generic output proves Go/Rust support.
+- Open risks/next actions: full-width corridor/junction reconstruction remains
+  pending; rejected displacement prototype is not shipped. Improving skyline
+  variety must use source-backed roles/metrics, not reintroduce file-count towers.
+- Commits:00a2ce6 records the rejected spike separately; this verified viewer fix
+  receives its own conventional commit. Push both normally to the existing
+  experiment/street-grid upstream after staged review; no main merge/default promotion.
+
+## Checkpoint 2026-10-19 — non-orthogonal structural street reconstruction
+
+- Implemented: ADR-021 and opt-in `--diagonal-streets`. Split geometric crossings
+  and overlaps, protect doors/branches/trip endpoints, replace eligible branch-free
+  detours with shorter diagonal chords. Certify full-width tapered pavement and
+  junction mouths against buildings and other roads. Preserve unrelated geometry;
+  bounded fallback widths do not bypass collision checks. No public schema change.
+- Fixtures/revisions: SQLite Browser ae32df153a64d250de7c77a5057deeff4092a39b,
+  PocketBase 6f370ea741f33adf889eef02e3c1b884a47aa522 (cross-repository snapshots);
+  GJ local-sha256-06eb492d57141c16 and OJ local-sha256-c2e80f9d3908fec8 from
+  urban-street-r1. These four snapshots were repackaged, not rescanned. Maintained
+  spring-positive at parent134ecee was freshly built through the real CLI.
+- Commands (all artifact paths under ../artifacts/visual):
+  `python ../artifacts/visual/diagonal_review.py diagonal-streets-r2` packages
+  before/after twice and checks canonical identity, new surface clearance/winding;
+  `node ../artifacts/visual/diagonal_paths.mjs diagonal-streets-r2` checks all trips;
+  `python ../artifacts/visual/diagonal_verify.py` verifies final resource-limit
+  changes retain exact plans and viewer-data bytes for all four cases.
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/diagonal-e2e-r2/build`;
+  `python -m scripts.street_grid ../artifacts/visual/diagonal-e2e-r2/build
+  --street-grid --aligned-blocks --diagonal-streets
+  --out ../artifacts/visual/diagonal-e2e-r2/streets`.
+- Actual browser commands: `node ../artifacts/visual/diagonal_focus.mjs
+  diagonal-streets-r2 diagonal-focus-r2` captures four identical-camera pairs.
+  `node scripts/viewer_audit.mjs 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+  ../artifacts/visual/diagonal-browser-r2` with diagonal-streets-r2/{sqlitebrowser,
+  pocketbase,gj,oj}/after as four positional inputs; the same command with output
+  diagonal-small-audit-r2 and input diagonal-e2e-r2/streets/after checks the fresh
+  fixture. `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/diagonal-fallback-r2` with diagonal-streets-r2/{sqlitebrowser,
+  gj}/after exercises WebGL/forced Canvas and reversible structure toggling.
+- Artifacts inspected: SQLite before/after focus images, SQLite rendered showcase
+  and forced Canvas; PocketBase after focus, GJ after focus/Overview, OJ rendered
+  showcase. `diagonal-focus-r2/index.html` links actual viewers and same-camera
+  captures. SQLite's large exterior staircase becomes a direct diagonal;
+  PocketBase shows an oblique three-way approach. Buildings, labels and framing
+  remain unchanged. Broad voids, parallel connectors and inner grids still exist.
+- Quantitative outcome: accepted4/45 SQLite,14/86 PocketBase,18/75 GJ,8/54 OJ.
+  Replaced-chain lengths259→196.89,416.5→301.40,591.5→456.36,353.5→275.90.
+  These are local chain totals, not entire-city percentages. Newly emitted
+  polygons60/198/312/123: building intersections0, reversed faces0. Exact repeated
+  package bytes and unchanged canonical City/UCG/logical routing in all four.
+- Path fidelity: all5,782 trips have continuous mapped geometry, exact complete
+  endpoints, original route/edge membership and no increased physical length.
+  Only27 GJ trips use changed segments; other replacements in these snapshots
+  are unassigned civic streets. SQLite networks0: Synthetic explicitly unavailable.
+  Representative changed GJ link ManagedPreviewService→ManagedPreviewProperties
+  retains RESOLVED REFERENCES evidence java.type-reference, source line52;
+  original evidence ID792c9dda... and full canonical records unchanged.
+- Tests: `python -m unittest discover -s tests -q`:487 run,486 pass,1 existing
+  Windows symlink skip. `node --test tests/camera_framing.test.mjs
+  tests/access_routes.test.mjs tests/junction_geometry.test.mjs tests/road_paint.test.mjs
+  tests/viewer_audit.test.mjs tests/camera_navigation.test.mjs
+  tests/role_landmarks.test.mjs`:52 pass. Ruff and git diff --check pass.
+  Regression coverage includes protected interior doors, crossings, width-edge
+  obstacles, unrelated streets, reversal/permutation, exact repeated packaging,
+  width transitions, physical paint and forward/reverse Synthetic continuity.
+  Browser three-LOD Synthetic static rebuilds0 where applicable; CPU draw submission
+  metrics in reports are not GPU frame-rate claims. No failing tests weakened.
+- Fixes applied/reverified: first chord prototype used the narrowest section for
+  the entire road, producing hairline connectors in actual captures. Replaced it
+  with certified width profiles and tapered mouths; regenerated r2 and reran
+  geometry, trip, browser and fallback checks. New caps preserve r2 bytes exactly.
+- Spec alignment: PASS under ADR-020/021 experiment; technical7/8 and T-01/02/03/
+  05/06/07/08/09, functional AC-002/003/006/011, product DEC-005/007/008/011.
+  Canonical geography is unchanged; no language-coverage claim, untrusted execution,
+  new service dependency, fabricated semantic edge or default-mode promotion.
+- Open risks/next actions: branch-free reconstruction does not solve dense internal
+  orthogonal topology. Study bounded junction/connector reconfiguration with entry-
+  exit tracing next; do not place decorative roundabouts over unmodified paths.
+  Resource caps intentionally refuse excessive inputs instead of partial unsafe
+  output. Existing experimental streets and fallback assignment limitations remain.
+- Commit/push: one atomic feature unit with ADR, implementation, tests and this
+  checkpoint; intended upstream origin/experiment/street-grid. Stage explicit paths,
+  verify human identity/no agent attribution, then normal push. No main merge.
+
+## Checkpoint 2026-10-19 — bounded oblique three-arm junctions
+
+- Implemented: opt-in `--junction-streets` on the ADR-021 diagonal baseline.
+  Reconstruct three arms and their central/outer mouth surfaces atomically, with
+  fixed outer terminals, pinned doors, maximum 14-unit center movement, minimum
+  35-degree approach separation, no arm length increase and at least 5% total
+  local shortening. Full-width collision checks include buildings and retained
+  roads. Overlapping proposals are reserved deterministically. Bounded resources;
+  no broad displacement field, fabricated junction connectivity or public schema change.
+- Fixtures/revisions: SQLite ae32df153a64d250de7c77a5057deeff4092a39b;
+  PocketBase 6f370ea741f33adf889eef02e3c1b884a47aa522;
+  GJ local-sha256-06eb492d57141c16; OJ local-sha256-c2e80f9d3908fec8.
+  Four existing diagonal-streets-r2 snapshots repackaged, not freshly scanned.
+  Maintained spring-positive at parent 6291e6a freshly scanned through real CLI.
+- Commands (workspace-private helpers/output under ../artifacts/visual):
+  `python ../artifacts/visual/junction_review.py oblique-junctions-r1`;
+  `node ../artifacts/visual/diagonal_paths.mjs oblique-junctions-r1`;
+  `python ../artifacts/visual/junction_verify.py` (final planner and serialization
+  exactly match inspected packages after implementation optimization).
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/oblique-junction-e2e-r1/build`;
+  `python -m scripts.street_grid ../artifacts/visual/oblique-junction-e2e-r1/build
+  --street-grid --aligned-blocks --junction-streets
+  --out ../artifacts/visual/oblique-junction-e2e-r1/streets`.
+- Actual browser commands: `node ../artifacts/visual/diagonal_focus.mjs
+  oblique-junctions-r1 oblique-junction-focus-r1 junction` produces four same-camera
+  before/after pairs. `node scripts/viewer_audit.mjs
+  'C:/Program Files/Google/Chrome/Application/chrome.exe'
+  ../artifacts/visual/oblique-junction-audit-r1` with oblique-junctions-r1/
+  {pocketbase,gj,oj}/after as three positional inputs; same audit with output
+  oblique-junction-small-audit-r1 and inputs oblique-junctions-r1/sqlitebrowser/after
+  and oblique-junction-e2e-r1/streets/after. `node
+  ../artifacts/visual/city_context_review.mjs ../artifacts/visual/oblique-junction-fallback-r1`
+  with ../artifacts/visual/oblique-junctions-r1/{sqlitebrowser,gj}/after inputs
+  exercises actual WebGL, forced Canvas and reversible structure toggling.
+- Artifacts inspected: SQLite/PocketBase/OJ before and after focus captures;
+  GJ after focus and Overview; actual SVG showcase renders for SQLite/OJ and fresh
+  spring preview; forced SQLite Canvas city capture. Gallery:
+  `artifacts/visual/oblique-junction-focus-r1/index.html`. Oblique mouths and
+  shortened approaches are visible locally, with no new building collision or
+  lost junction seam observed. README/Overview silhouettes are essentially
+  unchanged; generic repetitive towers, empty gaps and regular inner grids remain.
+- Quantitative outcome: one junction per repository, from 18/55/16/16 position
+  proposals (SQLite/PocketBase/GJ/OJ). Building rejection 14/49/15/12; remaining
+  proposals are reserved or conflict with retained roads. Local arm totals
+  66.50→51.00,67.24→60.69,129.50→122.73,61.80→54.52; NOT citywide percentages.
+  SQLite/PocketBase/OJ centers move; GJ center stays fixed. Changed polygons
+  29/32/37/27: building intersections 0, reversed faces 0. Repeated packages equal
+  byte-for-byte, canonical graph/scene and original logical routing unchanged.
+- Fidelity/performance: all 5,782 trips continuous, fixed complete endpoints,
+  preserved source/target/edge membership and no physical length increase versus
+  the previous diagonal baseline (floating-point tolerance 1e-6 world units).
+  Six GJ paths change incrementally; other new junctions are civic-only.
+  `python ../artifacts/visual/junction_evidence.py` traces one changed GJ trip:
+  Frontend/portal/app/admin/docs/page.tsx → components/docs/admin-image-url.ts,
+  RESOLVED IMPORTS, original edge b8f040e5... and evidence f5eb04d1... at line 13,
+  plus tsconfig path evidence 77fd212a.... Local source import and @/* mapping
+  inspected directly; original edge/evidence records are unchanged.
+  Synthetic stays unavailable for SQLite's zero-network output. Browser three-LOD
+  Synthetic static rebuilds 0 for applicable fixtures. CPU draw submission
+  measurements in reports are not GPU FPS or cross-hardware performance claims.
+- Tests: `node --test tests/*.test.mjs`: 53 pass. `python -m unittest discover
+  -s tests -q`: 494 run,493 pass,1 existing Windows symlink skip. New seven-test
+  junction suite also rerun after adding per-arm diagonal-baseline length assertions.
+  Ruff and git diff --check pass. Tests cover protected doors, messaging exclusion,
+  full-width obstacles, unrelated roads, ordering/reversal, already-straight stars,
+  resource limits, incompatible modes, repeated packaging and exact trip pairing.
+- Fixes applied/reverified: rejected early proposals whose central join touched an
+  unrelated arm; outer-terminal collision exemptions now belong only to that arm.
+  New JS endpoint test initially used exact floating-point equality on interpolation
+  (residual ~2e-15); corrected to explicit 1e-8 geometric tolerance, then reran both
+  Node and Python suites successfully. No connectivity or evidence assertion removed.
+- Spec alignment: PASS under ADR-020/021 opt-in experiment; technical7/8 invariants,
+  functional AC-002/003/006/011, product DEC-005/007/008/011. Canonical geography,
+  provenance, deterministic unsupported-language fallback and local static output
+  preserved. No target-repository execution, runtime service or semantic-coverage claim.
+- Open risks/next actions: safe acceptance is sparse under fixed footprints;
+  this is a local reconstruction capability, not completion of free-form urban
+  topology. Study connector/parcel co-planning with explicit stability budgets
+  before promising broader changes. No roundabouts, arbitrary multi-junction
+  merging, default promotion or main integration in this unit.
+- Commit/push: atomic feature unit includes ADR, implementation, tests and this
+  checkpoint. Intended verified delivery to existing origin/experiment/street-grid,
+  normal push after staged diff and human identity/attribution review. No main merge.
+
+## Checkpoint 2026-10-19 — Street-facing buildings, Phase A (parent 81e13cc)
+- Implemented: ADR-022 opt-in `--frontage-parcels`, including existing junction
+  streets. Deterministic physical frontage selection, whole-archetype rotation,
+  bounded in-owner translation candidates and exact preservation of existing
+  civic/relationship doorways. Export derived `street-parcels/0.1` separately;
+  no canonical City/UCG field or ID change. A non-semantic facade canopy marks
+  the front. WebGL, Canvas, picking/selection and SVG use physical corners.
+  Changed-footprint aggregates expand without losing/duplicating members;
+  unchanged role compounds remain intact at all LODs.
+- Fixtures/revisions: pinned oblique-junctions-r1 snapshots, GJ Cloud
+  local-sha256-06eb492d57141c16 (1,324 files), GamjaOJ
+  local-sha256-c2e80f9d3908fec8 (681), PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522 (664), SQLite Browser
+  ae32df153a64d250de7c77a5057deeff4092a39b (506, no evidenced networks).
+  Maintained spring-positive at parent81e13cc freshly scanned through the CLI,
+  producing local-sha256-645189cce01fc6ab. No target code/dependencies executed.
+- Commands run from MetropoGits: `python -m unittest discover -s tests -q`;
+  `node --test tests/*.test.mjs`; `python -m ruff check .`; `git diff --check`.
+  Fresh E2E: `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/street-facing-e2e-r2/build`, then `python -m scripts.street_grid
+  ../artifacts/visual/street-facing-e2e-r2/build --street-grid --aligned-blocks
+  --frontage-parcels --out ../artifacts/visual/street-facing-e2e-r2/street`.
+  Local private-snapshot helpers: `python ../artifacts/visual/orientation_review.py
+  street-facing-r2` (repeat packages, full building/road collision and owner/door
+  checks); `node ../artifacts/visual/diagonal_focus.mjs street-facing-r2
+  street-facing-focus-r2 parcels` (same-camera Detail/Overview, all four).
+  `node scripts/viewer_audit.mjs CHROME OUT INPUT...` with installed Google Chrome:
+  street-facing-audit-r2 covers GJ/PocketBase/SQLite/fresh spring output;
+  street-facing-oj-audit-r2 covers OJ. `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/street-facing-context-r2 ../artifacts/visual/street-facing-r2/gj/after`
+  checks actual WebGL/forced Canvas and structure-toggle restoration.
+- Artifacts: `artifacts/visual/street-facing-r2/{sqlitebrowser,pocketbase,gj,oj}/
+  {before,after}`, `street-facing-focus-r2/index.html`, the audit directories above,
+  and `street-facing-e2e-r2`. Detailed source-preservation evidence also checked
+  in r1 with orientation_verify.py: GJ admin/docs/page.tsx -> admin-image-url.ts,
+  RESOLVED IMPORTS edge b8f040e5..., IMPORT evidence f5eb04d1... at line13 and
+  configured @/* path evidence77fd212a.... All graph/evidence records identical.
+- Quantitative outcome: SQLite/PocketBase/GJ/OJ have 506/664/1,324/681 frontage
+  models, of which 429/504/1,005/554 rotate by a nonzero quarter/half turn.
+  **All four have zero non-cardinal rotations and zero moved buildings.** The
+  existing square plots and pinned entrances prevent oblique relocation; this
+  is not an empty-space or density improvement. Full-width road/building
+  intersections0; owner escape0; all original doors stay on the perimeter.
+  Canonical scene/graph and physical/logical routing are exactly unchanged.
+  All5,782 trips retain IDs, endpoints, edge membership and physical geometry.
+  Repeated packages match byte-for-byte; footprint area and source dimensions
+  remain unchanged. Controlled geometry tests, not the real corpus, establish
+  45-degree rotation/translation, rectangular footprint and setback behavior.
+- Visual findings: same-camera GJ Detail shows warehouse roof bands and asymmetric
+  building parts turned toward different adjacent streets. PocketBase/SQLite
+  remain generic without invented roles; GJ/OJ semantic colors remain intact.
+  Overview and README retain their existing compositions and aggregates, so the
+  thumbnail improvement is small. Large empty gaps and regular block axes are
+  still visible. Fresh spring default framing is usable; the audit's forced
+  zoomed Detail can enter tall buildings and is not an automatic framing claim.
+- Tests/determinism/stability: Python501 run,500 pass,1 existing Windows symlink
+  skip; Node54 pass. Seven Python parcel tests cover arbitrary rotation,
+  rectangular dimensions, low-height canopy bounds, concave owner clipping,
+  protected doors, neighbor overlap, ordering/reversal, distant-addition
+  stability, explicit work/index caps and repeated source-preserving packaging.
+  New Node test proves partial filters/LODs cannot lose or double-represent files
+  when only an affected aggregate is expanded. Full existing stability/golden,
+  schema/security and integration suites pass. No tests weakened.
+- Fixes applied/reverified: replaced initial all-street/all-building candidate
+  comparisons with bounded spatial queries; explicit ranking/index limits fail
+  closed. Kept canopy inside original footprint/height. Sorted physical part
+  faces together in Canvas/SVG so a rear low canopy cannot simply paint on top
+  of the whole front building; regenerated r2 packages/captures after this fix.
+  Actual Synthetic audits report0 static geometry rebuilds in all tested LODs;
+  SQLite animation remains unavailable without evidenced networks. CPU submission
+  timing is not GPU FPS or a cross-machine performance guarantee.
+- Spec alignment: PASS under user-approved ADR-022 experiment, building on
+  ADR-020/021. Rechecked technical7/8, functional AC-002/003/006/011 and product
+  DEC-005/007/008/011. Stable canonical geography, evidence fidelity, local static
+  output and unsupported-language fallback preserved. No default promotion,
+  untrusted code execution, new runtime service or main merge.
+- Open risks/next actions: PhaseB must co-plan block-local parcels and entrances
+  to obtain actual oblique placements and better use of space. Do not sell
+  cardinal model rotation as that result, shrink buildings to force fits or
+  disable collision/door checks. PhaseC corner lots and role-aware hierarchy
+  bias follow coordinated parcel work. Arbitrary-angle visual geometry is only
+  covered by controlled fixtures here, not accepted real-corpus placements.
+- Commit/push: one atomic feature unit with ADR, implementation, regression
+  tests and this checkpoint. Verified delivery targets the existing upstream
+  origin/experiment/street-grid after final staged review; no main integration.
+
+## Checkpoint 2026-10-19 — coordinated leaf blocks and occupied ground
+- Implemented: ADR-023 opt-in `--local-blocks`, whole-group rotation with a fixed
+  outer owner boundary and continuous road/paint/trip mapping. Tight derived
+  ground supports and LOD mass-sized plinths replace broad normal-view floors.
+  Full territory remains available through Structure overlay. This is a bounded
+  pilot, not completed block-local subdivision or physical city compaction.
+- Fixtures/revisions: reused street-facing-r2 canonical snapshots: GJ
+  local-sha256-06eb492d57141c16 (1,324 files), OJ local-sha256-c2e80f9d3908fec8
+  (681), PocketBase 6f370ea741f33adf889eef02e3c1b884a47aa522 (664), SQLite Browser
+  ae32df153a64d250de7c77a5057deeff4092a39b (506). Fresh maintained spring-positive
+  fixture scanned through the real CLI. No clone code or build script executed.
+- Commands from MetropoGits: `python -m unittest discover -s tests -q`;
+  `node --test tests/*.test.mjs`; `python -m ruff check .`; `git diff --check`.
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/local-blocks-e2e-r1/build`, followed by
+  `python -m scripts.street_grid ../artifacts/visual/local-blocks-e2e-r1/build
+  --street-grid --aligned-blocks --local-blocks
+  --out ../artifacts/visual/local-blocks-e2e-r1/street`.
+  Private-snapshot repeat/package helper: `python ../artifacts/visual/local_blocks_review.py
+  local-blocks-r3`; full spatial audit: `python ../artifacts/visual/local_blocks_geometry.py
+  local-blocks-r3`; comparison: `node ../artifacts/visual/diagonal_focus.mjs
+  local-blocks-r3 local-blocks-focus-r3 blocks`.
+- Artifacts inspected: `local-blocks-focus-r3/index.html`, GJ same-camera
+  before/after Detail and sparse-ground captures; OJ/SQLite Overview;
+  `local-blocks-audit-r3/case-{1,3}/showcase.png`, GJ forced-Canvas capture in
+  `local-blocks-context-r3/canvas-0/city.png`. Actual WebGL audit via
+  `node scripts/viewer_audit.mjs CHROME OUT INPUT...` covers GJ/PocketBase/SQLite/
+  fresh spring in local-blocks-audit-r3 and OJ in local-blocks-oj-audit-r3.
+  `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/local-blocks-context-r3
+  ../artifacts/visual/local-blocks-r3/gj/after
+  ../artifacts/visual/local-blocks-r3/oj/after` verifies WebGL/forced Canvas,
+  unchanged selection counts/camera and restored geometry after Structure toggle.
+- Quantitative outcome: GJ accepts three small two-file groups (-45,-45,-3.81
+  degrees); other three repositories accept none. Eight GJ physical route
+  segments change, used by48 trips. All5,782 logical trips preserve endpoints by
+  identity, evidence and continuity; physical door coordinates may move with their
+  blocks. Representative preserved RESOLVED REFERENCES edge9c0ea7a9... remains
+  DeploymentEditedComposeTest.java -> DeploymentController.java with original
+  evidence3639afeb.... Canonical graphs/scenes remain exactly unchanged.
+- Ground metrics: individual occupied-pad area upper bounds are39,799/51,101/
+  99,475/52,065 versus allocated root areas62,328/118,286/265,678/98,980 for
+  SQLite/PocketBase/GJ/OJ. These are world areas, not pixel coverage or a claim of
+  whole-city reduction: pad sums may overlap and exclude aggregate plinths.
+  Repeated packages are byte-identical. Geometry audit checks3,175 building
+  envelopes against full physical streets/demand pavement: overlaps0, owner
+  escapes0, uncovered buildings0; all moved doors remain on building perimeters.
+- Visual findings: oversized normal-view owner floors and aggregate platforms
+  recede, while source colors and district labels remain recognizable. GJ small
+  groups visibly rotate; the whole-city grid and inter-group distances largely
+  remain. Vacant space is now dark in some sparse areas instead of filled by a
+  slab. This does NOT solve packing or make the city universally more organic.
+  Full owner geometry remains inspectable. No decorative fillers were introduced.
+- Tests/determinism/stability: Python510 run,509 pass,1 existing Windows symlink
+  skip; Node55 pass. New cases cover fixed-boundary positive triangulation,
+  rigid interiors, continuous doors, envelope-vs-roof bounds, polygon area,
+  reversed input order, unrelated distant owner stability, concave ground
+  ownership, exact support membership, repeated packaging and explicit work
+  limits. All existing schema/golden/security/stability tests pass. Synthetic
+  audits in all three LODs report0 static geometry rebuilds. SQLite still has no
+  invented traffic. CPU submission samples are not GPU FPS measurements.
+- Fixes applied/reverified: r2 exposed a PocketBase owner escape because the
+  inner cage used small roof meshes rather than the full footprint. Included
+  full envelopes and doors; rejected that candidate and regenerated r3. Added
+  regression coverage rather than weakening collision tolerances. Compact
+  aggregate picking now uses the same smaller supports as drawing; supports
+  never expand beyond the represented mass. Earlier r1/r2 are not the delivered
+  milestone. Corrected an initial helper module path and test invocation.
+- Spec alignment: PASS under user-approved ADR-023 experimental scope. Rechecked
+  technical7/8, functional AC-002/003/006/011 and product DEC-007/008. No public
+  schema, stable ID, semantic evidence, default mode or remote setting changed.
+- Open risks/next actions: full parcel subdivision and genuine bounded local
+  compaction remain. Whole-group rotation is intentionally narrow; do not claim
+  general Phase B completion. Local affine road widths can vary; do not equate
+  those variations with traffic demand. Complete long-range packing and corner
+  lot handling need separate evidence and acceptance checks.
+- Commits created/pushed: one atomic feature unit, reviewed and delivered to
+  existing origin/experiment/street-grid; no main integration. Commit outcome is
+  checked after staged review and push, not inferred from this log entry.
