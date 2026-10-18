@@ -2528,3 +2528,59 @@
   communication-layer redesign deferred until this road behavior is reviewed.
 - Delivery: one feat(renderer) work unit on authorized main; commit/push and CI
   status are verified separately at handoff, not inferred from local tests.
+
+## Checkpoint 2026-10-18 — Ground camera movement and remote district navigation
+- Implemented: visible Move mode, four directional buttons, WASD/arrow movement,
+  Shift/Alt/right/middle drag, and a major-district jump selector in both viewer
+  paths. WebGL vertical drag now translates X/Z instead of changing target Y.
+  Movement follows camera orientation and zoom; rotation retains the translated
+  pivot. Reset restores the fitted city view. Form/editable controls and browser
+  modifier shortcuts are not intercepted. No change to semantic/layout data.
+- Fixtures: maintained structural-showcase through the complete pipeline;
+  GJ-Cloud 3d9b53f and GamjaOJ b163acd via trusted shared-access-r3 graph/scene
+  snapshots for controlled camera comparison. Input repositories were not run.
+- Commands: `python -m unittest discover -s tests -q`; `python -m ruff check
+  metropogits tests scripts`; `node --test tests/camera_navigation.test.mjs
+  tests/access_routes.test.mjs tests/role_landmarks.test.mjs tests/viewer_audit.test.mjs`;
+  JavaScript syntax and `git diff --check`; full `metropogits build` of
+  structural-showcase and local GJ; local refresh_for_review.py/repackage_camera.py;
+  `node scripts/viewer_audit.mjs <Chrome> ../artifacts/visual/camera-navigation-audit-r3
+  ../artifacts/visual/camera-navigation-r3/gj ../artifacts/visual/camera-navigation-r3/oj`.
+- Input-change finding: fresh GJ analysis in camera-navigation-r1/gj is PARTIAL,
+  with LAYOUT_HINT_PARTIAL, not a successful unchanged-input baseline. Four
+  bin/main/schema.sql output copies under Backend/{Auth,Ops,User,Vm} are now
+  eligible inputs (1328 rather than 1324 files); 250 existing buildings moved.
+  This is not caused by the camera-only patch. No input/cache files were deleted
+  to hide it. Generated-output exclusion and hint churn are explicit next fixes;
+  arbitrary source directories named bin must not be blindly excluded.
+- Artifacts inspected: camera-navigation-audit-r2 case-1/case-2
+  camera-district-jump.png and case-1 preview.png; r3 case-1 camera-district-jump.png
+  after the Inspector correction. User district is centered and navigable; OJ
+  scripts district fills the focused view. Background districts may be cropped
+  intentionally while focused. Toolbar wraps without covering the canvas.
+- Fix applied after visual inspection: a major district incorrectly displayed
+  0/0 because only direct files were counted. Inspector now includes descendants
+  and labels counts as filter matches, not rendered/on-screen buildings. GJ
+  Backend/User reports 115/115, with regression coverage for sibling exclusion.
+- Browser checks: real pointer drag in Move mode, directional control, keyboard
+  movement, form-key isolation, orbit-pivot persistence, Reset, and farthest
+  major-district jump pass in both projects. Existing role-compound, access-path,
+  synthetic provenance and all-LOD controls also pass. Synthetic static builds
+  remain zero. GJ orbit CPU p95 Overview/District/Detail 12.2/16.8/20.0 ms;
+  OJ 2.8/4.5/4.4 ms. Synthetic p95 GJ 1.5/1.0/1.1 ms, OJ 1.1/1.2/1.5 ms.
+  These are headless SwiftShader CPU submission measurements, not GPU FPS.
+- Tests/stability: 259 Python tests run, 258 pass, one Windows symlink skip;
+  23 Node tests pass; lint/syntax/whitespace checks pass. Repackaged GJ/OJ
+  graph.ucg.json, city.json, preview.svg and showcase.svg exactly match prior
+  SHA256 values: zero canonical churn for the camera work. The first attempted
+  dotted unittest invocation failed because tests is not a Python package;
+  corrected discovery invocation passed, without changing or skipping tests.
+- Spec alignment: PASS for FR-012, NF-009 and unchanged evidence/scene contracts.
+  Canvas controls are implemented and covered by packaging/policy tests but are
+  not visually verified in this checkpoint. Large-scene camera CPU and narrow
+  road contrast remain open; communication changes remain deferred.
+- Delivery: one feat(viewer) local commit. Push intentionally not attempted:
+  the latest supplied AGENTS prohibits direct protected-main pushes, superseding
+  the earlier owner exception. A permitted delivery branch/workflow needs user
+  direction. Existing untracked .gradle/target directories and deferred stash
+  are preserved and excluded from the commit.

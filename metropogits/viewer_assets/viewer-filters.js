@@ -1032,7 +1032,40 @@
       unresolved: routing.unresolvedEdgeIds.length});
   }
 
+  function districtBuildings(scene, districtId) {
+    const children = new Map(scene.districts.map(d => [d.id, []]));
+    for (const district of scene.districts) children.get(district.parentId)?.push(district.id);
+    const ids = new Set(), pending = [districtId];
+    while (pending.length) {
+      const id = pending.pop();
+      if (ids.has(id)) continue;
+      ids.add(id);
+      pending.push(...(children.get(id) || []));
+    }
+    return scene.buildings.filter(b => ids.has(b.districtId));
+  }
+
+  // Translate the orbit target on X/Z, never its height. Drag distances are pixels.
+  function groundPan(camera, dx, dy, viewportHeight, fieldOfView) {
+    const scale = 2 * camera.distance * Math.tan(fieldOfView / 2) / Math.max(1, viewportHeight);
+    const forward = dy / Math.max(0.15, Math.sin(camera.pitch));
+    return {x: (-dx * Math.cos(camera.yaw) - forward * Math.sin(camera.yaw)) * scale,
+      z: (dx * Math.sin(camera.yaw) - forward * Math.cos(camera.yaw)) * scale};
+  }
+
+  function cameraKeyAction(event) {
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
+      || event.target?.isContentEditable
+      || event.target?.closest?.('input, select, textarea, [contenteditable], [role="textbox"]')) return null;
+    return {w:'pan-up', arrowup:'pan-up', s:'pan-down', arrowdown:'pan-down',
+      a:'pan-left', arrowleft:'pan-left', d:'pan-right', arrowright:'pan-right',
+      q:'rotate-left', e:'rotate-right', '+':'zoom-in', '=':'zoom-in', '-':'zoom-out', r:'reset'}[event.key.toLowerCase()] || null;
+  }
+
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    districtBuildings,
+    groundPan,
+    cameraKeyAction,
     createAccessPolicy,
     corridorVisible,
     aggregateParts,

@@ -20,6 +20,14 @@
     </header>
 
     <nav class="toolbar" aria-label="City camera controls">
+      <button type="button" data-action="toggle-pan" aria-pressed="false" title="Switch primary drag between orbit and ground movement">Move mode</button>
+      <span class="camera-directions" role="group" aria-label="Move camera across the ground">
+        <button type="button" data-action="pan-left" aria-label="Move camera left" title="Move left (A / Left)">←</button>
+        <button type="button" data-action="pan-up" aria-label="Move camera forward" title="Move forward (W / Up)">↑</button>
+        <button type="button" data-action="pan-down" aria-label="Move camera backward" title="Move backward (S / Down)">↓</button>
+        <button type="button" data-action="pan-right" aria-label="Move camera right" title="Move right (D / Right)">→</button>
+      </span>
+      <select id="district-jump" aria-label="Go to a major district" title="Move directly to a major district"><option value="">Go to district…</option></select>
       <button type="button" data-action="rotate-left" title="Rotate left (Q)">↶ Rotate</button>
       <button type="button" data-action="rotate-right" title="Rotate right (E)">Rotate ↷</button>
       <button type="button" data-action="zoom-in" title="Zoom in (+)">＋</button>

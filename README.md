@@ -20,7 +20,14 @@ metropogits build --repo . --out dist --theme minimal
 The command writes the graph and scene contracts, deterministic SVG previews,
 an interactive static viewer, a diagnostic manifest, and a linked README
 snippet. Open `dist/index.html` directly for the perspective WebGL city: drag
-to orbit, use Alt/secondary drag to pan, and use the wheel to zoom. If WebGL
+to orbit, enable **Move mode** to drag across the ground, or use Shift/Alt/right/
+middle drag to move without switching modes. WASD, arrow keys and the directional
+buttons move the camera relative to its current orientation; the wheel zooms,
+Q/E rotate, and R/Reset restores the city view. **Go to district** moves directly
+to a major district, including ones currently off-screen. Movement preserves
+camera height and shifts the orbit center with it. Shortcuts do not intercept
+form controls or browser modifier keys. The 2D fallback starts in Move mode.
+If WebGL
 initialization fails, the same artifact automatically opens the interactive
 isometric 2D fallback. Both paths support selection, evidence inspection, and
 filters for verified role, language, technology, and evidence level. District

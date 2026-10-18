@@ -23,6 +23,23 @@ def load_fixture() -> dict:
 
 
 class ViewerTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("node"), "Node unavailable")
+    def test_camera_navigation_policy(self):
+        subprocess.run(["node", "--test", str(Path(__file__).with_name("camera_navigation.test.mjs"))],
+                       check=True, capture_output=True, text=True, encoding="utf-8")
+
+    def test_navigation_controls_are_packaged_for_both_renderers(self):
+        artifacts = render_viewer(generate_city(load_fixture()), load_fixture())
+        html = artifacts["index.html"].decode("utf-8")
+        for action in ("toggle-pan", "pan-left", "pan-right", "pan-up", "pan-down"):
+            self.assertIn(f'data-action="{action}"', html)
+        self.assertIn('id="district-jump"', html)
+        for name in ("viewer-3d.js", "viewer.js"):
+            source = artifacts[f"assets/{name}"].decode("utf-8")
+            self.assertIn("filterEngine.cameraKeyAction(event)", source)
+            self.assertIn('districtJump.addEventListener("change"', source)
+            self.assertIn('event.button !== 0 ? "pan"', source)
+
     def test_legend_has_its_own_row_outside_the_canvas_stage(self):
         artifacts = render_viewer(generate_city(load_fixture()), load_fixture())
         html = artifacts["index.html"].decode("utf-8")

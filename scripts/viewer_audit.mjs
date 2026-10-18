@@ -299,6 +299,8 @@ export function reportHtml(report) {
     ${['overview','district','detail','common-scale'].map(mode => `<section><h2>${mode}</h2><p>${mode === 'common-scale'
       ? 'Same absolute camera distance, same overview LOD, each city centered on its own bounds.'
       : `Same fit-relative zoom (${report.policy.normalizedZooms[mode]}×), natural LOD. District/detail intentionally zoom into the city, so cropped edges are expected.`}</p><div class="pair">${cells(mode)}</div></section>`).join('')}
+    <section><h2>Remote district navigation</h2><p>Actual district-jump control after ground pan, orbit, drag, keyboard and reset checks.</p><div class="pair">${report.cases.map((item,index) => item.navigation
+      ? `<figure><a href="case-${index+1}/camera-district-jump.png"><img alt="Case ${index+1}, camera focused on a remote district" src="case-${index+1}/camera-district-jump.png"></a><figcaption>${escape(item.navigation.destination)}</figcaption></figure>` : '').join('')}</div></section>
     </html>`;
 }
 
@@ -451,6 +453,53 @@ export async function runAudit(browser, output, inputs, samples = 20) {
         const capture=await cdp.send('Page.captureScreenshot',{format:'png'});
         await writeFile(join(directory,'access-selected.png'),Buffer.from(capture.data,'base64'));
         result.accessInteraction=check;
+      }
+      // Real navigation controls: target translation must not turn into altitude/orbit.
+      const cameraStart = await configure(cdp, {zoom:1.6});
+      const panned = await activate(cdp, 'document.querySelector("[data-action=pan-up]").click()');
+      if (panned.camera.targetY !== cameraStart.camera.targetY || panned.camera.distance !== cameraStart.camera.distance
+        || Math.hypot(panned.camera.targetX-cameraStart.camera.targetX,panned.camera.targetZ-cameraStart.camera.targetZ)<1)
+        throw new Error('Ground camera translation failed');
+      const orbited = await activate(cdp, 'document.querySelector("[data-action=rotate-right]").click()');
+      for (const key of ['targetX','targetY','targetZ']) {
+        if (orbited.camera[key] !== panned.camera[key]) throw new Error('Orbit lost translated pivot');
+      }
+      await activate(cdp, 'document.querySelector("[data-action=toggle-pan]").click()');
+      const dragStart=await snapshot(cdp);
+      const point={x:dragStart.canvasRect.x+dragStart.viewport[0]*.5,y:dragStart.canvasRect.y+dragStart.viewport[1]*.5};
+      await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
+      await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',button:'left',buttons:1,x:point.x+65,y:point.y+45});
+      await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,x:point.x+65,y:point.y+45});
+      const dragged=await nextDraw(cdp,dragStart.sequence);
+      if (dragged.camera.yaw!==dragStart.camera.yaw || dragged.camera.pitch!==dragStart.camera.pitch
+        || dragged.camera.targetY!==dragStart.camera.targetY || dragged.camera.targetX===dragStart.camera.targetX)
+        throw new Error('Move-mode drag did not translate the ground pivot');
+      await activate(cdp, 'document.querySelector("[data-action=toggle-pan]").click()');
+      await cdp.evaluate('document.getElementById("filter-role").focus()');
+      const formBefore=await snapshot(cdp);
+      await cdp.send('Input.dispatchKeyEvent',{type:'keyDown',key:'w',code:'KeyW'});
+      await cdp.send('Input.dispatchKeyEvent',{type:'keyUp',key:'w',code:'KeyW'});
+      if (JSON.stringify((await snapshot(cdp)).camera)!==JSON.stringify(formBefore.camera)) throw new Error('Camera stole form key input');
+      await cdp.evaluate('document.getElementById("city-canvas").focus()');
+      await cdp.send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight',code:'ArrowRight'});
+      await cdp.send('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight',code:'ArrowRight'});
+      const keyed=await nextDraw(cdp,formBefore.sequence);
+      if (keyed.camera.targetX===formBefore.camera.targetX && keyed.camera.targetZ===formBefore.camera.targetZ) throw new Error('Keyboard movement failed');
+      const reset=await activate(cdp, 'document.querySelector("[data-action=reset]").click()');
+      const baseline=await configure(cdp,{zoom:1});
+      if (JSON.stringify(reset.camera)!==JSON.stringify(baseline.camera)) throw new Error('Reset failed after navigation');
+      const destination=await cdp.evaluate(`(() => {
+        const ids=[...document.getElementById('district-jump').options].map(o=>o.value).filter(Boolean);
+        const camera=__METRO_AUDIT__.snapshot().camera;
+        return METROPOGITS_DATA.scene.districts.filter(d=>ids.includes(d.id)).sort((a,b)=>
+          Math.hypot(b.x+b.width/2-camera.targetX,b.z+b.depth/2-camera.targetZ)-Math.hypot(a.x+a.width/2-camera.targetX,a.z+a.depth/2-camera.targetZ))[0];
+      })()`);
+      if (destination) {
+        const jumped=await activate(cdp, `const jump=document.getElementById('district-jump'); jump.value=${JSON.stringify(destination.id)}; jump.dispatchEvent(new Event('change'))`);
+        if (jumped.camera.targetX!==destination.x+destination.width/2 || jumped.camera.targetZ!==destination.z+destination.depth/2) throw new Error('District jump missed target');
+        const capture=await cdp.send('Page.captureScreenshot',{format:'png'});
+        await writeFile(join(directory,'camera-district-jump.png'),Buffer.from(capture.data,'base64'));
+        result.navigation={groundPan:panned.camera,drag:dragged.camera,keyboard:keyed.camera,reset:true,destination:destination.id,jumped:jumped.camera};
       }
       await cdp.send('Page.navigate', {url: pathToFileURL(join(directory, 'preview.svg')).href});
       const previewDeadline = Date.now() + 10000;

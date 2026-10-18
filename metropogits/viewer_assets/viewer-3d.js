@@ -481,6 +481,7 @@
     activityEpoch: 0,
     dragging: false,
     dragMode: "orbit",
+    moveMode: false,
     filters: { confidence: "", language: "", role: "", technology: "" },
     moved: false,
     pointerX: 0,
@@ -1597,13 +1598,13 @@
 
   function showDistrict(districtId) {
     const district = districts.get(districtId);
-    const districtBuildings = scene.buildings.filter((item) => item.districtId === districtId);
+    const districtBuildings = filterEngine.districtBuildings(scene, districtId);
     const visibleCount = districtBuildings.filter((item) => visibleBuildingIds.has(item.entityId)).length;
     inspector.replaceChildren();
     inspector.append(element("p", "DISTRICT", "eyebrow"));
     inspector.append(element("h2", districtLabel(district)));
     const details = element("dl", undefined, "detail-list");
-    detailRow(details, "Buildings", `${visibleCount}/${districtBuildings.length} visible`);
+    detailRow(details, "Files (including subdistricts)", `${visibleCount}/${districtBuildings.length} match filters`);
     detailRow(details, "Parent", district.parentId
       ? districtLabel(districts.get(district.parentId))
       : "City root");
@@ -1680,6 +1681,14 @@
   }
 
   function runAction(action) {
+    if (action === "toggle-pan") {
+      state.moveMode = !state.moveMode;
+      document.querySelector('[data-action="toggle-pan"]').setAttribute("aria-pressed", String(state.moveMode));
+      canvas.classList.toggle("move-mode", state.moveMode);
+    }
+    const step = Math.min(viewportWidth, viewportHeight) * 0.12;
+    const delta = {"pan-left":[step,0], "pan-right":[-step,0], "pan-up":[0,step], "pan-down":[0,-step]}[action];
+    if (delta) panGround(...delta);
     if (action === "toggle-routes") {
       showAllNetworks = !showAllNetworks;
       document.querySelector('[data-action="toggle-routes"]').setAttribute("aria-pressed", String(showAllNetworks));
@@ -1692,10 +1701,20 @@
     scheduleRender();
   }
 
+  function panGround(dx, dy) {
+    const delta = filterEngine.groundPan(state, dx, dy, viewportHeight, cameraPolicy.fieldOfView);
+    state.targetX += delta.x;
+    state.targetZ += delta.z;
+    hoverLabel.hidden = true;
+  }
+
   canvas.addEventListener("pointerdown", (event) => {
+    if (![0, 1, 2].includes(event.button)) return;
+    event.preventDefault();
+    canvas.focus({preventScroll: true});
     canvas.setPointerCapture(event.pointerId);
     state.dragging = true;
-    state.dragMode = event.altKey || event.button === 2 ? "pan" : "orbit";
+    state.dragMode = state.moveMode || event.altKey || event.shiftKey || event.button !== 0 ? "pan" : "orbit";
     state.pointerX = event.clientX;
     state.pointerY = event.clientY;
     state.moved = false;
@@ -1713,12 +1732,7 @@
         state.yaw -= deltaX * 0.008;
         state.pitch = Math.max(0.16, Math.min(1.42, state.pitch + deltaY * 0.006));
       } else {
-        const scale = state.distance / Math.max(viewportHeight, 1);
-        const rightX = Math.cos(state.yaw);
-        const rightZ = -Math.sin(state.yaw);
-        state.targetX -= deltaX * scale * rightX;
-        state.targetZ -= deltaX * scale * rightZ;
-        state.targetY += deltaY * scale;
+        panGround(deltaX, deltaY);
       }
       state.pointerX = event.clientX;
       state.pointerY = event.clientY;
@@ -1738,7 +1752,7 @@
   });
   canvas.addEventListener("pointerup", (event) => {
     const rectangle = canvas.getBoundingClientRect();
-    if (!state.moved) showSelection(hitTest(event.clientX - rectangle.left, event.clientY - rectangle.top));
+    if (!state.moved && event.button === 0) showSelection(hitTest(event.clientX - rectangle.left, event.clientY - rectangle.top));
     state.dragging = false;
     canvas.classList.remove("dragging");
   });
@@ -1758,6 +1772,24 @@
 
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => runAction(button.dataset.action));
+  });
+  const districtJump = document.getElementById("district-jump");
+  for (const id of [...majorDistrictIds].sort()) {
+    const option = element("option", districtLabel(districts.get(id)));
+    option.value = id;
+    districtJump.append(option);
+  }
+  districtJump.disabled = majorDistrictIds.size === 0;
+  districtJump.addEventListener("change", () => {
+    const district = districts.get(districtJump.value);
+    if (!district) return;
+    state.targetX = district.x + district.width / 2;
+    state.targetZ = district.z + district.depth / 2;
+    state.targetY = tallestBuilding * 0.12;
+    state.distance = Math.max(32, Math.hypot(district.width, district.depth) * 1.15);
+    hoverLabel.hidden = true;
+    showSelection({kind: "district", id: district.id});
+    districtJump.value = "";
   });
   for (const [name, control] of filterControls) {
     control.addEventListener("change", () => {
@@ -1800,15 +1832,7 @@
   });
   reducedMotion?.addEventListener?.("change", updateActivityAvailability);
   document.addEventListener("keydown", (event) => {
-    const actions = {
-      "+": "zoom-in",
-      "-": "zoom-out",
-      "=": "zoom-in",
-      e: "rotate-right",
-      q: "rotate-left",
-      r: "reset",
-    };
-    const action = actions[event.key.toLowerCase()];
+    const action = filterEngine.cameraKeyAction(event);
     if (action) {
       event.preventDefault();
       runAction(action);
@@ -1818,7 +1842,7 @@
   repositoryName.textContent = ucg.repository.id;
   document.title = `${ucg.repository.id} · MetropoGits`;
   if (toolbarHelp) {
-    toolbarHelp.textContent = "Drag to orbit · Alt/secondary drag to pan · Wheel to zoom";
+    toolbarHelp.textContent = "Move mode / Shift / right drag: move · WASD / arrows: move · Q/E: orbit · Wheel: zoom · R: reset";
   }
   populateFilter("role", filterIndex.options.roles);
   populateFilter("language", filterIndex.options.languages);

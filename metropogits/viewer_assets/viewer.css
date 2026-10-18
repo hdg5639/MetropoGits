@@ -86,6 +86,11 @@ button {
 }
 
 button:hover, button:focus-visible { border-color: var(--accent); outline: none; }
+.camera-directions { display: inline-flex; gap: 0.2rem; }
+[data-action="toggle-pan"][aria-pressed="true"] { border-color: var(--accent); background: #16415a; }
+#city-canvas.move-mode { cursor: grab; }
+#district-jump { max-width: 13rem; min-width: 0; padding: 0.4rem; border: 1px solid #334155; border-radius: 0.4rem; background: #111827; color: var(--text); }
+#district-jump:focus-visible { outline: 1px solid var(--accent); }
 .toolbar-help { margin-left: auto; color: var(--muted); font-size: 0.75rem; }
 .activity-control {
   display: inline-flex;

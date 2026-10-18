@@ -177,6 +177,7 @@
     activityEpoch: 0,
     dragging: false,
     dragMode: "pan",
+    moveMode: true,
     filters: {
       confidence: "",
       language: "",
@@ -1107,7 +1108,7 @@
 
   function showDistrict(districtId) {
     const district = districts.get(districtId);
-    const districtBuildings = scene.buildings.filter((item) => item.districtId === districtId);
+    const districtBuildings = filterEngine.districtBuildings(scene, districtId);
     const visibleChildCount = districtBuildings.filter((item) =>
       visibleBuildingIds.has(item.entityId),
     ).length;
@@ -1115,7 +1116,7 @@
     inspector.append(element("p", "DISTRICT", "eyebrow"));
     inspector.append(element("h2", districtLabel(district)));
     const details = element("dl", undefined, "detail-list");
-    detailRow(details, "Buildings", `${visibleChildCount}/${districtBuildings.length} visible`);
+    detailRow(details, "Files (including subdistricts)", `${visibleChildCount}/${districtBuildings.length} match filters`);
     detailRow(details, "Parent", district.parentId ? districtLabel(districts.get(district.parentId)) : "City root");
     detailRow(details, "Size", `${district.width} × ${district.depth}`);
     inspector.append(details);
@@ -1185,9 +1186,12 @@
   }
 
   canvas.addEventListener("pointerdown", (event) => {
+    if (![0, 1, 2].includes(event.button)) return;
+    event.preventDefault();
+    canvas.focus({preventScroll: true});
     canvas.setPointerCapture(event.pointerId);
     state.dragging = true;
-    state.dragMode = event.altKey || event.button === 2 ? "rotate" : "pan";
+    state.dragMode = state.moveMode || event.altKey || event.shiftKey || event.button !== 0 ? "pan" : "rotate";
     state.pointerX = event.clientX;
     state.pointerY = event.clientY;
     state.moved = false;
@@ -1226,7 +1230,7 @@
 
   canvas.addEventListener("pointerup", (event) => {
     const rectangle = canvas.getBoundingClientRect();
-    if (!state.moved) showSelection(hitTest(event.clientX - rectangle.left, event.clientY - rectangle.top));
+    if (!state.moved && event.button === 0) showSelection(hitTest(event.clientX - rectangle.left, event.clientY - rectangle.top));
     state.dragging = false;
     canvas.classList.remove("dragging");
   });
@@ -1246,6 +1250,14 @@
   );
 
   function runAction(action) {
+    if (action === "toggle-pan") {
+      state.moveMode = !state.moveMode;
+      document.querySelector('[data-action="toggle-pan"]').setAttribute("aria-pressed", String(state.moveMode));
+      canvas.classList.toggle("move-mode", state.moveMode);
+    }
+    const step = Math.min(viewportWidth, viewportHeight) * 0.12;
+    const delta = {"pan-left":[step,0], "pan-right":[-step,0], "pan-up":[0,step], "pan-down":[0,-step]}[action];
+    if (delta) { state.panX += delta[0]; state.panY += delta[1]; hoverLabel.hidden = true; }
     if (action === "toggle-routes") {
       showAllNetworks = !showAllNetworks;
       document.querySelector('[data-action="toggle-routes"]').setAttribute("aria-pressed", String(showAllNetworks));
@@ -1265,6 +1277,23 @@
 
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => runAction(button.dataset.action));
+  });
+  document.querySelector('[data-action="toggle-pan"]').setAttribute("aria-pressed", "true");
+  canvas.classList.add("move-mode");
+  document.getElementById("toolbar-help").textContent = "Move mode / Shift / right drag: move · WASD / arrows: move · Q/E: rotate · Wheel: zoom · R: reset";
+  const districtJump = document.getElementById("district-jump");
+  for (const id of [...majorDistrictIds].sort()) {
+    const option = element("option", districtLabel(districts.get(id)));
+    option.value = id;
+    districtJump.append(option);
+  }
+  districtJump.disabled = majorDistrictIds.size === 0;
+  districtJump.addEventListener("change", () => {
+    const district = districts.get(districtJump.value);
+    if (!district) return;
+    focusWorld(district.x + district.width / 2, district.z + district.depth / 2);
+    showSelection({kind: "district", id: district.id});
+    districtJump.value = "";
   });
   for (const [name, control] of filterControls) {
     control.addEventListener("change", () => {
@@ -1305,8 +1334,7 @@
   });
   reducedMotion?.addEventListener?.("change", updateActivityAvailability);
   document.addEventListener("keydown", (event) => {
-    const actions = { q: "rotate-left", e: "rotate-right", "+": "zoom-in", "=": "zoom-in", "-": "zoom-out", r: "reset" };
-    const action = actions[event.key.toLowerCase()];
+    const action = filterEngine.cameraKeyAction(event);
     if (action) {
       event.preventDefault();
       runAction(action);
