@@ -5379,3 +5379,22 @@
 - Commits created/pushed: one atomic feature unit, reviewed and delivered to
   existing origin/experiment/street-grid; no main integration. Commit outcome is
   checked after staged review and push, not inferred from this log entry.
+
+## Checkpoint 2026-10-19 — incremental performance implementation policy
+- Implemented: recorded the user's performance and impact priorities in
+  `URBAN_BLOCK_PLAN.md`: retain Python, measure the new engine through existing
+  profiling, optimize observed large costs incrementally and avoid low-impact
+  tuning loops. Native libraries/Rust remain measured future options.
+- Evidence: inspected current definitions of `_pack_shape`, `_shortest_cell_path`,
+  `consolidate_routes` and the existing cProfile benchmark. The supplied review
+  identifies candidates, not measured bottleneck rankings.
+- Validation: documentation diff/whitespace and referenced local paths checked.
+  No runtime, schema, dependency, scene or generated output changed; no new
+  benchmark, render or runtime test is claimed for this documentation-only unit.
+- Spec alignment: existing evidence, deterministic output, resource bounds and
+  compatibility requirements retained. World engine/contract choices require
+  their own ADR before implementation.
+- Next actions: apply this policy during the authorized world-generation work;
+  do not start a separate optimization or rewrite from this note.
+- Delivery: one documentation commit using the configured human identity;
+  push result verified separately before reporting completion.
