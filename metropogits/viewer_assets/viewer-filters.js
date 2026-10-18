@@ -975,7 +975,7 @@
     return !enabled || overlay || major || identity === selectedIdentity;
   }
 
-  function createAccessPolicy(routing, hierarchy = null, pavement = null) {
+  function createAccessPolicy(routing, hierarchy = null, pavement = null, curves = null) {
     if (!routing) return null;
     const assigned = routing.streetGrid ? new Set(routing.streetGrid.assignment.assignedRouteIds) : null;
     const fallbackIds = new Set(routing.streetGrid?.assignment.fallbackRouteIds || []);
@@ -1008,14 +1008,19 @@
     }
     const routes = new Map(routing.routes.map(route => [route.id, route]));
     const segments = new Map(routing.segments.map(segment => [segment.id,
-      {...segment, demand: hierarchy?.segments?.[segment.id], pavement: pavement?.segments?.[segment.id]}]));
+      {...segment, demand: hierarchy?.segments?.[segment.id], pavement: pavement?.segments?.[segment.id],
+        path:curves?.segments?.[segment.id] || [segment.start,segment.end], curves}]));
     const trajectories = new Map(routing.routes.map(route => {
       let distance = 0;
-      const steps = route.path.slice(1).map((end, i) => {
-        const start = route.path[i], length = Math.hypot(end[0]-start[0], end[1]-start[1]);
-        const step = {start, end, length, distance, segmentId: route.segmentIds[i]};
-        distance += length;
-        return step;
+      const steps = route.path.slice(1).flatMap((end, i) => {
+        const segment=segments.get(route.segmentIds[i]);
+        const path=curves?.segments?.[route.segmentIds[i]];
+        const forward=path && segment.start[0]===route.path[i][0] && segment.start[1]===route.path[i][1];
+        const points=path ? (forward ? path : [...path].reverse()) : [route.path[i],end];
+        return points.slice(1).map((end,j)=>{
+          const start=points[j],length=Math.hypot(end[0]-start[0],end[1]-start[1]);
+          const step={start,end,length,distance,segmentId:route.segmentIds[i]};distance+=length;return step;
+        });
       });
       return [route.id, {steps, distance}];
     }));
@@ -1052,7 +1057,7 @@
       const segment = segments.get(id);
       if (!segment) return null;
       const contributing = segment.routeIds.filter(key => !activeRouteIds || activeRouteIds.has(key));
-      return {id, kind: segment.kind, path: [segment.start, segment.end], routeIds: contributing, demand:segment.demand,
+      return {id, kind: segment.kind, path: segment.path, routeIds: contributing, demand:segment.demand,
         pavementWidth:segment.pavement ? {min:Math.min(...segment.pavement.map(p=>p.width)),
           max:Math.max(...segment.pavement.map(p=>p.maxWidth ?? p.width))} : null,
         edgeIds: [...new Set(contributing.flatMap(key => routes.get(key).edgeIds))].sort()};
@@ -1179,6 +1184,29 @@
   }
 
   function accessMarkingSegments(segment, trims) {
+    const original=rawAccessMarkingSegments(segment,trims);
+    if (!segment.curves) return original;
+    return original.flatMap(p=>{
+      const points=curveLine(p.start,p.end,segment.curves);
+      return points.slice(1).map((end,i)=>({start:points[i],end}));
+    });
+  }
+
+  function curveLine(a,b,curves) {
+    const relevant=curves.corners.filter(c=>[0,1].every(j=>Math.min(a[j],b[j])<c.point[j]+c.radius && Math.max(a[j],b[j])>c.point[j]-c.radius));
+    if (!relevant.length) return [a,b];
+    const count=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.75));
+    return Array.from({length:count+1},(_,i)=>{
+      const p=a.map((v,j)=>v+(b[j]-v)*i/count);
+      for(const c of relevant) {
+        const x=Math.abs(p[0]-c.point[0])/c.radius,z=Math.abs(p[1]-c.point[1])/c.radius;
+        if(x<1 && z<1) {const d=c.radius/4*((1-x)*(1-z))**2;return p.map((v,j)=>v+c.direction[j]*d);}
+      }
+      return p;
+    });
+  }
+
+  function rawAccessMarkingSegments(segment, trims) {
     const style=accessRoadStyle(segment), run=accessMarkingSegment(segment,trims);
     if (!run || segment.access || !style.shared || style.width<1.25) return [];
     if (segment.kind!=='DEPENDENCY_ROAD') return [run];
@@ -1196,7 +1224,7 @@
       pieces.push({start,end});
     }
     if (!segment.pavement) return pieces;
-    return pieces.flatMap(paint => segment.pavement.filter(p=>p.width>=1.25).flatMap(p=>{
+    return pieces.flatMap(paint => (segment.curves?.paintPieces?.[segment.id] || segment.pavement).filter(p=>p.width>=1.25).flatMap(p=>{
       const a=Math.max(paint.start[axis],Math.min(p.start[axis],p.end[axis]));
       const b=Math.min(paint.end[axis],Math.max(p.start[axis],p.end[axis]));
       if (b-a<1e-8) return [];

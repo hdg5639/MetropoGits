@@ -45,7 +45,7 @@
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
-  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand);
+  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand, data.streetCurves);
   let accessFrame = null;
   let accessPaint = new Map();
   function networkForId(id) {
@@ -854,7 +854,7 @@
     }
     for (const rectangle of accessPolicy && !data.streets?.structural ? [] : streetRectangles) drawStructuralStreet(rectangle);
     for (const segment of accessFrame?.segments || []) {
-      const points = [segment.start, segment.end].map(p => project(...p, 0.15));
+      const points = segment.path.map(p => project(...p, 0.15));
       const style = filterEngine.accessRoadStyle(segment), width = style.width;
       if (segment.pavement) {
         for (const piece of segment.pavement) {
@@ -898,9 +898,8 @@
     }
     for (const segment of accessFrame?.segments || []) {
       if (!segment.highlighted) continue;
-      const a=project(...segment.start,0.22), b=project(...segment.end,0.22);
       context.beginPath();
-      context.moveTo(a.x,a.y); context.lineTo(b.x,b.y);
+      segment.path.forEach((p,i)=>{const q=project(...p,.22);if(i) context.lineTo(q.x,q.y);else context.moveTo(q.x,q.y);});
       context.lineWidth=1.5; context.strokeStyle="#67d7ff"; context.stroke();
     }
     drawDistrictLabels();
@@ -1242,7 +1241,7 @@
       detailRow(details, "Files outside major districts", demand.unassignedBuildingCount);
       const pavementWidth=accessPolicy?.network(networkId)?.pavementWidth;
       detailRow(details, pavementWidth ? "Demand cap / target width" : "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
-      if (pavementWidth) detailRow(details,"Physical width range",`${pavementWidth.min.toFixed(2)} – ${pavementWidth.max.toFixed(2)} · shared street envelope`);
+      if (pavementWidth) detailRow(details,data.streetCurves ? "Approach width range" : "Physical width range",`${pavementWidth.min.toFixed(2)} – ${pavementWidth.max.toFixed(2)} · shared street envelope`);
       inspector.append(element("p", "Grade uses full-road static dependency demand, not runtime traffic. Filters and path selection do not change it. Trunk demand does not imply highway geometry.", "muted"));
     }
     inspector.append(details);

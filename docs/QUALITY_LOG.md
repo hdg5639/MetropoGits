@@ -4814,3 +4814,70 @@
   origin/experiment/street-grid. This independently verified context unit is
   committed/pushed on the same experimental branch after closing stage checks;
   no private artifacts, IDE caches or agent attribution included.
+
+## Checkpoint 2026-10-18 — shared curved street presentation
+
+- Implemented: opt-in --curved-streets on aligned structural streets. Geography
+  determines56 GJ and25 OJ clearance-certified degree-two bend supports; branches
+  are not replaced with rotaries. Shared pavement, paint, picking, exact-path
+  highlight and Synthetic follow the same quadratic map. Public City/UCG and
+  original semantic route records remain unchanged. Approach widths are labeled
+  separately from the curved cross-section. Default/straight modes remain.
+- Fixtures/revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896, catalog0.4.0; maintained
+  spring-positive and structural-showcase on parent0a6c2b4 plus this unit.
+- Commands: `python ../artifacts/visual/curve_street_review.py curved-streets-r5`;
+  `python -m metropogits build --repo tests/fixtures/repositories/NAME --out OUT`
+  -> curved-street-fixtures/{spring,unknown}; `python -m scripts.street_grid
+  BUILD --street-grid --aligned-blocks --curved-streets --out OUT`
+  -> curved-street-fixtures-r5/{spring,unknown}-study. Targets are read-only;
+  no target code/build/dependency installation was run.
+- Actual artifacts: curved-streets-r5/{gj,oj}/{before,after}; same-camera gallery
+  `artifacts/visual/curved-streets-focus-r7/index.html` from
+  `node ../artifacts/visual/curve_focus_review.mjs curved-streets-r5
+  curved-streets-focus-r7`. Reviewed GJ/OJ local bend captures and actual OJ
+  showcase SVG capture. Unknown WebGL and OJ forced-Canvas also inspected.
+- Visual fixes: r1 exposed an outside-corner gap; r3 revealed the added joint
+  was backface-culled; r4's square joint produced a spike. r5 uses upward-facing
+  round joins inside certified empty supports. Added a winding/support regression
+  test. Rounded connections are visible locally, but minor width bulges, empty
+  land, orthogonal internal grids and whole staircase chains remain. No claim
+  that the skyline/thumbnail is radically transformed. Roundabouts remain0.
+  An early review helper captured a missing showcase path; fixed it to capture
+  the real artifact, not the viewer-only audit copy. Missing-file capture rejected.
+- Geometry: `python ../artifacts/visual/curve_geometry_audit.py curved-streets-r5`
+  recomputes identical presentation and checks all rendered triangles, upward
+  winding and positive-area building overlaps. GJ28239/OJ9950 total structural+
+  demand quads,91884/38410 broad-phase building checks,0 overlaps. Full route
+  endpoints, direction and segment continuity checked for all4209/1381 trips.
+  Assignment3642/567 and1113/268 unchanged. Sampled trip length sums
+  762890->762620.5773 and174351->174342.1762; these are visual lengths, not runtime
+  throughput.209 GJ trips grow slightly (maximum0.4295 units) while totals shrink;
+  checked against freshly derived original whole-trip allowances:0 violations.
+- Browser: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/curved-streets-audit-r5 INPUT...` on both after directories;
+  Chrome152.0.7977.84/SwiftShader at
+  C:/Program Files/Google/Chrome/Application/chrome.exe. Three LODs, navigation,
+  filters, exact-route inspection and Synthetic pass. Static rebuilds0;
+  Synthetic CPU p95 GJ1.2-1.7ms/OJ1.1-1.5ms, not GPU FPS. GJ first submission
+  1192.6ms/OJ443.2ms; more tessellation is a real cost, not a performance win.
+  The focus-r7 harness also clicks actual curved road hit regions and selects
+  one contributing route on both cities. All-routes was disabled for exact-only
+  assertions; keeping it enabled deliberately retains context, not a product bug.
+- Fallbacks: `city_context_review.mjs` -> curved-streets-canvas-r5 verifies
+  WebGL/forced Canvas and reversible overlay with unchanged counts/cameras.
+  `junction_smoke.mjs curved-street-fixtures-r5` captures fresh small WebGL/SVG;
+  `street_diagnostics_ui.mjs` -> curved-street-fixtures-ui-r5 checks exact Spring
+  fallback and empty unknown states in both renderers without exceptions.
+- Tests: full Python discovery471 run,470 pass/1 existing Windows symlink skip;
+  seven Node suites47 pass; Ruff/diff checks pass. Targeted eight curve tests
+  re-run after adding pre-allocation sampling caps. Tests cover determinism,
+  source immutability, support clearance, branch exclusion, C1 centerline tangent,
+  winding, limits, repeated real packaging/SVG and forward/reverse Synthetic.
+- Spec alignment: PASS user-approved ADR-020 extension, technical7/8,
+  FR-007/011/012 and AC-002/003/006/011/014. No schema/identity/security change,
+  no invented relationships, no default promotion. Next: coherent whole-corridor
+  staircase replacement and separately certified entry/exit junction geometry.
+- Commit/push: one verified curved-street work unit on experiment/street-grid;
+  normal upstream push after staged diff/identity review. Private artifacts and
+  unrelated IDE caches excluded; no agent attribution.

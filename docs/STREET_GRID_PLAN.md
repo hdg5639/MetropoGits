@@ -231,3 +231,27 @@ static rebuilds during Synthetic. Repeated generic towers, empty parcels and
 regular street geometry are still visible and should guide the next broader
 improvement. This milestone improves readability, not architectural coverage,
 and does not promote the experiment to the default pipeline.
+
+## Curved street continuation — user request, 2026-10-18
+
+Run `python -m scripts.street_grid BUILD --street-grid --aligned-blocks
+--curved-streets --out NEW_DIRECTORY`. The straight variant remains available.
+This is an explicit extension of ADR-020, not a public schema/layout migration.
+
+Start with geography-only degree-two bends: bounded, disjoint building-free
+supports with approach lengths checked up to the next branch/turn. Inside each
+support a common compact map gives both centerline legs a continuous quadratic
+tangent. All pavement, lane paint, picking, highlighted paths and Synthetic use
+that same map. Physical round joins complete the outside corner of butt-ended
+strips. No independent per-trip smoothing or invented edge connectivity.
+
+Preserve canonical City/UCG, logical route IDs, membership, doors and assignment
+diagnostics. Derived sampled paths change only physical presentation. Inspector
+widths are labeled approach widths rather than pretending a bent cross-section
+has the original width everywhere. CPU previews use the same geometry.
+
+This does NOT yet replace whole staircase chains or create roundabouts. Those
+need a coherent corridor/junction replacement with complete entry-exit tracing,
+adequate full-width clearance and unchanged source/destination pairing. Never
+add a roundabout disk over paths that still cross its center. Compare local
+bends and overview separately; a better local curve is not a transformed skyline.

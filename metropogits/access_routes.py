@@ -283,7 +283,13 @@ def derive_access_routes(scene, graph):
 def svg_access_lines(routing, project, overview=False, network_ids=None, hierarchy=None):
     """Traceable SVG polygons from the same shared segments used by the viewer."""
     from metropogits.street_demand import demand_pavement, clip_paint
+    from metropogits.street_curves import curved_presentation, CurveMap
+    from metropogits.structural_streets import street_rectangles
     pavement = demand_pavement(routing, hierarchy)
+    paint_pavement = pavement
+    surfaces = street_rectangles(routing) if 'streetGrid' in routing else None
+    surfaces, pavement, _ = curved_presentation(routing, surfaces, pavement, hierarchy)
+    mapper = CurveMap(routing.get('curvePlan'))
     routes = routing["routes"]
     indices = {route["id"]: i for i, route in enumerate(routes)}
     allowed = {r["id"] for r in routes if network_ids is None or set(r["networkIds"]) & network_ids}
@@ -300,7 +306,7 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
         lines.append('<metadata id="street-assignment">' + html.escape(canonical_json_bytes(
             structural['assignment']).decode()) + '</metadata>')
         lines.append('<g id="civic-infrastructure" aria-label="Structural streets: visual, not source relationships">')
-        for rect in street_rectangles(routing):
+        for rect in surfaces:
             x, z, w, d = (rect[k] for k in ('x', 'z', 'width', 'depth'))
             polygon = rect.get('points', [[x,z], [x+w,z], [x+w,z+d], [x,z+d]])
             points = [project(a,b) for a,b in polygon]
@@ -345,13 +351,13 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
     trims = junction_trims(routing, visible, widths)
     for segment, color in paints:
         raw = dash_segments(segment['start'], segment['end'], trims.get(segment['id'], (0, 0)))
-        pieces = pavement['segments'].get(segment['id']) if pavement else None
+        pieces = paint_pavement['segments'].get(segment['id']) if paint_pavement else None
         for paint in (part for item in raw for part in clip_paint(item,pieces)):
             a, b = paint['start'], paint['end']
             dx, dz = (0, .065) if a[1] == b[1] else (.065, 0)
-            points = [project(a[0]-dx, a[1]-dz), project(b[0]-dx, b[1]-dz),
-                      project(b[0]+dx, b[1]+dz), project(a[0]+dx, a[1]+dz)]
-            encoded = ' '.join(f'{float(x):.3f},{float(y):.3f}' for x, y in points)
-            lines.append(f'<polygon data-road-paint="arterial-dash" points="{encoded}" fill="{color}" aria-hidden="true"/>')
+            polygon = [[a[0]-dx,a[1]-dz],[b[0]-dx,b[1]-dz],[b[0]+dx,b[1]+dz],[a[0]+dx,a[1]+dz]]
+            for part in mapper.polygon(polygon):
+                encoded = ' '.join(f'{float(x):.3f},{float(y):.3f}' for x,y in (project(*p) for p in part))
+                lines.append(f'<polygon data-road-paint="arterial-dash" points="{encoded}" fill="{color}" aria-hidden="true"/>')
     lines.append('</g>')
     return lines

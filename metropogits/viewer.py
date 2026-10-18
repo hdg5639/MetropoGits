@@ -12,6 +12,7 @@ from metropogits.road_hierarchy import derive_road_hierarchy
 from metropogits.structural_streets import street_rectangles
 from metropogits.street_demand import demand_pavement
 from metropogits.city_context import city_context
+from metropogits.street_curves import curved_presentation
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
@@ -44,12 +45,14 @@ def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -
     hierarchy = derive_road_hierarchy(scene, routing)
     surfaces = street_rectangles(routing) if 'streetGrid' in routing else None
     pavement = demand_pavement(routing, hierarchy, surfaces)
+    surfaces, pavement, curves = curved_presentation(routing, surfaces, pavement, hierarchy)
     return _javascript_assignment(
         "METROPOGITS_DATA",
         {
             "scene": scene,
             "routing": routing,
             "roadHierarchy": hierarchy,
+            **({"streetCurves": curves} if curves else {}),
             **({"streetDemand": pavement} if pavement is not None else {}),
             **({"cityContext": city_context(routing)} if city_context(routing) else {}),
             "streets": ({**derive_street_grid(scene), "structural": True, "surfaces": surfaces}

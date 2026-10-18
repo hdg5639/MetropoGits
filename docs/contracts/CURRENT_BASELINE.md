@@ -460,3 +460,22 @@ CPU showcase uses the same palette and removes decorative plot outlines.
 Accessible preview deliberately retains its detailed structural-diagram style.
 Neither changes canonical position/shape, road paths or evidence. Default and
 structural0.1 viewers do not gain this experimental toggle or styling.
+
+### Opt-in curved streets
+
+`scripts.street_grid --curved-streets` requires aligned structural0.2. Optional
+derived `routing.curvePlan` version `street-curves/0.1` contains geography-only
+degree-two bend supports (`point`, `radius`, `direction`). It does not rewrite
+canonical City/UCG or original route records. Viewer-only `streetCurves` has
+sampled paths keyed by unchanged segment ID and original paint-width pieces.
+Routes follow these paths in their original direction, including reverse trips.
+All scene/relationship IDs and endpoint provenance remain intact.
+
+Support squares are building-free, disjoint and bounded by half the approach to
+the next structural branch/turn. The common quadratic map is identity outside
+them. Surfaces are subdivided before mapping; round corner joins remain inside
+the certified empty support. Source selection, picking, highlight and Synthetic
+consume the same mapped centerlines. CPU SVG maps pavement and paint as well.
+Planning caps500000 nodes/5M clearance checks; presentation caps500000 pieces.
+Limits raise an error rather than silently omitting paths. Legacy/default modes
+are unchanged. This version does not reroute a staircase chain or create rotaries.

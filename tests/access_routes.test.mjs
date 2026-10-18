@@ -15,6 +15,26 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
   {id:'shared',routeIds:['ab','cd'],access:false,kind:'DEPENDENCY_ROAD',start:[0,7],end:[7,7]}
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
+
+test('curved shared segments drive exact inspection and forward/reverse synthetic trips',()=>{
+  const r={status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],segments:[
+    {id:'curve',kind:'DEPENDENCY_ROAD',start:[0,0],end:[10,0],width:2,routeIds:['forward','reverse']}],
+    routes:[{id:'forward',source:'A',target:'B',kind:'DEPENDENCY_ROAD',edgeIds:['e1'],networkIds:['n'],path:[[0,0],[10,0]],segmentIds:['curve']},
+      {id:'reverse',source:'B',target:'A',kind:'DEPENDENCY_ROAD',edgeIds:['e2'],networkIds:['n'],path:[[10,0],[0,0]],segmentIds:['curve']}]};
+  const path=[[0,0],[4,3],[6,3],[10,0]];
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(r,null,null,{segments:{curve:path},corners:[]});
+  assert.deepEqual(p.network('curve').path,path);
+  assert.deepEqual(p.network('curve').edgeIds,['e1','e2']);
+  assert.deepEqual(p.position(r.routes[0],.5).point,[5,3]);
+  assert.deepEqual(p.position(r.routes[1],.5).point,[5,3]);
+  for(let i=0;i<=20;i++) {
+    const a=p.position(r.routes[0],i/20),b=p.position(r.routes[1],1-i/20);
+    assert.ok(Math.hypot(a.point[0]-b.point[0],a.point[1]-b.point[1])<1e-8);
+    assert.equal(a.segmentId,'curve');
+  }
+  const f=p.frame('detail',new Set(['A','B']),new Set(['n']),{kind:'network',id:'curve',routeId:'forward'});
+  assert.deepEqual([...f.routeIds],['forward']);
+});
 const files=new Set(['A','B','C','D']), networks=new Set(['n']);
 
 test('city context hides minor decoration only and always exposes selected structure',()=>{

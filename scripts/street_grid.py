@@ -15,7 +15,7 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph, *, aligned=False):
+def compare(scene, graph, *, aligned=False, curves=False):
     errors = validate_document(scene, graph)
     if errors:
         raise ValueError('; '.join(errors[:8]))
@@ -23,6 +23,9 @@ def compare(scene, graph, *, aligned=False):
     scene = json.loads(canonical_json_bytes(scene))
     before = derive_access_routes(scene, graph)
     after = assign_streets(scene, before, aligned=aligned)
+    if curves:
+        from metropogits.street_curves import plan_curves
+        after['curvePlan'] = plan_curves(scene, after)
     def identity(routing):
         return {p['id']: [p[k] for k in ('source', 'target', 'kind', 'edgeIds', 'networkIds')]
                 for p in routing['routes']}
@@ -37,6 +40,8 @@ def compare(scene, graph, *, aligned=False):
         structuralEntrances=len(after['streetGrid']['entrances']),
         assignment=after['streetGrid']['assignment'],
         disclaimer='Structural streets are visual infrastructure. Dependency demand is static, not measured traffic.')
+    if curves:
+        report['curves'] = after['curvePlan']
     return before, after, report
 
 
@@ -45,6 +50,7 @@ def main():
     parser.add_argument('build', type=Path)
     parser.add_argument('--street-grid', required=True, action='store_true', help='explicitly enable experimental structural streets')
     parser.add_argument('--aligned-blocks', action='store_true', help='align block streets to parcel boundaries and join geometric neighbors')
+    parser.add_argument('--curved-streets', action='store_true', help='round clearance-certified non-branching bends; requires aligned blocks')
     parser.add_argument('--out', required=True, type=Path)
     args = parser.parse_args()
     try:
@@ -56,7 +62,9 @@ def main():
                 raise ValueError('input exceeds 64 MiB')
             return loads_strict_json(path.read_text(encoding='utf-8'))
         scene, graph = read('city.json'), read('graph.ucg.json')
-        before, after, report = compare(scene, graph, aligned=args.aligned_blocks)
+        if args.curved_streets and not args.aligned_blocks:
+            raise ValueError('--curved-streets requires --aligned-blocks')
+        before, after, report = compare(scene, graph, aligned=args.aligned_blocks, curves=args.curved_streets)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)
