@@ -130,7 +130,7 @@
     (metropolis?.repositories || []).map((repository) => [repository.rootDistrictId, repository]),
   );
   const filterIndex = filterEngine.createIndex(scene, ucg);
-  const majorDistrictIds = new Set(filterEngine.majorDistrictIds(scene));
+  const majorDistrictIds = new Set(data.majorDistrictIds || filterEngine.majorDistrictIds(scene));
   const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets, ucg);
   const expandedAggregateIds = new Set();
   let showAllNetworks = false;

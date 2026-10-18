@@ -929,3 +929,55 @@ Portal 건물58개만 위치가 다르고, 구역506개와 나머지 건물1266�
 같은 세부 문제를 2~3회 개선해도 효과가 작으면 남은 한계를 기록하고 우선순위를
 다시 판단한다. 데이터 누락·잘못된 근거·충돌·결정성 문제는 즉시 해결한다.
 임의의 속도 목표나 전면 재작성으로 구현 흐름을 멈추지 않는다.
+
+## 2026-10-19 — 첫 Procedural World: 평지 도시 생성
+
+[ADR-024](adr/ADR-024.md)에 따라 기존 셀 엔진 옆에 `metropogits.world`를 추가한다.
+실행 가능한 첫 범위는 **면적 수요 → 비직교 구역 → 도로 → 필지 → 방향을 가진 건물
+→ 실제 관계의 공유 도로 배정 → WebGL/Canvas/CPU SVG**이다.
+
+```powershell
+python -m metropogits build --repo REPOSITORY --repo-id owner/project --out BUILD
+python -m scripts.procedural_world BUILD --namespace owner/project --out NEW_WORLD
+python -m scripts.procedural_world BUILD --namespace owner/project --seed alternate --out ANOTHER_WORLD
+python -m scripts.procedural_world NEXT_BUILD --namespace owner/project --previous-world NEW_WORLD/world.json --out NEXT_WORLD
+```
+
+출력 폴더는 새 경로를 지정한다. `world.json`이 물리 배치의 기준이며,
+`city.json`과 `graph.ucg.json`은 원본 빌드의 정규 데이터 그대로 보존한다.
+브라우저의 `world-view/0.1`은 렌더링 어댑터이며 City v0.2 문서로 내보내지 않는다.
+기존 `build` 기본값, 분석기, City/UCG 스키마는 바뀌지 않는다.
+
+- 시드: SHA-256 길이 구분 필드와 카운터, `sha256-counter/1`. 커밋/내용 해시는
+  기본 시드에 사용하지 않는다. 구역·건물 경로별 스트림을 독립적으로 파생한다.
+  `--namespace`는 세계의 정체성이며 UCG ID를 바꾸지 않는다. 같은 클론을 다른
+  컴퓨터에서 재현하려면 분석 시에도 같은 `--repo-id`를 사용한다.
+- 배분: `capacity-bisection/0.1`은 구역별 필지·가로·성장 여유 면적을 계산하고,
+  하나의 볼록 외곽 안을 수요 비율에 맞춰 공유 절단선으로 나눈다. Voronoi 구현으로
+  부르지 않는다. 공유 경계는 T 정점을 정합하고 단일 edge 레코드로 저장한다.
+- 도로·건물: 구역 경계축을 따르는 가로와 횡단 집산도로를 먼저 확보한다.
+  양쪽 전면 필지에 건물을 넣고 전체 메시와 출입구를 함께 회전한다. 각 건물은
+  실제 출입구로 구조 가로망에 접근한다. 원래 디렉터리 소유권은 필지의
+  `sourceDistrictId`, 전체 트리는 `logicalDistricts`에 남는다.
+- 관계: 로컬 파일/심볼 끝점을 실제 파일 건물로 연결하고, 동일 출발점의 최단경로
+  트리를 재사용한다. 공유 구간은 경로별 원래 edge ID를 보존한다. 건물 내부 관계와
+  외부/비로컬 관계도 coverage 목록과 원본 UCG에 보존하며, 가짜 시설을 만들지 않는다.
+- 호환 힌트: 같은 시드·네임스페이스·물리 구역 구성이며 남은 필지가 충분하면
+  기존 구역과 필지 위치를 재사용한다. 용량이 부족하면 최대 5회 면적 복구를 시도하고
+  재계획을 명시한다. 모든 cold 실행의 작은 변경 안정성을 보장한다는 뜻은 아니다.
+- 검증: `world-0.1.schema.json`, 독립 소유권/크기/충돌/접근성/관계 보존 검사,
+  반복 바이트 비교와 실제 브라우저 선택·애니메이션 검사를 수행한다. 좌표 양자화는
+  1e-4, 경계 포함 오차는 최대 0.001 단위다. 공유 경계의 영면적 접촉을 SAT의
+  수치 오차만으로 중첩이라고 판정하지 않는다. 건물과 전폭 노면은 별도 검사한다.
+
+첫 버전의 계획 프로필은 구역별로 회전한 `GRID`다. `ORGANIC`/`RADIAL`/`INDUSTRIAL`,
+용량 제한 Voronoi, 지형·하천·교량·터널은 후속 단계다. 현재 뷰어는 물리 주구역을
+표시하며 원래 전체 패키지별 공간 선택과 회전된 역할 집계 시설은 후속 통합 대상이다.
+첫 월드 뷰는 원본 파일 건물을 모두 표시한다. 이 제한을 완성된 Semantic LOD로
+설명하거나 기존 역할 집계의 완전한 대체라고 주장하지 않는다.
+
+검토 산출물은 `artifacts/visual/world-flat-reviewed-r2`에 둔다. 기존/신규 비교는
+원본 파일 크기를 유지한 채 각각 전체가 보이도록 프레이밍하며, 픽셀상의 크기 차이를
+동일 스케일 밀도 측정으로 해석하지 않는다. 시간은 표준 cProfile과 단계별 시계로
+측정하고 정규 world/SVG에는 넣지 않는다. 구현 후 세부 조정보다 네 저장소의
+도시 구조와 가독성 차이를 다음 작업의 근거로 삼는다.

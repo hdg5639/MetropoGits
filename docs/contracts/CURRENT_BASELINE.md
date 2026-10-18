@@ -1,5 +1,26 @@
 # Current implementation contract baseline
 
+## Procedural-world experimental addition — 2026-10-19
+
+[ADR-024](../adr/ADR-024.md) introduces a separate
+[`world/0.1-experimental`](../../schemas/world-0.1.schema.json) physical document
+through `python -m scripts.procedural_world BUILD --out NEW_WORLD`. Its CPU SVG
+and existing WebGL/Canvas adapter consume the same polygons, oriented buildings
+and exact source-backed trips. Original UCG and City artifacts are retained;
+the derived browser `world-view/0.1` projection is not a City schema migration.
+
+This first flat engine uses capacity bisection, rotated frontage grids and
+structural collectors, with explicit source-directory mapping and complete edge
+accounting. It does not implement Voronoi, relief, water, bridges or every planning
+profile. Legacy default output remains authoritative for its existing contract.
+See [commands and limits](../URBAN_BLOCK_PLAN.md#2026-10-19--첫-procedural-world-평지-도시-생성).
+
+The browser audit now returns one requested road's complete choices rather than
+serializing full trajectories for every visible road. This prevents oversized
+inspection payloads on highly shared street graphs; assertions are unchanged.
+
+## Existing City/UCG baseline
+
 Verified 2026-10-18 against the checked-in producer, schemas, validators, and
 accepted ADRs. This document reconciles implementation with the original
 `MPG-TECH`, `MPG-FUNC`, and `MPG-PLAN` revision 1.0 design baseline. It does not

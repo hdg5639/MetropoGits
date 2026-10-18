@@ -5398,3 +5398,116 @@
   do not start a separate optimization or rewrite from this note.
 - Delivery: one documentation commit using the configured human identity;
   push result verified separately before reporting completion.
+
+## Checkpoint 2026-10-19 — first connected procedural flat world
+- Implemented: ADR-024 independent `metropogits.world`, isolated deterministic
+  seed streams, capacity-guided polygon bisection, shared boundary topology,
+  streets reserved before parcels, locally rotated complete building models and
+  entrances, source-pair routing on shared infrastructure, bounded validation,
+  browser adapter and CPU SVG from the same physical world. The opt-in developer
+  command is `python -m scripts.procedural_world BUILD --namespace owner/project
+  --out NEW_WORLD`; existing builds and public City/UCG contracts are unchanged.
+- Fixtures/revisions: GJ local-sha256-06eb492d57141c16 (1,324 files), OJ
+  local-sha256-c2e80f9d3908fec8 (681), PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522 (664), SQLite Browser
+  ae32df153a64d250de7c77a5057deeff4092a39b (506). Four-corpus inputs are the
+  existing local-blocks-r3 canonical snapshots, not newly analyzed revisions.
+  Fresh maintained spring-positive and a temporary unsupported Rust fixture also
+  run through scanning, UCG and City before World generation. No target code,
+  dependency installation or target build script is executed.
+- Commands from MetropoGits: `python -m unittest discover -s tests -q`;
+  `node --test tests/*.test.mjs`; `python -m ruff check .`; `git diff --check`;
+  `python ../artifacts/visual/world_review.py world-flat-reviewed-r2`.
+  Fresh pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --repo-id fixture/world-spring
+  --out ../artifacts/visual/world-flat-e2e-r1/build`, followed by
+  `python -m scripts.procedural_world ../artifacts/visual/world-flat-e2e-r1/build
+  --out ../artifacts/visual/world-flat-e2e-r2/world --namespace fixture/world-spring`.
+  Browser audits: `node scripts/viewer_audit.mjs CHROME OUT INPUT...`, using
+  C:/Program Files/Google/Chrome/Application/chrome.exe, output
+  ../artifacts/visual/world-flat-final-audit-r1 and the four before/after pairs
+  under ../artifacts/visual/world-flat-reviewed-r2. The fresh Spring audit is
+  ../artifacts/visual/world-flat-e2e-audit-r2. Forced Canvas and Structure toggle:
+  `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/world-flat-context-r1
+  ../artifacts/visual/world-flat-reviewed-r2/gj/after
+  ../artifacts/visual/world-flat-reviewed-r2/oj/after`.
+- Artifacts inspected: world-flat-reviewed-r2/index.html and report.json;
+  all eight before/after Overview screenshots in world-flat-final-audit-r1;
+  after showcase.png for cases 2/4/6/8; case-2/route-inspector.png;
+  world-flat-context-r1/canvas-0/city.png. Browser audits additionally exercise
+  three LODs, pointer picking, source/road inspectors, route choice, camera,
+  filters, preview rendering and Synthetic activity. Eight corpus cases and the
+  fresh maintained fixture complete without browser exceptions. These are real
+  rendered artifacts, not mockups. Gallery images fit each complete city
+  independently; common-scale captures exist separately, so apparent image size
+  in the gallery is not a physical density measurement.
+- Quantitative outcome: all 3,175 buildings have structurally reachable doors;
+  5,782 complete local source-pair trips retain exact contributing graph edges.
+  GJ/OJ/PocketBase/SQLite physical zones: 6/6/8/3; trips: 4209/1381/192/0;
+  represented local edges: 6157/2243/192/0. Every other non-CONTAINS edge is
+  explicitly partitioned into internal or nonlocal coverage, never discarded.
+  Zero building collisions, full-width street collisions or owner escapes in
+  all four corpora. Original City/UCG bytes and source building sizes, roles,
+  IDs and evidence remain unchanged. Complete original directory hierarchies
+  remain in logicalDistricts even when multiple directories share a physical zone.
+- Area/capacity: new allocated areas are approximately 251306/138820/150427/97208
+  versus original 265678/98980/118286/62328. Only GJ is smaller (about 5.4%);
+  the other three grow to reserve frontage, circulation and capacity. Do not
+  claim universal physical compaction. Capacity recovery increases only failed
+  districts' budgets, not the entire city. PocketBase requires four repairs
+  near the five-attempt bound; arbitrary inputs/seeds can fail explicitly.
+- Tests/determinism/stability: Python 522 run, 521 pass, one existing Windows
+  symlink skip; Node 56 pass; Ruff and whitespace checks pass. Full suites include
+  existing schema/golden/security/layout cases. Two independent four-corpus
+  generations produce byte-identical complete packages. New tests check source
+  preservation, seed isolation, revision-independent geography, controlled
+  nearby file addition with previous-world placement reuse, polygon topology,
+  malformed hints, semantic endpoints, geometry rejection and resource caps.
+  Incremental stability is conditional on compatible zone ownership/capacity;
+  cold replanning is diagnosed, not promised stable. Synthetic audits report
+  zero static geometry rebuilds; SQLite has no invented semantic traffic.
+- Performance evidence: GJ unprofiled repeat generation/validation/packaging is
+  approximately 5.65/0.89/4.54 seconds. Separately profiled cumulative GJ routing
+  is 2.60 seconds, boundary partition 0.007, street atomization 0.20; profile
+  times overlap and are not additive or directly comparable to normal timings.
+  report.json and gj-world.prof retain the observations outside canonical output.
+  These measurements start from existing UCG/City, not a full clone analysis.
+  Browser CPU submission samples are not GPU FPS or a memory benchmark.
+- Fixes applied/reverified: limited area recovery to deficient districts;
+  canonicalized quantized oblique T connections; validated real clipped common
+  polygon area instead of treating numerical SAT contact as an overlap; corrected
+  model winding and added full-footprint/door/street checks. High-sharing browser
+  auditing previously duplicated all path geometry for every selectable road,
+  exhausting Chrome diagnostic payloads. Commit 20a829f returns complete choices
+  for one requested road without that duplicated payload; regression tests and
+  the complete large-corpus audit pass without weakening path checks.
+- Visual findings: a connected polygon mainland replaces disconnected floor
+  islands; local street axes and full building orientations are visible, with
+  named service zones and retained role colors. Overview and CPU exports show
+  the same placement. Long regular rows remain, generic-heavy corpora remain
+  generic, and extra reserved land is visible. This is one locally rotated GRID
+  profile, not Voronoi, organic streets, terrain or completed urban planning.
+  New-world role compounds/semantic LOD are not integrated, so all original file
+  buildings remain visible. The root-zone browser label can show a raw source
+  ID; CPU labels use Root. Record that small polish task without hiding the
+  larger planning/LOD limitations behind more isolated cosmetic iterations.
+- Spec alignment: PASS within user-authorized ADR-024 experimental scope.
+  Rechecked technical contracts/layout/rendering, functional deterministic
+  output/source inspection/fallback acceptance, and product DEC-007/008.
+  Existing default engine and normalized artifacts remain intact. Separate
+  versioned world/0.1-experimental and world-view/0.1 are not City v0.2 documents.
+  No new runtime dependency, AI/service requirement, unsafe execution or remote
+  setting change. Structural streets are labeled visual infrastructure, not
+  invented relationships; only source-backed trips carry semantic evidence.
+- Open risks/next actions: integrate rotated role compounds/semantic LOD and
+  distinct block planning profiles as visible vertical slices; evaluate
+  capacity-efficient land allocation across unknown inputs. Terrain/hydrology,
+  bridges/tunnels and weighted Voronoi remain subsequent work. GJ viewer-data
+  is about 28 MB; track export size and actual measured costs before adding more
+  world detail. Do not claim the whole procedural-world proposal complete.
+- Commits created/pushed: ec13478 (world seed/ADR), 20a829f (bounded audit payload)
+  and this atomic first-world feature/checkpoint. Current intended branch main;
+  the user explicitly retains owner-authorized normal push delivery. Review
+  staged paths/identity and confirm the push command result before reporting
+  remote delivery. No force push, protection changes or agent attribution.
