@@ -19,14 +19,15 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph):
+def compare(scene, graph, *, merge_junctions=False):
     errors = validate_document(scene, graph)
     if errors:
         raise ValueError('; '.join(errors[:8]))
     _bounded_geometry(scene)
     scene = json.loads(canonical_json_bytes(scene))
-    baseline = derive_access_routes(scene, graph)
-    candidate = consolidate_routes(baseline)
+    original = derive_access_routes(scene, graph)
+    baseline = consolidate_routes(original) if merge_junctions else original
+    candidate = consolidate_routes(original, merge_junctions=merge_junctions)
     def identities(routing):
         return {r['id']: (r['source'], r['target'], r['kind'], r['edgeIds'], r['networkIds'])
                 for r in routing['routes']}
@@ -40,8 +41,13 @@ def compare(scene, graph):
     for key in ('pavementCenterlineLength', 'nearbyParallelPairLength'):
         if after[key] > before[key]+1e-8:
             raise ValueError('global road regression: ' + key)
-    return baseline, candidate, dict(version='road-consolidation/0.1', before=before, after=after,
-                                    **candidate['consolidation'])
+    report = dict(version='road-consolidation/0.1', before=before, after=after,
+                  **candidate['consolidation'])
+    if merge_junctions:
+        if after['junctions'] > before['junctions']:
+            raise ValueError('junction consolidation increased branch count')
+        report['junctionConsolidation'] = candidate['junctionConsolidation']
+    return baseline, candidate, report
 
 
 def package(scene, graph, routing, report):
@@ -73,6 +79,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('build', type=Path)
     parser.add_argument('--out', required=True, type=Path)
+    parser.add_argument('--junctions', action='store_true', help='compare parallel-only and additional short-junction consolidation')
     args = parser.parse_args()
     try:
         if args.out.exists():
@@ -83,7 +90,7 @@ def main():
                 raise ValueError('input exceeds 64 MiB')
             return loads_strict_json(path.read_text(encoding='utf-8'))
         scene, graph = read('city.json'), read('graph.ucg.json')
-        before, after, report = compare(scene, graph)
+        before, after, report = compare(scene, graph, merge_junctions=args.junctions)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)

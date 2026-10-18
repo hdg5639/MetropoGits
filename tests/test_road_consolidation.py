@@ -1,13 +1,13 @@
 import copy
 import json
 import unittest
-from collections import deque
+from collections import defaultdict, deque
 from pathlib import Path
 from unittest.mock import patch
 
 from metropogits.access_routes import PITCH, _id, _pair
 from metropogits.layout import generate_city
-from metropogits.road_consolidation import _bends, _search, consolidate_routes
+from metropogits.road_consolidation import _bends, _junction_links, _search, consolidate_routes
 from scripts.canonical_json import canonical_json_bytes
 from scripts.road_consolidation import compare, package
 from scripts.road_metrics import road_metrics
@@ -49,7 +49,133 @@ def atomic(routing):
     return result
 
 
+def junction_fixture(short_route=False, separate_kinds=False, separation=2):
+    paths = [[(x, 0) for x in range(41)], [(x, 1) for x in range(41)],
+             [(x, 0) for x in range(21)] + [(x, 1) for x in range(20, 41)],
+             [(x, 1) for x in range(21+separation)] + [(x, 0) for x in range(20+separation, 41)]]
+    if short_route:
+        paths.append([(19, 0), (20, 0), (20, 1), (21, 1)])
+    segments, routes = {}, []
+    for i, nodes in enumerate(paths):
+        kind = 'HTTP_HIGHWAY' if separate_kinds and i == 3 else 'DEPENDENCY_ROAD'
+        points = [[x*PITCH, z*PITCH] for x, z in nodes]
+        ids = []
+        for a, b in zip(points, points[1:]):
+            start, end = sorted((a, b))
+            key = _id('access-segment', [kind, start, end])
+            segments.setdefault(key, dict(id=key, kind=kind, start=start, end=end,
+                                          width=.5, access=False, routeIds=[]))['routeIds'].append(f'r{i}')
+            ids.append(key)
+        routes.append(dict(id=f'r{i}', kind=kind, source=f's{i}', target=f't{i}',
+                           edgeIds=[f'e{i}'], networkIds=['n'], path=points, segmentIds=ids, latticeSteps=len(nodes)-1))
+    return dict(version='visual-access/0.2', status='COMPLETE', routes=routes,
+                segments=list(segments.values()), junctions=[], diagnostics=[], unresolvedEdgeIds=[], searchExpansions=0)
+
+
 class RoadConsolidationTests(unittest.TestCase):
+    def test_short_junction_links_reassign_routes_to_remaining_crossing(self):
+        before = junction_fixture()
+        with patch('metropogits.road_consolidation.MAX_ATTEMPTS', 0):
+            after = consolidate_routes(before, merge_junctions=True)
+        self.assertGreater(after['junctionConsolidation']['accepted'], 0)
+        self.assertLess(len(after['junctions']), 4)
+        self.assertTrue(atomic(after) < atomic(before))
+        self.check_provenance(before, after)
+        for route in after['routes']:
+            a, b = [tuple(v/PITCH for v in p) for p in (route['path'][0], route['path'][-1])]
+            bound = int((abs(a[0]-b[0])+abs(a[1]-b[1]))*100//90)
+            self.assertLessEqual(route['latticeSteps'], bound)
+
+    def test_junction_short_dependency_protects_link_from_excessive_detour(self):
+        before = junction_fixture(short_route=True)
+        with patch('metropogits.road_consolidation.MAX_ATTEMPTS', 0):
+            after = consolidate_routes(before, merge_junctions=True)
+        self.assertIn(('DEPENDENCY_ROAD', _pair((20, 0), (20, 1))), atomic(after))
+        self.check_provenance(before, after)
+        self.assertEqual(3, next(r for r in after['routes'] if r['id'] == 'r4')['latticeSteps'])
+
+    def test_junction_pass_cannot_reuse_other_kind(self):
+        before = junction_fixture(separate_kinds=True)
+        with patch('metropogits.road_consolidation.MAX_ATTEMPTS', 0):
+            after = consolidate_routes(before, merge_junctions=True)
+        self.assertEqual(0, after['junctionConsolidation']['accepted'])
+        self.assertEqual(atomic(before), atomic(after))
+        self.check_provenance(before, after)
+
+    def test_junction_candidates_exclude_fixed_ports_and_long_links(self):
+        source = junction_fixture()
+        adjacency, users = defaultdict(lambda: defaultdict(set)), {}
+        for key in atomic(source):
+            kind, (a, b) = key
+            adjacency[kind][a].add(b)
+            adjacency[kind][b].add(a)
+            users[key] = {'r'}
+        links = _junction_links(adjacency, set(), users)
+        self.assertTrue(links)
+        self.assertTrue(all(len(link[2]) <= 2 for link in links))
+        ports = {('DEPENDENCY_ROAD', (x, z)) for x in (20, 22) for z in (0, 1)}
+        self.assertEqual([], _junction_links(adjacency, ports, users))
+        with patch('metropogits.road_consolidation.MAX_JUNCTION_LINK_STEPS', 1):
+            self.assertTrue(all(len(link[2]) == 1 for link in _junction_links(adjacency, set(), users)))
+        adjacency, users = defaultdict(lambda: defaultdict(set)), {}
+        for key in atomic(junction_fixture(separation=5)):
+            kind, (a, b) = key
+            adjacency[kind][a].add(b)
+            adjacency[kind][b].add(a)
+            users[key] = {'r'}
+        # Five-step links between crossings are not silently truncated into candidates.
+        self.assertTrue(all(len(link[2]) == 1 for link in _junction_links(adjacency, set(), users)))
+
+    def test_junction_multi_route_failure_rolls_back_all_replacements(self):
+        before = junction_fixture()
+        for route in list(before['routes']):
+            duplicate = copy.deepcopy(route)
+            duplicate.update(id=route['id']+'copy', source=route['source']+'copy', edgeIds=[route['edgeIds'][0]+'copy'])
+            before['routes'].append(duplicate)
+            for segment in before['segments']:
+                if route['id'] in segment['routeIds']:
+                    segment['routeIds'].append(duplicate['id'])
+        calls = []
+        def fail_second(*args):
+            calls.append(1)
+            return _search(*args) if len(calls) == 1 else None
+        with patch('metropogits.road_consolidation.MAX_ATTEMPTS', 0), patch('metropogits.road_consolidation.MAX_JUNCTION_ATTEMPTS', 1), patch('metropogits.road_consolidation._search', side_effect=fail_second):
+            after = consolidate_routes(before, merge_junctions=True)
+        self.assertEqual(2, len(calls))
+        self.assertEqual(0, after['junctionConsolidation']['accepted'])
+        self.assertEqual(atomic(before), atomic(after))
+        self.check_provenance(before, after)
+
+    def test_junction_budgets_preserve_atomic_routes_and_original_limits(self):
+        before = junction_fixture()
+        for option, limit in [('MAX_JUNCTION_ATTEMPTS', 0), ('MAX_SEARCH_STATES', 1), ('MAX_SEARCH_LABELS', 1)]:
+            with patch('metropogits.road_consolidation.MAX_ATTEMPTS', 0), patch('metropogits.road_consolidation.'+option, limit):
+                after = consolidate_routes(before, merge_junctions=True)
+            self.assertEqual(atomic(before), atomic(after))
+            self.check_provenance(before, after)
+        # Both stages share limits frozen from the original 0.2 routes.
+        after = consolidate_routes(before, merge_junctions=True)
+        self.check_provenance(before, after)
+        with self.assertRaisesRegex(ValueError, 'complete visual-access/0.2'):
+            consolidate_routes(after, merge_junctions=True)
+
+    def test_junction_opt_in_determinism_and_package_compatibility(self):
+        before = junction_fixture()
+        expected = canonical_json_bytes(consolidate_routes(before, merge_junctions=True))
+        before['routes'].reverse()
+        before['segments'].reverse()
+        self.assertEqual(expected, canonical_json_bytes(consolidate_routes(before, merge_junctions=True)))
+        self.assertNotIn('junctionConsolidation', consolidate_routes(before))
+        graph = json.loads((Path(__file__).parent/'fixtures/ucg/valid/spring-minimal.json').read_text(encoding='utf-8'))
+        scene = generate_city(graph)
+        baseline, routing, report = compare(scene, graph, merge_junctions=True)
+        self.assertEqual('visual-access/0.3', baseline['version'])
+        self.assertIn('junctionConsolidation', report)
+        artifacts = package(scene, graph, routing, report)
+        data = json.loads(artifacts['assets/viewer-data.js'].decode().split('=', 1)[1].rstrip(';\n'))
+        self.assertEqual(routing, data['routing'])
+        self.assertEqual(canonical_json_bytes(scene), artifacts['city.json'])
+
     def test_real_detour_reuses_road_and_removes_parallel_pavement(self):
         before = fixture()
         original = copy.deepcopy(before)

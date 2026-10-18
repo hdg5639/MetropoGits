@@ -3177,3 +3177,64 @@
   reconfirmed the owner exception to protected-main direct pushes this turn;
   ordinary upstream push follows verification, without force or rule changes.
   Private artifacts/review scripts and unrelated IDE caches are excluded.
+
+## Checkpoint 2026-10-18 — bounded short junction consolidation
+
+- Implemented: opt-in `--junctions` pass transfers dependencies from redundant
+  short branch links to surviving crossings. Links span at most two lattice steps,
+  exclude fixed ports and must eliminate at least one T. All affected routes move
+  atomically within the ORIGINAL 0.2 distance/+2 bend limits across both passes.
+  No added pavement, moved buildings, schema/source-ID changes or default adoption.
+  ADR-018, current baseline and urban block plan record the policy and limits.
+- Fixtures / revisions: GJ3d9b53f and OJb163acd readonly parcel-3d-r2 inputs;
+  fresh spring-positive and structural-showcase builds at parentc1dfe3e. No target
+  code/build scripts/dependencies executed. Sparse outputs retain2/0 routes.
+- Commands: `python -m scripts.road_consolidation
+  ../artifacts/visual/parcel-3d-r2/<gj|oj> --out
+  ../artifacts/visual/junction-merge-r1/<gj|oj> --junctions`;
+  `python -m metropogits build --repo tests/fixtures/repositories/<spring-positive|structural-showcase>
+  --out ../artifacts/visual/junction-merge-fixtures/<spring|unknown>
+  --repo-id fixtures/<spring|unknown>`, then the same consolidation command into
+  `<spring|unknown>-study`. Both maintained fixture builds COMPLETE.
+- Metrics relative to parallel-only: GJ junctions2959→2596, pavement40932→39210,
+  nearby parallel15631→14066.5, travel692680→694542, turns24055→23129. OJ
+  junctions652→631, pavement9569.5→9447, parallel3794→3696, travel155857→155878,
+  turns6642→6260. GJ219 accepted/600 attempts (cap reached,1645 candidates);
+  OJ13/171 (262 candidates, remaining candidates no longer eligible). Not optimal.
+- Fidelity: `node ../artifacts/visual/verify_access.mjs <after-build>` confirms
+  GJ4209 complete paths/6157 represented edges, OJ1381/2243; missing edges and
+  pavement/building intersections0. City/UCG bytes match input; no building churn.
+  `python ../artifacts/visual/verify_consolidation.py` confirms unchanged old
+  parallel-only routing, strict atomic-pavement subset, all original endpoint/edge
+  identities and frozen per-route distance/bend bounds. All14 after artifacts per
+  city reproduce byte-for-byte; repeat+package41.77s GJ/12.55s OJ, not a pure
+  optimizer or frame benchmark. New pass is capped at600 attempts/2M popped states;
+  comparison recomputes the parallel baseline, increasing developer-command cost.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs` generated
+  junction-merge-focus-r1 GJ/OJ before/after focused.png at identical1500x1000
+  viewport, target/yaw/pitch/distance; both after showcase.png inspected. GJ short
+  transverse branches decrease visibly; OJ selected-area difference is small.
+  City silhouette, density and remaining orthogonal roads largely persist.
+  `node ../artifacts/visual/junction_smoke.mjs` captured new fixture outputs;
+  spring.png WebGL and unknown-preview.png inspected. Sparse margins unchanged.
+- Browser: `node scripts/viewer_audit.mjs <Chrome>
+  ../artifacts/visual/junction-merge-audit-r1 <gj-after> <oj-after>` passes all three
+  LODs, selection/drill-down/filters, camera movement and synthetic route checks.
+  Chrome152 SwiftShader20 samples: synthetic CPU p95 GJ1.2/1.0/1.4ms and
+  OJ1.2/1.3/1.1ms; static geometry rebuilds0 throughout. Not GPU FPS/speedup claims.
+- Tests: `python -m unittest discover -s tests`313 run,312 pass,1 Windows symlink
+  skip; `python -m ruff check metropogits scripts tests` passes; Node access_routes,
+  junction_geometry, viewer_audit, camera_navigation, role_landmarks suites32 pass.
+  Seven new Python cases cover actual branch transfer, excessive detours,
+  cross-kind rejection, fixed ports/link length, rollback, budgets, deterministic
+  permutation, frozen bounds and package compatibility. No failing tests weakened.
+- Spec alignment: PASS, technical7–8, FR-007, AC-002/003/006/014, DEC-005/006/011.
+  Existing evidence, static/local-first boundaries and unsupported fallback intact.
+- Open risks / next actions: many protected short dependencies and sole bridges
+  cannot merge safely. Evaluate remaining complex junctions for selective curved
+  connections/roundabouts with complete path/clearance checks, not decoration or
+  relaxed detour guarantees. Dense orthogonal appearance is not fully resolved.
+- Commits created / pushed (main): implementation, regression cases and docs are
+  one work unit committed after verification; ordinary upstream push follows under
+  the maintainer's reconfirmed owner exception. No force/rule changes or attribution;
+  private generated artifacts and unrelated IDE caches are excluded.

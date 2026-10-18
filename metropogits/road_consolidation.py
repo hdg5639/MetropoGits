@@ -12,6 +12,8 @@ MAX_SEARCH_STATES = 2_000_000
 MAX_ATOMIC_EDGES = 100_000
 MAX_ROUTE_STEPS = 1_000_000
 MAX_SEARCH_LABELS = 100_000
+MAX_JUNCTION_ATTEMPTS = 600
+MAX_JUNCTION_LINK_STEPS = 2
 
 
 def _distance(a, b):
@@ -77,7 +79,30 @@ def _search(start, end, adjacency, blocked, limit, heading, terminal, bend_limit
     return None
 
 
-def consolidate_routes(routing):
+def _junction_links(adjacency, ports, users):
+    """Short links between existing branch nodes, excluding fixed entrance ports."""
+    candidates, seen = [], set()
+    for kind, graph in sorted(adjacency.items()):
+        for start in sorted(graph):
+            if len(graph[start]) < 3 or (kind, start) in ports:
+                continue
+            for neighbor in sorted(graph[start]):
+                previous, current = start, neighbor
+                stroke = [(kind, _pair(previous, current))]
+                while len(graph[current]) == 2 and (kind, current) not in ports and len(stroke) < MAX_JUNCTION_LINK_STEPS:
+                    other = next(n for n in graph[current] if n != previous)
+                    stroke.append((kind, _pair(current, other)))
+                    previous, current = current, other
+                keys = tuple(sorted(stroke))
+                if current == start or len(graph[current]) < 3 or (kind, current) in ports or keys in seen:
+                    continue
+                seen.add(keys)
+                affected = set().union(*(users[k] for k in keys))
+                candidates.append((len(affected), len(keys), keys, start, current))
+    return sorted(candidates)
+
+
+def consolidate_routes(routing, *, merge_junctions=False):
     """Return independent routing; never move buildings, add pavement or lose routes."""
     if routing['version'] != 'visual-access/0.2' or routing['status'] != 'COMPLETE':
         raise ValueError('consolidation requires complete visual-access/0.2 routing')
@@ -158,14 +183,8 @@ def consolidate_routes(routing):
             affected = set().union(*(users[k] for k in stroke))
             candidates.append((len(affected), -parallel, -len(stroke), tuple(sorted(stroke))))
 
-    budget, attempts, accepted, rejected, removed = [0, 0], 0, 0, defaultdict(int), set()
-    for _, _, _, stroke in sorted(candidates):
-        if attempts >= MAX_ATTEMPTS or budget[0] >= MAX_SEARCH_STATES:
-            break
-        active = [key for key in stroke if users.get(key)]
-        if not active:
-            continue
-        attempts += 1
+    removed = set()
+    def remove_link(active, budget):
         kind = active[0][0]
         blocked = {pair for _, pair in active}
         affected = sorted(set().union(*(users[k] for k in active)))
@@ -178,12 +197,8 @@ def consolidate_routes(routing):
                            heading, terminal, bend_limits[identity], budget)
             if path is None:
                 reason = 'search_label_limit' if budget[1] > previous_label_hits else 'unreachable_or_detour_or_bend_limit'
-                rejected[reason] += 1
-                break
+                return reason
             replacements[identity] = path
-        if len(replacements) != len(affected):
-            continue
-        accepted += 1
         for identity, path in replacements.items():
             for a, b in zip(paths[identity], paths[identity][1:]):
                 users[(kind, _pair(a, b))].discard(identity)
@@ -196,6 +211,53 @@ def consolidate_routes(routing):
             adjacency[kind][a].discard(b)
             adjacency[kind][b].discard(a)
             removed.add(key)
+        return None
+
+    budget, attempts, accepted, rejected = [0, 0], 0, 0, defaultdict(int)
+    for _, _, _, stroke in sorted(candidates):
+        if attempts >= MAX_ATTEMPTS or budget[0] >= MAX_SEARCH_STATES:
+            break
+        active = [key for key in stroke if users.get(key)]
+        if not active:
+            continue
+        attempts += 1
+        reason = remove_link(active, budget)
+        if reason:
+            rejected[reason] += 1
+        else:
+            accepted += 1
+
+    parallel_removed = len(removed)
+    if merge_junctions:
+        links = _junction_links(adjacency, ports, users)
+        joint_budget, joint_attempts, joint_accepted = [0, 0], 0, 0
+        joint_rejected = defaultdict(int)
+        for _, _, stroke, start, end in links:
+            if joint_attempts >= MAX_JUNCTION_ATTEMPTS or joint_budget[0] >= MAX_SEARCH_STATES:
+                break
+            kind = stroke[0][0]
+            if any(key in removed for key in stroke):
+                continue
+            degrees = [len(adjacency[kind][point]) for point in (start, end)]
+            # At least one T must disappear. A four-way becoming another T is
+            # not enough; no access port can be swallowed by this pass.
+            if min(degrees) < 3 or 3 not in degrees:
+                continue
+            joint_attempts += 1
+            reason = remove_link(stroke, joint_budget)
+            if reason:
+                joint_rejected[reason] += 1
+            else:
+                joint_accepted += 1
+        result['junctionConsolidation'] = dict(
+            candidates=len(links), attempts=joint_attempts, accepted=joint_accepted,
+            removedLatticeEdges=len(removed)-parallel_removed, searchStates=joint_budget[0],
+            limitReached=joint_attempts >= MAX_JUNCTION_ATTEMPTS or joint_budget[0] >= MAX_SEARCH_STATES or joint_budget[1] > 0,
+            rejected=dict(sorted(joint_rejected.items())), maxAttempts=MAX_JUNCTION_ATTEMPTS,
+            maxSearchStates=MAX_SEARCH_STATES, maxSearchLabels=MAX_SEARCH_LABELS,
+            maxLinkSteps=MAX_JUNCTION_LINK_STEPS, originalBoundsPreserved=True)
+        if joint_budget[1]:
+            result['junctionConsolidation']['searchLabelLimitHits'] = joint_budget[1]
 
     # Rebuild all memberships and intersections from final complete routes.
     segments = {}
@@ -236,7 +298,7 @@ def consolidate_routes(routing):
                            for (kind, x, z), ids in sorted(incidence.items()) if len(ids) >= 3]
     result['version'] = 'visual-access/0.3'
     result['consolidation'] = dict(candidates=len(candidates), attempts=attempts, accepted=accepted,
-                                 removedLatticeEdges=len(removed), searchStates=budget[0],
+                                 removedLatticeEdges=parallel_removed, searchStates=budget[0],
                                  limitReached=attempts >= MAX_ATTEMPTS or budget[0] >= MAX_SEARCH_STATES or budget[1] > 0,
                                  rejected=dict(sorted(rejected.items())), maxAttempts=MAX_ATTEMPTS,
                                  maxSearchStates=MAX_SEARCH_STATES, maxSearchLabels=MAX_SEARCH_LABELS,

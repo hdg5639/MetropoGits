@@ -85,7 +85,13 @@ old lines. Inputs with partial routing are rejected. WebGL joins existing
 same-kind junction surfaces inside the original pavement envelope and clips
 ordinary markings at approach mouths; exact selection and animation paths
 remain complete. Canvas/SVG surfaces and all routing data are unchanged.
-Nearby approach merging and selective roundabouts remain subsequent work.
+An additional opt-in `--junctions` comparison removes short links between nearby
+branch nodes when every dependency can reuse surviving crossings. Fixed entrance
+ports are excluded; distance/+2 bend bounds stay frozen against original 0.2
+routes across BOTH passes. Additional budget: 600 attempts and 2M search states.
+The before package is parallel-only 0.3; after is 0.3 with derived
+`junctionConsolidation` metadata. No default adoption, node relocation, new
+pavement or roundabout implementation is implied.
 
 ADR-017 exposes the measured parcel candidate through `scripts.parcel_viewer`.
 Only one selected leaf changes file coordinates; all directory geometry, file
