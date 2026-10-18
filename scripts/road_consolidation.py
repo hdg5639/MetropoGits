@@ -10,6 +10,7 @@ from metropogits.access_routes import derive_access_routes
 from metropogits.block_collectors import plan_collectors
 from metropogits.block_gateways import plan_gateways
 from metropogits.road_frontage import plan_frontages
+from metropogits.shared_frontage import plan_shared_frontages
 from metropogits.cli import _artifact_record, _diagnostic_summary
 from metropogits.preview import render_preview
 from metropogits.road_consolidation import consolidate_routes
@@ -22,7 +23,8 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False, continuity=False, collectors=False, frontage=False, gateways=False):
+def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False, continuity=False, collectors=False, frontage=False, gateways=False, shared_frontage=False):
+    gateways = gateways or shared_frontage
     frontage = frontage or gateways
     collectors = collectors or frontage
     continuity = continuity or collectors
@@ -36,6 +38,8 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
     original = derive_access_routes(scene, graph)
     if gateways:
         baseline = plan_frontages(scene, original, plan_collectors(scene, original, consolidate_routes(original, continuity=True)))
+        if shared_frontage:
+            baseline = plan_gateways(scene, original, baseline)
     elif frontage:
         baseline = plan_collectors(scene, original, consolidate_routes(original, continuity=True))
     elif collectors:
@@ -48,7 +52,8 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
         baseline = consolidate_routes(original, merge_junctions=True)
     else:
         baseline = consolidate_routes(original) if merge_junctions else original
-    candidate = (plan_gateways(scene, original, baseline) if gateways else
+    candidate = (plan_shared_frontages(scene, original, baseline) if shared_frontage else
+                 plan_gateways(scene, original, baseline) if gateways else
                  plan_frontages(scene, original, baseline) if frontage else
                  plan_collectors(scene, original, baseline) if collectors else
                  consolidate_routes(original, merge_junctions=merge_junctions or avenues or backbone,
@@ -88,6 +93,8 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
         if after['turns'] > before['turns']:
             raise ValueError('gateway consolidation increased total bends')
         report['blockGateways'] = candidate['blockGateways']
+    if shared_frontage:
+        report['sharedFrontage'] = candidate['sharedFrontage']
     return baseline, candidate, report
 
 
@@ -128,6 +135,7 @@ def main():
     parser.add_argument('--collectors', action='store_true', help='replan bounded blocks as shared collector trees against continuity roads')
     parser.add_argument('--frontage', action='store_true', help='choose local shared roads before reconnecting visual building entrances')
     parser.add_argument('--gateways', action='store_true', help='pool nearby block boundary crossings on common evidenced gateways')
+    parser.add_argument('--shared-frontage', action='store_true', help='orient entrances toward shared complete trips; preserve original route bounds and geography')
     args = parser.parse_args()
     try:
         if args.out.exists():
@@ -140,7 +148,8 @@ def main():
         scene, graph = read('city.json'), read('graph.ucg.json')
         before, after, report = compare(scene, graph, merge_junctions=args.junctions, avenues=args.avenues,
                                       backbone=args.backbone, urban=args.urban, continuity=args.continuity,
-                                      collectors=args.collectors, frontage=args.frontage, gateways=args.gateways)
+                                      collectors=args.collectors, frontage=args.frontage, gateways=args.gateways,
+                                      shared_frontage=args.shared_frontage)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)

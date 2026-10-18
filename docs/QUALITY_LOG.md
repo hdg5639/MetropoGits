@@ -3929,3 +3929,79 @@
   commit and normal upstream push under the maintainer's explicit owner exception.
   Actual Git outcome is reported after execution. No force, remote settings edits,
   attribution, private artifacts or unrelated fixture caches staged.
+
+## Checkpoint 2026-10-18 — complete-trip shared frontage (parent 94165e3)
+- Implemented: opt-in `--shared-frontage`; evaluate alternative clear building
+  faces with every complete incident trip, rather than fixing outside-patch paths.
+  New candidate connectors stay within three lattice steps of alternative faces.
+  Preserve original0.2 world-distance/+4-bend bounds, all source relationships,
+  canonical City/UCG and buildings. Atomic entrance rollback and final total-bend
+  rollback; only actually used obstacle-clear pavement is exported.
+- Diagnostic comparisons: private whole-corridor deletion with complete-trip
+  rerouting saved GJ0.64%/OJ0.78% pavement. Longest-trip-first reuse saved2.84%/3.27%
+  but increased bends; neither prototype promoted. Complete-trip entrance planning
+  improves both without parcel relocation. This establishes a search-scope limit,
+  not absence of layout issues or global optimality.
+- Fixtures / revisions: GJ3d9b53f and OJb163acd cached parcel scenes/gateway-r3;
+  fresh maintained spring-positive/structural-showcase at94165e3. No target source
+  execution/build/dependency installation. Specs read technical/functional/product,
+  followed by AGENTS. ADR-019 scope recorded before product implementation.
+- Commands: `python ../artifacts/visual/shared_frontage_trial.py <gj|oj>` reads
+  JSON-only cached data and original road-consolidation-r2 bounds. Outputs:
+  `artifacts/visual/shared-frontage-r1/{gj,oj}/{before,after}`. GJ401/OJ103 accepted
+  entrances. Pavement27156->23957 /7161.5->6167.5, nearby parallel4826.5->2453.5 /
+  1680->868, junctions1497->1402 /450->414, bends23682->22642 /6638->6258.
+  Total trip distance724502->725867 /161499->162094; no claim every path shortened.
+- Bounds: GJ2673 attempts/12M states hits total cap; OJ1170 attempts/2166841 states
+  hits10 per-trip caps. GJ160 capped searches includes final total exhaustion.
+  Candidate graph36168/9690 unit edges. Failed/capped proposals retain safe routes.
+- Fidelity: `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/shared-frontage-r1/<gj|oj>/after`:6157/2243 scene-backed
+  edges,1273/400 connected files,4209/1381 paths, unresolved0, building intersections0.
+  Examined changed AdminAccountDeletionController->AccountDeletionJobResponse:
+  same two edge IDs and RESOLVED import evidence, not an inferred runtime call.
+- Repeatability: `python ../artifacts/visual/verify_shared_frontage.py gj oj`:
+  independent full-width/membership/door/world-budget checks pass; City/UCG bytes
+  unchanged and all14 files per city match repeat generation. Counter-based union
+  scoring matches expanded geometry oracle and old scorer's real-city output.
+  Repeat planner162.88s/23.60s under local load, not controlled speedup/full build time.
+- Fresh pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/shared-frontage-fixtures-r1/<spring|unknown> --repo-id
+  fixtures/<spring|unknown>`; `python -m scripts.road_consolidation
+  ../artifacts/visual/shared-frontage-fixtures-r1/<spring|unknown> --out
+  ../artifacts/visual/shared-frontage-fixtures-r1/<spring|unknown>-study --shared-frontage`.
+  Both COMPLETE; Spring pavement15.5->12, two paths retained; unknown zero roads.
+  `node ../artifacts/visual/junction_smoke.mjs shared-frontage-fixtures-r1` passes.
+  Actual Spring viewer/unknown preview inspected: dense towers/sparse generic
+  fallback retained; no fabricated technology or relationships.
+- Visual artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs
+  shared-frontage-r1 shared-frontage-focus-r1`. All four before/after focus images,
+  both showcase images and GJ audit route inspector viewed. Identical camera
+  confirmed. Redundant short approaches disappear in Ops deployment/service and
+  OJ generation/service. Skyline/README composition unchanged; continuous bright
+  paint and orthogonal corridors still look circuit-like. No visual-completion claim.
+- Browser: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/shared-frontage-audit-r1
+  ../artifacts/visual/shared-frontage-r1/gj/after
+  ../artifacts/visual/shared-frontage-r1/oj/after` passes all three LODs, picking,
+  source/route drill-down, filters, grades, navigation and Synthetic. Chrome152 /
+  SwiftShader20 samples: Synthetic CPU p95 GJ1.3/1.1/1.1ms, OJ5.7/1.6/1.7ms;
+  static rebuilds0 throughout. Concurrent local planner load; not GPU FPS/speedup.
+- Tests: `python -m unittest discover -s tests -q`:401 run,400 pass,1 Windows
+  symlink skip. Fifteen new tests cover full-trip gain, all-incident rollback,
+  final bend rollback, every resource cap, exact geometry/provenance, mixed-kind
+  protection, access-only prior trips, canonical packaging, search contraction,
+  repeatability, unknown input and union-score oracle. Ruff and whitespace pass.
+  Node access_routes/junction_geometry/viewer_audit/camera_navigation/role_landmarks
+  suites:35 pass. Prior access-only trips were initially rejected by too-strict
+  lattice-set equality; corrected to preserve them and added regression coverage.
+- Spec alignment: PASS technical7-8, FR-007, AC-002/003/006/014, DEC-005/006/007/011,
+  ADR-019. No schema/default/ID/security change. No curves/roundabouts implemented.
+- Open risks / next actions: route generation remains costly/bounded; geometry
+  improvement is stronger than its visual impact. Next distinguish asphalt,
+  minor accesses, arterial lane paint and junction presentation without hiding roads.
+- Commits created / pushed (main): checkpoint precedes this coherent feature/tests/
+  docs commit and normal owner-authorized push. Actual Git result checked afterward.
+  No attribution, force, remote settings change, private artifacts or unrelated caches.

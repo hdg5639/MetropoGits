@@ -256,3 +256,17 @@ candidate rankings each accepted zero proposals in both real cities. There is
 no `--joint` product option or additional default pass. Keep `--gateways` as
 the current experimental baseline; see ADR-019 and URBAN_BLOCK_PLAN for the
 rejected trial, limitations and next parcel-constraint diagnostics.
+
+`scripts.road_consolidation --shared-frontage` now compares gateway routing with
+complete-trip entrance planning (`sharedFrontage`, `shared-frontage/0.1`, existing
+visual-access/0.3 payload). It moves only derived door/port choices and reroutes
+every incident relationship atomically; canonical City/UCG and source IDs stay
+fixed. Original0.2 world-distance/+4-bend bounds include new door spurs. Strict
+pavement reduction, non-increasing junctions/parallel length and a final total-bend
+rollback guard apply. Inherited earlier-stage metadata describes earlier stages.
+No `--joint` option, parcel reallocation, semantic inference or default change.
+Limits:1600 entrances,4800 proposals,12M states overall,12000 states/60000 labels
+per trip,100000 candidate edges,20000 input routes,existing1M expanded-step limit.
+Candidate connectors extend at most three obstacle-clear lattice steps from
+alternative faces. Only accepted route-used geometry is exported. Search caps
+retain the last safe result and are reported, not treated as infeasibility proofs.
