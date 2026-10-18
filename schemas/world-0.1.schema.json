@@ -7,7 +7,10 @@
   "required": ["schemaVersion","generatorVersion","seed","seedAlgorithm","repositoryNamespace","sourceCityDigest","ucgDigest","coordinateSystem","coordinateQuantum","terrainPreset","allocationAlgorithm","envelope","districts","logicalDistricts","topology","parcels","streets","routing","networks","coverage","diagnostics","anchors"],
   "properties": {
     "schemaVersion": {"const":"world/0.1-experimental"},
-    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3"]},
+    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4"]},
+    "outlinePolicy": {"enum":["ellipse","varied"]},
+    "outlineVersion": {"const":"seeded-convex/1"},
+    "outlineFamily": {"enum":["compact","elongated","angular","asymmetric"]},
     "planningPolicy": {"enum":["grid","mixed","radial","organic","industrial","hybrid","varied"]},
     "seed": {"type":"string","pattern":"^[0-9a-f]{16}$"},
     "seedAlgorithm": {"const":"sha256-counter/1"},

@@ -114,6 +114,29 @@ class WorldProfileTests(unittest.TestCase):
             if p["entityId"] in old:
                 self.assertEqual(p, old[p["entityId"]])
 
+    def test_industrial_and_hybrid_hints_keep_existing_parcels(self):
+        from metropogits.cli import analyze_repository
+        from metropogits.layout import generate_city
+
+        for profile in ("industrial", "hybrid"):
+            with (
+                self.subTest(profile=profile),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                repo = Path(directory)
+                scene, graph = fixture(repo)
+                first = generate_world(scene, graph, planning=profile)
+                (repo / "extra.rs").write_text("fn added() {}", encoding="utf8")
+                graph = analyze_repository(repo, repository_id="fixture/radial")
+                scene = generate_city(graph)
+                changed = generate_world(scene, graph, planning=profile, previous=first)
+                validate_world(changed, scene, graph)
+                self.assertTrue(changed["anchors"]["reusedDistrictIds"])
+                old = {p["entityId"]: p for p in first["parcels"]}
+                for p in changed["parcels"]:
+                    if p["entityId"] in old:
+                        self.assertEqual(p, old[p["entityId"]])
+
     def test_new_frontage_resource_bounds_fail_closed(self):
         from metropogits.world.organic import organic_slots
 

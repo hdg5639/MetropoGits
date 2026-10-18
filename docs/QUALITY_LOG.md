@@ -5733,3 +5733,73 @@
   comparison so local fallback cannot obscure which grammars were implemented.
 - Delivery: one atomic hybrid/varied feature/checkpoint on main, normal
   owner-authorized push verified separately; no agent attribution.
+
+## Checkpoint 2026-10-19 — variable outlines and final grammar review
+- Implemented: ADR-027 `--outline varied`, independent seeded-convex/1 stream
+  and compact/elongated/angular/asymmetric convex land. Vertex count/radii /
+  angular spacing, aspect, shear and rotation change actual allocation geometry,
+  not a decorative border. Existing ellipse/default worlds remain unchanged.
+  Matching hints retain prior land and parcels; policy switches diagnose replan.
+- Fixtures/revisions: same four pinned canonical corpora recorded above; same
+  freshly scanned maintained Spring build; 80-file TS import-cycle atlas with
+  explicit fixture/planning-atlas identity. Atlas files are controlled test input,
+  not a claim about a real user's architecture. No source repository executed.
+- Commands: `python -m unittest discover -s tests -q`; Node full suite, Ruff and
+  diff checks; `python ../artifacts/visual/world_grammars_review.py varied
+  world-varied-outline-r1 --varied-outline`; `python
+  ../artifacts/visual/world_profile_atlas.py`; procedural-world CLI on
+  world-grammars-e2e-r1/build with `--namespace fixture/world-grammars --planning
+  varied --outline varied --out ../artifacts/visual/world-grammars-e2e-r1/varied-outline`.
+  Browser audit: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/world-outlines-audit-r1 INPUT...` for four new corpus
+  outputs, five atlas grammars, four outline atlas seeds and maintained output
+  (14 cases). CHROME path as above. Context audit: `node
+  ../artifacts/visual/city_context_review.mjs ../artifacts/visual/world-outlines-context-r1
+  ../artifacts/visual/world-varied-outline-r1/gj
+  ../artifacts/visual/world-varied-outline-r1/pocketbase`.
+- Artifacts inspected: world-profile-atlas-r1/index.html/report.json;
+  world-varied-outline-r1/report.json; four real corpus Overview PNGs and GJ
+  showcase/route-inspector PNGs in world-outlines-audit-r1; CPU showcase PNGs
+  cases5–13 (all five grammars and all four outline examples);
+  world-outlines-context-r1/canvas-0/city.png. Both render targets reflect the
+  same physical world. Atlas full-city framing is independent, not pixel scale.
+- Visual findings: actual large worlds no longer share a fixed elliptical
+  silhouette. Asymmetric wedges, angular corners and differing proportions are
+  visible; planning adapts inside the boundary. Atlas exposes true GRID,
+  ORGANIC, RADIAL, INDUSTRIAL and within-district HYBRID differences, including
+  the industrial open-space cost. Outline examples intentionally select one
+  explicit seed per family (shape-0/1/2/6), not a claimed random sample. Still
+  flat convex land: no deep bays, islands, water or organic terrain. Some rows,
+  spare lots, root-label roughness and lack of role-compound LOD remain visible.
+- Tests/determinism/stability: Python539 run/538 pass/one existing Windows
+  symlink skip; Node56 pass; lint/whitespace pass. New tests exercise128 outline
+  seeds with convexity and shape diversity, real repeated World/schema/package
+  bytes, compatible added-file hints, policy-switch replans and legacy defaults.
+  Added industrial/hybrid hint assertions preserve existing parcels. Independent
+  four-corpus comparison confirms default GRID world bytes still exactly match
+  world-flat-reviewed-r2. All new four-corpus and nine atlas packages repeat
+  byte-identically and conserve source City/UCG bytes; original 3,175 corpus
+  buildings/5,782 source-pair trips remain, zero collisions/owner escapes, all
+  doors reachable. Maintained output six buildings/two trips. Browser14 cases
+  pass exact inspection, filters, camera, three LODs and Synthetic with zero
+  static rebuilds/no exceptions. Forced Canvas and Structure restoration pass.
+- Land/performance: new corpus areas GJ/OJ/PB/SQLite 263078/131658/142683/97605
+  versus GRID251306/138820/150427/97208; not a universal density gain. GJ measured
+  generation6.92s/package6.30s, viewer-data36.29MB from analyzed snapshots.
+  Large route serialization and semantic LOD remain future measured work;
+  browser CPU submission samples are not GPU FPS/memory measurements.
+- Spec alignment: PASS, authorized ADR-026/027 scope. Rechecked technical7/8,
+  functional AC-002/003/006/011/012 and product DEC-004/005/006/007/008/009/011.
+  Additive experimental World metadata retains old documents. No City/UCG
+  break, stable source ID change, new dependency, AI/API or source execution.
+  Structural planning labels never assert new industrial roles or dependencies.
+- Open risks/next actions: varied policy deliberately does not guarantee all
+  five profiles occur in every repository: capacity fallback is explicit.
+  ORGANIC is meandering strips, HYBRID two connected region grammars, not
+  completed arbitrary block/polygon planning. Concave coasts and terrain need
+  a separate geometry design. Do not resume tiny curve tuning; prioritize
+  source-traceable LOD and actual measured export costs for the next milestone.
+- Delivery: fourth atomic feature/checkpoint after 1185b1b/19f855b/35bfbff,
+  current main, standing owner-authorized normal push. Review final staged paths,
+  human identity, upstream and remote SHA before reporting delivery. Preserve
+  untracked user build caches; never force-push or add agent attribution.

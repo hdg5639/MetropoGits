@@ -1047,3 +1047,23 @@ HYBRID: `--planning hybrid`. 한 구역을 곡선형/격자형 계획 영역으�
 공간이 부족한 문법은 진단을 남기고 해당 구역만 GRID로 폴백한다. 따라서 특정 저장소에
 다섯 종류가 반드시 모두 나오는 것은 아니다. `world-varied-r1`에서 실제 선택/폴백을 확인한다.
 평지 문법 구현이 지형·Semantic LOD 또는 임의의 오목한 블록 분할 완료를 뜻하지는 않는다.
+
+외곽 변주: [ADR-027](adr/ADR-027.md), `--outline varied`. 독립적인 시드 스트림에서
+compact/elongated/angular/asymmetric 계열을 고르고, 꼭짓점 수·각도·반지름·종횡비·기울임을
+변화시킨 볼록 다각형을 실제 구역 배분 경계로 사용한다. 단순히 바닥 텍스처만 바꾸는 게 아니다.
+기존 타원은 기본값 `--outline ellipse`로 유지한다. 같은 입력/시드는 같은 결과이며,
+다른 윤곽을 원하면 `--seed`를 바꾼다. 변경된 시드가 원본 코드 사실을 바꾸지는 않는다.
+
+```powershell
+python -m scripts.procedural_world BUILD --namespace owner/project --planning varied --outline varied --out NEW_WORLD
+python -m scripts.procedural_world BUILD --namespace owner/project --planning varied --outline varied --seed another-world --out ANOTHER_WORLD
+```
+
+호환 previous-world는 이전 외곽과 필지를 유지하고, 외곽 정책 변경은 명시적인 재계획으로
+기록한다. 현재 커널이 안전하게 지원하는 볼록 육지 범위이며, 깊은 만·섬·강·오목한 해안선은
+후속 지형/폴리곤 설계가 필요하다. 모든 시드에서 수용량이 보장되는 것도 아니다.
+
+확인 페이지: `artifacts/visual/world-profile-atlas-r1/index.html`에 같은 실제 80-file TS
+테스트 소스의 다섯 문법과 네 외곽 계열을 모았다. 계열별 seed는 명시적인 예시 선택이며
+같은 픽셀 스케일/같은 면적이라는 뜻은 아니다. 실제 네 저장소의 새 외곽+자동 계획은
+`world-varied-outline-r1/index.html`에서 확인한다. 새 감자박스 viewer-data는 약 36MB다.

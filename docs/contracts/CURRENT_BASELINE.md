@@ -32,7 +32,21 @@ Compatible hints preserve profile/slot choices; a policy change cold-replans.
 Independent validation now also rejects overlapping parcels and building
 envelopes outside their own parcels. See [ADR-025](../adr/ADR-025.md).
 
-## Existing City/UCG baseline
+## Remaining planning grammars and outlines — 2026-10-19
+
+[ADR-026](../adr/ADR-026.md) implements ORGANIC, INDUSTRIAL and within-district
+HYBRID in `flat-planning/0.3`. `--planning varied` selects all five grammars,
+with explicit local capacity fallback; existing `mixed` remains a two-grammar
+policy. Hybrid region polygons and parcel region IDs are independently validated.
+Industrial lots reserve additional land without changing source building sizes.
+
+[ADR-027](../adr/ADR-027.md) adds `--outline varied`, independently derived
+`seeded-convex/1` silhouettes and additive `flat-world/0.4` metadata. Existing
+ellipse/default GRID worlds reproduce their original bytes. This is convex
+connected land only, not a terrain/coastline or concave polygon implementation.
+Original UCG/City contracts and browser source inspection remain unchanged.
+
+## Existing City/UCG baseline (unchanged)
 
 Verified 2026-10-18 against the checked-in producer, schemas, validators, and
 accepted ADRs. This document reconciles implementation with the original

@@ -17,8 +17,22 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed")
     parser.add_argument(
+        "--outline",
+        choices=("ellipse", "varied"),
+        default="ellipse",
+        help="seeded convex silhouette; ellipse preserves existing geography",
+    )
+    parser.add_argument(
         "--planning",
-        choices=("grid", "mixed", "radial", "organic", "industrial", "hybrid", "varied"),
+        choices=(
+            "grid",
+            "mixed",
+            "radial",
+            "organic",
+            "industrial",
+            "hybrid",
+            "varied",
+        ),
         default="grid",
         help="visual planning grammar; grid retains the original default",
     )
@@ -53,6 +67,7 @@ def main():
             namespace=args.namespace,
             previous=read(args.previous_world) if args.previous_world else None,
             planning=args.planning,
+            outline=args.outline,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)

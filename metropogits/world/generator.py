@@ -13,6 +13,7 @@ from .radial import radial_slots
 from .organic import organic_slots
 from .industrial import industrial_slots
 from .hybrid import hybrid_slots, hybrid_regions
+from .outline import VERSION as OUTLINE_VERSION, varied_outline
 from .seed import ALGORITHM, derive, draw, world_seed
 
 
@@ -27,8 +28,17 @@ def requested_profile(planning, seed):
 
 
 def generate_world(
-    scene, graph, *, seed=None, namespace=None, previous=None, planning="grid"
+    scene,
+    graph,
+    *,
+    seed=None,
+    namespace=None,
+    previous=None,
+    planning="grid",
+    outline="ellipse",
 ):
+    if outline not in ("ellipse", "varied"):
+        raise ValueError("unsupported world outline policy")
     if planning not in (
         "grid",
         "mixed",
@@ -115,6 +125,7 @@ def generate_world(
         and previous.get("seed") == resolved_seed
         and previous.get("repositoryNamespace") == identity
         and previous.get("planningPolicy", "grid") == planning
+        and previous.get("outlinePolicy", "ellipse") == outline
         and set(d["id"] for d in previous.get("districts", [])) == set(grouped)
     )
     old_districts = {d["id"]: d for d in previous["districts"]} if compatible else {}
@@ -144,7 +155,7 @@ def generate_world(
             polygons = {k: old_districts[k]["polygon"] for k in grouped}
             envelope = previous["envelope"]
         else:
-            # Seeded affine octagon remains convex and has a readable wide silhouette.
+            # Preserve the legacy affine dodecagon unless variation is requested.
             rotation = (draw(resolved_seed) - 0.5) * 0.7
             envelope = [
                 point(
@@ -157,6 +168,8 @@ def generate_world(
                 )
                 for t in (2 * math.pi * i / 12 for i in range(12))
             ]
+            if outline == "varied":
+                envelope, _ = varied_outline(resolved_seed)
             radius = math.sqrt(
                 sum(b["total"] for b in budgets.values()) / area(envelope)
             )
@@ -322,4 +335,11 @@ def generate_world(
     )
     if planning != "grid":
         world["planningPolicy"] = planning
+    if outline == "varied":
+        world.update(
+            generatorVersion="flat-world/0.4",
+            outlinePolicy="varied",
+            outlineVersion=OUTLINE_VERSION,
+            outlineFamily=varied_outline(resolved_seed)[1],
+        )
     return world
