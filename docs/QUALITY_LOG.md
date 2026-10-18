@@ -2810,3 +2810,67 @@
 - Commits created / pushed (main): 7009244 documents the plan; separate renderer
   implementation commit follows this verified checkpoint. Normal origin/main push
   authorized explicitly by the maintainer; no force or remote-setting changes.
+
+## Checkpoint 2026-10-18 — bounded street-front parcel pilot
+- Implemented: opt-in `scripts.parcel_pilot` comparing one leaf district without
+  rewriting UCG, canonical City, default layout or viewer. Same selection rule
+  across repositories: connected 8..64-file leaf, sufficient polygon capacity,
+  highest incident file-pair count, ID tie-break. Reserve paired frontage rows
+  and crossing space for <=2x5-parcel blocks; apportion occupants by capacity,
+  then place using real neighbor positions. Only actual paths become pavement.
+- Fixtures / revisions: GJ-Cloud 3d9b53f, GamjaOJ b163acd; trusted canonical inputs
+  from road-continuity-r2. Fresh spring-positive and structural-showcase builds
+  at implementation base ea46409. Target source code was never executed.
+- Commands run: `python -m scripts.parcel_pilot
+  ../artifacts/visual/road-continuity-r2/<gj|oj> --out
+  ../artifacts/visual/parcel-pilot-r4/<gj|oj>`; both exit 0. Fresh pipeline:
+  `python -m metropogits build --repo tests/fixtures/repositories/<spring-positive|structural-showcase>
+  --out ../artifacts/visual/parcel-pilot-fixtures/<spring|unknown>`: COMPLETE,
+  12 artifacts each. Pilot on those fresh builds reports NOT_APPLICABLE rather
+  than inventing missing relations or forcing too-small districts to move.
+  `python -m unittest discover -s tests -q`: 278 run, 277 pass, one Windows
+  symlink skip. `python -m ruff check .`: pass. Node access_routes, viewer_audit,
+  camera_navigation, role_landmarks suites: 27 pass. `git diff --check`: pass.
+- Artifacts inspected: real Chrome headless screenshots (1500x1400) of
+  parcel-pilot-r4/gj.png and oj.png, same-scale baseline/candidate embedded SVGs.
+  Actual fresh spring-viewer.png (WebGL) and unknown-preview.png (SVG) inspected
+  under parcel-pilot-fixtures. Screenshot command: Chrome --headless --no-sandbox
+  --disable-gpu --hide-scrollbars --screenshot=<png> --window-size=1500,1400
+  file:///D:/Code/MetroPoGits/artifacts/visual/parcel-pilot-r4/<case>/index.html.
+  Fresh fixture screenshots use 1280x900, Spring adds --virtual-time-budget=5000.
+- Visual findings / corrections: the first distance-only candidate pulled GJ
+  buildings to one side. Capacity quotas and cross-street reservations reduce
+  that concentration and produce legible frontage blocks. Some GJ upper empty
+  space remains; OJ has more parallel-path pair length. Do not promote to default
+  based solely on shorter routes. Private file paths and evidence IDs are escaped
+  in hover titles; all source IDs remain in report JSON. Reports have restrictive
+  CSP and no executable scripts or network dependency.
+- Tests / determinism / stability: 9 new tests cover mutation, ownership, exact
+  edge coverage, obstacle intersection, permutation invariance, strict Decimal
+  input, concave footprints, bounded capacity, child-district refusal, isolated
+  addition stability and HTML escaping. Full real-data experiment re-run and
+  report bytes compared equal for both repositories; each route's original edge
+  endpoints checked against its UCG. Canonical input files are read-only.
+  GJ 36 selected files / 35 moved; OJ 49 / 48 moved. Zero outside movement,
+  ownership escapes, overlaps, road/building intersections or unresolved edges.
+  Cold local reallocation has no within-district edit/hint stability guarantee.
+- Measurements (incident routes only): GJ 357 routes / 556 edges, length
+  65667 -> 56945, turns 2113 -> 1893, centerline 5938.5 -> 4885, expansions
+  249026 -> 187325. OJ 528 routes / 893 edges, length 79117 -> 70101,
+  turns 2937 -> 2717, centerline 5382 -> 5193, expansions 203843 -> 151856.
+  Parallel pair length GJ 3013.5 -> 1806; OJ 2975 -> 3174.5 (regression).
+  Each selected footprint remains 4900 square units; coverage GJ 26.4%, OJ 36%.
+- Spec alignment: PASS for isolated experimental tooling, not an approved
+  replacement for DEC-007/ADR-014. Report version parcel-pilot/0.1 is explicitly
+  not a City scene or layout hint. No public schemas, IDs, runtime dependencies,
+  facts, default geometry or synthetic code changed. AC-002/006 preserved.
+- Open risks / next actions: candidate WebGL/showcase/Synthetic performance
+  NOT visually/performance verified because candidate is a dedicated 2D report,
+  not a City exporter. No new performance claims for default viewer. Before
+  promotion, resolve variable block sizes/footprint use, OJ parallel regression,
+  layout-version/hint ADR and same-camera 3D comparison. Sparse baseline still
+  has oversized land margins, unchanged here. Initial dotted unittest/import
+  alias/Decimal and shell-quoting errors were corrected and checks rerun.
+- Commits created / pushed (main): one coherent layout-pilot work unit with
+  tests, plan boundary and this checkpoint; commit and normal upstream push
+  follow verification. No private artifacts or unrelated IDE caches staged.
