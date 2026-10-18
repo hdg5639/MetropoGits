@@ -1,11 +1,14 @@
 import copy
+import heapq
 import shutil
 import subprocess
 import unittest
 from pathlib import Path
 from collections import deque
+from unittest.mock import patch
 
 from metropogits.access_routes import AccessGrid, PITCH, derive_access_routes, svg_access_lines
+from scripts.road_metrics import road_metrics
 
 
 def fixture():
@@ -19,6 +22,89 @@ def fixture():
 
 
 class AccessRouteTests(unittest.TestCase):
+    def test_directional_search_matches_independent_dijkstra(self):
+        class TinyGrid(AccessGrid):
+            def __init__(self):
+                self.expansions = 0
+
+            def neighbors(self, node):
+                x, z = node
+                for other in ((x-1, z), (x, z-1), (x, z+1), (x+1, z)):
+                    if 0 <= other[0] <= 5 and 0 <= other[1] <= 5 and other not in {(2, 2), (2, 3), (4, 1)}:
+                        yield other, 2 if (x+z+sum(other)) % 3 else .5
+
+        grid = TinyGrid()
+        usage = {tuple(sorted((node, other))): (sum(node)+sum(other)) % 9
+                 for node in ((x, z) for x in range(6) for z in range(6))
+                 for other, _ in grid.neighbors(node)}
+
+        def transition(a, b, heading, clearance, terminal=(0, 0)):
+            direction = (b[0]-a[0], b[1]-a[1])
+            turn = int(heading != (0, 0) and heading != direction)
+            turn += int(terminal != (0, 0) and terminal != direction)
+            weight = min(100, 98 - (2 if clearance >= 1.5 else 0) - min(6, usage.get(tuple(sorted((a, b))), 0)) + turn*2)
+            self.assertGreaterEqual(weight, 90)
+            self.assertLessEqual(weight, 100)
+            return weight, turn, direction
+
+        # No heuristic; retain all arrival directions and compare lexicographic
+        # optimum, not just endpoints or an arbitrary expected drawing.
+        for start in ((0, 0), (1, 4), (5, 0)):
+            cases = [(end, a, b) for end in ((0, 5), (5, 5), (4, 2), start)
+                     for a, b in [((0, 0), (0, 0)), ((1, 0), (0, 1)), ((-1, 0), (1, 0))]]
+            for end, start_heading, end_heading in cases:
+                queue = [(0, 0, start, start_heading)]
+                seen = set()
+                while queue:
+                    cost, bends, node, heading = heapq.heappop(queue)
+                    if (node, heading) in seen:
+                        continue
+                    seen.add((node, heading))
+                    if node == end:
+                        optimum = cost, bends
+                        break
+                    for other, clearance in grid.neighbors(node):
+                        weight, turn, direction = transition(node, other, heading, clearance,
+                                                             end_heading if other == end else (0, 0))
+                        heapq.heappush(queue, (cost+weight, bends+turn, other, direction))
+                path = grid.route(start, end, usage, start_heading, end_heading)
+                score, bends, heading = 0, 0, start_heading
+                for a, b in zip(path, path[1:]):
+                    weight, turn, heading = transition(a, b, heading, dict(grid.neighbors(a))[b],
+                                                       end_heading if b == end else (0, 0))
+                    score += weight
+                    bends += turn
+                self.assertEqual(optimum, (score, bends))
+                self.assertEqual(start, path[0])
+                self.assertEqual(end, path[-1])
+
+    def test_bend_budget_and_resource_exhaustion(self):
+        scene, _ = fixture()
+        grid = AccessGrid(scene["buildings"])
+        path = grid.route((-2, -2), (10, -1), {})
+        headings = [(b[0]-a[0], b[1]-a[1]) for a, b in zip(path, path[1:])]
+        self.assertEqual(1, sum(a != b for a, b in zip(headings, headings[1:])))
+        # Align both short access spurs, not only the lattice portion.
+        path = grid.route((-2, -2), (10, -1), {}, (1, 0), (0, 1))
+        headings = [(1, 0), *[(b[0]-a[0], b[1]-a[1]) for a, b in zip(path, path[1:])], (0, 1)]
+        self.assertEqual(1, sum(a != b for a, b in zip(headings, headings[1:])))
+        with patch("metropogits.access_routes.MAX_EXPANSIONS", 0):
+            self.assertIsNone(grid.route((-2, -2), (10, -1), {}))
+
+    def test_geometry_metrics_are_length_weighted_and_do_not_change_inputs(self):
+        routing = dict(routes=[dict(path=[[0, 0], [2, 0], [4, 0], [4, 2]])],
+                       segments=[dict(start=[0, 0], end=[4, 0], access=False, kind="DEPENDENCY_ROAD", routeIds=["a", "b"]),
+                                 dict(start=[1, 3.5], end=[3, 3.5], access=False, kind="DEPENDENCY_ROAD", routeIds=["c"])],
+                       junctions=[], unresolvedEdgeIds=[])
+        original = copy.deepcopy(routing)
+        metrics = road_metrics(routing)
+        self.assertEqual(1, metrics["turns"])
+        self.assertEqual(6, metrics["routeLength"])
+        self.assertEqual(6, metrics["pavementCenterlineLength"])
+        self.assertEqual(4, metrics["sharedCenterlineLength"])
+        self.assertEqual(2, metrics["nearbyParallelPairLength"])
+        self.assertEqual(original, routing)
+
     def test_svg_hierarchy_preserves_paths_and_geometry(self):
         routes = [dict(id=str(i), kind="DEPENDENCY_ROAD", source="A", target=str(i),
                        edgeIds=[f"edge-{i}"], networkIds=[str(i)]) for i in range(4)]

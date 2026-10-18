@@ -94,6 +94,7 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         raise PreviewError(f"width must be between {MIN_WIDTH} and {MAX_DIMENSION}")
     if not MIN_HEIGHT <= height <= MAX_DIMENSION:
         raise PreviewError(f"height must be between {MIN_HEIGHT} and {MAX_DIMENSION}")
+    routing = routing if routing is not None else derive_access_routes(scene, graph)
     palette = _palette(scene["theme"])
     territories = derive_district_territories(scene)
     by_territory = {t["id"]: t for t in territories["districts"]}
@@ -133,7 +134,7 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
     for district_id in visible_districts:
         mapping[district_id] = dict(kind="district", districtId=district_id)
     mapping["visual:streets"] = dict(kind="structural-streets", semantic=False,
-                                     basis="visual-access/0.1", networkIds=sorted(n["id"] for n in networks))
+                                     basis=routing["version"], networkIds=sorted(n["id"] for n in networks))
 
     surfaces = [
         (r, district_id)
@@ -234,7 +235,6 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
             f'data-map-id="{_escape(owner)}"',
             0.8,
         )
-    routing = routing if routing is not None else derive_access_routes(scene, graph)
     lines.extend(svg_access_lines(routing, project, overview=bool(blocks), network_ids={n["id"] for n in networks}))
     faces = []
     for part, archetype, owner in cuboids:

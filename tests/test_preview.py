@@ -38,8 +38,8 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            # Shared-road palette distinguishes trunks without changing geometry.
-            "3a7164c722c0c5ac07dec90571833bb2b8ff9c546617de7ef0b4142b2308b058",
+            # Same minimal geometry; derived routing metadata now records 0.2.
+            "58073bbebb5fdf14bf90552cad54f6014ef6dba7a3a54ce5d2c92b064cbc48e5",
             hashlib.sha256(first).hexdigest(),
         )
 

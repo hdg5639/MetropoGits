@@ -2755,3 +2755,58 @@
   explicitly renewed authorization for normal main pushes after ee9deab; use the
   existing origin upstream without force or remote-policy changes. Delivery is
   verified from the Git command outcome, not assumed from ownership.
+
+## Checkpoint 2026-10-18 — road-led block plan and continuity foundation
+- Implemented: documented the maintainer's service/block/parcel merge-and-split
+  direction in URBAN_BLOCK_PLAN.md (7009244). First implementation refines derived
+  routing with arrival-direction state, including access-spur headings, bounded
+  bend costs and deterministic fewer-turn tie-breaking. Added road_metrics CLI.
+  This is not the planned block allocator, near-parallel snapping, or new scenery.
+- Fixtures / revisions: GJ-Cloud 3d9b53f and GamjaOJ b163acd trusted snapshots from
+  route-inspection-r2. Fresh CLI builds of spring-positive and structural-showcase.
+- Commands run: `python -m unittest discover -s tests -q` (269 run, 268 pass,
+  one Windows symlink skip); `python -m ruff check .`; Node access_routes,
+  viewer_audit, camera_navigation and role_landmarks suites (27 pass); diff --check.
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/road-continuity-r2/spring` and equivalent
+  structural-showcase -> road-continuity-r2/unknown: COMPLETE, 12 artifacts each.
+  Trusted local refresh_for_review.py rerouted the large snapshots once and passed
+  that same payload to WebGL, preview and showcase; no source repo execution.
+  `python -m scripts.road_metrics <route-inspection-r2/case> <road-continuity-r2/case>`
+  records geometry-only measures for gj and oj; `verify_access.mjs` checks provenance
+  and pavement intersections. No private artifacts were staged for publication.
+- Artifacts inspected: actual road-continuity-audit-r1 GJ District and OJ preview,
+  r2 GJ District and OJ Detail. Browser audit command:
+  `node scripts/viewer_audit.mjs <Chrome> ../artifacts/visual/road-continuity-audit-r2
+  ../artifacts/visual/road-continuity-r2/gj ../artifacts/visual/road-continuity-r2/oj`.
+  Both pass navigation, actual road click/path selection, filtering and synthetic
+  trajectory checks. Silhouettes and district placement remain recognizable;
+  straighter paths are incremental, and the dense circuit-like grid still remains.
+- Regression found and fixed: lattice-only bend scoring initially added turns at
+  small Spring fixture doors. Include both access headings; original minimal path
+  is restored. Its SVG golden change is now only visual-access/0.2 metadata, verified
+  by reproducing the previous hash with supplied 0.1 metadata. Showcase basis uses
+  the supplied routing version rather than a hardcoded old version.
+- Tests / determinism / stability: independent no-heuristic directional Dijkstra
+  checks 36 source/target/heading cases against the A* lexicographic optimum.
+  Straight-run, spur alignment, transition range, bounded detour, resource refusal,
+  no-input-mutation and metrics tests pass. Full GJ/OJ routing re-derived identically
+  (22.54/4.17 seconds in that run). UCG and City bytes unchanged, hence zero building
+  movement. Original route IDs/endpoints/edge and network membership unchanged.
+  All 6157/2243 edges covered; zero unresolved or pavement/building intersections.
+- Measurements: GJ route-turn sum 31198 -> 24516; OJ 8901 -> 7915. Centerline length
+  GJ 52345.5 -> 51796; OJ 12936.5 -> 12376.5. Nearby-parallel pair overlap length
+  GJ 31850 -> 31206; OJ 7826 -> 6916 (proxy, not proof those roads can merge).
+  Directional expansions increase GJ 1325361 -> 2384938, OJ 242764 -> 449967;
+  the 5M ceiling is unchanged, so other large inputs can exhaust it sooner.
+  Software WebGL orbit CPU p95 Overview/District/Detail: GJ 4.2/6.3/7.2 ms,
+  OJ 1.2/1.4/1.9 ms; synthetic static rebuilds zero. Not GPU FPS guarantees.
+- Spec alignment: PASS, ADR-014/016, FR-007 and AC-002/003/006. Public UCG/City
+  schemas and IDs untouched; derived routing version records geometry changes.
+  Costs including final-spur turns remain 90..100, retaining the 100/90 path bound.
+- Open risks / next actions: one-district road-led block/parcel pilot with explicit
+  layout-version/hint decision; continuing spatial density and labeling work.
+  Synthetic's fixed <=96 path sample remains unchanged and documented for later.
+- Commits created / pushed (main): 7009244 documents the plan; separate renderer
+  implementation commit follows this verified checkpoint. Normal origin/main push
+  authorized explicitly by the maintainer; no force or remote-setting changes.

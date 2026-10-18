@@ -27,6 +27,10 @@ def _point(node):
     return [node[0] * PITCH, node[1] * PITCH]
 
 
+def _heading(a, b):
+    return tuple((b[i] > a[i]) - (b[i] < a[i]) for i in (0, 1))
+
+
 def _compact_segments(segments, routes):
     """Coalesce straight runs only when provenance/width are identical; keep junctions."""
     incident = defaultdict(list)
@@ -148,33 +152,42 @@ class AccessGrid:
         _, node, door = min(eligible)
         return node, door
 
-    def route(self, start, end, usage):
+    def route(self, start, end, usage, start_heading=(0, 0), end_heading=(0, 0)):
         if start == end:
             return [start]
         def heuristic(node):
             return 90 * (abs(node[0] - end[0]) + abs(node[1] - end[1]))
-        queue = [(heuristic(start), 0, start)]
-        costs, previous = {start: 0}, {start: None}
+        # Arrival direction is part of the state: two visits to a junction may
+        # have different continuation costs. Never discard one just by node.
+        initial = (start, start_heading)
+        queue = [(heuristic(start), 0, 0, initial)]
+        costs, previous = {initial: (0, 0)}, {initial: None}
         while queue:
             if self.expansions >= MAX_EXPANSIONS:
                 return None
-            _, cost, current = heapq.heappop(queue)
-            if cost != costs[current]:
+            _, bends, cost, state = heapq.heappop(queue)
+            if (cost, bends) != costs[state]:
                 continue
             self.expansions += 1
+            current, heading = state
             if current == end:
                 path = []
-                while current is not None:
-                    path.append(current)
-                    current = previous[current]
+                while state is not None:
+                    path.append(state[0])
+                    state = previous[state]
                 return list(reversed(path))
             for other, clearance in self.neighbors(current):
-                # All costs >= 90: a sharing preference cannot cause an arbitrary detour.
-                weight = 100 - (2 if clearance >= 1.5 else 0) - min(8, usage.get(_pair(current, other), 0))
-                candidate = cost + weight
-                if candidate < costs.get(other, math.inf):
-                    costs[other], previous[other] = candidate, current
-                    heapq.heappush(queue, (candidate + heuristic(other), candidate, other))
+                direction = (other[0] - current[0], other[1] - current[1])
+                turn = int(heading != (0, 0) and direction != heading)
+                turn += int(other == end and end_heading != (0, 0) and direction != end_heading)
+                # Including the turn, every transition stays in [90, 100].
+                # Thus continuity/sharing retain ADR-016's 100/90 detour bound.
+                weight = min(100, 98 - (2 if clearance >= 1.5 else 0) - min(6, usage.get(_pair(current, other), 0)) + 2 * turn)
+                candidate = (cost + weight, bends + turn)
+                next_state = (other, direction)
+                if candidate < costs.get(next_state, (math.inf, math.inf)):
+                    costs[next_state], previous[next_state] = candidate, state
+                    heapq.heappush(queue, (candidate[0] + heuristic(other), candidate[1], candidate[0], next_state))
         return None
 
 
@@ -189,7 +202,7 @@ def derive_access_routes(scene, graph):
                 group = grouped[(network["kind"], edge["from"], edge["to"])]
                 group["edgeIds"].add(edge_id)
                 group["networkIds"].add(network["id"])
-    result = dict(version="visual-access/0.1", routes=[], segments=[], junctions=[],
+    result = dict(version="visual-access/0.2", routes=[], segments=[], junctions=[],
                   unresolvedEdgeIds=[], diagnostics=[], status="COMPLETE")
     if not grouped:
         return result
@@ -229,7 +242,8 @@ def derive_access_routes(scene, graph):
             continue
         start, source_door = ports[source]
         end, target_door = ports[target]
-        path = grid.route(start, end, usage)
+        path = grid.route(start, end, usage, _heading(source_door, _point(start)),
+                          _heading(_point(end), target_door))
         if path is None:
             result["unresolvedEdgeIds"].extend(group["edgeIds"])
             continue
