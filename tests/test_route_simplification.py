@@ -8,7 +8,7 @@ from unittest.mock import patch
 from metropogits.access_routes import _pair
 from metropogits.block_collectors import _expand, _rebuild
 from metropogits.layout import generate_city
-from metropogits.route_simplification import _search, simplify_routes
+from metropogits.route_simplification import _distance_probe, _search, simplify_routes
 from metropogits.shared_frontage import _compress
 from scripts.canonical_json import canonical_json_bytes
 from scripts.road_consolidation import compare, package
@@ -179,6 +179,98 @@ class RouteSimplificationTests(unittest.TestCase):
         self.assertEqual(after, data['routing'])
         self.assertEqual(canonical_json_bytes(scene), artifacts['city.json'])
         self.assertEqual(artifacts, package(scene, graph, after, report))
+
+    def test_distance_probe_separates_length_disconnection_and_caps(self):
+        points = [(0, 0), (0, 1), (1, 1), (2, 1), (2, 0)]
+        graph = {p: set() for p in points}
+        usage = Counter()
+        for a, b in zip(points, points[1:]):
+            graph[a].add(b)
+            graph[b].add(a)
+            usage[_pair(a, b)] += 1
+        compressed = _compress(graph, {points[0], points[-1]})
+        a, b = points[0], points[-1]
+        frozen = copy.deepcopy(usage)
+        result = _distance_probe(compressed, a, b, usage, 4, [0])
+        self.assertEqual('WITHIN_DISTANCE_BUDGET', result['status'])
+        self.assertEqual(4, result['shortestSteps'])
+        result = _distance_probe(compressed, a, b, usage, 3, [0])
+        self.assertEqual('EXCEEDS_DISTANCE_BUDGET', result['status'])
+        self.assertGreater(result['lowerBoundSteps'], 3)
+        self.assertEqual('DISCONNECTED', _distance_probe(compressed, a, b, Counter(), 10, [0])['status'])
+        for cap in ('MAX_PROBE_STATES', 'MAX_PROBE_TRIP_STATES'):
+            with patch('metropogits.route_simplification.'+cap, 0):
+                self.assertEqual('CAPPED', _distance_probe(compressed, a, b, usage, 4, [0])['status'])
+        self.assertEqual(frozen, usage)
+
+    def test_diagnostic_sampling_cannot_change_routing_or_search_budget(self):
+        scene, original = fixture()
+        expected = simplify_routes(original, original)
+        for cap in ('MAX_DIAGNOSTIC_SAMPLES', 'MAX_SAMPLES_PER_REASON', 'MAX_PROBE_STATES'):
+            with self.subTest(cap=cap), patch('metropogits.route_simplification.'+cap, 0):
+                actual = simplify_routes(original, original)
+                diagnostic = actual['routeSimplification'].pop('constraints')
+                reference = copy.deepcopy(expected)
+                reference['routeSimplification'].pop('constraints')
+                self.assertEqual(canonical_json_bytes(reference), canonical_json_bytes(actual))
+                self.assertLessEqual(diagnostic['probeStates'], diagnostic['maxProbeStates'])
+
+    def test_rejection_accounting_and_bounded_source_linked_samples(self):
+        scene, original = fixture()
+        report = simplify_routes(original, original)['routeSimplification']
+        diagnostic = report['constraints']
+        self.assertEqual(report['corridorAttempts'], len(report['removedCorridors'])+sum(diagnostic['rejected'].values()))
+        self.assertEqual(sum(diagnostic['rejected'].values())-len(diagnostic['samples']), diagnostic['unsampledRejections'])
+        self.assertLessEqual(len(diagnostic['samples']), diagnostic['sampleLimit'])
+        counts = Counter(s['reason'] for s in diagnostic['samples'])
+        self.assertTrue(all(n <= diagnostic['samplePerReasonLimit'] for n in counts.values()))
+        ids = {r['id'] for r in original['routes']}
+        for sample in diagnostic['samples']:
+            if 'routeId' in sample:
+                self.assertIn(sample['routeId'], ids)
+            self.assertTrue(sample['blockedKeys'])
+
+    def test_search_cap_is_unknown_not_infeasible(self):
+        original = loop_fixture()
+        with patch('metropogits.route_simplification.MAX_TRIP_STATES', 0):
+            diagnostic = simplify_routes(original, original)['routeSimplification']['constraints']
+        self.assertGreater(diagnostic['rejected']['search_cap'], 0)
+        self.assertNotIn('no_admissible_trip', diagnostic['rejected'])
+        self.assertTrue(all('distanceProbe' not in s for s in diagnostic['samples']))
+
+    def test_probe_matches_small_grid_breadth_first_distance(self):
+        from collections import deque
+        for missing in (None, ((1, 0), (2, 0)), ((0, 1), (0, 2))):
+            graph = {(x, y): set() for x in range(3) for y in range(3)}
+            usage = Counter()
+            for a in graph:
+                for b in ((a[0]+1, a[1]), (a[0], a[1]+1)):
+                    if b in graph and _pair(a, b) != missing:
+                        graph[a].add(b)
+                        graph[b].add(a)
+                        usage[_pair(a, b)] += 1
+            for start in graph:
+                distances, queue = {start: 0}, deque([start])
+                while queue:
+                    node = queue.popleft()
+                    for neighbor in graph[node]:
+                        if neighbor not in distances:
+                            distances[neighbor] = distances[node]+1
+                            queue.append(neighbor)
+                for end in graph:
+                    compiled = _compress(graph, {start, end})
+                    result = _distance_probe(compiled, start, end, usage, 100, [0])
+                    self.assertEqual(distances[end], result['shortestSteps'])
+
+    def test_long_corridor_samples_are_explicitly_truncated(self):
+        original = loop_fixture()
+        with patch('metropogits.route_simplification.MAX_DIAGNOSTIC_KEYS', 1), patch('metropogits.route_simplification._search', return_value=None):
+            report = simplify_routes(original, original)['routeSimplification']['constraints']
+        self.assertTrue(report['samples'])
+        for sample in report['samples']:
+            self.assertEqual(1, len(sample['blockedKeys']))
+            self.assertTrue(sample['blockedKeysTruncated'])
+            self.assertGreater(sample['blockedKeyCount'], 1)
 
 
 if __name__ == '__main__':

@@ -302,3 +302,23 @@ default, curve, roundabout, relation inference or layout-locality guarantee.
 Inherited diagnostic blocks describe earlier passes; only `routeSimplification`
 describes this additional pass. `searchExpansions` remains initial route-search
 work, not total planning cost; use each pass's own search counters.
+
+The simplification report additionally includes `constraints`
+(`corridor-constraints/0.1`), without changing any routing geometry or decision.
+Counts classify attempted corridor proposals as accepted, `search_cap`,
+`no_admissible_trip`, or `total_bend_regression`; skipped connectivity bridges
+and already-removed corridors are separate. Counts are proposal events across
+rounds, not distinct roads/files. `unsampledRejections` explicitly discloses
+omitted diagnostic examples, not omitted relationships.
+
+Keep at most24 samples, the first8 per reason in deterministic search order.
+Each sample stores at most64 blocked lattice keys, with full count and explicit
+truncation flag. For sampled no-admissible-trip failures, a separate distance-only
+probe returns `WITHIN_DISTANCE_BUDGET`, `EXCEEDS_DISTANCE_BUDGET`, `DISCONNECTED`,
+or `CAPPED`. A within-distance result does not certify the bend-constrained trip;
+an exceeded-distance result supplies a lower bound, not an exact shortest length.
+Probe limits are5,000 states per sample/100,000 total, separate from routing
+search; unknown/capped never means impossible. Distances are remaining lattice
+steps after fixed access spurs, not world units or runtime latency. Samples refer
+to the candidate graph at rejection time and are not statistical estimates of
+all remaining roads. This is developer metadata, not a semantic UCG fact.

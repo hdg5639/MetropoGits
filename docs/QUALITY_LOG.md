@@ -4231,3 +4231,73 @@
 - Commits created / pushed (main): one coherent implementation/test/docs unit;
   verified normal owner-authorized push follows. Private generated artifacts and
   unrelated pre-existing IDE build caches remain outside the commit.
+
+## Checkpoint 2026-10-18 — explain residual corridor constraints
+
+- Implemented: bounded `routeSimplification.constraints` diagnostics separating
+  rejected proposals, bridge/unused skips, search-cap unknowns and total-bend
+  regressions. First8 samples per reason, at most24; sample geometry capped at64
+  keys with explicit full count/truncation. Independent distance-only probes
+  have separate5,000-per-trip/100,000-total state limits and cannot change routing.
+- Experiments not promoted: geometry-ranked removal prioritization reduced cold
+  parallel length2348.5->2299.5 but worsened junctions1367->1370 and total
+  bends22797->22835; OJ junctions403->404. Additional refinement of the prior
+  result removed only one cold corridor (31.5 pavement units) for3M states,
+  with no gain in historical GJ/OJ. Retained the previous planner and viewer;
+  this checkpoint delivers diagnostics, **not a new visual improvement**.
+- Fixtures / revisions: historical/cold GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766;
+  GamjaOJb163acd2b5fe41edfc1e7fc7d367362851241896; maintained spring-positive
+  and structural-showcase at parent fc0c591, catalog0.4.0. Target code not run.
+- Commands: private `python ../artifacts/visual/parallel_priority_trial.py oj cold gj`
+  for the two candidate policies; final `python
+  ../artifacts/visual/corridor_constraints_review.py oj cold gj` regenerates the
+  actual simplification twice per city and exports reports to
+  `artifacts/visual/corridor-constraints-r2/{index.html,oj.json,cold.json,gj.json}`.
+  Entire routing bytes equal the previous `trip-simplification-r4` after removing
+  only the new diagnostic field. Repeated final reports/paths are canonical-byte
+  identical. No City/UCG/building/district/source identity changes.
+- Observed proposal counts (historical GJ/cold GJ/OJ): attempts1200/1200/767;
+  accepted27/34/7; no-admissible-trip1086/1080/715; total-bend-regression87/86/45;
+  individual search-cap rejections0. Connectivity bridge skips792/820/430.
+  Counters count proposal events across rounds, not unique roads. Both GJ cases
+  still hit the overall proposal limit; unattempted candidates remain unknown.
+- Distance probe samples: historical GJ8/8, cold7/8, OJ8/8 exceeded the remaining
+  original distance allowance. Cold's other sample is distance-feasible but not
+  accepted by the original constrained search. Probe states162/166/30; no caps.
+  First-per-reason samples are not statistically representative of the city.
+  Samples describe the rejection-time graph, not a replayable final graph snapshot.
+  Report includes exact route IDs; sampled OJ training-courses.js imports
+  thinking-difficulty.js in the source, retaining the same evidenced relationship.
+- Fidelity checks: independent RoadFrontageTests.check confirms fixed doors,
+  original world-distance/bend bounds, exact memberships and0 full-width building
+  intersections for all three cities. Same4209/4209/1381 complete paths and
+  6157/6157/2243 scene-backed edges; no lost or fabricated relations.
+- Fresh end-to-end: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/corridor-constraints-fixtures-r2/<spring|unknown>`;
+  `python -m scripts.road_consolidation <build> --out <name>-study --simplify`;
+  `node ../artifacts/visual/junction_smoke.mjs corridor-constraints-fixtures-r2`.
+  Both COMPLETE, actual WebGL/SVG captured without exceptions; Spring6 buildings/
+  2 routes and unknown3 generic buildings/0 routes. Viewed final Spring WebGL and
+  unknown SVG; earlier same-turn smoke also inspected. Existing sparse composition
+  and generic fallback retained, no cosmetic concealment of missing relations.
+- Artifacts inspected: real Chrome headless capture of the HTML constraint report
+  (`corridor-constraints-r2/report.png`), readable labels/counters/source samples.
+  Report links to unchanged verified viewers. No new large-city visual or
+  Synthetic performance improvement claimed; rendering code is unchanged.
+- Tests / determinism / stability: Python422 run,421 pass,1 Windows symlink skip;
+  Node six routing/paint/junction/audit/camera/landmark suites38 pass; Ruff and
+  whitespace checks pass. Six added tests cover independent distance oracle,
+  disconnection/caps, diagnostic noninterference, proposal accounting, bounded
+  samples, explicit truncation, and search-cap unknown vs infeasible distinction.
+- Spec alignment: PASS technical7/10, FR-007/015, AC-002/006/009/014,
+  DEC-003/005/006/007/011. No public schema, default, evidence, detour or security
+  relaxation. Developer diagnostic payload documented in CURRENT_BASELINE/ADR-019.
+- Next: local joint access-point/connector experiments around rejected samples,
+  preserving source-backed trips and original budgets. Distinguish fixed-access
+  constraints from physical parcel constraints before moving buildings or
+  increasing detour allowances. Do not hide roads or repeat costly global search
+  and label negligible change a redesign.
+- Commits / push: one coherent diagnostics/test/documentation work unit on main;
+  verified normal owner-authorized push follows. Private reports and existing
+  unrelated IDE build caches are not staged; no agent attribution.

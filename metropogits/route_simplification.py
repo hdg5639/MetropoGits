@@ -19,6 +19,43 @@ MAX_LABELS = 30_000
 TURN_COST = 15
 MAX_PROPOSALS = 1200
 MAX_ROUNDS = 2
+MAX_DIAGNOSTIC_SAMPLES = 24
+MAX_SAMPLES_PER_REASON = 8
+MAX_DIAGNOSTIC_KEYS = 64
+MAX_PROBE_STATES = 100_000
+MAX_PROBE_TRIP_STATES = 5000
+
+
+def _distance_probe(graph, start, end, usage, limit, budget):
+    """Independent shortest-distance feasibility probe, ignoring bend limits.
+
+    This only explains rejected proposals; it must never alter routing search
+    order, its state budget, or the accepted geometry.
+    """
+    def distance(p):
+        return abs(p[0]-end[0])+abs(p[1]-end[1])
+    queue, best, allowed = [(distance(start), 0, start)], {start: 0}, {}
+    local = 0
+    while queue:
+        if budget[0] >= MAX_PROBE_STATES or local >= MAX_PROBE_TRIP_STATES:
+            return dict(status='CAPPED', states=local)
+        lower, steps, node = heapq.heappop(queue)
+        if steps != best[node]:
+            continue
+        local += 1
+        budget[0] += 1
+        if lower > limit:
+            return dict(status='EXCEEDS_DISTANCE_BUDGET', lowerBoundSteps=lower, states=local)
+        if node == end:
+            return dict(status='WITHIN_DISTANCE_BUDGET', shortestSteps=steps, states=local)
+        for other, path, keys, *_ in graph.get(node, ()):
+            if keys not in allowed:
+                allowed[keys] = all(usage[e] > 0 for e in keys)
+            new_steps = steps+len(path)-1
+            if allowed[keys] and new_steps < best.get(other, math.inf):
+                best[other] = new_steps
+                heapq.heappush(queue, (new_steps+distance(other), new_steps, other))
+    return dict(status='DISCONNECTED', states=local)
 
 
 def _search(graph, start, end, usage, limit, bend_limit, heading, terminal, budget):
@@ -98,6 +135,14 @@ def simplify_routes(original, baseline):
                   noNewPavement=True, fixedEntrances=True, maxProposals=MAX_PROPOSALS,
                   maxRounds=MAX_ROUNDS, corridorAttempts=0, removedCorridors=[])
     report['turnCost'] = TURN_COST
+    diagnostics = dict(version='corridor-constraints/0.1', rejected={}, skipped={}, samples=[],
+                       sampleLimit=MAX_DIAGNOSTIC_SAMPLES, maxProbeStates=MAX_PROBE_STATES,
+                       maxProbeTripStates=MAX_PROBE_TRIP_STATES, samplePerReasonLimit=MAX_SAMPLES_PER_REASON,
+                       maxSampleKeys=MAX_DIAGNOSTIC_KEYS)
+    rejected, skipped, probe_budget = Counter(), Counter(), [0]
+    def can_sample(reason):
+        return (len(diagnostics['samples']) < MAX_DIAGNOSTIC_SAMPLES
+                and sum(s['reason'] == reason for s in diagnostics['samples']) < MAX_SAMPLES_PER_REASON)
     budget = [0, 0]
     limited = sum(len(u) for u in usage.values()) > MAX_GRAPH_EDGES
     graph = {} if limited else {k: _compress(g, ports[k]) for k, g in sorted(adjacency.items())}
@@ -155,7 +200,11 @@ def simplify_routes(original, baseline):
             if budget[0] >= MAX_STATES or report['corridorAttempts'] >= MAX_PROPOSALS:
                 limited = True
                 break
-            if any(k in bridges or not users[k] for k in keys):
+            if any(k in bridges for k in keys):
+                skipped['connectivity_bridge'] += 1
+                continue
+            if any(not users[k] for k in keys):
+                skipped['already_removed'] += 1
                 continue
             kind = keys[0][0]
             affected = sorted(set().union(*(users[k] for k in keys)))
@@ -166,16 +215,35 @@ def simplify_routes(original, baseline):
             changes = {}
             for rid in affected:
                 route, nodes = routes[rid], paths[rid]
+                caps_before = budget[1]
                 path = _search(graph[kind], nodes[0], nodes[-1], allowed, limits[rid],
                                _bends(originals[rid]['path'])+4,
                                _heading(route['path'][0], _world(nodes[0])),
                                _heading(_world(nodes[-1]), route['path'][-1]), budget)
                 if path is None:
+                    reason = 'search_cap' if budget[1] > caps_before else 'no_admissible_trip'
+                    rejected[reason] += 1
+                    if can_sample(reason):
+                        sample = dict(reason=reason, routeId=rid, affectedRoutes=len(affected),
+                                      blockedKeys=[[kind, [list(a), list(b)]] for kind, (a, b) in keys[:MAX_DIAGNOSTIC_KEYS]],
+                                      blockedKeyCount=len(keys), blockedKeysTruncated=len(keys) > MAX_DIAGNOSTIC_KEYS,
+                                      distanceBudgetSteps=limits[rid],
+                                      bendBudget=_bends(originals[rid]['path'])+4)
+                        if reason == 'no_admissible_trip':
+                            sample['distanceProbe'] = _distance_probe(
+                                graph[kind], nodes[0], nodes[-1], allowed, limits[rid], probe_budget)
+                        diagnostics['samples'].append(sample)
                     break
                 changes[rid] = path
             else:
                 delta = sum(path_bends(rid, path)-path_bends(rid, paths[rid]) for rid, path in changes.items())
                 if delta > 0:
+                    rejected['total_bend_regression'] += 1
+                    if can_sample('total_bend_regression'):
+                        diagnostics['samples'].append(dict(reason='total_bend_regression',
+                            affectedRoutes=len(affected), bendDelta=delta,
+                            blockedKeyCount=len(keys), blockedKeysTruncated=len(keys) > MAX_DIAGNOSTIC_KEYS,
+                            blockedKeys=[[kind, [list(a), list(b)]] for kind, (a, b) in keys[:MAX_DIAGNOSTIC_KEYS]]))
                     continue
                 for rid, path in changes.items():
                     for a, b in zip(paths[rid], paths[rid][1:]):
@@ -205,6 +273,10 @@ def simplify_routes(original, baseline):
                 or (rid in paths and len(paths[rid])-1 > limits[rid])):
             raise ValueError('simplification changed a door or exceeded original bounds')
     result['version'] = 'visual-access/0.3'
+    diagnostics.update(rejected=dict(sorted(rejected.items())), skipped=dict(sorted(skipped.items())),
+                       probeStates=probe_budget[0],
+                       unsampledRejections=sum(rejected.values())-len(diagnostics['samples']))
+    report['constraints'] = diagnostics
     report.update(searchStates=budget[0], cappedSearches=budget[1], limitReached=limited or budget[1] > 0)
     result['routeSimplification'] = report
     return result
