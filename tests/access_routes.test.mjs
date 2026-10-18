@@ -16,6 +16,23 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 
+test('diagonal chains join across moved logical corners without changing source-target pairing',()=>{
+  const r={status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],segments:[
+    {id:'a',kind:'DEPENDENCY_ROAD',start:[0,0],end:[10,0],width:2,routeIds:['forward','reverse']},
+    {id:'b',kind:'DEPENDENCY_ROAD',start:[10,0],end:[10,10],width:2,routeIds:['forward','reverse']}],
+    routes:[{id:'forward',source:'A',target:'B',kind:'DEPENDENCY_ROAD',edgeIds:['e1'],networkIds:['n'],path:[[0,0],[10,0],[10,10]],segmentIds:['a','b']},
+      {id:'reverse',source:'B',target:'A',kind:'DEPENDENCY_ROAD',edgeIds:['e2'],networkIds:['n'],path:[[10,10],[10,0],[0,0]],segmentIds:['b','a']}]};
+  const physical={segments:{a:[[0,0],[5,5]],b:[[5,5],[10,10]]},corners:[]};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(r,null,null,physical);
+  for(let i=0;i<=20;i++) {
+    const a=p.position(r.routes[0],i/20),b=p.position(r.routes[1],1-i/20);
+    assert.ok(Math.hypot(a.point[0]-b.point[0],a.point[1]-b.point[1])<1e-8);
+    assert.ok(Math.abs(a.point[0]-a.point[1])<1e-8);
+  }
+  assert.deepEqual(p.network('a').edgeIds,['e1','e2']);
+  assert.deepEqual(p.position(r.routes[0],.5).point,[5,5]);
+});
+
 test('curved shared segments drive exact inspection and forward/reverse synthetic trips',()=>{
   const r={status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],segments:[
     {id:'curve',kind:'DEPENDENCY_ROAD',start:[0,0],end:[10,0],width:2,routeIds:['forward','reverse']}],

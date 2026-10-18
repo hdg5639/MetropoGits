@@ -282,3 +282,49 @@ and compare actual surfaces before calling it an improvement. Do not distort
 nearby roads with a broad displacement field. In the meantime prioritize the
 cross-repository Overview silhouette/framing regression rather than another
 unsafe expansion of road smoothing.
+
+## Non-orthogonal street chains — ADR-021, 2026-10-19
+
+The user requested actual diagonal connections and oblique junction approaches,
+not another corner-rounding pass. The opt-in implementation replaces eligible
+branch-free orthogonal chains with straight, full-width certified chords.
+Crossings, doors, branches and complete trip endpoints are protected terminals.
+Building footprints and unrelated roads veto a replacement; no geometric
+crossing is silently promoted to a new connection. Existing intermediate logical
+segment IDs stay mapped to positions along the new physical line.
+
+```powershell
+python -m scripts.street_grid BUILD --street-grid --aligned-blocks --diagonal-streets --out NEW_DIRECTORY
+```
+
+This option cannot combine with `--curved-streets`. Canonical City/UCG and logical
+routes remain unchanged; derived `street-diagonals/0.1` coordinates serve pavement,
+CPU previews, browser picking, exact inspection and Synthetic together. Width
+comes from existing structural sections, not edge counts. Narrow terminal mouths
+transition into the available corridor width after collision certification.
+
+Same-camera comparison: `artifacts/visual/diagonal-focus-r2/index.html`.
+Viewers: `diagonal-streets-r2/{sqlitebrowser,pocketbase,gj,oj}/{before,after}`.
+These four pinned canonical snapshots were repackaged, not freshly analyzed.
+
+| Fixture | Accepted / candidates | Replaced chain length before → after |
+| --- | --- | --- |
+| SQLite Browser | 4 / 45 | 259.0 → 196.89 |
+| PocketBase | 14 / 86 | 416.5 → 301.40 |
+| GJ Cloud | 18 / 75 | 591.5 → 456.36 |
+| GamjaOJ | 8 / 54 | 353.5 → 275.90 |
+
+These are replaced-chain lengths, **not whole-city reduction percentages**.
+All 5,782 logical trips retain identity/endpoints and continuous physical paths;
+27 GJ trips actually traverse a changed physical segment. PocketBase/OJ changes
+are civic streets without assigned traffic in these snapshots; SQLite has no
+evidenced networks. Never animate invented traffic to decorate these diagonals.
+
+Actual SQLite captures show the user's large exterior staircase replaced by a
+direct diagonal; PocketBase has an oblique three-way approach. Most inner streets
+remain orthogonal because doors and dense buildings constrain the candidate set.
+Broad empty gaps, parallel civic connectors and generic silhouettes remain.
+Next: compare **local junction/connector reconfiguration** with explicit entry-exit
+mapping and full-width clearance, rather than decorating every corner with a
+roundabout or pretending this branch-free pass is a free-form city generator.
+No default promotion, main merge or new semantic interpretation is included.

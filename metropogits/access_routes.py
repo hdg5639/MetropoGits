@@ -288,7 +288,7 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
     pavement = demand_pavement(routing, hierarchy)
     paint_pavement = pavement
     surfaces = street_rectangles(routing) if 'streetGrid' in routing else None
-    surfaces, pavement, _ = curved_presentation(routing, surfaces, pavement, hierarchy)
+    surfaces, pavement, physical = curved_presentation(routing, surfaces, pavement, hierarchy)
     mapper = CurveMap(routing.get('curvePlan'))
     routes = routing["routes"]
     indices = {route["id"]: i for i, route in enumerate(routes)}
@@ -350,6 +350,14 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
             paints.append((segment, profile.get('marking', '#d4c6a5')))
     trims = junction_trims(routing, visible, widths)
     for segment, color in paints:
+        mapped = (physical or {}).get('paintSegments', {}).get(segment['id'])
+        if mapped is not None:
+            from metropogits.street_diagonals import ribbon
+            for paint in mapped:
+                polygon = ribbon(paint['start'], paint['end'], .13)
+                encoded = ' '.join(f'{float(x):.3f},{float(y):.3f}' for x,y in (project(*p) for p in polygon))
+                lines.append(f'<polygon data-road-paint="arterial-dash" points="{encoded}" fill="{color}" aria-hidden="true"/>')
+            continue
         raw = dash_segments(segment['start'], segment['end'], trims.get(segment['id'], (0, 0)))
         pieces = paint_pavement['segments'].get(segment['id']) if paint_pavement else None
         for paint in (part for item in raw for part in clip_paint(item,pieces)):

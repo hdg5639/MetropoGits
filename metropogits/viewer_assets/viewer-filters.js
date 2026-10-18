@@ -1186,6 +1186,8 @@
   }
 
   function accessMarkingSegments(segment, trims) {
+    const physical = segment.curves?.paintSegments?.[segment.id];
+    if (physical) return physical;
     const original=rawAccessMarkingSegments(segment,trims);
     if (!segment.curves) return original;
     return original.flatMap(p=>{

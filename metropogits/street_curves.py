@@ -125,6 +125,9 @@ class CurveMap:
 
 
 def curved_presentation(routing, surfaces, pavement, hierarchy=None):
+    if routing.get('diagonalPlan'):
+        from metropogits.street_diagonals import presentation
+        return presentation(routing, surfaces, pavement, hierarchy)
     plan = routing.get('curvePlan')
     if not plan:
         return surfaces, pavement, None

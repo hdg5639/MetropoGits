@@ -5051,3 +5051,80 @@
 - Commits:00a2ce6 records the rejected spike separately; this verified viewer fix
   receives its own conventional commit. Push both normally to the existing
   experiment/street-grid upstream after staged review; no main merge/default promotion.
+
+## Checkpoint 2026-10-19 — non-orthogonal structural street reconstruction
+
+- Implemented: ADR-021 and opt-in `--diagonal-streets`. Split geometric crossings
+  and overlaps, protect doors/branches/trip endpoints, replace eligible branch-free
+  detours with shorter diagonal chords. Certify full-width tapered pavement and
+  junction mouths against buildings and other roads. Preserve unrelated geometry;
+  bounded fallback widths do not bypass collision checks. No public schema change.
+- Fixtures/revisions: SQLite Browser ae32df153a64d250de7c77a5057deeff4092a39b,
+  PocketBase 6f370ea741f33adf889eef02e3c1b884a47aa522 (cross-repository snapshots);
+  GJ local-sha256-06eb492d57141c16 and OJ local-sha256-c2e80f9d3908fec8 from
+  urban-street-r1. These four snapshots were repackaged, not rescanned. Maintained
+  spring-positive at parent134ecee was freshly built through the real CLI.
+- Commands (all artifact paths under ../artifacts/visual):
+  `python ../artifacts/visual/diagonal_review.py diagonal-streets-r2` packages
+  before/after twice and checks canonical identity, new surface clearance/winding;
+  `node ../artifacts/visual/diagonal_paths.mjs diagonal-streets-r2` checks all trips;
+  `python ../artifacts/visual/diagonal_verify.py` verifies final resource-limit
+  changes retain exact plans and viewer-data bytes for all four cases.
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/diagonal-e2e-r2/build`;
+  `python -m scripts.street_grid ../artifacts/visual/diagonal-e2e-r2/build
+  --street-grid --aligned-blocks --diagonal-streets
+  --out ../artifacts/visual/diagonal-e2e-r2/streets`.
+- Actual browser commands: `node ../artifacts/visual/diagonal_focus.mjs
+  diagonal-streets-r2 diagonal-focus-r2` captures four identical-camera pairs.
+  `node scripts/viewer_audit.mjs 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+  ../artifacts/visual/diagonal-browser-r2` with diagonal-streets-r2/{sqlitebrowser,
+  pocketbase,gj,oj}/after as four positional inputs; the same command with output
+  diagonal-small-audit-r2 and input diagonal-e2e-r2/streets/after checks the fresh
+  fixture. `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/diagonal-fallback-r2` with diagonal-streets-r2/{sqlitebrowser,
+  gj}/after exercises WebGL/forced Canvas and reversible structure toggling.
+- Artifacts inspected: SQLite before/after focus images, SQLite rendered showcase
+  and forced Canvas; PocketBase after focus, GJ after focus/Overview, OJ rendered
+  showcase. `diagonal-focus-r2/index.html` links actual viewers and same-camera
+  captures. SQLite's large exterior staircase becomes a direct diagonal;
+  PocketBase shows an oblique three-way approach. Buildings, labels and framing
+  remain unchanged. Broad voids, parallel connectors and inner grids still exist.
+- Quantitative outcome: accepted4/45 SQLite,14/86 PocketBase,18/75 GJ,8/54 OJ.
+  Replaced-chain lengths259→196.89,416.5→301.40,591.5→456.36,353.5→275.90.
+  These are local chain totals, not entire-city percentages. Newly emitted
+  polygons60/198/312/123: building intersections0, reversed faces0. Exact repeated
+  package bytes and unchanged canonical City/UCG/logical routing in all four.
+- Path fidelity: all5,782 trips have continuous mapped geometry, exact complete
+  endpoints, original route/edge membership and no increased physical length.
+  Only27 GJ trips use changed segments; other replacements in these snapshots
+  are unassigned civic streets. SQLite networks0: Synthetic explicitly unavailable.
+  Representative changed GJ link ManagedPreviewService→ManagedPreviewProperties
+  retains RESOLVED REFERENCES evidence java.type-reference, source line52;
+  original evidence ID792c9dda... and full canonical records unchanged.
+- Tests: `python -m unittest discover -s tests -q`:487 run,486 pass,1 existing
+  Windows symlink skip. `node --test tests/camera_framing.test.mjs
+  tests/access_routes.test.mjs tests/junction_geometry.test.mjs tests/road_paint.test.mjs
+  tests/viewer_audit.test.mjs tests/camera_navigation.test.mjs
+  tests/role_landmarks.test.mjs`:52 pass. Ruff and git diff --check pass.
+  Regression coverage includes protected interior doors, crossings, width-edge
+  obstacles, unrelated streets, reversal/permutation, exact repeated packaging,
+  width transitions, physical paint and forward/reverse Synthetic continuity.
+  Browser three-LOD Synthetic static rebuilds0 where applicable; CPU draw submission
+  metrics in reports are not GPU frame-rate claims. No failing tests weakened.
+- Fixes applied/reverified: first chord prototype used the narrowest section for
+  the entire road, producing hairline connectors in actual captures. Replaced it
+  with certified width profiles and tapered mouths; regenerated r2 and reran
+  geometry, trip, browser and fallback checks. New caps preserve r2 bytes exactly.
+- Spec alignment: PASS under ADR-020/021 experiment; technical7/8 and T-01/02/03/
+  05/06/07/08/09, functional AC-002/003/006/011, product DEC-005/007/008/011.
+  Canonical geography is unchanged; no language-coverage claim, untrusted execution,
+  new service dependency, fabricated semantic edge or default-mode promotion.
+- Open risks/next actions: branch-free reconstruction does not solve dense internal
+  orthogonal topology. Study bounded junction/connector reconfiguration with entry-
+  exit tracing next; do not place decorative roundabouts over unmodified paths.
+  Resource caps intentionally refuse excessive inputs instead of partial unsafe
+  output. Existing experimental streets and fallback assignment limitations remain.
+- Commit/push: one atomic feature unit with ADR, implementation, tests and this
+  checkpoint; intended upstream origin/experiment/street-grid. Stage explicit paths,
+  verify human identity/no agent attribution, then normal push. No main merge.
