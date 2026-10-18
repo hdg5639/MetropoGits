@@ -16,6 +16,7 @@ from scripts.validate_ucg import validate_document as validate_ucg_document
 
 CELL = 7
 MAX_CELLS = 4096
+MAX_ROUTED_CANDIDATES = 6
 
 
 def center(building):
@@ -32,7 +33,7 @@ def contains(rect, x, z, width, depth):
             and z+depth <= rect['z']+rect['depth'])
 
 
-def sites(district, axis, phase):
+def sites(district, axis, phase, block_width=5, crossing=5):
     """Paired frontage rows; reservations are NOT evidence-backed roads."""
     nx, nz = int(district['width']//CELL), int(district['depth']//CELL)
     if nx*nz > MAX_CELLS:
@@ -41,9 +42,8 @@ def sites(district, axis, phase):
     for x in range(nx):
         for z in range(nz):
             row = (x, z)[axis]
-            # A crossing reservation breaks long frontage strips into blocks
-            # of at most 2x5 parcels, rather than another eight-building wall.
-            if row % 3 == phase or (x, z)[1-axis] % 6 == 5:
+            # A crossing reservation splits frontage strips into bounded blocks.
+            if row % 3 == phase or (x, z)[1-axis] % (block_width+1) == crossing:
                 continue
             px, pz = district['x'] + x*CELL + .5, district['z'] + z*CELL + .5
             # Require both the parcel and its adjacent street reservation to
@@ -57,16 +57,16 @@ def sites(district, axis, phase):
     return result
 
 
-def frontage_band(site, district, axis, phase):
+def frontage_band(site, district, axis, phase, block_width=5, crossing=5):
     row = round((site[axis] - district[('x', 'z')[axis]] - .5) / CELL)
     column = round((site[1-axis] - district[('x', 'z')[1-axis]] - .5) / CELL)
-    return (row-phase-1)//3, column//6
+    return (row-phase-1)//3, (column-crossing-1)//(block_width+1)
 
 
-def band_quotas(available, district, axis, phase, count):
+def band_quotas(available, district, axis, phase, count, block_width=5, crossing=5):
     capacity = defaultdict(int)
     for site in available:
-        capacity[frontage_band(site, district, axis, phase)] += 1
+        capacity[frontage_band(site, district, axis, phase, block_width, crossing)] += 1
     # Largest-remainder apportionment prevents relation attraction from leaving
     # an entire street block vacant. Within each quota, relations choose sites.
     total = len(available)
@@ -77,7 +77,32 @@ def band_quotas(available, district, axis, phase, count):
     return quotas
 
 
-def propose(scene, graph):
+def empty_rectangle(district, buildings):
+    """Largest building-free 7-unit cell rectangle; includes street reservations."""
+    nx, nz = int(district['width']//CELL), int(district['depth']//CELL)
+    if nx*nz > MAX_CELLS:
+        raise ValueError('pilot district exceeds cell budget')
+    heights, largest = [0]*nx, 0
+    for row in range(nz):
+        for col in range(nx):
+            x, z = district['x']+col*CELL, district['z']+row*CELL
+            inside = any(contains(r, x, z, CELL, CELL) for r in district.get('footprint', [district]))
+            occupied = any(b['x'] < x+CELL and b['x']+b['width'] > x
+                           and b['z'] < z+CELL and b['z']+b['depth'] > z for b in buildings)
+            heights[col] = heights[col]+1 if inside and not occupied else 0
+        stack = []
+        for col, height in enumerate([*heights, 0]):
+            start = col
+            while stack and stack[-1][1] > height:
+                index, previous = stack.pop()
+                largest = max(largest, (col-index)*previous)
+                start = index
+            if not stack or stack[-1][1] < height:
+                stack.append((start, height))
+    return largest*CELL*CELL
+
+
+def propose(scene, graph, alternatives=False):
     """Select one bounded leaf, return explicit overrides or a safe fallback."""
     scene = json.loads(canonical_json_bytes(scene))
     buildings = {b['entityId']: b for b in scene['buildings']}
@@ -107,14 +132,20 @@ def propose(scene, graph):
         if pairs and options:
             eligible.append((-len(pairs), district['id'], district, members, options))
     if not eligible:
-        return dict(version='parcel-pilot/0.1', status='NOT_APPLICABLE',
+        return dict(version='parcel-pilot/0.2', status='NOT_APPLICABLE',
                     reason='No connected 8..64-file leaf with sufficient frontage capacity', overrides=[])
     _, _, district, members, options = min(eligible, key=lambda item: item[:2])
     member_set = set(members)
+    options = [(axis, phase, width, crossing, sites(district, axis, phase, width, crossing))
+               for axis in (0, 1) for phase in range(3) for width in (3, 4, 5, 7)
+               for crossing in sorted({0, width//2, width})]
+    options = [o for o in options if len(o[-1]) >= len(members)]
     candidates = []
-    for axis, phase, available in options:
+    for axis, phase, width, crossing, available in options:
         placed = {}
-        quotas = band_quotas(available, district, axis, phase, len(members))
+        quotas = band_quotas(available, district, axis, phase, len(members), width, crossing)
+        def band(site):
+            return frontage_band(site, district, axis, phase, width, crossing)
         for identity in sorted(members, key=lambda m: (-len(neighbors[m]), m)):
             # Unplaced local neighbors do not pull back toward old geometry.
             targets = [center(placed[n] if n in placed else buildings[n])
@@ -123,20 +154,29 @@ def propose(scene, graph):
             def cost(site):
                 point = (site[0]+3, site[1]+3)
                 return (sum(distance(point, t) for t in targets), distance(point, old), site)
-            x, z = min((s for s in available if quotas[frontage_band(s, district, axis, phase)]), key=cost)
-            quotas[frontage_band((x, z), district, axis, phase)] -= 1
+            x, z = min((s for s in available if quotas[band(s)]), key=cost)
+            quotas[band((x, z))] -= 1
             available.remove((x, z))
             placed[identity] = dict(buildings[identity], x=x, z=z)
         pairs = {tuple(sorted((m, n))) for m in members for n in neighbors[m]}
         score = sum(distance(center(placed.get(a, buildings[a])), center(placed.get(b, buildings[b])))
                     for a, b in sorted(pairs))
         movement = sum(distance(center(buildings[m]), center(placed[m])) for m in members)
-        candidates.append((score, movement, axis, phase, placed))
-    score, _, axis, phase, placed = min(candidates, key=lambda c: c[:4])
-    return dict(version='parcel-pilot/0.1', status='EXPERIMENTAL', districtId=district['id'],
-                orientation='vertical' if axis == 0 else 'horizontal', phase=phase,
-                demandDistance=score,
-                overrides=[dict(entityId=m, x=placed[m]['x'], z=placed[m]['z']) for m in members])
+        candidates.append(dict(version='parcel-pilot/0.2', status='EXPERIMENTAL', districtId=district['id'],
+                               orientation='vertical' if axis == 0 else 'horizontal', phase=phase,
+                               blockWidth=width, crossing=crossing, demandDistance=score, movement=movement,
+                               emptyRectangleArea=empty_rectangle(district, list(placed.values())),
+                               overrides=[dict(entityId=m, x=placed[m]['x'], z=placed[m]['z']) for m in members]))
+    candidates.sort(key=lambda c: (c['emptyRectangleArea'], c['demandDistance'], c['movement'],
+                                   c['orientation'], c['phase'], c['blockWidth'], c['crossing']))
+    # Route distinct layouts, not six copies of the same placement.
+    distinct, seen = [], set()
+    for candidate in candidates:
+        identity = canonical_json_bytes(candidate['overrides'])
+        if identity not in seen:
+            distinct.append(candidate)
+            seen.add(identity)
+    return distinct[:MAX_ROUTED_CANDIDATES] if alternatives else distinct[0]
 
 
 def pavement_intersections(routing, buildings):
@@ -154,13 +194,42 @@ def pavement_intersections(routing, buildings):
     return count
 
 
+GUARDED_METRICS = ('routeLength', 'turns', 'pavementCenterlineLength',
+                   'nearbyParallelPairLength', 'emptyRectangleArea')
+
+
+def rejection_reasons(metrics, baseline):
+    reasons = [key + ' regressed' for key in GUARDED_METRICS if metrics[key] > baseline[key]]
+    for key in ('pavementBuildingIntersections', 'outsideOwnership', 'overlappingBuildingPairs'):
+        if metrics[key]:
+            reasons.append(key)
+    if not metrics['exactEdgeCoverage']:
+        reasons.append('incomplete edge coverage')
+    return reasons
+
+
+def geometry_checks(district, buildings, members):
+    inside = [b for b in buildings if b['entityId'] in members]
+    outside = sum(not any(contains(r, b['x'], b['z'], b['width'], b['depth'])
+                          for r in district.get('footprint', [district])) for b in inside)
+    overlaps = {tuple(sorted((a['entityId'], b['entityId'])))
+                for a in inside for b in buildings if a['entityId'] != b['entityId']
+                and min(a['x']+a['width'], b['x']+b['width']) > max(a['x'], b['x'])
+                and min(a['z']+a['depth'], b['z']+b['depth']) > max(a['z'], b['z'])}
+    return dict(outsideOwnership=outside, overlappingBuildingPairs=len(overlaps),
+                districtArea=sum(r['width']*r['depth'] for r in district.get('footprint', [district])),
+                buildingArea=sum(b['width']*b['depth'] for b in inside))
+
+
 def experiment(scene, graph):
     # Strict JSON readers use Decimal. Geometry here is derived float data,
     # while the original canonical documents are never serialized back.
     scene = json.loads(canonical_json_bytes(scene))
-    proposal = propose(scene, graph)
-    if proposal['status'] == 'NOT_APPLICABLE':
-        return proposal
+    proposals = propose(scene, graph, alternatives=True)
+    if isinstance(proposals, dict):
+        return proposals
+    proposal = proposals[0]
+    district = next(d for d in scene['districts'] if d['id'] == proposal['districtId'])
     overrides = {b['entityId']: b for b in proposal['overrides']}
     # Only routes incident to the chosen district are compared. ALL buildings
     # remain obstacles, including unchanged neighboring districts.
@@ -172,32 +241,52 @@ def experiment(scene, graph):
         if selected:
             networks.append(dict(network, edgeIds=selected))
     baseline = sorted(copy.deepcopy(scene['buildings']), key=lambda b: b['entityId'])
-    candidate = [dict(b, **{k: v for k, v in overrides.get(b['entityId'], {}).items() if k != 'entityId'})
-                 for b in baseline]
     expected = sorted({e for n in networks for e in n['edgeIds']})
-    variants = {}
-    for name, buildings in [('baseline', baseline), ('candidate', candidate)]:
+
+    def evaluate(buildings):
         routing = derive_access_routes(dict(buildings=buildings, networks=networks), graph)
         represented = sorted({e for r in routing['routes'] for e in r['edgeIds']})
         metrics = dict(road_metrics(routing), pavementBuildingIntersections=pavement_intersections(routing, buildings),
-                       exactEdgeCoverage=represented == expected)
-        variants[name] = dict(buildings=buildings, routing=routing, metrics=metrics)
+                       exactEdgeCoverage=represented == expected,
+                       emptyRectangleArea=empty_rectangle(district, [b for b in buildings if b['entityId'] in overrides]),
+                       **geometry_checks(district, buildings, overrides))
+        return dict(buildings=buildings, routing=routing, metrics=metrics)
+
+    original = evaluate(baseline)
+    audits, acceptable = [], []
+    for index, proposed in enumerate(proposals):
+        changes = {b['entityId']: b for b in proposed['overrides']}
+        buildings = [dict(b, x=changes[b['entityId']]['x'], z=changes[b['entityId']]['z'])
+                     if b['entityId'] in changes else b for b in baseline]
+        variant = evaluate(buildings)
+        metrics = variant['metrics']
+        reasons = rejection_reasons(metrics, original['metrics'])
+        if not any(metrics[k] < original['metrics'][k] for k in GUARDED_METRICS):
+            reasons.append('no measured improvement')
+        audits.append(dict(index=index, blockWidth=proposed['blockWidth'], crossing=proposed['crossing'],
+                           orientation=proposed['orientation'], phase=proposed['phase'], metrics=metrics, rejectedBecause=reasons))
+        if not reasons:
+            score = (metrics['emptyRectangleArea'], metrics['nearbyParallelPairLength'], metrics['routeLength'],
+                     metrics['turns'], proposed['movement'], index)
+            acceptable.append((score, index, proposed, variant))
+    if acceptable:
+        _, selected, proposal, chosen = min(acceptable, key=lambda item: item[0])
+        proposal = dict(proposal, selection='CANDIDATE_SELECTED')
+    else:
+        selected, chosen = None, original
+        proposal = dict(version='parcel-pilot/0.2', status='EXPERIMENTAL', selection='BASELINE_RETAINED',
+                        districtId=district['id'], overrides=[])
+    variants = dict(baseline=original, candidate=chosen)
+    candidate = chosen['buildings']
     movements = [dict(entityId=a['entityId'], distance=distance(center(a), center(b)))
                  for a, b in zip(baseline, candidate) if center(a) != center(b)]
     proposal.update(variants=variants, movements=movements, comparedEdgeIds=expected,
-                    district=next(d for d in scene['districts'] if d['id'] == proposal['districtId']),
+                    district=district, selectedCandidate=selected, candidateAudits=audits,
+                    routingCandidateLimit=MAX_ROUTED_CANDIDATES,
                     unchangedOutsideDistrict=all(m['entityId'] in overrides for m in movements))
-    district = proposal['district']
-    inside = [b for b in candidate if b['entityId'] in overrides]
-    outside = sum(not any(contains(r, b['x'], b['z'], b['width'], b['depth'])
-                          for r in district.get('footprint', [district])) for b in inside)
-    overlaps = sum(min(a['x']+a['width'], b['x']+b['width']) > max(a['x'], b['x'])
-                   and min(a['z']+a['depth'], b['z']+b['depth']) > max(a['z'], b['z'])
-                   for a in inside for b in candidate if a['entityId'] != b['entityId'])
-    proposal['geometryChecks'] = dict(outsideOwnership=outside, overlappingBuildingPairs=overlaps,
-                                    districtArea=sum(r['width']*r['depth'] for r in district.get('footprint', [district])),
-                                    buildingArea=sum(b['width']*b['depth'] for b in inside))
-    proposal['safeCandidate'] = (not outside and not overlaps and proposal['unchangedOutsideDistrict']
+    proposal['geometryChecks'] = geometry_checks(district, candidate, overrides)
+    proposal['safeCandidate'] = (not proposal['geometryChecks']['outsideOwnership']
+                                and not proposal['geometryChecks']['overlappingBuildingPairs'] and proposal['unchangedOutsideDistrict']
                                 and all(v['metrics']['exactEdgeCoverage'] and not v['metrics']['pavementBuildingIntersections']
                                         for v in variants.values()))
     # Safety is NOT visual acceptance; no automatic promotion to canonical City.
@@ -223,6 +312,8 @@ def render_report(report):
     district = report['district']
     bounds = (district['x']-14, district['z']-14, district['width']+28, district['depth']+28)
     output = [head, '<p>' + esc(district['id']) + '</p>',
+              '<p>Decision: ' + esc(report.get('selection', 'EXPERIMENTAL')) +
+              '. Building-free rectangle area includes street space, not just vacant land.</p>',
               '<p>Safety checks: ' + ('PASS' if report['safeCandidate'] else 'FAIL — do not apply') + '. '
               'Footprint area: ' + str(report['geometryChecks']['districtArea']) + '; building coverage: '
               + str(round(100*report['geometryChecks']['buildingArea']/report['geometryChecks']['districtArea'], 1)) + '% (unchanged).</p>',
@@ -259,6 +350,12 @@ def render_report(report):
     for movement in report['movements']:
         output.append('<li>' + esc(movement['entityId']) + ': ' + str(movement['distance']) + '</li>')
     output.append('</ul></details><p><a href="report.json">Full derived report and provenance</a></p></html>')
+    if report.get('candidateAudits'):
+        output[-1] = '</ul></details><h2>Candidate decisions (bounded search, not a global optimum)</h2><ul>'
+        for audit in report['candidateAudits']:
+            result = '; '.join(audit['rejectedBecause']) or ('SELECTED' if audit['index'] == report['selectedCandidate'] else 'Passed; lower ranked')
+            output.append('<li>' + esc(f"#{audit['index']} / width {audit['blockWidth']} / {audit['orientation']} / {result}") + '</li>')
+        output.append('</ul><p><a href="report.json">Full derived report and provenance</a></p></html>')
     return ''.join(output)
 
 
@@ -284,7 +381,7 @@ def main():
         args.out.mkdir(parents=True, exist_ok=False)
         (args.out / 'report.json').write_bytes(canonical_json_bytes(report))
         (args.out / 'index.html').write_text(render_report(report), encoding='utf-8')
-        print(report['status'], args.out)
+        print(report['status'], report.get('selection', ''), args.out)
         if report['status'] == 'EXPERIMENTAL':
             print(report['districtId'])
             for name, variant in report['variants'].items():

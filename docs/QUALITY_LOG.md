@@ -2874,3 +2874,66 @@
 - Commits created / pushed (main): one coherent layout-pilot work unit with
   tests, plan boundary and this checkpoint; commit and normal upstream push
   follow verification. No private artifacts or unrelated IDE caches staged.
+
+## Checkpoint 2026-10-18 — measured adaptive parcel selection
+- Implemented: parcel-pilot/0.2 experiments with 3/4/5/7-column frontage blocks
+  and alternate crossing positions. Preserve original district selection and
+  ownership. Enumerate <=72 configurations; route <=6 distinct shortlisted
+  candidates plus baseline using the unchanged bounded access router. Select
+  only measured candidates with exact evidence, safe geometry, no regression
+  versus input in length/turns/centerline/parallel proxy/largest empty rectangle,
+  and at least one improvement. Record rejection reasons; keep baseline if none
+  pass. This is isolated developer tooling, not a canonical allocator change.
+- Fixtures / revisions: GJ-Cloud 3d9b53f / GamjaOJ b163acd trusted
+  road-continuity-r2 inputs. Selected districts unchanged from previous experiment.
+  Fresh spring-positive and structural-showcase at source base 37aff66.
+- Commands run: `python -m scripts.parcel_pilot
+  ../artifacts/visual/road-continuity-r2/<gj|oj> --out
+  ../artifacts/visual/parcel-adaptive-r1/<gj|oj>`. Fresh pipeline:
+  `python -m metropogits build --repo tests/fixtures/repositories/<spring-positive|structural-showcase>
+  --out ../artifacts/visual/parcel-adaptive-fixtures/<spring|unknown>`: COMPLETE,
+  12 artifacts each; unknown pilot safely NOT_APPLICABLE. Python unittest
+  discovery: 282 run, 281 pass, one Windows symlink skip. Ruff all pass;
+  Node access_routes/viewer_audit/camera_navigation/role_landmarks: 27 pass;
+  git diff --check passes.
+- Artifacts inspected: actual Chrome headless embedded SVG comparisons,
+  parcel-adaptive-r1/gj.png and oj.png, 1500x1500 identical projection/crop;
+  fresh parcel-adaptive-fixtures/spring.png (WebGL) and unknown.png (SVG),
+  1280x900. Chrome --headless --no-sandbox --disable-gpu --hide-scrollbars
+  --screenshot=<png> --window-size=<size> file:///<artifact>/index.html
+  (unknown uses preview.svg; Spring adds --virtual-time-budget=5000).
+- Visual findings: GJ no longer concentrates most files on the right as r4 did;
+  smaller blocks separate the frontage. OJ forms horizontal blocks with shared
+  connecting space. Roads remain rectilinear and some thin parallel spurs remain;
+  this is not yet a complete city-like surface treatment. Upper reserved margins
+  remain and total land/building areas are unchanged. Candidate is SVG-only:
+  candidate WebGL/showcase/Synthetic performance NOT verified or claimed.
+- Tests / determinism / stability: 13 pilot tests now cover actual accepted
+  selection on a distributed fixture, rejection/fallback on the original compact
+  fixture, each individual metric/evidence/safety guard, <=7 router calls, unique
+  bounded shortlist, 512 independent exhaustive 3x3 empty-rectangle checks,
+  concave footprints, Decimal, escaping, permutation and isolated-addition
+  stability. The previous mandatory-movement assertion was replaced by explicit
+  accepted/fallback scenarios, not by permitting an unsafe candidate.
+  Re-ran full GJ/OJ experiments; report canonical bytes identical, original input
+  bytes unchanged, every route endpoint/edge ID checked against original UCG.
+  Repeat whole-pilot time 15.30s GJ / 13.16s OJ on this machine, not rendering FPS.
+- Measurements: GJ 357 routes / 556 edges, OJ 528 / 893 preserved. Largest
+  building-free grid rectangle (includes roads): GJ original686/r4 980/new490,
+  OJ490/490/490. Parallel proxy GJ3013.5/1806/1816.5; OJ2975/3174.5/2621.5.
+  New length GJ57407/OJ70332 and turns1917/2746 improve the original but slightly
+  regress r4 (56945/70101, 1893/2717). Explicit tradeoff: do not claim Pareto
+  improvement over r4. Geometry/evidence violations and outside movement zero.
+  Experimental movement GJ35/OJ49; no local-edit hint guarantee inside the district.
+- Spec alignment: PASS within isolated pilot; FR-006/007, AC-002/003/006 and
+  ADR-014/016 boundaries retained. No runtime AI/services/target execution,
+  canonical schema/ID/layout/default viewer changes. Report version records
+  derived changes. No architecture decision is implied by passing metrics.
+- Open risks / next actions: opt-in layout/hint version ADR, actual same-camera
+  candidate WebGL inspection, then wider service-level validation before default
+  adoption. The bounded shortlist is not globally optimal; cost of up to seven
+  routesets makes it unsuitable for blindly enabling per district. Source-free
+  sparse preview still has oversized margins, unchanged here.
+- Commits created / pushed (main): one measured-selection work unit including
+  tests and documentation; commit and normal authorized upstream push follow
+  this checkpoint. Private outputs and unrelated IDE caches remain unstaged.

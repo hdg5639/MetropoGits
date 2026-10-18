@@ -1,16 +1,22 @@
 import copy
 import unittest
+from unittest.mock import patch
 
 from scripts.canonical_json import canonical_json_bytes
-from scripts.parcel_pilot import band_quotas, contains, experiment, frontage_band, propose, render_report, sites
+from scripts.parcel_pilot import (GUARDED_METRICS, MAX_ROUTED_CANDIDATES, band_quotas,
+                                 contains, empty_rectangle, experiment, frontage_band,
+                                 propose, rejection_reasons, render_report, sites)
 
 
-def fixture():
+def fixture(distributed=False):
     district = dict(id='leaf', parentId='root', x=0, z=0, width=49, depth=49)
     district['footprint'] = [{k: district[k] for k in ('x', 'z', 'width', 'depth')}]
     buildings = [dict(entityId=f'b{i}', districtId='leaf', x=.5+(i % 4)*7, z=.5+(i//4)*7,
                       width=6, depth=6, height=10, archetype='GENERIC_BUILDING', evidenceIds=[])
                  for i in range(12)]
+    if distributed:
+        for i, building in enumerate(buildings):
+            building.update(x=.5+(i % 4)*14, z=.5+(i//4)*21)
     buildings.append(dict(buildings[0], entityId='outside', districtId='other', x=70.5, z=21.5))
     edges = [dict(id=f'e{i}', **{'from': f'b{i}', 'to': 'outside'}) for i in range(12)]
     edges += [dict(id=f'local{i}', **{'from': f'b{i}', 'to': f'b{i+1}'}) for i in range(11)]
@@ -21,13 +27,17 @@ def fixture():
 
 class ParcelPilotTests(unittest.TestCase):
     def test_evidence_and_ownership_preserved_without_input_mutation(self):
-        scene, graph = fixture()
+        scene, graph = fixture(distributed=True)
         original = copy.deepcopy((scene, graph))
         report = experiment(scene, graph)
         self.assertEqual(original, (scene, graph))
         self.assertTrue(report['safeCandidate'])
         self.assertTrue(report['unchangedOutsideDistrict'])
+        self.assertEqual('CANDIDATE_SELECTED', report['selection'])
         self.assertTrue(report['movements'])
+        metrics = report['variants']['candidate']['metrics']
+        self.assertEqual([], rejection_reasons(metrics, report['variants']['baseline']['metrics']))
+        self.assertEqual([], report['candidateAudits'][report['selectedCandidate']]['rejectedBecause'])
         candidate = report['variants']['candidate']['buildings']
         for before, after in zip(sorted(scene['buildings'], key=lambda b: b['entityId']), candidate):
             self.assertEqual({k: v for k, v in before.items() if k not in ('x', 'z')},
@@ -64,11 +74,11 @@ class ParcelPilotTests(unittest.TestCase):
         report = propose(scene, graph)
         axis = 0 if report['orientation'] == 'vertical' else 1
         district = scene['districts'][0]
-        available = sites(district, axis, report['phase'])
-        quotas = band_quotas(available, district, axis, report['phase'], len(report['overrides']))
+        available = sites(district, axis, report['phase'], report['blockWidth'], report['crossing'])
+        quotas = band_quotas(available, district, axis, report['phase'], len(report['overrides']), report['blockWidth'], report['crossing'])
         actual = dict.fromkeys(quotas, 0)
         for building in report['overrides']:
-            actual[frontage_band((building['x'], building['z']), district, axis, report['phase'])] += 1
+            actual[frontage_band((building['x'], building['z']), district, axis, report['phase'], report['blockWidth'], report['crossing'])] += 1
         self.assertEqual(quotas, actual)
         self.assertTrue(all(actual.values()))
 
@@ -85,6 +95,48 @@ class ParcelPilotTests(unittest.TestCase):
         self.assertEqual(0, report['geometryChecks']['outsideOwnership'])
         self.assertEqual(0, report['geometryChecks']['overlappingBuildingPairs'])
         self.assertTrue(report['safeCandidate'])
+
+    def test_empty_rectangle_matches_independent_exhaustive_grid(self):
+        district = dict(x=0, z=0, width=21, depth=21)
+        rectangles = [{(x, z) for x in range(x0, x1) for z in range(z0, z1)}
+                      for x0 in range(3) for x1 in range(x0+1, 4)
+                      for z0 in range(3) for z1 in range(z0+1, 4)]
+        for mask in range(512):
+            occupied = {(i % 3, i//3) for i in range(9) if mask & (1 << i)}
+            buildings = [dict(x=x*7+.5, z=z*7+.5, width=6, depth=6) for x, z in occupied]
+            expected = max([len(r)*49 for r in rectangles if not r & occupied] or [0])
+            self.assertEqual(expected, empty_rectangle(district, buildings))
+        district['footprint'] = [dict(x=0, z=0, width=7, depth=21)]
+        self.assertEqual(147, empty_rectangle(district, []))
+
+    def test_guards_reject_each_regression_and_evidence_loss(self):
+        baseline = {k: 100 for k in GUARDED_METRICS}
+        baseline.update(exactEdgeCoverage=True, pavementBuildingIntersections=0,
+                        outsideOwnership=0, overlappingBuildingPairs=0)
+        self.assertEqual([], rejection_reasons(baseline, baseline))
+        for key in GUARDED_METRICS:
+            self.assertEqual([key+' regressed'], rejection_reasons(dict(baseline, **{key: 101}), baseline))
+        for key in ('pavementBuildingIntersections', 'outsideOwnership', 'overlappingBuildingPairs'):
+            self.assertEqual([key], rejection_reasons(dict(baseline, **{key: 1}), baseline))
+        self.assertEqual(['incomplete edge coverage'], rejection_reasons(dict(baseline, exactEdgeCoverage=False), baseline))
+
+    def test_all_candidates_rejected_keeps_baseline_and_limits_routing(self):
+        from metropogits.access_routes import derive_access_routes
+        with patch('scripts.parcel_pilot.derive_access_routes', wraps=derive_access_routes) as router:
+            report = experiment(*fixture())
+        self.assertLessEqual(router.call_count, MAX_ROUTED_CANDIDATES+1)
+        self.assertEqual('BASELINE_RETAINED', report['selection'])
+        self.assertIsNone(report['selectedCandidate'])
+        self.assertTrue(all(a['rejectedBecause'] for a in report['candidateAudits']))
+        self.assertEqual([], report['overrides'])
+        self.assertEqual([], report['movements'])
+        self.assertEqual(report['variants']['baseline'], report['variants']['candidate'])
+
+    def test_shortlist_is_unique_bounded_and_covers_variable_block_width(self):
+        options = propose(*fixture(), alternatives=True)
+        self.assertLessEqual(len(options), MAX_ROUTED_CANDIDATES)
+        self.assertEqual(len(options), len({canonical_json_bytes(o['overrides']) for o in options}))
+        self.assertGreater(len({o['blockWidth'] for o in options}), 1)
 
     def test_concave_footprint_and_resource_ceiling(self):
         district = dict(x=0, z=0, width=49, depth=49,
