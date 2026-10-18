@@ -144,6 +144,11 @@ remaining showcase, road-legibility, and cross-repository comparison work.
 History, metropolis, and synthetic activity remain optional P2 features;
 their presence does not expand the v1 acceptance scope.
 
+Experimental procedural-world work follows the accumulated requirements and
+active priorities in [the world execution ledger](docs/WORLD_EXECUTION_LEDGER.md).
+It records rejected experiments and unfinished work; passing geometry tests
+alone does not mark a visual direction accepted.
+
 Validate an individual Universal Code Graph document:
 
 ```powershell

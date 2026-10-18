@@ -119,11 +119,14 @@ def view_data(world, scene, graph):
     routing = copy.deepcopy(world["routing"])
     routing["parcelPlan"] = dict(buildings=models, changedFootprintIds=sorted(models))
     hierarchy = derive_road_hierarchy(physical_scene, routing)
+    pavement_color = (
+        "#26333e" if world.get("zoningPolicy") == "neighborhoods" else "#3e4a54"
+    )
     surfaces = [
         dict(
             s,
             points=list(reversed(ribbon(s["start"], s["end"], s["width"]))),
-            color="#3e4a54",
+            color=pavement_color,
         )
         for s in world["streets"]
     ]
@@ -143,7 +146,7 @@ def view_data(world, scene, graph):
             for i in range(8)
         ]
         surfaces.extend(
-            dict(points=[b, b, a, list(p)], color="#3e4a54")
+            dict(points=[b, b, a, list(p)], color=pavement_color)
             for a, b in zip(ring, ring[1:] + ring[:1])
         )
     pavement = dict(
@@ -198,6 +201,12 @@ def view_data(world, scene, graph):
     )
     if neighborhoods:
         data["semanticZoning"] = {z["id"]: z for z in neighborhoods}
+        if world.get("zoningPolicy") == "neighborhoods":
+            data["neighborhoodPlan"] = dict(
+                version=world["zoning"]["version"],
+                blocks={b["id"]: b for b in world["zoning"]["blocks"]},
+                mainRoadCount=len(world["zoning"]["mainRoads"]),
+            )
         if "softZoning" in world:
             data["softZoning"] = dict(
                 version=world["softZoning"]["version"], influenceOnly=True

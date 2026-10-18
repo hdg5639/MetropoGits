@@ -6,7 +6,7 @@ from scripts.canonical_json import sha256_digest
 from scripts.validate_city import validate_document
 from metropogits.street_diagonals import hull
 from . import VERSION
-from .geometry import area, centroid, partition, point, shared_boundaries
+from .geometry import area, centroid, inside, partition, point, shared_boundaries
 from .infrastructure import atomic_streets, route_world
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
@@ -21,6 +21,9 @@ from .zoning import (
     plan_zones,
     zone_demand,
 )
+from .affinity import dependency_pairs
+from .neighborhoods import VERSION as NEIGHBORHOOD_VERSION, neighborhood_candidates
+from .neighborhood_layout import neighborhood_demand, plan_neighborhoods
 
 
 def requested_profile(planning, seed):
@@ -45,7 +48,7 @@ def generate_world(
     zoning="none",
     _route=True,
 ):
-    if zoning not in ("none", "semantic", "soft"):
+    if zoning not in ("none", "semantic", "soft", "neighborhoods"):
         raise ValueError("unsupported world zoning policy")
     if zoning == "soft":
         from .soft import generate_soft_world
@@ -111,12 +114,25 @@ def generate_world(
                     or not isinstance(z.get("id"), str)
                     or not isinstance(z.get("parentId"), str)
                     or z.get("planningProfile")
-                    not in ("GRID", "ORGANIC", "RADIAL", "INDUSTRIAL")
+                    not in ("GRID", "ORGANIC", "RADIAL", "INDUSTRIAL", "BLOCK_LOCAL")
                     for z in recorded["zones"]
                 )
             ):
                 raise ValueError("invalid previous world zoning structure")
+            if "blocks" in recorded and (
+                not isinstance(recorded["blocks"], list)
+                or len(recorded["blocks"]) > 1024
+                or any(
+                    not isinstance(b, dict)
+                    or not isinstance(b.get("zoneId"), str)
+                    or not isinstance(b.get("memberEntityIds"), list)
+                    or len(b["memberEntityIds"]) > 10000
+                    for b in recorded["blocks"]
+                )
+            ):
+                raise ValueError("invalid previous world block structure")
             polygons.extend(z.get("polygon", []) for z in recorded["zones"])
+            polygons.extend(b.get("polygon", []) for b in recorded.get("blocks", []))
         for polygon in polygons:
             if (
                 not isinstance(polygon, list)
@@ -156,12 +172,23 @@ def generate_world(
     requested = {k: requested_profile(planning, local_seeds[k]) for k in grouped}
     budgets = {k: demand(v, requested[k]) for k, v in grouped.items()}
     clusters = {}
-    if zoning == "semantic":
+    zoned = zoning in ("semantic", "neighborhoods")
+    if zoned:
         entities = {e["id"]: e for e in graph["entities"]}
-        clusters = {k: zone_candidates(v, entities, k) for k, v in grouped.items()}
-        budgets = {
-            k: zone_demand(clusters[k], members) for k, members in grouped.items()
+        clusters = {
+            k: neighborhood_candidates(v, entities, k, graph)
+            if zoning == "neighborhoods"
+            else zone_candidates(v, entities, k)
+            for k, v in grouped.items()
         }
+        budgets = {
+            k: (neighborhood_demand if zoning == "neighborhoods" else zone_demand)(
+                clusters[k], members
+            )
+            for k, members in grouped.items()
+        }
+    owners = {b["entityId"]: key for key, members in grouped.items() for b in members}
+    pairs = dependency_pairs(graph, owners) if zoning == "neighborhoods" else {}
     # A tiny corner district still needs a complete frontage/circulation cell.
     # Budget it locally rather than inflating every large district to repair it.
     if len(grouped) > 1:
@@ -184,7 +211,7 @@ def generate_world(
         d.get("planningProfile")
         not in (
             ("ZONED",)
-            if zoning == "semantic"
+            if zoned
             else ("GRID",)
             if planning == "grid"
             else ("GRID", "RADIAL", "ORGANIC", "INDUSTRIAL", "HYBRID")
@@ -240,10 +267,18 @@ def generate_world(
         parcels = []
         raw = []
         failed = []
+        quantization_failed = set()
         planning_diagnostics = []
         semantic_zones = []
+        development_blocks, main_roads = [], []
         reused_zoned = []
         for key, members in grouped.items():
+            if zoning == "neighborhoods" and not all(
+                inside(v, polygons[key], -0.001) for v in polygons[key]
+            ):
+                failed.append(key)
+                quantization_failed.add(key)
+                continue
             local_seed = local_seeds[key]
             profile = requested[key]
             if attempt == 0 and compatible:
@@ -255,7 +290,7 @@ def generate_world(
                 "INDUSTRIAL": industrial_slots,
                 "HYBRID": hybrid_slots,
             }.get(profile, slots)
-            if zoning == "semantic":
+            if zoned:
                 old_zones = (
                     [
                         z
@@ -265,15 +300,46 @@ def generate_world(
                     if compatible and attempt == 0
                     else []
                 )
-                placed, lanes, records, notes, zone_reuse = plan_zones(
-                    polygons[key],
-                    clusters[key],
-                    members,
-                    local_seed,
-                    entity_paths,
-                    old_zones,
-                    old_parcels if compatible and attempt == 0 else None,
-                )
+                if zoning == "neighborhoods":
+                    old_blocks = (
+                        [
+                            b
+                            for b in previous.get("zoning", {}).get("blocks", [])
+                            if b["zoneId"] in {z["id"] for z in old_zones}
+                        ]
+                        if compatible and attempt == 0
+                        else []
+                    )
+                    placed, lanes, records, notes, zone_reuse, blocks, backbone = (
+                        plan_neighborhoods(
+                            polygons[key],
+                            clusters[key],
+                            members,
+                            local_seed,
+                            entity_paths,
+                            {
+                                (a, b): w
+                                for (a, b), w in pairs.items()
+                                if owners[a] == key
+                            },
+                            planning,
+                            old_zones,
+                            old_blocks,
+                            old_parcels if compatible and attempt == 0 else None,
+                        )
+                    )
+                    development_blocks.extend(blocks)
+                    main_roads.extend(backbone)
+                else:
+                    placed, lanes, records, notes, zone_reuse = plan_zones(
+                        polygons[key],
+                        clusters[key],
+                        members,
+                        local_seed,
+                        entity_paths,
+                        old_zones,
+                        old_parcels if compatible and attempt == 0 else None,
+                    )
                 semantic_zones.extend(records)
                 planning_diagnostics.extend(notes)
                 if zone_reuse:
@@ -353,8 +419,17 @@ def generate_world(
                 districtIds=failed,
             )
         )
+        if quantization_failed:
+            repairs.append(
+                dict(
+                    reason="quantized shared-cut convexity repair; bounded local demand adjustment",
+                    districtIds=sorted(quantization_failed),
+                )
+            )
         for key in failed:
-            extra = budgets[key]["total"] * 0.5
+            extra = budgets[key]["total"] * (
+                0.002 if key in quantization_failed else 0.5
+            )
             budgets[key]["repairReserve"] = budgets[key].get("repairReserve", 0) + extra
             budgets[key]["total"] += extra
     else:
@@ -366,7 +441,7 @@ def generate_world(
         route_world(graph, parcels, streets) if _route else ({}, [], {})
     )
     reused = sorted(grouped) if compatible and attempt == 0 else []
-    if zoning == "semantic":
+    if zoned:
         reused = sorted(reused_zoned) if compatible and attempt == 0 else []
     topology = {}
     for d in districts:
@@ -429,13 +504,22 @@ def generate_world(
             outlineVersion=OUTLINE_VERSION,
             outlineFamily=varied_outline(resolved_seed)[1],
         )
-    if zoning == "semantic":
+    if zoned:
         world.update(
-            generatorVersion="flat-zoning/0.1",
-            zoningPolicy="semantic",
+            generatorVersion="flat-neighborhoods/0.1"
+            if zoning == "neighborhoods"
+            else "flat-zoning/0.1",
+            zoningPolicy=zoning,
             zoning=dict(
-                version=ZONING_VERSION,
+                version=NEIGHBORHOOD_VERSION
+                if zoning == "neighborhoods"
+                else ZONING_VERSION,
                 zones=sorted(semantic_zones, key=lambda z: z["id"]),
             ),
         )
+        if zoning == "neighborhoods":
+            world["zoning"].update(
+                blocks=sorted(development_blocks, key=lambda b: b["id"]),
+                mainRoads=sorted(main_roads, key=lambda r: r["id"]),
+            )
     return world

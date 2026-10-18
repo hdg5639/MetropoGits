@@ -18,7 +18,7 @@ def main():
     parser.add_argument("--seed")
     parser.add_argument(
         "--zoning",
-        choices=("none", "semantic", "soft"),
+        choices=("none", "semantic", "soft", "neighborhoods"),
         default="none",
         help="opt-in evidence-backed neighborhoods; leaves canonical City/UCG intact",
     )

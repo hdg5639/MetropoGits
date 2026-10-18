@@ -5,7 +5,9 @@ import math
 from .geometry import centroid, nearest, point
 
 
-def access_corridors(polygons, local_roads, parent):
+def access_corridors(
+    polygons, local_roads, parent, *, return_ports=False, affinity=None
+):
     ports = {key: set() for key in polygons}
     edges = {}
     outer = []
@@ -45,7 +47,14 @@ def access_corridors(polygons, local_roads, parent):
         if len(owners) == 2:
             i, j = sorted(owners)
             adjacency.append(
-                (math.dist(centroid(polygons[i]), centroid(polygons[j])), i, j, a, b)
+                (
+                    math.dist(centroid(polygons[i]), centroid(polygons[j]))
+                    / (1 + math.log1p((affinity or {}).get((i, j), 0))),
+                    i,
+                    j,
+                    a,
+                    b,
+                )
             )
     for _, i, j, a, b in sorted(adjacency):
         if root(i) != root(j):
@@ -100,4 +109,4 @@ def access_corridors(polygons, local_roads, parent):
                 roads.append(
                     dict(start=point(a), end=point(b), width=3.5, access=False)
                 )
-    return roads
+    return (roads, ports) if return_ports else roads

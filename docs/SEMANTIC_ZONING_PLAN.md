@@ -76,6 +76,15 @@ cosmetics, or new patterns while the same pipeline order remains wrong.
 
 ## Delivery order and scope
 
+First road-first vertical slice is now implemented as `--zoning neighborhoods`
+under [ADR-030](adr/ADR-030.md). It preserves physical source cores and explicit
+supporting edges, precomputes road-cut blocks/backbone, and applies existing
+grammars locally. See current contracts for limits and
+`artifacts/visual/neighborhoods-r4/index.html` for actual before/after outputs.
+It is not completion of all HZ-03/04 work: boundary blocks are disclosed as
+administrative-edge bounded, role mixing is conservative, and land usage grows.
+The original delivery packages below remain partially open.
+
 1. HZ-00: [ADR-028](adr/ADR-028.md), opt-in contract and geometry gates.
 2. HZ-01: deterministic role-backed zone candidates, explicit member claims,
    minimum-size merging and honest GENERAL_MIXED fallback.

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metropogits.dev/schemas/planning-0.3.schema.json",
+  "title": "Physical source-core neighborhoods and reserved road-cut blocks",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion","zoningVersion","worldSeed","ucgDigest","sourceCityDigest","terrainPreset","zones","blocks","mainRoads"],
+  "properties": {
+    "schemaVersion": {"const":"planning/0.3-experimental"},
+    "zoningVersion": {"const":"neighborhoods/0.1"},
+    "worldSeed": {"type":"string","pattern":"^[0-9a-f]{16}$"},
+    "ucgDigest": {"$ref":"#/$defs/digest"}, "sourceCityDigest": {"$ref":"#/$defs/digest"},
+    "terrainPreset": {"const":"flat"},
+    "zones": {"type":"array","minItems":1,"maxItems":448,"items":{"type":"object","required":["id","parentId","clusterKey","classification","coreEntityIds","coreClaims","memberEntityIds","memberClaims","supportingMembers","polygon","accessPorts","planningProfile"],"properties":{"coreEntityIds":{"$ref":"#/$defs/ids"},"memberEntityIds":{"$ref":"#/$defs/ids"},"planningProfile":{"const":"BLOCK_LOCAL"},"polygon":{"$ref":"#/$defs/polygon"},"supportingMembers":{"type":"array","maxItems":10000,"items":{"type":"object","additionalProperties":false,"required":["entityId","coreEdgeIds","affinity"],"properties":{"entityId":{"type":"string"},"coreEdgeIds":{"$ref":"#/$defs/ids"},"affinity":{"type":"number","minimum":2}}}}}}},
+    "blocks": {"type":"array","minItems":1,"maxItems":1024,"items":{"type":"object","required":["id","zoneId","memberEntityIds","polygon","boundaryTypes","planningProfile","capacity","affinity"],"properties":{"id":{"type":"string","pattern":"^world:block:[0-9a-f]{16}$"},"memberEntityIds":{"$ref":"#/$defs/ids"},"polygon":{"$ref":"#/$defs/polygon"},"boundaryTypes":{"type":"array","items":{"enum":["ROAD_CUT","NEIGHBORHOOD_BOUNDARY"]}},"planningProfile":{"enum":["GRID","ORGANIC","RADIAL","INDUSTRIAL","HYBRID"]},"capacity":{"type":"integer","minimum":1}}}},
+    "mainRoads": {"type":"array","maxItems":10000,"items":{"type":"object","required":["id","start","end","width","structural"],"properties":{"structural":{"const":true},"start":{"$ref":"#/$defs/point"},"end":{"$ref":"#/$defs/point"},"width":{"type":"number","exclusiveMinimum":0}}}}
+  },
+  "$defs": {
+    "digest":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
+    "ids":{"type":"array","uniqueItems":true,"maxItems":10000,"items":{"type":"string"}},
+    "point":{"type":"array","minItems":2,"maxItems":2,"items":{"type":"number","minimum":-100000,"maximum":100000}},
+    "polygon":{"type":"array","minItems":3,"maxItems":512,"items":{"$ref":"#/$defs/point"}}
+  }
+}

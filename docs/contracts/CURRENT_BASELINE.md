@@ -46,7 +46,62 @@ ellipse/default GRID worlds reproduce their original bytes. This is convex
 connected land only, not a terrain/coastline or concave polygon implementation.
 Original UCG/City contracts and browser source inspection remain unchanged.
 
+## Source-core neighborhoods and road-cut blocks — 2026-10-19
+
+[ADR-030](../adr/ADR-030.md) adds `--zoning neighborhoods`,
+`flat-neighborhoods/0.1`, `neighborhoods/0.1` and the separately versioned
+[`planning/0.3-experimental`](../../schemas/planning-0.3.schema.json) projection.
+This is an additive developer experiment, not a City/UCG migration, default
+change or claim that the full hierarchical proposal is complete.
+
+Core source files stay inside their real neighborhood polygons. Existing
+unclassified files may join only with DIRECT/RESOLVED source-core links:
+pair weight at least2, strictly more than1.5 times the next neighborhood's
+score, and at most half as many supporting files as core files. These are
+documented planning heuristics, not probabilities or a required mixing quota.
+Each attachment preserves exact `coreEdgeIds`; original per-file roles never
+change. Ambiguous/verified tiny roles and unconnected files remain mixed.
+
+Dependency-local batches target64 files, balanced to avoid a tiny last batch.
+Stable source anchors determine block IDs. Convex capacity cuts and a shared
+access backbone are computed before local frontage/meshes. Zone adjacency uses
+distance divided by `1 + log1p(sourceAffinity)` to prefer real cross-neighborhood
+connections, without creating dependencies. Selected boundary subtrees/ports,
+not every semantic border, connect neighborhoods. A fixed GRID capacity
+certificate governs upstream repair; local grammar failure falls back on that
+same block. The entire GJ all-GRID ablation changes452 local building frames
+without changing its envelope, block polygons or reserved main-road digest.
+
+`zoning.blocks` stores actual polygons, exact members, capacity, requested/actual
+grammar, hybrid subregions and affinity measurements; `zoning.mainRoads` stores
+reserved structural segments. `ROAD_CUT` versus `NEIGHBORHOOD_BOUNDARY` explicitly
+distinguishes physical cuts from outer/administrative land boundaries. These
+are road-cut development blocks, not arbitrary fully road-enclosed planar faces.
+Both renderers expose core/supporting counts, local block IDs/plans and exact
+supporting edges. Main/context ground and CPU geometry use the same World.
+
+Bounds: existing10000 files/64 principal districts/448 neighborhoods; per-parent
+256 blocks,1024 persisted blocks overall,5M boundary/coverage checks,2M spatial
+entries,10k-unit extent guard. Existing bounded power/three local repairs/five
+parent attempts remain; a quantized convexity failure gets a disclosed0.2%
+local demand retry, not a relaxed validator. Compatible hints preserve old
+neighborhood/block anchors and full file frames when capacity fits; any local
+capacity/membership replan is diagnosed. Existing default World bytes match all
+four fixed corpus baselines. Cold opt-in geography intentionally changes.
+
+Current limits: core grouping is still role-led; recruitment currently admits
+only unclassified helpers, not arbitrary mixed verified-role communities.
+Regular frontage rows, GRID fallbacks, colored facades and extra land reserve
+remain visible. Area grew versus soft by25.5% GJ/17.7% OJ/9.1% PB/36.1% SQLite;
+this is not a density success. Continue with measured block/frontage efficiency
+and relationship-aware mixed neighborhoods, then the deferred materials/LOD
+work in the ledger. Terrain, concave coastlines and arbitrary planar road-face
+extraction are not implemented.
+
 ## Soft functional influence — 2026-10-19
+
+This opt-in ablation was **not accepted as the visual baseline**. See the
+[execution ledger](../WORLD_EXECUTION_LEDGER.md) and the road-first policy below.
 
 [ADR-029](../adr/ADR-029.md) adds `--zoning soft`, compatible with all existing
 planning/outline policies, without changing their physical sites, streets or

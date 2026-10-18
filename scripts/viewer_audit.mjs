@@ -364,7 +364,8 @@ export async function prepare(input, output) {
 export async function auditZoning(cdp) {
   const target = await cdp.evaluate(`(() => {
     const zones = Object.values(METROPOGITS_DATA.semanticZoning || {});
-    zones.sort((a,b) => Boolean(b.memberClaims.length)-Boolean(a.memberClaims.length) || b.memberEntityIds.length-a.memberEntityIds.length);
+    zones.sort((a,b) => Boolean(b.coreEntityIds?.length)-Boolean(a.coreEntityIds?.length)
+      || Boolean(b.memberClaims.length)-Boolean(a.memberClaims.length) || b.memberEntityIds.length-a.memberEntityIds.length);
     const z=zones[0]; return z ? {id:z.id,parentId:z.parentId,label:z.label,count:z.memberEntityIds.length} : null;
   })()`);
   if (!target) return null;
@@ -377,6 +378,17 @@ export async function auditZoning(cdp) {
     const shown=[...document.querySelectorAll('.zoning-member')].map(b=>b.dataset.entityId);
     if(JSON.stringify(shown)!==JSON.stringify(z.memberEntityIds.slice(0,25)))throw Error('Zoning member page mismatch');
     if(!document.getElementById('inspector-content').textContent.includes('not a source module'))throw Error('Missing derived-zone disclosure');
+    if(METROPOGITS_DATA.neighborhoodPlan) {
+      const plan=METROPOGITS_DATA.neighborhoodPlan;
+      const blocks=Object.values(plan.blocks).filter(b=>b.zoneId===z.id);
+      const buildings=new Map(METROPOGITS_DATA.scene.buildings.map(b=>[b.entityId,b]));
+      if(!z.coreEntityIds.every(id=>buildings.get(id)?.districtId===z.id))throw Error('Source core escaped its displayed neighborhood');
+      const edgeIds=new Set(METROPOGITS_DATA.ucg.edges.map(e=>e.id));
+      if(!z.supportingMembers.every(m=>buildings.get(m.entityId)?.districtId===z.id && m.coreEdgeIds.length && m.coreEdgeIds.every(id=>edgeIds.has(id))))throw Error('Supporting member lacks original dependencies');
+      const summary=document.querySelector('.neighborhood-core-summary')?.textContent;
+      if(!summary?.includes(z.coreEntityIds.length+' source-core files') || !summary.includes(blocks.length+' road-cut blocks'))throw Error('Missing physical core/block disclosure');
+      if(!blocks.every(b=>document.getElementById('inspector-content').textContent.includes(b.id)))throw Error('Local block plans missing from inspector');
+    }
     document.querySelector('.zoning-member').click();
     const entity=METROPOGITS_DATA.ucg.entities.find(e=>e.id===z.memberEntityIds[0]);
     if(document.querySelector('#inspector-content h2').textContent!==entity.path)throw Error('Zoning constituent lost source identity');
