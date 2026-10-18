@@ -104,7 +104,7 @@ and repetitive. Curves are local accents, not a transformed city model.
 
 Next priorities:
 
-1. Correct Qt translation discrimination with negative TypeScript fixtures.
+1. Correct Qt translation discrimination with negative TypeScript fixtures (done below).
 2. Make aggregate geometry/framing respect small-city scale across LODs.
 3. Continue coherent corridor/staircase replacement under unchanged provenance,
    comparing large relation-rich GJ/OJ and at least one new low-semantic case.
@@ -112,3 +112,35 @@ Next priorities:
    missing relationships with invented traffic or infer services from names.
 5. Re-run this corpus after changes; record shifted coordinates and changed
    canonical facts separately from the presentation-only curve experiment.
+
+## Qt translation correction — same corpus revision
+
+The scanner now recognizes XML declarations or explicit Qt TS document headers
+within its existing bounded sniff buffer for `.ts` files. It never loads a DTD,
+expands an entity or executes source. Detected documents retain their FILE IDs
+and generic buildings with language `xml`, plus an INFO diagnostic. Strings,
+TypeScript comments/generics/type assertions and `.tsx` are negative fixtures.
+This is content-type disambiguation, not Qt framework or C++ semantic support.
+Headers beyond the sniff window are not claimed to be detected.
+
+```powershell
+python -m scripts.repository_benchmark --repo ../visual_test_proj/sqlitebrowser --out ../artifacts/visual/cross-repository-qt-r1 --streets
+node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/cross-repository-qt-audit-r1 ../artifacts/visual/cross-repository-qt-r1/sqlitebrowser/streets
+```
+
+All27 translation documents are now XML; adapter processed24->0, structural-only
+506/506, networks0, statusPARTIAL->COMPLETE (the spurious JS/TS skip warnings
+disappear). This status change does NOT mean C++ support. Repeated base and curved
+artifacts match. All506 building IDs, ownership, positions, sizes and archetypes
+and all27 district bounds match the baseline. The27 language-derived styleVariant
+strings correctly change typescript->xml; the UCG digest changes accordingly.
+Street routing digest,1044 structural segments and16 bends stay unchanged.
+Unprofiled second build2.38s versus baseline5.09s is an observed sample, not a
+controlled performance claim. Reanalysis of the other six repositories yields
+exactly the previous canonical graph hashes.
+
+Updated local entry page: `artifacts/visual/cross-repository-reviewed-r1/index.html`.
+It preserves the original seven-case benchmark and links the corrected SQLite
+viewer separately. Browser capture confirms the same city shape and zero-network
+Synthetic unavailable state. Documentation/tooling commit660c0e1 is pushed to
+experiment/street-grid; this scanner correction is a separate work unit.

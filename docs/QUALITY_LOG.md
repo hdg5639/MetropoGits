@@ -4925,3 +4925,41 @@
 - Commit/push: benchmark tooling/checkpoint committed separately on
   experiment/street-grid; only tracked tool/tests/docs, never corpus/artifacts or
   unrelated IDE caches. Ordinary upstream push after verification.
+
+## Checkpoint 2026-10-18 — Qt translation content-type correction
+
+- Implemented: bounded `.ts` XML/Qt-header discrimination; retain generic FILE
+  identities and buildings as language xml, with INFO provenance for the format
+  correction. No XML/DTD/entity resolution, target execution or dependency install.
+  TypeScript strings/comments/type assertions and TSX remain negative fixtures.
+- Fixture/revision: sqlitebrowser ae32df153a64d250de7c77a5057deeff4092a39b;
+  new positive/negative scanner and analyzer integration tests; parent660c0e1.
+- Commands: `python -m scripts.repository_benchmark --repo
+  ../visual_test_proj/sqlitebrowser --out
+  ../artifacts/visual/cross-repository-qt-r1 --streets`; browser audit with CHROME,
+  output cross-repository-qt-audit-r1 and corrected sqlitebrowser/streets input.
+  Full corpus reanalysis compared canonical UCG hashes to cross-repository-r2.
+- Results:27 XML documents correctly retained, false adapter count24->0;
+ 506 buildings/27 districts unchanged in ID, position, size and archetype.
+ 27 language-derived styleVariant values change to xml; scene ucgDigest changes.
+  Zero dependencies remain zero. Structural street routing digest unchanged.
+  All base/curved artifacts repeat byte-identically. Other six graph hashes match.
+- Actual artifacts inspected: corrected default WebGL capture; same skyline,
+  no invented traffic. Three explicit LODs, navigation, preview/showcase captures
+  complete without browser exceptions. Synthetic N/A because networks0, not a
+  moving-traffic success claim. Updated seven-case gallery is
+  cross-repository-reviewed-r1/index.html; historical baseline remains intact.
+- Tests: full Python478 run,477 pass/1 existing Windows symlink skip; Node48 pass;
+  Ruff and diff checks pass. Small maintained Spring/unknown E2E and large GJ
+  browser regression were verified in the preceding checkpoint; full unit suite
+  rerun after scanner change. No failing tests suppressed.
+- Spec alignment: PASS FR-001/002/003/010/015, AC-001/002/012/014. Existing string
+  language contract, stable IDs and canonical layout unchanged. No framework-role
+  inference from filenames or new semantic adapter. Bounded sniff limitation
+  explicitly documented; headers beyond the window remain unrecognized.
+- Open work: oversized forced-Overview aggregates, coherent whole-staircase
+  corridor reconstruction, separately certified roundabouts, and language support.
+  These are not delivered by this benchmark/bug-fix milestone.
+- Commits:660c0e1 benchmark tooling already pushed; Qt fix gets its own conventional
+  commit and ordinary upstream push on experiment/street-grid after staged review.
+  Private corpus/artifacts and unrelated IDE caches are not staged.
