@@ -3858,3 +3858,74 @@
   tests/docs commit and normal upstream push under the explicit owner exception.
   Actual Git outcome is reported after execution. No force, remote settings edit,
   agent attribution, private artifacts or unrelated fixture build caches staged.
+
+## Checkpoint 2026-10-18 — rejected joint entrance study (parent 1b32b81)
+- Implemented: a private bounded prototype jointly evaluates building entrance
+  faces and a shared boundary gateway. Both real cities reject every proposal;
+  product source/defaults/CLI remain untouched. This completed work unit is the
+  evidence-based documentation decision, not a delivered visual improvement.
+  Prototype and seven tests retained in local `artifacts/visual/joint-entrances-study/`.
+- Fixtures / revisions: GJ3d9b53f, OJb163acd cached parcel scenes and gateway-r3
+  routing; maintained spring-positive and structural-showcase at parent1b32b81.
+  No target repository code, builds or dependencies executed. Specs read in
+  technical/functional/product order, followed by operating instructions.
+- Trials: parallel-pavement-first and spatially interleaved candidate ordering
+  each accept0/240 proposals per city. R2 GJ rejection counts: incident constraint87,
+  no crossing removed45, no pavement gain95, more bends12, geometry regression1.
+  OJ:136/55/47/0/2. Candidate groups935/280; R2 states41887/60619. Both hit the
+  proposal cap, not the1M-state cap. This heuristic failure does not prove fixed
+  geography impossible. A controlled six-building test changes one door and
+  removes two crossings, but is not a real-repository visual gain.
+- Commands: `python ../artifacts/visual/joint_trial.py gj oj` exports
+  `artifacts/visual/joint-entrances-r2/{gj,oj}/{before,after}`; inputs are parsed
+  JSON payloads, not evaluated JavaScript. `python ../artifacts/visual/verify_joint.py
+  gj oj` passes exact before/after route, segment, junction and canonical input
+  equality, and all14 packaged files per city match a repeat generation.
+  GJ/OJ paths4209/1381, pavement27156/7161.5, bends23682/6638 unchanged.
+- Fidelity: `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/joint-entrances-r2/<gj|oj>/after` passes:6157/2243 scene-backed
+  edges,1273/400 connected files, unresolved0, full-width building intersections0.
+  These counts are scene-backed coverage, not proof of exhaustive static analysis.
+- Fresh pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/joint-entrances-fixtures-r2/<spring|unknown> --repo-id
+  fixtures/<spring|unknown>`, then `python ../artifacts/visual/joint_fixture.py`
+  and `node ../artifacts/visual/junction_smoke.mjs joint-entrances-fixtures-r2`.
+  Both COMPLETE, Spring2 paths/6 segments unchanged, unknown0 roads. No browser
+  exceptions. Fresh Spring WebGL and unknown SVG preview captures inspected:
+  Spring dense towers retained; unknown generic blocks remain sparse, no invented roads.
+- Visual comparison: `node ../artifacts/visual/parcel_focus_review.mjs
+  joint-entrances-r2 joint-entrances-focus-r2
+  Backend/Ops/src/test/java/gj/cloud/ops/application/deployment/spec
+  backend/src/main/java/dev/gamjaoj/export/service`. Both after WebGL captures
+  and both showcase images inspected; camera equality checked. Each paired
+  before/after focused PNG is byte-identical. The busy orthogonal road appearance,
+  skyline and README composition remain unchanged; no visual improvement claimed.
+- Browser: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/joint-entrances-audit-r2
+  ../artifacts/visual/joint-entrances-r2/gj/after
+  ../artifacts/visual/joint-entrances-r2/oj/after` passes three LODs, picking,
+  inspectors, filters, navigation and Synthetic. Chrome152/SwiftShader20 samples:
+  Synthetic CPU p95 GJ1.5/1.0/1.3ms, OJ1.0/1.3/1.2ms, static rebuilds0 throughout.
+  These are CPU submission measurements, not GPU FPS or a speedup comparison.
+- Tests: `python -m unittest discover -s tests -q`:386 run,385 pass,1 Windows
+  symlink skip. `python ../artifacts/visual/joint-entrances-study/test_joint_entrances.py`:
+  7 pass, including atomic door consistency/rollback, exact memberships, collision/
+  original bounds, repeatability, scene order, caps, unsupported fallback and provenance.
+  `python -m ruff check metropogits scripts tests`:pass.
+  `node --test tests/access_routes.test.mjs tests/junction_geometry.test.mjs
+  tests/viewer_audit.test.mjs tests/camera_navigation.test.mjs
+  tests/role_landmarks.test.mjs`:35 pass.
+- Spec alignment: PASS technical7-8, FR-007, AC-002/003/006/014, DEC-005/006/007/011,
+  ADR-019. No public schema, stable ID, security, semantic evidence or default change.
+  No curves/roundabouts, new layout or completed city-planning claim.
+- Fixes applied and reverified: spatially diversify candidate ranking without
+  raising budgets; still no real gain. Keep the prototype outside the product.
+- Open risks / next actions: diagnose fixed-parcel constraints separately from
+  heuristic search limits before proposing road-first parcel reallocation. Preserve
+  the working gateway baseline; do not weaken evidence/acceptance to ship a stage.
+- Commits created / pushed (main): this checkpoint precedes the documentation-only
+  commit and normal upstream push under the maintainer's explicit owner exception.
+  Actual Git outcome is reported after execution. No force, remote settings edits,
+  attribution, private artifacts or unrelated fixture caches staged.

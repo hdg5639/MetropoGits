@@ -250,3 +250,9 @@ Limits:4–96 files per directory,256 districts,480 patches,240 connected propos
 does not promise city-wide optimization. `retainedRoutes` means unchanged,
 not necessarily rejected or essential. Old options/defaults are unchanged;
 preview, Inspector and Synthetic use the same final exact route geometry.
+
+The subsequent joint entrance/gateway study was not promoted: two bounded
+candidate rankings each accepted zero proposals in both real cities. There is
+no `--joint` product option or additional default pass. Keep `--gateways` as
+the current experimental baseline; see ADR-019 and URBAN_BLOCK_PLAN for the
+rejected trial, limitations and next parcel-constraint diagnostics.
