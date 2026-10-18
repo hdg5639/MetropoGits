@@ -325,7 +325,7 @@
       const routingStatus = accessFrame
         ? `${accessFrame.routes.length} relation paths / ${accessFrame.segments.length} shared segments${accessPolicy.unresolved ? ` · ${accessPolicy.unresolved} unrouted edges` : ""}`
         : `${renderedNetworkIds.size}/${visibleNetworkIds.size} ${routeLabel}`;
-      const status = `${label} · ${subject} · ${routingStatus}${accessFrame?.focused ? " · Selected paths (x-ray)" : ""}`;
+      const status = `${label} · ${subject} · ${routingStatus}${accessFrame?.focused ? " · Selected paths (x-ray)" : ""}${accessPolicy?.streetStatus || ''}`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
     }
   }
@@ -831,7 +831,7 @@
     if (currentDetailLevel === "detail") {
       for (const block of civicBlocks) drawCivicBlock(block);
     }
-    for (const rectangle of accessPolicy ? [] : streetRectangles) drawStructuralStreet(rectangle);
+    for (const rectangle of accessPolicy && !data.streets?.structural ? [] : streetRectangles) drawStructuralStreet(rectangle);
     for (const segment of accessFrame?.segments || []) {
       const points = [segment.start, segment.end].map(p => project(...p, 0.15));
       const style = filterEngine.accessRoadStyle(segment), width = style.width;

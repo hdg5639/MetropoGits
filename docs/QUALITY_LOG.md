@@ -4390,3 +4390,86 @@
 - Commit / push: one coherent feature/test/docs work unit on main; normal
   owner-authorized push after final staged review. Generated/private outputs and
   pre-existing .gradle/target IDE caches excluded; no agent attribution.
+
+## Checkpoint 2026-10-18 — ADR-020 structural street prototype
+- Implemented: geography-only infrastructure, safe-width per-building access,
+  bounded assignment of original evidenced trips, explicit fallback partition,
+  opt-in `scripts.street_grid --street-grid`, WebGL/Canvas/SVG structural layer
+  and visible disclosure. Original IDs/provenance, City/UCG and normal CLI stay
+  unchanged. ADR/plan committed first as0cf8d0e on experiment/street-grid.
+- Fixtures / revisions: existing pinned GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766
+  hinted and cold cities; GamjaOJ b163acd2b5fe41edfc1e7fc7d367362851241896.
+  Fresh maintained spring-positive and structural-showcase inputs at basebe6f1c3,
+  catalog0.4.0. No target code execution/dependency installation.
+- Commands run (repo root):
+  `python -m scripts.street_grid ../artifacts/visual/frontage-refinement-r2/NAME/after
+  --street-grid --out ../artifacts/visual/street-grid-r1/NAME` for gj/cold/oj;
+  `python ../artifacts/visual/street_grid_review.py` repeats assignment, uses an
+  independent full-trip/membership/clearance oracle, removes networks to verify
+  structural independence, and packages latest-baseline comparisons tostreet-grid-r3.
+  `python ../artifacts/visual/street_grid_refresh.py` refreshes those owned
+  artifacts after final visible SVG disclosure edits; it does not reroute.
+- Fresh source-to-render commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --out
+  ../artifacts/visual/street-grid-fixtures/spring`; same for structural-showcase
+  to unknown. Then `python -m scripts.street_grid BUILD --street-grid --out
+  ../artifacts/visual/street-grid-fixtures/NAME-study` and
+  `node ../artifacts/visual/junction_smoke.mjs street-grid-fixtures`.
+  An initial guessed unknown-language path did not exist; command failed before
+  output. Located and used the maintained structural-showcase fixture instead.
+- Results (hintedGJ / coldGJ / OJ): assigned2487/4209,2483/4209,547/1381;
+  fallback1722/1726/834; structural entrances1324/1324/681; canonical building
+  and routing full-width intersections0. Infrastructure one connected component
+  in each. Repeated routing identical; unchanged network-free infrastructure.
+  Assignment search states1281862/1294438/234734; capped searches0. Local
+  assignment time18.405/17.130/3.478s, excluding independent oracle/packaging.
+  Spring assigns0/2 and preserves both fallback paths; unknown has0 relationships
+  and3 structural entrances. No fabricated dependencies.
+- Regression metrics: structural centerline34419.5/34419.5/14393 versus prior
+  evidenced pavement23446/23302.5/6076.5 (different coverage/meaning). New
+  all-trip geometry including fallback54998.5/55558.5/14522. These overlapping
+  lengths must not be added. **Not a road-length reduction or visual victory.**
+  Default hides legacy fallbacks with an explicit count; selection/All routes
+  exposes them. Fewer displayed trips must not be reported as route simplification.
+- Artifacts inspected: actual matched-camera WebGL captures in
+  street-grid-focus-r3/{gj,oj}-{before,after}/focused.png;
+  street-grid-cold-focus-r1/cold-after/showcase.png (real Chrome SVG rasterization);
+  street-grid-gj-focus-r2/gj-{before,after}/focused.png and showcase.png;
+  street-grid-fixtures/unknown.png; street-grid-canvas-r1/gj/canvas.png.
+  Private captures remain outside Git. Structural surfaces are more continuous
+  around some buildings but grid repetition/empty parcels remain; small unknown
+  has overly broad grid coverage. Canvas overview's aggregate outlines are noisy.
+  Frozen LOD obstacle rectangles prevent unrelated compound silhouette changes.
+- Browser commands: `node scripts/viewer_audit.mjs
+  'C:/Program Files/Google/Chrome/Application/chrome.exe' OUT INPUT` for
+  street-grid-r3/{gj,oj,cold}/after to street-grid-{gj-audit-r2,oj-audit-r1,cold-audit-r1}.
+  All pass overview/district/detail, exact-route inspection, filters/navigation.
+  Synthetic static rebuilds0; local CPU p95 GJ1.2/1.1/1.5ms,
+  OJ1.3/1.2/1.3ms, cold1.3/1.4/1.3ms. CPU submission timings, not GPU FPS/SLA.
+  `node ../artifacts/visual/street_grid_canvas.mjs` forces WebGL unavailable and
+  captures both real Canvas fallbacks with Synthetic; no browser exceptions.
+  `parcel_focus_review.mjs street-grid-r3 street-grid-focus-r3` plus cold Portal
+  suffix command verify identical Detail camera per before/after pair.
+- Tests / fixes: Python439 run,438 pass,1 existing Windows symlink skip; six
+  maintained Node suites39 pass; Ruff/whitespace pass. New tests cover geometry
+  independence, caps, clearance/access, exact identities/bounds, fallback honesty,
+  deterministic input order/repeat, opt-in rendering and default LOD preservation.
+  Fixed strict-JSON Decimal normalization before geometry; fixed missing LOD
+  rectangles that changed compound counts; added visible SVG structural labels.
+  Initial review harness digest used bytes instead of a document; corrected and
+  reran successfully. Early capture attempts before package completion failed
+  with missing files; completed matched-camera/audit runs supersede them.
+- Spec alignment: approved experimental deviation under ADR-020 from technical7,
+  FR-007/AC-006 and product5.1/DEC-011; only non-semantic infrastructure changes
+  meaning. AC-002/009/014, source evidence and original trip budgets retained.
+  No schema/identity/default changes. No claim of infrastructure incremental
+  locality or aggregate-to-street clearance; canonical buildings remain fixed.
+- Open risks / next: incomplete assignment and redundant structural loops block
+  promotion. Record individual fallback reasons; reduce infrastructure with
+  frontage/connectivity constraints independently of dependencies. Evaluate a
+  bounded street-first parcel experiment only with explicit stability review.
+  Do not resume small frontage tweaks or call the circuit-like problem solved.
+- Commit / push: documentation0cf8d0e precedes this coherent prototype/test/docs
+  work unit on experiment/street-grid. Final staged review and normal feature
+  branch push follow this checkpoint; no main merge, force push, attribution or
+  generated/private artifacts. Delivery hash/push result are recorded in handoff.

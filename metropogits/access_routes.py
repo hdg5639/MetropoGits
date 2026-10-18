@@ -290,10 +290,24 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
                     routes=[{k: r[k] for k in ("id", "kind", "source", "target", "edgeIds", "networkIds")} for r in routes])
     lines = ['<metadata id="access-routing">' + html.escape(canonical_json_bytes(metadata).decode()) + '</metadata>',
              '<g id="shared-access-roads" aria-label="Shared geometry, not additional relationships">']
+    structural = routing.get('streetGrid')
+    if structural:
+        from metropogits.structural_streets import street_rectangles
+        assigned = set(structural['assignment']['assignedRouteIds'])
+        allowed &= assigned
+        lines.append('<metadata id="street-assignment">' + html.escape(canonical_json_bytes(
+            structural['assignment']).decode()) + '</metadata>')
+        lines.append('<g id="civic-infrastructure" aria-label="Structural streets: visual, not source relationships">')
+        for rect in street_rectangles(routing):
+            x, z, w, d = (rect[k] for k in ('x', 'z', 'width', 'depth'))
+            points = [project(x,z), project(x+w,z), project(x+w,z+d), project(x,z+d)]
+            encoded = ' '.join(f'{float(a):.3f},{float(b):.3f}' for a,b in points)
+            lines.append(f'<polygon points="{encoded}" fill="{rect["color"]}" data-civic-street="{rect["id"]}"/>')
+        lines.append('</g>')
     visible, widths, paints = [], {}, []
     for segment in routing["segments"]:
         active = [r for r in segment["routeIds"] if r in allowed]
-        if not active or (overview and (segment["access"] or len(active) < 4)):
+        if not active or (not structural and overview and (segment["access"] or len(active) < 4)):
             continue
         a, b = segment["start"], segment["end"]
         width = min(segment["width"], 0.7 + math.log2(len(active)+1)*0.5)

@@ -763,7 +763,7 @@
       STREET: "#172437",
     };
     for (const rectangle of streetRectangles) {
-      if (accessPolicy) break;
+      if (accessPolicy && !data.streets?.structural) break;
       if (!filterEngine.corridorVisible(rectangle, renderedNetworkIds)) continue;
       roadSegment(
         triangles,
@@ -1391,7 +1391,7 @@
       const routingStatus = accessFrame
         ? `${accessFrame.routes.length} relation paths / ${accessFrame.segments.length} shared segments${accessPolicy.unresolved ? ` · ${accessPolicy.unresolved} unrouted edges` : ""}`
         : `${renderedNetworkIds.size}/${visibleNetworkIds.size} ${routeLabel}`;
-      const status = `${label} · ${subject} · ${routingStatus}${accessFrame?.focused ? " · Selected paths (x-ray)" : ""}`;
+      const status = `${label} · ${subject} · ${routingStatus}${accessFrame?.focused ? " · Selected paths (x-ray)" : ""}${accessPolicy?.streetStatus || ''}`;
       if (detailLevel.textContent !== status) detailLevel.textContent = status;
     }
   }

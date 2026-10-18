@@ -348,3 +348,35 @@ routes and1M expanded steps. Caps retain complete valid routes. Repeated input
 is deterministic; a refinement result cannot be refined again. Default CLI,
 UCG/City schemas, positions and evidence stay unchanged. This remains an explicit
 developer comparison rather than a default production pipeline.
+
+### ADR-020 opt-in structural infrastructure (not the default)
+
+`python -m scripts.street_grid BUILD --street-grid --out NEW_DIRECTORY` creates
+an original-access/0.2 versus structural-assignment comparison. Public City/UCG,
+canonical positions, IDs and normal CLI behavior do not change.
+
+Derived access/0.3 may carry `streetGrid` with version `structural-streets/0.1`,
+`semantic:false`, directory/geography basis, safe-width segments, entrances,
+block ownership, diagnostics/status and assignment data. Geometry generation
+does not read networks or UCG edges. A bounded directory frontier (up to64 files
+where hierarchy permits) gets28-unit seed streets, obstacle-clear connectors
+and one geometric entrance per building. A directory with more than64 direct
+files remains one group;64 is a frontier target, not a hard building cap.
+
+Assignment retains original doors, all relationships and original0.2 trip
+length/bend limits. At most4-step connections attach original ports to the
+skeleton; these are evidenced access connectors, not extra structural claims.
+`assignedRouteIds` and `fallbackRouteIds` partition all routes. Fallback routes
+keep their original geometry. Consumers show assigned demand by default, disclose
+counts and allow selection/All routes to expose exact fallback paths. Synthetic
+follows the same stored paths; it never randomly branches. This is static demand,
+not runtime traffic. SVG metadata retains all routes; visible captions disclose
+structural meaning and partial assignment.
+
+Caps:10000 buildings,250000 bounding lattice cells,500000 seed steps,2M BFS
+states for infrastructure, another2M for original-port connections,20000 routes,
+3M route search states (per-trip12000 states/60000 labels), existing1M route
+expansion limit. Hard input caps fail; exhausted searches report partial streets
+or retain fallback relationships. No default schema/config migration or claim of
+incremental street stability. LOD obstacle rectangles stay at the legacy value
+for controlled comparisons; new surfaces do not retile aggregate facilities.

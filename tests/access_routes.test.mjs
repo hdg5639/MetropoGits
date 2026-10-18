@@ -16,6 +16,24 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 const files=new Set(['A','B','C','D']), networks=new Set(['n']);
+test('structural mode discloses fallback and preserves inspection and exact synthetic paths',()=>{
+  const input=structuredClone(routing);
+  input.streetGrid={assignment:{assignedRouteIds:['ab'],fallbackRouteIds:['cd']}};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(input);
+  const frame=p.frame('detail',files,networks,null);
+  assert.deepEqual([...frame.routeIds],['ab']);
+  assert.deepEqual(frame.animated.map(r=>r.id),['ab']);
+  assert.match(p.streetStatus,/1\/2.*1 legacy paths/);
+  for(const selected of [{kind:'building',id:'C'},{kind:'network',id:'c'}]) {
+    const inspected=p.frame('overview',files,networks,selected);
+    assert.deepEqual([...inspected.routeIds],['cd']);
+    assert.equal(inspected.segmentIds.size,3);
+    assert.deepEqual(p.position(inspected.animated[0],1).point,[14,7]);
+  }
+  assert.equal(p.frame('detail',files,networks,null,true).routes.length,2);
+  assert.equal(p.frame('detail',new Set(['A','B']),networks,{kind:'building',id:'C'}).routes.length,0);
+  assert.equal(p.choices('n',files,networks).length,2);
+});
 test('road hierarchy uses actual path count without enlarging safe pavement',()=>{
   for (const count of [1,3,4,100]) for (const access of [false,true]) {
     const segment={width:.45,access,routeIds:Array.from({length:count},(_,i)=>String(i))};

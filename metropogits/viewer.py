@@ -9,6 +9,7 @@ from metropogits.territory import derive_district_territories
 from metropogits.streets import derive_street_grid
 from metropogits.access_routes import derive_access_routes
 from metropogits.road_hierarchy import derive_road_hierarchy
+from metropogits.structural_streets import street_rectangles
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
@@ -44,7 +45,8 @@ def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -
             "scene": scene,
             "routing": routing,
             "roadHierarchy": derive_road_hierarchy(scene, routing),
-            "streets": derive_street_grid(scene),
+            "streets": ({**derive_street_grid(scene), "structural": True, "surfaces": street_rectangles(routing)}
+                        if 'streetGrid' in routing else derive_street_grid(scene)),
             "territories": derive_district_territories(scene),
             "ucg": ucg,
         },
@@ -75,6 +77,12 @@ def render_viewer(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> d
     if scene['layoutAlgorithm'] == 'hierarchical-parcel/0.1-experimental':
         result['index.html'] = result['index.html'].replace(
             b'METROPOGITS / STATIC CITY', b'METROPOGITS / EXPERIMENTAL PARCEL LAYOUT', 1)
+    if routing is not None and 'streetGrid' in routing:
+        result['index.html'] = result['index.html'].replace(
+            b'METROPOGITS / STATIC CITY', b'METROPOGITS / STRUCTURAL STREET EXPERIMENT').replace(
+            b'METROPOGITS / EXPERIMENTAL PARCEL LAYOUT', b'METROPOGITS / STRUCTURAL STREET EXPERIMENT').replace(
+            b'Route corridor (derived)', b'Structural street (visual, not a relationship)').replace(
+            b'Dependency road \xc2\xb7 width / paint = static demand', b'Assigned dependency demand (not runtime traffic)')
     return dict(sorted(result.items()))
 
 

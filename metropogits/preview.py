@@ -691,7 +691,12 @@ def render_preview(
             'font-family="system-ui, sans-serif" font-size="13" '
             f'font-weight="800">{_escape(label)}</text>'
         )
-    lines.extend(["  </g>", "  </g>", "</svg>"])
+    lines.extend(["  </g>", "  </g>"])
+    if 'streetGrid' in routing:
+        assigned = len(routing['streetGrid']['assignment']['assignedRouteIds'])
+        lines.append(f'<text x="{PADDING}" y="{height-8}" fill="{palette["muted"]}" font-family="sans-serif" '
+                     f'font-size="10">Structural streets (visual) · {assigned}/{len(routing["routes"])} trips assigned · Legacy paths in viewer</text>')
+    lines.append('</svg>')
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 

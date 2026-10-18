@@ -315,6 +315,11 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         else f"{len(models)} file buildings"
     )
     summary += f" · {len(networks)}/{len(scene['networks'])} routes"
+    footer = 'Visual aggregates · Source evidence in viewer'
+    if 'streetGrid' in routing:
+        assignment = routing['streetGrid']['assignment']
+        footer = (f"Structural streets (visual) · {len(assignment['assignedRouteIds'])}/{len(routing['routes'])} trips assigned"
+                  f" · {len(assignment['fallbackRouteIds'])} legacy paths in viewer · Not runtime traffic")
     lines += [
         f'<text x="28" y="30" fill="{palette["text"]}" font-family="sans-serif" '
         f'font-size="20" font-weight="700">{_escape(title)}</text>',
@@ -323,7 +328,7 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         f'<text x="28" y="{height - 31}" fill="{palette["text"]}" font-family="sans-serif" '
         'font-size="11">METROPOGITS · Your code is a living city</text>',
         f'<text x="28" y="{height - 14}" fill="{palette["muted"]}" font-family="sans-serif" '
-        'font-size="10">Visual aggregates · Source evidence in viewer</text>',
+        f'font-size="10">{_escape(footer)}</text>',
     ]
     metadata = dict(
         projectionVersion="showcase/0.1",

@@ -973,6 +973,7 @@
 
   function createAccessPolicy(routing, hierarchy = null) {
     if (!routing) return null;
+    const assigned = routing.streetGrid ? new Set(routing.streetGrid.assignment.assignedRouteIds) : null;
     const routes = new Map(routing.routes.map(route => [route.id, route]));
     const segments = new Map(routing.segments.map(segment => [segment.id,
       {...segment, demand: hierarchy?.segments?.[segment.id]}]));
@@ -996,15 +997,16 @@
         && (selected?.kind !== 'aggregate' || memberIds.has(route.source) || memberIds.has(route.target))
         && (selected?.kind !== 'network' || ((selectedRoutes ? selectedRoutes.has(route.id) : route.networkIds.includes(selected.id))
           && (!selected.routeId || selected.routeId === route.id))));
-      const eligible = showAll ? candidates : related;
-      const routeIds = new Set(eligible.map(route => route.id));
       const focused = ['building', 'network', 'aggregate'].includes(selected?.kind);
+      const eligible = (showAll ? candidates : related).filter(route =>
+        !assigned || focused || showAll || assigned.has(route.id));
+      const routeIds = new Set(eligible.map(route => route.id));
       const highlighted = new Set(focused ? related.map(route => route.id) : []);
       const visibleSegments = [...segments.values()].map(segment => {
         const active = segment.routeIds.filter(id => routeIds.has(id));
         return {...segment, routeIds: active, highlighted: active.some(id => highlighted.has(id))};
       }).filter(segment => segment.routeIds.length &&
-        (level !== 'overview' || focused || showAll || (!segment.access && segment.routeIds.length >= 4)));
+        (assigned || level !== 'overview' || focused || showAll || (!segment.access && segment.routeIds.length >= 4)));
       const segmentIds = new Set(visibleSegments.map(segment => segment.id));
       const representedRoutes = new Set(visibleSegments.flatMap(segment => segment.routeIds));
       const animated = eligible.filter(route => representedRoutes.has(route.id));
@@ -1037,6 +1039,7 @@
         step.start[1] + (step.end[1]-step.start[1])*fraction]};
     }
     return Object.freeze({frame, network, choices, position, segments, routes, status: routing.status,
+      streetStatus: assigned ? ` · Street assignment ${assigned.size}/${routing.routes.length} · ${routing.streetGrid.assignment.fallbackRouteIds.length} legacy paths: select a building or All routes` : '',
       unresolved: routing.unresolvedEdgeIds.length});
   }
 
