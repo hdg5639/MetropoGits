@@ -8,6 +8,7 @@ from pathlib import Path
 from metropogits import __version__
 from metropogits.access_routes import derive_access_routes
 from metropogits.block_collectors import plan_collectors
+from metropogits.block_gateways import plan_gateways
 from metropogits.road_frontage import plan_frontages
 from metropogits.cli import _artifact_record, _diagnostic_summary
 from metropogits.preview import render_preview
@@ -21,7 +22,8 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False, continuity=False, collectors=False, frontage=False):
+def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False, continuity=False, collectors=False, frontage=False, gateways=False):
+    frontage = frontage or gateways
     collectors = collectors or frontage
     continuity = continuity or collectors
     urban = urban or continuity
@@ -32,7 +34,9 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
     _bounded_geometry(scene)
     scene = json.loads(canonical_json_bytes(scene))
     original = derive_access_routes(scene, graph)
-    if frontage:
+    if gateways:
+        baseline = plan_frontages(scene, original, plan_collectors(scene, original, consolidate_routes(original, continuity=True)))
+    elif frontage:
         baseline = plan_collectors(scene, original, consolidate_routes(original, continuity=True))
     elif collectors:
         baseline = consolidate_routes(original, continuity=True)
@@ -44,7 +48,8 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
         baseline = consolidate_routes(original, merge_junctions=True)
     else:
         baseline = consolidate_routes(original) if merge_junctions else original
-    candidate = (plan_frontages(scene, original, baseline) if frontage else
+    candidate = (plan_gateways(scene, original, baseline) if gateways else
+                 plan_frontages(scene, original, baseline) if frontage else
                  plan_collectors(scene, original, baseline) if collectors else
                  consolidate_routes(original, merge_junctions=merge_junctions or avenues or backbone,
                                     avenues=avenues or backbone, backbone=backbone, urban=urban, continuity=continuity))
@@ -77,8 +82,12 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
         report['roadContinuity'] = candidate['roadContinuity']
     if collectors and not frontage:
         report['blockCollectors'] = candidate['blockCollectors']
-    if frontage:
+    if frontage and not gateways:
         report['roadFrontage'] = candidate['roadFrontage']
+    if gateways:
+        if after['turns'] > before['turns']:
+            raise ValueError('gateway consolidation increased total bends')
+        report['blockGateways'] = candidate['blockGateways']
     return baseline, candidate, report
 
 
@@ -118,6 +127,7 @@ def main():
     parser.add_argument('--continuity', action='store_true', help='compare urban roads with bend-preserving alignment and remaining cycle removal')
     parser.add_argument('--collectors', action='store_true', help='replan bounded blocks as shared collector trees against continuity roads')
     parser.add_argument('--frontage', action='store_true', help='choose local shared roads before reconnecting visual building entrances')
+    parser.add_argument('--gateways', action='store_true', help='pool nearby block boundary crossings on common evidenced gateways')
     args = parser.parse_args()
     try:
         if args.out.exists():
@@ -130,7 +140,7 @@ def main():
         scene, graph = read('city.json'), read('graph.ucg.json')
         before, after, report = compare(scene, graph, merge_junctions=args.junctions, avenues=args.avenues,
                                       backbone=args.backbone, urban=args.urban, continuity=args.continuity,
-                                      collectors=args.collectors, frontage=args.frontage)
+                                      collectors=args.collectors, frontage=args.frontage, gateways=args.gateways)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)

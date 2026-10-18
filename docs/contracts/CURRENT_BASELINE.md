@@ -235,3 +235,18 @@ Only actual route-used pavement is exported. Preview, viewer, Inspector and
 Synthetic consume the same paths; earlier diagnostic blocks describe earlier
 passes. This first road-first frontage slice is not a parcel reallocator,
 city-wide arterial planner or curved/roundabout implementation. Defaults stay intact.
+
+`scripts.road_consolidation --gateways` compares the frontage result with joint
+block-boundary routing. Derived `blockGateways` / `block-gateways/0.1` in
+visual-access/0.3 records selected/removed crossings, changed/unchanged routes,
+rejections and caps. All doors/buildings/UCG/City/semantic IDs remain fixed.
+Existing pavement is preferred; new local connectors require full-width obstacle
+clearance and actual complete-route membership. Original0.2 world-distance and
++4-bend bounds include frontage changes; no compounded allowance. Accept only
+fewer used crossings and less pavement, with non-increasing total bends,
+junctions and nearby parallel length. Necessary old routes remain.
+Limits:4–96 files per directory,256 districts,480 patches,240 connected proposals,
+1M search states,21-unit grouping distance and28-unit patch radius. This heuristic
+does not promise city-wide optimization. `retainedRoutes` means unchanged,
+not necessarily rejected or essential. Old options/defaults are unchanged;
+preview, Inspector and Synthetic use the same final exact route geometry.

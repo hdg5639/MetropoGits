@@ -3770,3 +3770,91 @@
   documentation commit and verified normal upstream push under the maintainer's
   explicit owner exception. Actual Git outcome is reported after execution.
   No force, remote settings changes, agent attribution or private artifacts.
+
+## Checkpoint 2026-10-18 — shared block gateways (parent 82a4cb5)
+- Implemented: optional `--gateways` comparison after frontage. Group nearby
+  equally outward-facing directory crossings, choose an evidenced gateway and
+  jointly reconnect local route spans. Prefer old pavement; allow certified
+  short connectors. Keep necessary old routes when original0.2 world-distance/
+  +4-bend bounds fail. Accept only fewer used crossings/less pavement and no
+  increase in junctions, nearby parallel length or total bends. Buildings,
+  districts, doors, logical relationships and canonical inputs stay unchanged.
+- Fixtures / revisions: GJ3d9b53f, OJb163acd parcel JSON; maintained spring-positive
+  and unsupported structural-showcase at parent82a4cb5. No target code/build/
+  dependency execution. Specs read in technical/functional/product order.
+- Commands: `python ../artifacts/visual/gateway_trial.py gj oj` reads JSON-only
+  road-frontage-r2 baselines and original0.2 road-consolidation-r2 inputs, exports
+  `artifacts/visual/block-gateways-r3/{gj,oj}/{before,after}`. First existing-road-only
+  trial joined only one group per city. Obstacle-clear connectors and turn cost200
+  improve GJ's result; original route budgets and global acceptance guards unchanged.
+- GJ:3 accepted groups (3->1 twice,2->1 once),45 changed paths. Pavement27212->27156
+  (-0.21%), parallel4917.5->4826.5, junctions1497 unchanged, bends23726->23682,
+  route-distance724614->724502. New/removed unit edges11/27. OJ:1 group (2->1),
+  4 changed paths, pavement7165->7161.5 (-0.05%), parallel1701->1680,
+  junctions450 unchanged, bends6646->6638, route-distance161520->161499;
+  new/removed unit edges6/7. OJ segment count1344->1345 despite less pavement;
+  subdivision count is not a physical road-length metric.
+- Bounds: both cities hit240 proposals,110/109 patches,207300/209962 search states;
+  not the480-patch/1M-state limits. Small-directory-first search is not exhaustive
+  or globally optimal. `retainedRoutes` includes unchanged paths already using
+  the selected gateway, not just rejected/indispensable paths.
+- Fidelity: `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/block-gateways-r3/<gj|oj>/after` passes:6157/2243 scene-backed
+  edges,1273/400 connected files,4209/1381 routes, unresolved0, full-width
+  pavement/building intersections0. Exact route/segment memberships preserved.
+  A changed GJ ComposeRouterPlanRequest->ComposeRouterRouteOverride path still
+  carries its original edge IDs, including a RESOLVED import; no new
+  inferred call or communication. Existing source-inspector capture inspected.
+- Repeatability: `python ../artifacts/visual/verify_gateways.py gj oj` checks
+  unchanged canonical City/UCG bytes, fixed doors, original route bounds and
+  all14 packaged files per city byte-identical on a repeat. Planner29.30s/14.52s
+  under local load (not full analysis time or controlled speedup benchmark).
+  Original world-length ratio p95=1.329/1.326, max1.933/2.75 with28/16 short-block
+  exceptions. Approved14-unit short-route allowance remains; not a universal50% cap.
+- Fresh pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/block-gateways-fixtures-r3/<spring|unknown> --repo-id
+  fixtures/<spring|unknown>`, then `python -m scripts.road_consolidation
+  ../artifacts/visual/block-gateways-fixtures-r3/<spring|unknown> --out
+  ../artifacts/visual/block-gateways-fixtures-r3/<spring|unknown>-study --gateways`.
+  Both builds COMPLETE, Spring2 paths unchanged, unknown0 roads. `node
+  ../artifacts/visual/junction_smoke.mjs block-gateways-fixtures-r3` captures real
+  WebGL/SVG with no browser exceptions; Spring viewer/unknown preview inspected.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs
+  block-gateways-r3 block-gateways-focus-r3
+  Backend/Ops/src/test/java/gj/cloud/ops/application/deployment/spec
+  backend/src/main/java/dev/gamjaoj/export/service`. All four before/after WebGL
+  images and both showcase images viewed; exact camera equality checked. Ops
+  loses redundant transverse approaches; OJ one nearby parallel approach shifts
+  to a shared street. Changes are local/modest; overall skyline/README framing
+  unchanged. No observed new clipping/overlap, but orthogonal circuit appearance
+  persists. Unknown fallback retains generic blocks; sparse Spring remains dense.
+- Browser: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/block-gateways-audit-r3
+  ../artifacts/visual/block-gateways-r3/gj/after
+  ../artifacts/visual/block-gateways-r3/oj/after` passes three LODs, picking,
+  role/source inspector, single-route drill-down, filters, grades, navigation and
+  Synthetic. Chrome152/SwiftShader20 samples: Synthetic CPU p95 GJ1.3/1.2/1.2ms,
+  OJ1.1/1.2/1.2ms, static rebuilds0 throughout. Not GPU FPS or a speedup claim.
+- Tests: `python -m unittest discover -s tests -q`:386 run,385 pass,1 Windows
+  symlink skip. Eleven gateway tests include joint routing, exact memberships,
+  collision checks, rollback, fixed doors after frontage, original budgets,
+  deterministic scene ordering, search caps, semantic-kind/normal isolation,
+  no unknown fabricated connectivity and provenance/repeated-pass rejection.
+  `python -m ruff check metropogits scripts tests` and whitespace checks pass.
+  `node --test tests/access_routes.test.mjs tests/junction_geometry.test.mjs
+  tests/viewer_audit.test.mjs tests/camera_navigation.test.mjs
+  tests/role_landmarks.test.mjs`:35 pass.
+- Spec alignment: PASS technical7-8, FR-007, AC-002/003/006/014,
+  DEC-005/006/007/011, ADR-019. No schema/semantic-ID/default/security change.
+  No curves/roundabouts or finished city-planning claim. Small visual gain is
+  explicitly recorded; this experimental stage is not promoted to default.
+- Open risks / next actions: fixed entrances still constrain gateway planning.
+  Jointly evaluate entrances and boundary gateways, prioritize removable pavement
+  instead of small-directory order, and avoid simply raising caps/relaxing bounds.
+  Do not accumulate experimental passes in default builds without meaningful gain.
+- Commits created / pushed (main): checkpoint precedes the coherent implementation/
+  tests/docs commit and normal upstream push under the explicit owner exception.
+  Actual Git outcome is reported after execution. No force, remote settings edit,
+  agent attribution, private artifacts or unrelated fixture build caches staged.
