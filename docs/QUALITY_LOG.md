@@ -4675,3 +4675,56 @@
   framing does not solve these or justify default promotion of the street mode.
 - Commit / push: second independently verified work unit on experiment/street-grid;
   stage review and normal upstream push follow. Exact hash/result in handoff.
+
+## Checkpoint 2026-10-18 — structural pavement width continuity
+
+- Implemented: short-bulge suppression and gradual safe width transitions shared
+  by WebGL/Canvas/SVG. No route, entrance, evidence or canonical placement edits.
+- Fixtures / revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766 and
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896, catalog0.4.0, fixed
+  aligned-framing-r2 inputs. Maintained spring-positive and structural-showcase
+  at parent61a5986 plus this work unit run through the fresh real pipeline.
+- Commands: `python -m metropogits build --repo tests/fixtures/repositories/NAME
+  --out ../artifacts/visual/street-width-fixtures-r2/LABEL`, with NAME/LABEL
+  spring-positive/spring and structural-showcase/unknown. Then
+  `python -m scripts.street_grid BUILD --street-grid --aligned-blocks --out OUT`
+  to LABEL-study. `python ../artifacts/visual/street_width_review.py street-width-r2`
+  packages GJ/OJ before/after, verifies identical scene/UCG/routing bytes,
+  repeated surfaces, and each polygon inside its original cleared rectangle.
+- Artifacts inspected: street-width-focus-r3/gj-{before,after}/focused.png,
+  oj-after/showcase.png and street-width-fixtures-r2/unknown-preview.png;
+  Spring WebGL also inspected. `node ../artifacts/visual/parcel_focus_review.mjs
+  street-width-r2 street-width-focus-r3` asserts identical Detail cameras.
+  `node ../artifacts/visual/junction_smoke.mjs street-width-fixtures-r2`
+  captures actual fresh WebGL/SVG. No target repository code executed.
+- Visual findings: sparse streets no longer have isolated broad rectangles;
+  sustained expansions taper. Less unpainted slab area in GJ Detail, but dense
+  README thumbnail change is modest and grid character remains. Initial r1
+  taper-only diamonds rejected; r2 adds short-bulge suppression. First focus
+  invocation lost empty PowerShell arguments; rerun without placeholders passed.
+- Browser: `node scripts/viewer_audit.mjs CHROME OUT INPUT...` for
+  street-width-r2/{gj,oj}/after -> street-width-audit-r2, corresponding before
+  -> street-width-before-audit-r2. CHROME:
+  C:/Program Files/Google/Chrome/Application/chrome.exe,152.0.7977.84,SwiftShader.
+  Three LODs, navigation, filters, relation selection and Synthetic pass; static
+  rebuilds0 before/after. GJ Synthetic CPU p95 after1.1-1.3ms, before1.3-1.4ms:
+  single-run JS submission timings, not GPU FPS or a speedup conclusion.
+- `node ../artifacts/visual/street_diagnostics_ui.mjs OUT INPUT...` on fresh
+  Spring/unknown after outputs -> street-width-fallback-audit-r2 verifies real
+  WebGL and forced Canvas, exact fallback inspection and empty disclosure.
+  No exceptions. Spring assignment1/2; unknown0 relations, not fabricated roads.
+- Tests / stability: full Python discovery, seven Node suites43 pass, Ruff and
+  diff whitespace checks. Surface tests cover T/X junctions, reversal, order,
+  containment, door isolation, caps, legacy rendering, bulges and SVG parity.
+  Closing Python discovery:457 run,456 pass,1 Windows symlink skip. Large GJ/OJ retain
+  all4209/1381 trips and567/268 fallbacks. Canonical positions and routing bytes
+  are identical; no layout churn. All polygon points remain inside old clearance.
+- Costs / risks: structural quads GJ3679->4781, OJ1536->1903; extra mesh/storage
+  remains despite unchanged static cache behavior. The semantic demand overlay
+  still uses rectangular widths and may overlie narrower structural pavement.
+  Continuity claims apply to structural surfaces only.
+- Spec alignment: PASS under ADR-020, technical8, FR-011/012, AC-002/006/011/014.
+  No public schema/ID/evidence changes, external service or default promotion.
+  Next: shared layer envelope, then broader block/parcel readability.
+- Commit / push: one atomic work unit on experiment/street-grid; normal upstream
+  push after closing checks. No private fixture artifacts or IDE caches staged.

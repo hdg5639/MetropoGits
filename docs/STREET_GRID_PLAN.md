@@ -162,3 +162,31 @@ in these captures. Orbit target height is preserved. Smaller fixtures also pass.
 Remaining work is still physical street/parcel readability: narrow/wide surface
 transitions and overly regular grids are visible. Better framing exposes those
 issues rather than fixing them, and is not grounds to promote the experiment.
+
+## Continuous structural pavement / 2026-10-18
+
+Aligned-block presentation removes short width bulges before tapering from
+narrow to wide clearance. The first taper-only trial produced diamond-shaped
+bulges in the three-building unsupported fixture and was rejected. A two-step
+straight-run opening (14-unit neighborhood) suppresses short expansions; a
+bounded shortest-envelope pass limits full-width growth to0.25 per world unit.
+Door stubs do not dictate trunk width. This is geography-only presentation,
+not demand or inferred traffic. Equal-slope spans share one quad.
+
+WebGL, Canvas and CPU SVG use the same tapered polygons inside the former safe
+rectangles. Scene, UCG, entrances, all4209/1381 GJ/OJ trips, assignments and
+fallback reasons remain byte-identical. Original structural0.1 rendering stays
+rectangular. Compare `artifacts/visual/street-width-focus-r3/index.html`; usable
+viewers are `street-width-r2/{gj,oj}/after/index.html`. Fresh small pipeline
+fixtures/captures: `street-width-fixtures-r2`. Small streets lose isolated slabs;
+GJ Detail has less broad unpainted pavement. Dense thumbnails are not radically
+changed. Quads increase GJ3679->4781 and OJ1536->1903; browser Synthetic still
+rebuilds static geometry0 times. This is not a GPU/FPS or speedup claim.
+
+Next: evaluate a shared presentation envelope for structural pavement and its
+assigned-demand overlay. The latter retains its current quantitative grade and
+safe rectangular width, so it can still expand over a narrower structural
+surface. Keep paths, fallbacks and demand values intact; do not describe the
+entire layered road model as continuous. Regular grids, empty parcels and
+aggregate silhouettes remain broader tasks, not reasons for endless per-trip
+micro-optimization. No default promotion of the street experiment.

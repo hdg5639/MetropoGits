@@ -783,6 +783,11 @@
     for (const rectangle of streetRectangles) {
       if (accessPolicy && !data.streets?.structural) break;
       if (!filterEngine.corridorVisible(rectangle, renderedNetworkIds)) continue;
+      if (rectangle.points) {
+        quad(triangles, rectangle.points.map(([x,z]) => [x, rectangle.elevation ?? 0.08, z]),
+          [0,1,0], color(rectangle.color || streetColors.STREET));
+        continue;
+      }
       roadSegment(
         triangles,
         [rectangle.x, rectangle.z + rectangle.depth / 2],

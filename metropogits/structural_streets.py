@@ -294,6 +294,9 @@ def assign_streets(scene, original, *, aligned=False):
 
 def street_rectangles(routing):
     """One unpainted infrastructure surface; no fabricated network membership."""
+    if routing['streetGrid']['version'] == 'structural-streets/0.2':
+        from metropogits.street_surfaces import tapered_surfaces
+        return tapered_surfaces(routing['streetGrid']['segments'])
     result = []
     for segment in routing['streetGrid']['segments']:
         a, b, half = segment['start'], segment['end'], segment['width']/2

@@ -300,7 +300,8 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
         lines.append('<g id="civic-infrastructure" aria-label="Structural streets: visual, not source relationships">')
         for rect in street_rectangles(routing):
             x, z, w, d = (rect[k] for k in ('x', 'z', 'width', 'depth'))
-            points = [project(x,z), project(x+w,z), project(x+w,z+d), project(x,z+d)]
+            polygon = rect.get('points', [[x,z], [x+w,z], [x+w,z+d], [x,z+d]])
+            points = [project(a,b) for a,b in polygon]
             encoded = ' '.join(f'{float(a):.3f},{float(b):.3f}' for a,b in points)
             lines.append(f'<polygon points="{encoded}" fill="{rect["color"]}" data-civic-street="{rect["id"]}"/>')
         lines.append('</g>')

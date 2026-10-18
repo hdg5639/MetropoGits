@@ -419,3 +419,19 @@ so zoom never starts with an underground orbit pivot. A1% distance guard remains
 Reset restores this fitted target. This changes neither scene/routing data nor
 CPU preview/Canvas projection, and does not crop outlier buildings to enlarge
 the city. Subsequent manual camera movement remains user-controlled.
+
+### Structural pavement presentation
+
+For `structural-streets/0.2`, renderer-derived `streets.surfaces` may contain
+four X/Z `points` and `segmentId` plus the existing bounding rectangle. All three
+renderers consume the points; bounds are not a substitute for the polygon.
+This is packaged viewer geometry, not a City/UCG schema field or new relation.
+Routing segments retain original clear widths and existing IDs/paths.
+
+On the structural3.5-unit lattice, remove short straight-run width expansions
+with two-step erosion/dilation, then constrain full-width growth to0.25 per
+world unit. End neighborhoods truncate; door stubs do not constrain trunk
+width. Polygons remain subsets of previous clearance rectangles. Sampling is
+capped at500000 with an explicit error, not silent street truncation.
+Equal-slope pieces coalesce; order is deterministic. Legacy structural0.1 and
+normal nonexperimental output retain their prior form.

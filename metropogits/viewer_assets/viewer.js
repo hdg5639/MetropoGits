@@ -633,7 +633,7 @@
       ROUTE_ACCESS: "#1c293b",
       STREET: "#172437",
     };
-    const points = [
+    const points = rectangle.points ? rectangle.points.map(([x,z]) => project(x,z,rectangle.elevation ?? 0.09)) : [
       project(rectangle.x, rectangle.z, 0.09),
       project(rectangle.x + rectangle.width, rectangle.z, 0.09),
       project(rectangle.x + rectangle.width, rectangle.z + rectangle.depth, 0.09),
