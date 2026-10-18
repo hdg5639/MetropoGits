@@ -55,3 +55,19 @@ test('empty and degenerate framing remains finite and preserves orientation',()=
   check(points,fitted,1);
  }
 });
+
+test('framing contains source and promoted silhouettes regardless of city population',()=>{
+ const {lodFramingPoints}=globalThis.METROPOGITS_WEBGL_MATH;
+ for(const count of [1,42,256,400]) {
+  const buildings=Array.from({length:count},(_,i)=>({x:i%20*7,z:Math.floor(i/20)*7,width:6,depth:6,height:10}));
+  buildings[count-1].height=70;
+  const facilities=[{x:0,z:0,width:20,depth:20,height:30}];
+  const frozen=structuredClone({buildings,facilities});
+  const points=lodFramingPoints(buildings,facilities);
+  assert.equal(points.length,(count+1)*4);
+  assert.ok(points.some(p=>p[1]===32.4));
+  assert.ok(points.some(p=>p[1]===70));
+  for(const aspect of [.6,1.5,2.5]) check(points,fitPerspective(points,camera,policy,aspect),aspect);
+  assert.deepEqual({buildings,facilities},frozen);
+ }
+});

@@ -4993,3 +4993,61 @@
   corridor reconstruction must preserve street surfaces and junction mouths.
 - Commit: documentation-only record of rejected experiment, separate from the
   subsequent viewer correction; normal feature-branch push at verified checkpoint.
+
+## Checkpoint 2026-10-18 — source-bounded Overview and all-LOD framing
+- Implemented: CPU/shared browser ordinary aggregate heights use the constituent
+  scene height envelope, not file count. WebGL frames file and aggregate roofs
+  together regardless of population. Evidence-backed role facilities, their
+  membership, explicit expansion, paths and source records remain unchanged.
+- Fixtures/revisions: seven pinned corpus inputs from CROSS_REPOSITORY_BENCHMARK,
+  using corrected cross-repository-qt-r1 SQLite; GJ/OJ urban-street-r1 canonical
+  snapshots; maintained spring-positive fixture at770689b rebuilt from source.
+  Nine large/corpus inputs were repackaged, not freshly rescanned this checkpoint.
+- Commands: `python ../artifacts/visual/overview_review.py overview-proportions-r1`
+  (nine packages twice, exact canonical scene/UCG/routing equality assertions);
+  `node ../artifacts/visual/overview_gallery.mjs` (old/new membership comparison).
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/overview-e2e-r1/build`;
+  `python -m scripts.street_grid ../artifacts/visual/overview-e2e-r1/build
+  --street-grid --aligned-blocks --curved-streets
+  --out ../artifacts/visual/overview-e2e-r1/streets`.
+- Actual browser: `node scripts/viewer_audit.mjs
+  'C:/Program Files/Google/Chrome/Application/chrome.exe' OUTPUT INPUTS...`:
+  overview-small-audit-r1 takes overview-proportions-r1/{realworld,bat};
+  overview-corpus-audit-r1 takes {pocketbase,fastapi-realworld-example-app,ratatui,
+  lazygit,sqlitebrowser} plus overview-e2e-r1/streets/after;
+  overview-gamja-audit-r1 takes overview-proportions-r1/{gj,oj}.
+  All paths are under ../artifacts/visual. Reports retain exact expanded inputs,
+  browser/environment, asset hashes, natural/forced LOD and timing definitions.
+  `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/overview-fallback-r1
+  ../artifacts/visual/overview-proportions-r1/realworld
+  ../artifacts/visual/overview-proportions-r1/gj` exercises WebGL/forced Canvas.
+- Artifacts inspected: old/new RealWorld Overview actual WebGL images, new GJ
+  Overview, Ratatui rendered showcase, RealWorld forced Canvas capture. Gallery:
+  overview-proportions-reviewed-r1/index.html. RealWorld roof clipping corrected;
+  ordinary masses no longer inflate small scenes. GJ role landmarks stand above
+  lower generic masses. Flat repeated generic forms and empty plots remain.
+  Comparison cameras use each version's fit; no identical-camera claim.
+- Quantitative findings: maximum ordinary height25.63->10 RealWorld,
+  37.44->10 PocketBase,38.86->18 GJ,37.26->18 OJ. All nine memberships and original
+  graph/scene/routing unchanged, repeated package bytes equal. No layout migration.
+- Tests: `python -m unittest discover -s tests -q`:478 run/477 pass/1 existing
+  Windows symlink skip. `node --test tests/camera_framing.test.mjs
+  tests/access_routes.test.mjs tests/junction_geometry.test.mjs tests/road_paint.test.mjs
+  tests/viewer_audit.test.mjs tests/camera_navigation.test.mjs
+  tests/role_landmarks.test.mjs`:50 pass. Ruff and git diff --check pass.
+  CPU/JS projection parity, golden fixtures and deterministic outputs pass without
+  changing golden hashes. No tests weakened. Actual browser three-LOD Synthetic
+  static rebuilds0 wherever evidenced animation applies; zero-network cases N/A.
+  Road selection/exact-route inspection, navigation and Canvas toggle restore pass.
+- Spec alignment: PASS technical rendering/LOD and T-01/02/03/05/06/07/08;
+  functional structural baseline/repeatability/unknown-tech fallback and product
+  evidence-first principles. No runtime dependency, public schema, stable ID or
+  semantic classification change. No claim that generic output proves Go/Rust support.
+- Open risks/next actions: full-width corridor/junction reconstruction remains
+  pending; rejected displacement prototype is not shipped. Improving skyline
+  variety must use source-backed roles/metrics, not reintroduce file-count towers.
+- Commits:00a2ce6 records the rejected spike separately; this verified viewer fix
+  receives its own conventional commit. Push both normally to the existing
+  experiment/street-grid upstream after staged review; no main merge/default promotion.

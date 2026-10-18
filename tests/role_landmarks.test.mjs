@@ -100,6 +100,23 @@ test('District retains all files instead of sampling generic buildings', () => {
   assert.equal(p.visibility('district', ids, []).buildingIds.length, 400);
 });
 
+test('ordinary Overview masses retain source height bounds even for single-file plots',()=>{
+  for(const count of [1,6,42,400]) {
+    const f=fixture('unknown','GENERIC_BUILDING');
+    f.scene.buildings=f.scene.buildings.slice(0,count);
+    f.scene.buildings.forEach((b,i)=>{b.height=i%3===0?14:10;});
+    const original=structuredClone(f), p=policy(f);
+    const buildings=new Map(f.scene.buildings.map(b=>[b.entityId,b]));
+    for(const a of p.aggregates) {
+      assert.equal(a.height,Math.max(...a.memberEntityIds.map(id=>buildings.get(id).height)));
+      const parts=engine.aggregateParts(a);
+      assert.ok(parts.every(part=>part.height>0 && part.height<=a.height));
+      assert.equal(parts.reduce((sum,part)=>sum+part.representedCount,0),a.memberEntityIds.length);
+    }
+    assert.deepEqual(f,original);
+  }
+});
+
 test('page, API and test evidence never mix; module boundaries remain separate', () => {
   const f = fixture();
   f.ucg.evidence.push({evidenceId: 'page', ruleId: 'path.nextjs.app-page'},

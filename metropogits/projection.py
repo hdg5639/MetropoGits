@@ -212,7 +212,7 @@ def derive_blocks(scene, territory_data=None):
                     ],
                     "districtId": common,
                     "majorDistrictId": major_id,
-                    "height": min(64, 14 + math.log2(len(group) + 1) * 4.5),
+                    "height": max(building["height"] for building in group),
                     "id": f"visual:block:{major_id}:{index:03d}",
                     "labelX": _center(label, "x"),
                     "labelZ": _center(label, "z"),

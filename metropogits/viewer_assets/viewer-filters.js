@@ -368,7 +368,9 @@
             ),
           depth: Math.max(2, maxZ - z),
           districtId,
-          height: Math.min(64, 14 + Math.log2(members.length + 1) * 4.5),
+          // Overview is a summary of existing buildings, not a file-count tower.
+          // Keep its skyline inside the source scene's height envelope.
+          height: Math.max(...members.map(building => building.height)),
           id: `visual:block:${majorDistrictId}:${String(index).padStart(3, "0")}`,
           labelX: labelPlot.x + labelPlot.width / 2,
           labelZ: labelPlot.z + labelPlot.depth / 2,

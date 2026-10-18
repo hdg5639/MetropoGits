@@ -105,6 +105,16 @@
     return {...camera,targetX:target[0],targetY:target[1],targetZ:target[2],distance:(eyeDepth-depth)*1.01};
   }
 
+  function lodFramingPoints(buildings, facilities) {
+    // Fit the union of all LOD silhouettes. A small scene can still contain a
+    // promoted role facility; changing LOD must not reveal a clipped roof.
+    return [...buildings.map(b => ({...b, top:b.height})),
+      ...facilities.map(f => ({...f, top:f.height+2.4}))].flatMap(b => [
+      [b.x,b.top,b.z], [b.x+b.width,b.top,b.z],
+      [b.x+b.width,b.top,b.z+b.depth], [b.x,b.top,b.z+b.depth],
+    ]);
+  }
+
   function stableVariant(value, count) {
     let hash = 2166136261;
     for (const character of String(value)) {
@@ -238,6 +248,7 @@
 
   globalThis.METROPOGITS_WEBGL_MATH = Object.freeze({
     fitPerspective,
+    lodFramingPoints,
     lookAt,
     multiply,
     perspective,
@@ -699,26 +710,7 @@
         );
       }
     }
-    if (scene.buildings.length < 256) {
-      for (const building of scene.buildings) {
-        points.push(
-          [building.x, building.height, building.z],
-          [building.x + building.width, building.height, building.z],
-          [building.x + building.width, building.height, building.z + building.depth],
-          [building.x, building.height, building.z + building.depth],
-        );
-      }
-    }
-    if (scene.buildings.length >= 256) {
-      for (const facility of aggregateFacilities.values()) {
-        points.push(
-          [facility.x, facility.height + 2.4, facility.z],
-          [facility.x + facility.width, facility.height + 2.4, facility.z],
-          [facility.x + facility.width, facility.height + 2.4, facility.z + facility.depth],
-          [facility.x, facility.height + 2.4, facility.z + facility.depth],
-        );
-      }
-    }
+    for (const point of lodFramingPoints(scene.buildings,[...aggregateFacilities.values()])) points.push(point);
     const fitted=fitPerspective(points,state,cameraPolicy,viewportWidth/viewportHeight,Math.max(8,tallestBuilding));
     for (const key of ['targetX','targetY','targetZ']) {
       state[key]=fitted[key];

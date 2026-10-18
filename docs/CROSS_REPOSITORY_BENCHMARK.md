@@ -144,3 +144,49 @@ It preserves the original seven-case benchmark and links the corrected SQLite
 viewer separately. Browser capture confirms the same city shape and zero-network
 Synthetic unavailable state. Documentation/tooling commit660c0e1 is pushed to
 experiment/street-grid; this scanner correction is a separate work unit.
+
+## Overview proportions and framing correction — 2026-10-18
+
+The benchmark exposed a presentation bug, not an analysis gap: ordinary block
+height was `14 + 4.5*log2(memberCount+1)` regardless of constituent heights, and
+WebGL fitted only file roofs below256 files / only aggregate roofs at256 or more.
+Explicit Overview on small fixtures could reveal oversized clipped silhouettes.
+Natural small-city LOD is still Detail; do not describe the forced test as the
+default user view.
+
+Ordinary block height is now bounded by its tallest constituent scene building
+in both CPU projection and the shared Canvas/WebGL aggregation policy. Existing
+part proportions remain, with no new metric, role inference, count inflation or
+semantic landmark promotion. Existing evidence-backed role facilities retain
+their promotion geometry and exact membership. WebGL initial/reset framing uses
+the union of file and aggregate roofs, including the aggregate platform offset,
+at every population size. It does not snap/re-fit the camera on each LOD change.
+
+| Fixture | Maximum ordinary aggregate height, before → after |
+| --- | --- |
+| RealWorld |25.63 →10|
+| bat |32.00 →10|
+| PocketBase |37.44 →10|
+| FastAPI RealWorld |27.50 →10|
+| Ratatui |33.12 →10|
+| Lazygit |38.27 →10|
+| SQLite Browser |35.86 →10|
+| GJ-Cloud |38.86 →18|
+| GamjaOJ |37.26 →18|
+
+These are presentation units, not source-code size or observed runtime metrics.
+Repacked all nine archived canonical inputs; graphs, scenes, routing and block
+membership remain exact. Repeated packages match byte-for-byte. Small maintained
+Spring fixture was also rebuilt through the real CLI. No new language support.
+
+Local entry: `artifacts/visual/overview-proportions-reviewed-r1/index.html`.
+It links nine viewers, before/after Overview captures and actual README renders.
+Before/after use each version's automatic framing, not a falsely claimed identical
+camera. Small fixtures were explicitly forced to Overview for comparison.
+Browser audits cover all nine plus Spring; forced Canvas checked RealWorld/GJ.
+
+RealWorld's formerly clipped Overview roof is now contained. GJ's ordinary masses
+are lower relative to its unchanged role facilities. Generic repetition, broad
+empty parcels and detailed road widths remain visible; this is not a completed
+city art direction. The whole-corridor deformation trial was rejected for surface
+distortion (see STREET_GRID_PLAN), not included in this correction.
