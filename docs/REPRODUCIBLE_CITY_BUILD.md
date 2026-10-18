@@ -23,6 +23,15 @@ parcel experiment and complete-trip road consolidation. Omitting these stages
 does not reproduce the experimental viewer. None of these commands runs the
 target application's code, dependency installation or build scripts.
 
+For the subsequent fixed-door cleanup experiment, replace `--shared-frontage`
+with `--simplify` in the last command. Its `before` is the shared-frontage result;
+`after` smooths complete trips and removes redundant corridors atomically.
+This option rebuilds all prerequisite routing passes from the supplied City/UCG;
+it does not execute or trust an old viewer's JavaScript. The same original detour
+budget applies across every pass. It does not move buildings or change the
+default CLI layout. Use a new output directory and compare route geometry and
+travel distance, not merely fewer rendered segments.
+
 For a cold-repeat check, run all three commands again with another new output
 root and **no `--previous-scene`**. Compare files and coordinates by stable entity
 ID, not by screenshot appearance alone. Retain canonical graph/scene hashes,

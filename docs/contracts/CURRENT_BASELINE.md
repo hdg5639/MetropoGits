@@ -281,3 +281,24 @@ the cap never removes roads, source relations, selection traces or Synthetic pat
 Python SVG and browser renderers share geometry fixtures. Canvas caches paint
 with its access frame; WebGL retains static geometry caching. HTTP/messaging
 semantic colors and continuous selected-route overlays remain separate.
+
+`scripts.road_consolidation --simplify` explicitly runs the preceding experimental
+passes, then compares shared-frontage routing with existing-pavement trip
+simplification. Derived `routeSimplification` (`route-simplification/0.1`) records
+individual bend/length reductions and atomic corridor removals separately.
+Door positions, canonical City/UCG and all source/target/kind/edge identities stay
+fixed. First smooth trips without increasing individual length or bends; then
+remove redundant corridors only when every affected trip can use remaining
+same-kind pavement within original0.2 world-distance/+4-bend bounds and summed
+bends do not increase. Removed roads cannot be resurrected. Inspector, Synthetic,
+SVG and WebGL use the resulting exact complete paths, not a cosmetic overlay.
+
+Limits: 20,000 routes, 100,000 graph edges, existing 1M expanded-step guard,
+3M total states, 6,000 states/30,000 predecessor labels per trip, 1,200 corridor
+proposals over at most two rounds. Cost is lattice length +15 per bend; ties and
+candidate order are deterministic. Caps preserve safe complete routes and report
+truncation; they do not prove no better route exists. No new public schema,
+default, curve, roundabout, relation inference or layout-locality guarantee.
+Inherited diagnostic blocks describe earlier passes; only `routeSimplification`
+describes this additional pass. `searchExpansions` remains initial route-search
+work, not total planning cost; use each pass's own search counters.

@@ -4149,3 +4149,85 @@
 - Commits created / pushed (main): one documentation/checkpoint work unit;
   verified normal owner-authorized push follows. Private generated outputs and
   pre-existing IDE build caches are not staged; human identity/no agent credit.
+
+## Checkpoint 2026-10-18 — fixed-door trip smoothing and atomic corridor removal
+
+- Implemented: explicit `scripts.road_consolidation --simplify` after shared
+  frontage. Smooth complete trips without increasing distance/bends; then move
+  every user of a redundant corridor atomically to remaining same-kind pavement.
+  Keep fixed doors and original0.2 world-distance/+4-bend limits across stages.
+  No new pavement, resurrected discarded roads, invented edges or default change.
+  Added eleven tests, resource caps, duplicate/provenance rejection, postcondition
+  guards and developer contract/reproduction documentation before promotion.
+- Fixture(s) / revisions: GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  GamjaOJb163acd2b5fe41edfc1e7fc7d367362851241896; both historical hinted GJ and
+  independently cold-rebuilt GJ geography. Maintained spring-positive and
+  structural-showcase fixtures at parent d536511; catalog0.4.0.
+- Commands run: `python ../artifacts/visual/simplification_trial.py oj gj cold`
+  runs the final pass twice per city, compares canonical routing bytes, checks
+  original bounds/doors/widths/memberships using RoadFrontageTests.check, and
+  packages all renderers under `artifacts/visual/trip-simplification-r4`.
+  Earlier r1 smooth-only trial barely removed pavement; r2 export failed on
+  tuple-valued report keys. Corrected JSON metadata, tested serialization, and
+  regenerated r4 from the unchanged baselines; no failed export is promoted.
+- Fresh end-to-end commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/trip-simplification-fixtures/<spring|unknown>`;
+  `python -m scripts.road_consolidation <build> --out <name>-study --simplify`.
+  Both COMPLETE. Unknown has3 generic buildings/0 routes; Spring6 buildings/
+  2 routes. No target code, dependency installer or build script executed.
+- Results (historical GJ / OJ / cold GJ): pavement23957->23477.5 /
+  6167.5->6101 /23918.5->23337.5; parallel2453.5->2397.5 /868->826 /
+  2495.5->2348.5; junctions1402->1367 /414->403 /1420->1367;
+  bends22642->22158 /6258->6098 /23341->22797. Total route distance
+  725867->734358 /162094->163592 /721695->731495. This trades modest
+  bounded detours for shared pavement; not the preceding pass's roughly50% gain.
+- Planner: smoothing130/66/176 trips; corridor removals27/7/34. Search states
+  2982697/1600853/2844590; proposals1200/767/1200. Both GJ cases reach
+  the proposal cap; individual capped searches0. Fixed upper bounds do not
+  prove global optimality. A single final-pass run took roughly22/9/21seconds
+  locally, excluding artifact rendering, not an end-to-end speed claim.
+- Fidelity and stability: independent browser-data oracle
+  `node ../artifacts/visual/verify_access.mjs <r4>/<gj|oj|cold>/after` passes;
+  4209/1381/4209 exact paths,6157/2243/6157 scene-backed edges and
+  1273/400/1273 connected files, unresolved0, full-width intersections0.
+  `python -m scripts.validate_city <after>/city.json --ucg <after>/graph.ucg.json`
+  passes all three. Actual before/after City and UCG SHA256 match in all cases:
+  no building/district movement or semantic edits. Repeated routing bytes match.
+  A rerouted AiPartAdvisor->AiPreviewGenerationLogRepository trip retains its
+  RESOLVED REFERENCES edge/evidence; inspected corresponding source reference.
+  This does not newly certify incremental route stability under changed input.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs
+  trip-simplification-r4 trip-simplification-focus-r1` captures identical-camera
+  Ops/OJ Detail; same harness with explicit district arguments and `cold` captures
+  `trip-simplification-cold-focus-r1`. Viewed before/after WebGL captures and
+  actual GJ showcase, plus fresh Spring/unknown WebGL and SVG from
+  `node ../artifacts/visual/junction_smoke.mjs trip-simplification-fixtures`.
+  Some redundant strips disappear near the focused blocks; overall silhouette,
+  directory colors and composition remain stable. This is local cleanup, not a
+  dramatic skyline change. Short parallel approaches, angular corners, dense
+  labels and large overview aggregate outlines remain visible correction tasks.
+- Browser commands: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/trip-simplification-audit-r1 <r4>/gj/after <r4>/oj/after`;
+  repeat with `trip-simplification-cold-audit-r1 <r4>/cold/after`.
+  All three LODs, filters, exact route selection, navigation and Synthetic pass.
+  Static builds during animation0. Synthetic CPU p95 overview/district/detail:
+  GJ1.2/1.1/1.1ms, OJ2.0/1.2/1.4ms, cold1.6/1.1/1.1ms; Chrome/SwiftShader,
+  local submission timings, not GPU FPS or a cross-machine speed guarantee.
+  Sparse fixtures separately smoke-tested because their natural LOD is Detail.
+- Tests / determinism / stability: Python416 run,415 pass,1 Windows symlink skip;
+  Node access/junction/paint/audit/camera/landmark suites38 pass; Ruff passes.
+  Dedicated tests cover atomic failed-second-user rollback, no-new-pavement,
+  no resurrection, mixed kinds, input-order determinism, immutable inputs,
+  access-only/empty fallback, original bounds, caps and exact shared membership.
+- Spec alignment: PASS technical7-8, FR-007, AC-002/006/014,
+  DEC-003/005/006/007/011. Public schemas/stable IDs/security/defaults unchanged;
+  derived experimental diagnostic payload documented in CURRENT_BASELINE/ADR-019.
+- Open risks / next actions: preserve necessary endpoint access while evaluating
+  remaining short parallel corridors and repeated bends locally. No claim that
+  curves/roundabouts, road-first parcel reallocation or overall urban design is done.
+  GJ hits bounded proposal limits; default promotion requires separate evaluation.
+- Commits created / pushed (main): one coherent implementation/test/docs unit;
+  verified normal owner-authorized push follows. Private generated artifacts and
+  unrelated pre-existing IDE build caches remain outside the commit.
