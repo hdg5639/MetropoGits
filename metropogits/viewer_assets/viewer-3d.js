@@ -326,6 +326,7 @@
   if (typeof document === "undefined") return;
 
   const data = globalThis.METROPOGITS_DATA;
+  const orientedBuildings = data?.routing?.parcelPlan?.buildings || {};
   const filterEngine = globalThis.METROPOGITS_FILTERS;
   const activityEngine = globalThis.METROPOGITS_ACTIVITY;
   const canvas = document.getElementById("city-canvas");
@@ -662,6 +663,16 @@
     vertex(target, end, [0, 1, 0], vertexColor);
   }
 
+  function orientedBox(target, footprint, y, height, vertexColor) {
+    const top=footprint.map(([x,z])=>[x,y+height,z]);
+    quad(target,[top[0],top[3],top[2],top[1]],[0,1,0],vertexColor);
+    for(let i=0;i<4;i++) {
+      const a=footprint[i],b=footprint[(i+1)%4],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+      quad(target,[[a[0],y,a[1]],top[i],top[(i+1)%4],[b[0],y,b[1]]],
+        [(b[1]-a[1])/length,0,(a[0]-b[0])/length],vertexColor);
+    }
+  }
+
   function roadSegment(target, start, end, width, y, vertexColor) {
     const deltaX = end[0] - start[0];
     const deltaZ = end[1] - start[1];
@@ -711,6 +722,8 @@
       }
     }
     for (const point of lodFramingPoints(scene.buildings,[...aggregateFacilities.values()])) points.push(point);
+    for(const parcel of Object.values(orientedBuildings))for(const part of parcel.parts)
+      for(const [x,z] of part.footprint)points.push([x,part.y+part.height,z]);
     const fitted=fitPerspective(points,state,cameraPolicy,viewportWidth/viewportHeight,Math.max(8,tallestBuilding));
     for (const key of ['targetX','targetY','targetZ']) {
       state[key]=fitted[key];
@@ -930,7 +943,12 @@
       const selectedColor = selected("building", building.entityId)
         ? lighten(baseColor, 0.62)
         : baseColor;
-      for (const part of buildingParts(building, currentDetailLevel === "district")) {
+      const oriented=orientedBuildings[building.entityId];
+      for (const part of oriented?.parts || buildingParts(building, currentDetailLevel === "district")) {
+        if (part.footprint) {
+          orientedBox(triangles,part.footprint,.2+part.y,part.height,part.shade ? lighten(selectedColor,part.shade) : selectedColor);
+          continue;
+        }
         box(
           triangles,
           part.x,
@@ -943,6 +961,13 @@
         );
       }
       if (selected("building", building.entityId)) {
+        if (oriented) {
+          for(let i=0;i<4;i++) {
+            const a=oriented.footprint[i],b=oriented.footprint[(i+1)%4];
+            for(const y of [.24,building.height+.65])line(lines,[a[0],y,a[1]],[b[0],y,b[1]],color("#f8fafc"));
+          }
+          continue;
+        }
         const x0 = building.x - 0.45;
         const x1 = building.x + building.width + 0.45;
         const z0 = building.z - 0.45;
@@ -1126,12 +1151,17 @@
     for (const building of scene.buildings) {
       if (!renderedBuildingIds.has(building.entityId)) continue;
       const corners = [];
+      const oriented=orientedBuildings[building.entityId];
+      if(oriented) {
+        for(const [x,z] of oriented.footprint)for(const y of [.2,building.height+.2])corners.push([x,y,z]);
+      } else {
       for (const x of [building.x, building.x + building.width]) {
         for (const y of [0.2, building.height + 0.2]) {
           for (const z of [building.z, building.z + building.depth]) {
             corners.push([x, y, z]);
           }
         }
+      }
       }
       if (corners.length === 8) {
         regions.push({
@@ -1640,6 +1670,12 @@
     detailRow(details, "Archetype", building.archetype);
     detailRow(details, "Language", entity.language || "Unknown");
     detailRow(details, "Height", building.height);
+    const parcel=orientedBuildings[entityId];
+    if(parcel) {
+      detailRow(details,"Street-facing rotation",`${(parcel.angle*180/Math.PI).toFixed(1)}° · visual, not geographic north`);
+      detailRow(details,"Local displacement",`${parcel.displacement.toFixed(2)} world units`);
+      detailRow(details,"Frontage street",parcel.streetId);
+    }
     detailRow(details, "District", districtLabel(districts.get(building.districtId)));
     inspector.append(details);
     const facility = lodPolicy.facilityForEntity(entityId);

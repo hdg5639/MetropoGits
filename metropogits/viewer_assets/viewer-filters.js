@@ -684,10 +684,11 @@
       (territoryData?.districts || []).map((territory) => [territory.id, territory]),
     );
     const majorIds = new Set(majorDistrictIds(scene));
+    const orientedIds = new Set(streetData?.orientedEntityIds || []);
     const aggregates = roleFacilities(
       aggregateFacilities(scene, majorIds, districts, territories, streetData?.rectangles || []), scene, ucg,
       streetData?.rectangles || [],
-    );
+    ).filter(a => !a.memberEntityIds.some(id => orientedIds.has(id)));
     const aggregateIds = new Set(aggregates.map((aggregate) => aggregate.id));
     const roleByMember = new Map(aggregates.filter(a => a.role)
       .flatMap(a => a.memberEntityIds.map(id => [id, a])));

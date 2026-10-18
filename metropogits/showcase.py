@@ -29,6 +29,8 @@ from scripts.validate_city import validate_document
 
 
 def _corners(rect):
+    if "footprint" in rect:
+        return rect["footprint"]
     x, z, w, d = rect["x"], rect["z"], rect["width"], rect["depth"]
     return [(x, z), (x + w, z), (x + w, z + d), (x, z + d)]
 
@@ -102,6 +104,9 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
     entities = {e["id"]: e for e in graph["entities"]}
     major_ids = sorted(_major_district_ids(scene))
     blocks = derive_blocks(scene, territories) if len(scene["buildings"]) >= 256 else []
+    parcels = routing.get("parcelPlan", {}).get("buildings", {})
+    changed = set(routing.get("parcelPlan", {}).get("changedFootprintIds", []))
+    blocks = [b for b in blocks if not changed.intersection(b["memberEntityIds"])]
     networks = _selected_networks(scene, graph)
     streets = derive_street_grid(scene)["rectangles"]
     mapping = {}
@@ -119,8 +124,11 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         mapping[block["id"]]["kind"] = "visual-block"
         for part in aggregate_parts(block):
             models.append((part, block["id"]))
-    if not blocks:
+    represented = {identity for b in blocks for identity in b["memberEntityIds"]}
+    if not blocks or changed:
         for building in scene["buildings"]:
+            if building["entityId"] in represented:
+                continue
             mapping[building["entityId"]] = dict(
                 kind="file",
                 entityId=building["entityId"],
@@ -134,8 +142,12 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
     )
     for district_id in visible_districts:
         mapping[district_id] = dict(kind="district", districtId=district_id)
-    mapping["visual:streets"] = dict(kind="structural-streets", semantic=False,
-                                     basis=routing["version"], networkIds=sorted(n["id"] for n in networks))
+    mapping["visual:streets"] = dict(
+        kind="structural-streets",
+        semantic=False,
+        basis=routing["version"],
+        networkIds=sorted(n["id"] for n in networks),
+    )
 
     surfaces = [
         (r, district_id)
@@ -146,7 +158,7 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
     cuboids = [
         (part, model["archetype"], owner)
         for model, owner in models
-        for part in building_parts(model)
+        for part in parcels.get(owner, {}).get("parts", building_parts(model))
     ]
     ground_points = [p for rect, _ in surfaces + plots for p in _corners(rect)]
     ground_points += [p for r in streets for p in _corners(r)]
@@ -210,6 +222,7 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
     polygons_for_occupancy = []
 
     from metropogits.city_context import city_context
+
     context = city_context(routing)
 
     def polygon(points, color, attrs="", opacity=1, outline=True):
@@ -220,7 +233,11 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         )
 
     colors = {
-        d: (context['majorColors'][i % len(context['majorColors'])] if context else MAJOR_DISTRICT_COLORS[i % len(MAJOR_DISTRICT_COLORS)])
+        d: (
+            context["majorColors"][i % len(context["majorColors"])]
+            if context
+            else MAJOR_DISTRICT_COLORS[i % len(MAJOR_DISTRICT_COLORS)]
+        )
         for i, d in enumerate(major_ids)
     }
     # Parent ground first; major overlays retain the same canonical locations.
@@ -229,19 +246,26 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
     ):
         polygon(
             [project(x, z) for x, z in _corners(rect)],
-            colors.get(district_id, context['ground'] if context else "#172236"),
+            colors.get(district_id, context["ground"] if context else "#172236"),
             f'data-map-id="{_escape(district_id)}"',
             outline=not bool(context),
         )
-    for plot, owner in ([] if context else plots):
+    for plot, owner in [] if context else plots:
         polygon(
             [project(x, z, 0.05) for x, z in _corners(plot)],
             "#344154",
             f'data-map-id="{_escape(owner)}"',
             0.8,
         )
-    lines.extend(svg_access_lines(routing, project, overview=bool(blocks), network_ids={n["id"] for n in networks},
-                                  hierarchy=derive_road_hierarchy(scene, routing)))
+    lines.extend(
+        svg_access_lines(
+            routing,
+            project,
+            overview=bool(blocks),
+            network_ids={n["id"] for n in networks},
+            hierarchy=derive_road_hierarchy(scene, routing),
+        )
+    )
     faces = []
     for part, archetype, owner in cuboids:
         rotated = [_rotate(x, z, turn) for x, z in _corners(part)]
@@ -249,6 +273,26 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         z0, z1 = min(p[1] for p in rotated), max(p[1] for p in rotated)
         y0, y1 = part["y"], part["y"] + part["height"]
         base = ARCHETYPE_COLORS.get(archetype, ARCHETYPE_COLORS["GENERIC_BUILDING"])[0]
+        if "footprint" in part:
+            physical_faces = [([(x, z, y1) for x, z in rotated], 1.05)]
+            for i, (x, z) in enumerate(rotated):
+                nx, nz = rotated[(i + 1) % 4]
+                if (nz - z) - (nx - x) <= 0:
+                    continue
+                physical_faces.append(
+                    ([(x, z, y0), (nx, nz, y0), (nx, nz, y1), (x, z, y1)], 0.72)
+                )
+            for vertices, shade in physical_faces:
+                faces.append(
+                    (
+                        sum(x + z + y for x, z, y in vertices) / 4,
+                        owner,
+                        vertices,
+                        _shade(base, shade + part["shade"] * 0.2),
+                        archetype,
+                    )
+                )
+            continue
         for vertices, shade in [
             ([(x1, z0, y0), (x1, z1, y0), (x1, z1, y1), (x1, z0, y1)], 0.63),
             ([(x0, z1, y0), (x1, z1, y0), (x1, z1, y1), (x0, z1, y1)], 0.8),
@@ -319,11 +363,13 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         else f"{len(models)} file buildings"
     )
     summary += f" · {len(networks)}/{len(scene['networks'])} routes"
-    footer = 'Visual aggregates · Source evidence in viewer'
-    if 'streetGrid' in routing:
-        assignment = routing['streetGrid']['assignment']
-        footer = (f"Structural streets (visual) · {len(assignment['assignedRouteIds'])}/{len(routing['routes'])} trips assigned"
-                  f" · {len(assignment['fallbackRouteIds'])} legacy paths in viewer · Not runtime traffic")
+    footer = "Visual aggregates · Source evidence in viewer"
+    if "streetGrid" in routing:
+        assignment = routing["streetGrid"]["assignment"]
+        footer = (
+            f"Structural streets (visual) · {len(assignment['assignedRouteIds'])}/{len(routing['routes'])} trips assigned"
+            f" · {len(assignment['fallbackRouteIds'])} legacy paths in viewer · Not runtime traffic"
+        )
     lines += [
         f'<text x="28" y="30" fill="{palette["text"]}" font-family="sans-serif" '
         f'font-size="20" font-weight="700">{_escape(title)}</text>',

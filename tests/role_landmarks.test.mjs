@@ -18,6 +18,24 @@ const policy = ({scene, ucg}, streets = []) => engine.createLodPolicy(scene, nul
 const intersects = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width
   && a.z < b.z + b.depth && b.z < a.z + a.depth;
 
+test('changed physical footprints expand only affected aggregates without losing files', () => {
+  const f = fixture(), baseline = policy(f), changed = baseline.aggregates[0];
+  const p = engine.createLodPolicy(f.scene, null,
+    {rectangles: [], orientedEntityIds: [changed.memberEntityIds[0]]}, f.ucg);
+  assert.deepEqual(p.aggregates, baseline.aggregates.filter(a => a.id !== changed.id));
+  const ids = f.scene.buildings.map(b => b.entityId);
+  for (const level of ['overview', 'district', 'detail']) {
+    const v = p.visibility(level, ids, []);
+    assert.ok(changed.memberEntityIds.every(id => v.buildingIds.includes(id)));
+    const represented = [...v.buildingIds, ...p.aggregates.filter(a => v.aggregateIds.includes(a.id))
+      .flatMap(a => a.memberEntityIds)];
+    assert.deepEqual(represented.sort(), ids.slice().sort());
+  }
+  const partial = p.visibility('overview', [changed.memberEntityIds[0]], []);
+  assert.deepEqual(partial.buildingIds, [changed.memberEntityIds[0]]);
+  assert.deepEqual(partial.aggregateIds, []);
+});
+
 test('same-role facilities promote in stages, keep exact membership and original geometry', () => {
   const f = fixture(), original = JSON.stringify(f), p = policy(f);
   const roles = p.aggregates.filter(a => a.role);

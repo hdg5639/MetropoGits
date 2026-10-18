@@ -4,6 +4,7 @@
   if (globalThis.METROPOGITS_RENDERER === "webgl") return;
 
   const data = globalThis.METROPOGITS_DATA;
+  const orientedBuildings=data?.routing?.parcelPlan?.buildings || {};
   const filterEngine = globalThis.METROPOGITS_FILTERS;
   const canvas = document.getElementById("city-canvas");
   const context = canvas.getContext("2d");
@@ -717,9 +718,10 @@
   }
 
   function buildingDepth(building) {
+    const physical = orientedBuildings[building.entityId]?.center;
     const rotated = rotatePoint(
-      building.x + building.width / 2,
-      building.z + building.depth / 2,
+      physical?.[0] ?? building.x + building.width / 2,
+      physical?.[1] ?? building.z + building.depth / 2,
     );
     return rotated.x + rotated.z;
   }
@@ -756,6 +758,28 @@
   }
 
   function drawBuilding(building) {
+    const oriented=orientedBuildings[building.entityId];
+    if(oriented) {
+      const palette=colors[building.archetype] || colors.GENERIC_BUILDING;
+      const faces=[];
+      for(const part of oriented.parts) {
+        const bottom=part.footprint.map(([x,z])=>project(x,z,part.y));
+        const top=part.footprint.map(([x,z])=>project(x,z,part.y+part.height));
+        const depth=part.footprint.map(([x,z])=>{const r=rotatePoint(x,z);return r.x+r.z;});
+        for(let i=0;i<4;i++)faces.push({points:[bottom[i],bottom[(i+1)%4],top[(i+1)%4],top[i]],
+          depth:(depth[i]+depth[(i+1)%4])/2+part.y+part.height/2,color:palette[1+i%2]});
+        faces.push({points:top,depth:depth.reduce((a,b)=>a+b,0)/4+part.y+part.height,color:palette[0],roof:true});
+      }
+      for(const face of faces.sort((a,b)=>a.depth-b.depth)) {
+        polygonPath(face.points);context.fillStyle=face.color;context.fill();
+        if(face.roof) {
+          context.strokeStyle=selected("building",building.entityId)?"#f8fafc":"rgba(203,213,225,.62)";
+          context.lineWidth=selected("building",building.entityId)?2.5:1;context.stroke();
+        }
+        hitRegions.push({kind:"building",id:building.entityId,points:face.points});
+      }
+      return;
+    }
     const outline = drawVolume(
       building,
       colors[building.archetype] || colors.GENERIC_BUILDING,
@@ -1103,6 +1127,12 @@
     detailRow(details, "Archetype", building.archetype);
     detailRow(details, "Language", entity.language || "Unknown");
     detailRow(details, "Height", building.height);
+    const parcel=orientedBuildings[entityId];
+    if(parcel) {
+      detailRow(details,"Street-facing rotation",`${(parcel.angle*180/Math.PI).toFixed(1)}° · visual, not geographic north`);
+      detailRow(details,"Local displacement",`${parcel.displacement.toFixed(2)} world units`);
+      detailRow(details,"Frontage street",parcel.streetId);
+    }
     detailRow(details, "District", districtLabel(districts.get(building.districtId)));
     inspector.append(details);
     const facility = lodPolicy.facilityForEntity(entityId);

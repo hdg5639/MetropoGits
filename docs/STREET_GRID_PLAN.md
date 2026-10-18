@@ -377,3 +377,55 @@ constrain inner streets. This is a verified local capability, **not a citywide
 escape from the grid**. Next investigate coordinated connector/parcel planning
 with explicit placement-stability limits; do not merely relax collision checks
 or add decorative roundabouts. Default behavior and branch integration are unchanged.
+
+## Street-facing buildings — Phase A, ADR-022, 2026-10-19
+
+```powershell
+python -m scripts.street_grid BUILD --street-grid --aligned-blocks --frontage-parcels --out NEW_DIRECTORY
+```
+
+This opt-in mode includes junction streets. It does not change the default CLI,
+canonical City/UCG schemas or the branch-integration decision. `parcel-plan.json`
+and embedded `routing.parcelPlan` contain derived physical corners, whole-model
+parts, facing vector, frontage edge/point, selected street, gap and pinned doors.
+The front is local +Z turned toward the nearest eligible physical street, **not
+geographic north**. Preserve native width/depth/height and all existing doorways.
+Reject a candidate that crosses another building, a full-width road or its
+directory footprint. An unpinned candidate may translate at most seven units.
+Resource exhaustion fails explicitly. Deterministic candidate order and spatial
+indexes bound the pass; unrelated distant additions do not change a placement.
+
+WebGL, Canvas, selection/picking and CPU previews use the same physical corners.
+A small canopy marks the front without becoming an entity or evidence claim.
+Only aggregates containing changed footprints expand into individual buildings;
+other role compounds and Overview blocks remain intact. No extra files or roads
+are created to fill empty ground, and no source metrics are inflated.
+
+Same-camera comparison: `artifacts/visual/street-facing-focus-r2/index.html`.
+Actual viewers: `street-facing-r2/{sqlitebrowser,pocketbase,gj,oj}/after/index.html`.
+The before side is the previous oblique-junction output rebuilt with current assets.
+
+| Snapshot | Street-facing models | Nonzero rotation | Non-cardinal rotation | Moved buildings |
+| --- | ---: | ---: | ---: | ---: |
+| SQLite Browser | 506 | 429 | 0 | 0 |
+| PocketBase | 664 | 504 | 0 | 0 |
+| GJ Cloud | 1,324 | 1,005 | 0 | 0 |
+| GamjaOJ | 681 | 554 | 0 | 0 |
+
+The real corpus currently accepts quarter/half turns of square footprints. Detail
+captures show warehouse roof bands and asymmetric models facing different streets;
+Overview and README compositions are essentially unchanged. **This is not a
+demonstrated empty-space improvement or block-local re-layout.** All 5,782 trips,
+their endpoints and physical roads remain exactly unchanged; footprint area and
+positions are also unchanged. Collision/owner checks pass and repeated packages
+are byte-identical. A controlled geometry unit fixture verifies 45-degree rotation,
+bounded translation, rectangular dimensions and setback; it is not a claim of
+diagonal placement in the four real repositories.
+
+Next priority: Phase B, coordinated block-local parcels and frontage entrances.
+Choose a dominant adjacent street axis per block, generate feasible local parcels,
+then reconnect explicit building entrances while retaining relationship identity.
+Use stable block anchors and reject unsafe candidates atomically. Merely loosening
+door/collision tests or randomly rotating tight six-unit squares is not acceptable.
+Phase C adds corner-lot handling after that. Evidence-based role silhouettes stay
+authoritative; road hierarchy may influence visual placement, not invent roles.

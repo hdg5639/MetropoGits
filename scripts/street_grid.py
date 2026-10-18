@@ -15,7 +15,8 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph, *, aligned=False, curves=False, diagonals=False, junctions=False):
+def compare(scene, graph, *, aligned=False, curves=False, diagonals=False, junctions=False, parcels=False):
+    junctions = junctions or parcels
     if junctions and (not aligned or curves or diagonals):
         raise ValueError('junction streets require aligned blocks and cannot combine with other geometry flags')
     if diagonals and (not aligned or curves):
@@ -36,6 +37,9 @@ def compare(scene, graph, *, aligned=False, curves=False, diagonals=False, junct
     if junctions:
         from metropogits.street_junctions import plan_junctions
         after['diagonalPlan'] = plan_junctions(scene, after)
+    if parcels:
+        from metropogits.frontage_parcels import plan_parcels
+        after['parcelPlan'] = plan_parcels(scene,after)
     def identity(routing):
         return {p['id']: [p[k] for k in ('source', 'target', 'kind', 'edgeIds', 'networkIds')]
                 for p in routing['routes']}
@@ -56,6 +60,8 @@ def compare(scene, graph, *, aligned=False, curves=False, diagonals=False, junct
         report['diagonals'] = after['diagonalPlan']
     if junctions:
         report['junctions'] = after['diagonalPlan']
+    if parcels:
+        report['parcels'] = after['parcelPlan']
     return before, after, report
 
 
@@ -67,6 +73,7 @@ def main():
     parser.add_argument('--curved-streets', action='store_true', help='round clearance-certified non-branching bends; requires aligned blocks')
     parser.add_argument('--diagonal-streets', action='store_true', help='replace eligible branch-free street detours with collision-checked diagonal chords; requires aligned blocks')
     parser.add_argument('--junction-streets', action='store_true', help='reconstruct three-arm junctions on the diagonal baseline; requires aligned blocks')
+    parser.add_argument('--frontage-parcels', action='store_true', help='orient physical buildings toward streets with bounded in-owner movement; includes junction streets')
     parser.add_argument('--out', required=True, type=Path)
     args = parser.parse_args()
     try:
@@ -81,7 +88,7 @@ def main():
         if args.curved_streets and not args.aligned_blocks:
             raise ValueError('--curved-streets requires --aligned-blocks')
         before, after, report = compare(scene, graph, aligned=args.aligned_blocks, curves=args.curved_streets,
-                                       diagonals=args.diagonal_streets, junctions=args.junction_streets)
+                                       diagonals=args.diagonal_streets, junctions=args.junction_streets, parcels=args.frontage_parcels)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)

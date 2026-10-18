@@ -5213,3 +5213,89 @@
 - Commit/push: atomic feature unit includes ADR, implementation, tests and this
   checkpoint. Intended verified delivery to existing origin/experiment/street-grid,
   normal push after staged diff and human identity/attribution review. No main merge.
+
+## Checkpoint 2026-10-19 — Street-facing buildings, Phase A (parent 81e13cc)
+- Implemented: ADR-022 opt-in `--frontage-parcels`, including existing junction
+  streets. Deterministic physical frontage selection, whole-archetype rotation,
+  bounded in-owner translation candidates and exact preservation of existing
+  civic/relationship doorways. Export derived `street-parcels/0.1` separately;
+  no canonical City/UCG field or ID change. A non-semantic facade canopy marks
+  the front. WebGL, Canvas, picking/selection and SVG use physical corners.
+  Changed-footprint aggregates expand without losing/duplicating members;
+  unchanged role compounds remain intact at all LODs.
+- Fixtures/revisions: pinned oblique-junctions-r1 snapshots, GJ Cloud
+  local-sha256-06eb492d57141c16 (1,324 files), GamjaOJ
+  local-sha256-c2e80f9d3908fec8 (681), PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522 (664), SQLite Browser
+  ae32df153a64d250de7c77a5057deeff4092a39b (506, no evidenced networks).
+  Maintained spring-positive at parent81e13cc freshly scanned through the CLI,
+  producing local-sha256-645189cce01fc6ab. No target code/dependencies executed.
+- Commands run from MetropoGits: `python -m unittest discover -s tests -q`;
+  `node --test tests/*.test.mjs`; `python -m ruff check .`; `git diff --check`.
+  Fresh E2E: `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/street-facing-e2e-r2/build`, then `python -m scripts.street_grid
+  ../artifacts/visual/street-facing-e2e-r2/build --street-grid --aligned-blocks
+  --frontage-parcels --out ../artifacts/visual/street-facing-e2e-r2/street`.
+  Local private-snapshot helpers: `python ../artifacts/visual/orientation_review.py
+  street-facing-r2` (repeat packages, full building/road collision and owner/door
+  checks); `node ../artifacts/visual/diagonal_focus.mjs street-facing-r2
+  street-facing-focus-r2 parcels` (same-camera Detail/Overview, all four).
+  `node scripts/viewer_audit.mjs CHROME OUT INPUT...` with installed Google Chrome:
+  street-facing-audit-r2 covers GJ/PocketBase/SQLite/fresh spring output;
+  street-facing-oj-audit-r2 covers OJ. `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/street-facing-context-r2 ../artifacts/visual/street-facing-r2/gj/after`
+  checks actual WebGL/forced Canvas and structure-toggle restoration.
+- Artifacts: `artifacts/visual/street-facing-r2/{sqlitebrowser,pocketbase,gj,oj}/
+  {before,after}`, `street-facing-focus-r2/index.html`, the audit directories above,
+  and `street-facing-e2e-r2`. Detailed source-preservation evidence also checked
+  in r1 with orientation_verify.py: GJ admin/docs/page.tsx -> admin-image-url.ts,
+  RESOLVED IMPORTS edge b8f040e5..., IMPORT evidence f5eb04d1... at line13 and
+  configured @/* path evidence77fd212a.... All graph/evidence records identical.
+- Quantitative outcome: SQLite/PocketBase/GJ/OJ have 506/664/1,324/681 frontage
+  models, of which 429/504/1,005/554 rotate by a nonzero quarter/half turn.
+  **All four have zero non-cardinal rotations and zero moved buildings.** The
+  existing square plots and pinned entrances prevent oblique relocation; this
+  is not an empty-space or density improvement. Full-width road/building
+  intersections0; owner escape0; all original doors stay on the perimeter.
+  Canonical scene/graph and physical/logical routing are exactly unchanged.
+  All5,782 trips retain IDs, endpoints, edge membership and physical geometry.
+  Repeated packages match byte-for-byte; footprint area and source dimensions
+  remain unchanged. Controlled geometry tests, not the real corpus, establish
+  45-degree rotation/translation, rectangular footprint and setback behavior.
+- Visual findings: same-camera GJ Detail shows warehouse roof bands and asymmetric
+  building parts turned toward different adjacent streets. PocketBase/SQLite
+  remain generic without invented roles; GJ/OJ semantic colors remain intact.
+  Overview and README retain their existing compositions and aggregates, so the
+  thumbnail improvement is small. Large empty gaps and regular block axes are
+  still visible. Fresh spring default framing is usable; the audit's forced
+  zoomed Detail can enter tall buildings and is not an automatic framing claim.
+- Tests/determinism/stability: Python501 run,500 pass,1 existing Windows symlink
+  skip; Node54 pass. Seven Python parcel tests cover arbitrary rotation,
+  rectangular dimensions, low-height canopy bounds, concave owner clipping,
+  protected doors, neighbor overlap, ordering/reversal, distant-addition
+  stability, explicit work/index caps and repeated source-preserving packaging.
+  New Node test proves partial filters/LODs cannot lose or double-represent files
+  when only an affected aggregate is expanded. Full existing stability/golden,
+  schema/security and integration suites pass. No tests weakened.
+- Fixes applied/reverified: replaced initial all-street/all-building candidate
+  comparisons with bounded spatial queries; explicit ranking/index limits fail
+  closed. Kept canopy inside original footprint/height. Sorted physical part
+  faces together in Canvas/SVG so a rear low canopy cannot simply paint on top
+  of the whole front building; regenerated r2 packages/captures after this fix.
+  Actual Synthetic audits report0 static geometry rebuilds in all tested LODs;
+  SQLite animation remains unavailable without evidenced networks. CPU submission
+  timing is not GPU FPS or a cross-machine performance guarantee.
+- Spec alignment: PASS under user-approved ADR-022 experiment, building on
+  ADR-020/021. Rechecked technical7/8, functional AC-002/003/006/011 and product
+  DEC-005/007/008/011. Stable canonical geography, evidence fidelity, local static
+  output and unsupported-language fallback preserved. No default promotion,
+  untrusted code execution, new runtime service or main merge.
+- Open risks/next actions: PhaseB must co-plan block-local parcels and entrances
+  to obtain actual oblique placements and better use of space. Do not sell
+  cardinal model rotation as that result, shrink buildings to force fits or
+  disable collision/door checks. PhaseC corner lots and role-aware hierarchy
+  bias follow coordinated parcel work. Arbitrary-angle visual geometry is only
+  covered by controlled fixtures here, not accepted real-corpus placements.
+- Commit/push: one atomic feature unit with ADR, implementation, regression
+  tests and this checkpoint. Verified delivery targets the existing upstream
+  origin/experiment/street-grid after final staged review; no main integration.

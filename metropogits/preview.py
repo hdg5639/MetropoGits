@@ -616,6 +616,51 @@ def render_preview(
     lines.append("  <g id=\"buildings\">")
     for building in scene["buildings"]:
         x, y = project(building["x"], building["z"])
+        parcel = (
+            routing.get("parcelPlan", {}).get("buildings", {}).get(building["entityId"])
+        )
+        if parcel:
+            colors = ARCHETYPE_COLORS.get(
+                building["archetype"], ARCHETYPE_COLORS["GENERIC_BUILDING"]
+            )
+            vertical = max(3.0, min(16.0, float(building["height"]) * 0.8)) / float(
+                building["height"]
+            )
+            lines.append(
+                f'<g data-entity-id="{_escape(building["entityId"])}" data-archetype="{_escape(building["archetype"])}" data-placement="street-frontage">'
+            )
+            lines.append(
+                f"<title>{_escape(entities.get(building['entityId'], {}).get('path', building['entityId']))} · street-derived orientation</title>"
+            )
+            faces = []
+            for part in parcel["parts"]:
+
+                def ring(height):
+                    return [
+                        (
+                            project(px, pz)[0] - height * vertical * 0.45,
+                            project(px, pz)[1] - height * vertical,
+                        )
+                        for px, pz in part["footprint"]
+                    ]
+
+                bottom, top = ring(part["y"]), ring(part["y"] + part["height"])
+                for i in range(4):
+                    a, b = part["footprint"][i], part["footprint"][(i + 1) % 4]
+                    if (b[1] - a[1]) * 0.45 - (b[0] - a[0]) <= 0:
+                        continue
+                    points = [bottom[i], bottom[(i + 1) % 4], top[(i + 1) % 4], top[i]]
+                    text = " ".join(f"{_fmt(px)},{_fmt(py)}" for px, py in points)
+                    depth = vertical * (0.45 * (a[0] + b[0]) + a[1] + b[1]) / 2
+                    depth += scale * (part["y"] + part["height"] / 2)
+                    faces.append((depth, f'<polygon points="{text}" fill="{colors[1 + i % 2]}"/>'))
+                text = " ".join(f"{_fmt(px)},{_fmt(py)}" for px, py in top)
+                depth = sum(vertical * (0.45 * px + pz) for px, pz in part["footprint"]) / 4
+                depth += scale * (part["y"] + part["height"])
+                faces.append((depth, f'<polygon points="{text}" fill="{colors[0]}" stroke="#0f172a" stroke-width=".75"/>'))
+            lines.extend(face for _, face in sorted(faces, key=lambda item: item[0]))
+            lines.append("</g>")
+            continue
         building_width = max(float(building["width"]) * scale, 2.0)
         building_depth = max(float(building["depth"]) * scale, 2.0)
         extrusion = max(3.0, min(16.0, float(building["height"]) * 0.8))
