@@ -147,3 +147,18 @@ Remaining failures567/567/268, sparse-unknown width transitions, regular grid
 appearance and excess overview whitespace still need work. This improves the
 experimental street skeleton; it does not solve city composition or prove the
 new infrastructure is universally better than the older dependency-only renderer.
+
+## Viewer composition follow-up
+
+`artifacts/visual/aligned-framing-r2/{gj,oj,cold}` combines the above unchanged
+street assignment with perspective-aware initial framing. Comparison gallery:
+`framing-comparison-r1/index.html`. Same1500x1000 viewport, same Overview LOD,
+same entity counts; only camera target/distance change. In the drawable canvas,
+projected canonical building bounds span GJ53.4%→74.4% of width and67.4%→87.5%
+of height; OJ65.2%→85.9% and69.7%→83.7%. These are bounding spans, not occupied
+pixel area. No projected canonical building corner is outside the view frustum
+in these captures. Orbit target height is preserved. Smaller fixtures also pass.
+
+Remaining work is still physical street/parcel readability: narrow/wide surface
+transitions and overly regular grids are visible. Better framing exposes those
+issues rather than fixing them, and is not grounds to promote the experiment.

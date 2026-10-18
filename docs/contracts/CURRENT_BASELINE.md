@@ -408,3 +408,14 @@ with the existing area/building/seed limits; incomplete exploration is PARTIAL.
 Original0.1 mode, City/UCG, canonical positions and original trip doors/budgets
 are unchanged. No full incremental stability guarantee for derived streets is
 introduced; geometry changes can change wave ownership and connector choices.
+
+### Perspective framing (viewer only)
+
+Initial WebGL fitting solves the perspective-frustum inequalities over the same
+district/building/aggregate extent points instead of moving backward around a
+fixed world-AABB center. Yaw, pitch, margins, point membership and rendered LOD
+are unchanged. The target may translate in X/Z; its ground-relative Y is retained
+so zoom never starts with an underground orbit pivot. A1% distance guard remains.
+Reset restores this fitted target. This changes neither scene/routing data nor
+CPU preview/Canvas projection, and does not crop outlier buildings to enlarge
+the city. Subsequent manual camera movement remains user-controlled.

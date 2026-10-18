@@ -299,6 +299,11 @@ process.stdout.write(JSON.stringify(globalThis.METROPOGITS_CAMERA_POLICY));
         self.assertLess(policy["yaw"], -0.5)
         self.assertGreater(policy["yaw"], -0.8)
 
+    @unittest.skipUnless(shutil.which("node"), "Node.js is unavailable")
+    def test_perspective_framing_keeps_extreme_points_inside_view(self):
+        subprocess.run(["node", "--test", str(Path(__file__).with_name("camera_framing.test.mjs"))],
+                       check=True, capture_output=True, encoding="utf-8")
+
     def test_webgl_renderer_has_explicit_2d_fallback_boundary(self):
         artifacts = render_viewer(generate_city(load_fixture()), load_fixture())
         webgl = artifacts["assets/viewer-3d.js"].decode("utf-8")

@@ -4618,3 +4618,60 @@
 - Commit / push: separate verified feature unit on experiment/street-grid;
   staged diff and ordinary upstream push follow this checkpoint. Delivery hash
   recorded in handoff; no merge/main push or agent attribution.
+
+## Checkpoint 2026-10-18 — perspective-aware initial city framing
+- Implemented: analytic perspective fitting of the unchanged framing point set,
+  allowing X/Z target translation instead of backing away from a fixed map
+  center. Original yaw/pitch/margins and orbit target height preserved; Reset
+  restores the fitted pose. No entity omission, scene change or road rerouting.
+- Fixtures / revisions: same GJ/OJ pinned revisions as the preceding checkpoint,
+  hinted/cold variants at62c8d22; fresh spring-positive and structural-showcase.
+- Commands / artifacts: `node ../artifacts/visual/framing_review.mjs OUT INPUT...`
+  captured framing-before-r1 from aligned-streets-r1/{gj,oj}/after and the two
+  aligned-streets-fixtures outputs before editing. `python
+  ../artifacts/visual/framed_streets_export.py` packages aligned-framing-r2/{gj,oj,cold}
+  and asserts unchanged scene/graph/routing bytes. Current captures are
+  framing-after-r2 with those gj/oj inputs plus
+  aligned-framing-fixtures/{spring,unknown}-ground-pivot/after.
+  `node ../artifacts/visual/framing_metrics.mjs` independently projects every
+  canonical building corner, checks unchanged LOD/counts/orbit height and zero
+  out-of-frustum corners. Private framing-comparison-r1/index.html links captures.
+- Visual findings: inspected framing-before-r1/0/initial.png and
+  framing-after-r2/0/initial.png (GJ), framing-after-r1/1/initial.png (OJ initial
+  candidate), and real Spring/unknown previews from the fresh pipeline. Same
+  1500x1000 viewport and Overview membership. Final projected building-bound
+  width GJ53.4%→74.4%, OJ65.2%→85.9%; height67.4%→87.5%,69.7%→83.7%.
+  Bounding spans, not filled pixel area. All canonical corners remain inside;
+  no buildings deleted to manufacture improvement. Broad surfaces/regular grids
+  and aggregate silhouettes remain separate visual shortcomings.
+- Fixes: initial lateral fit moved the orbit target below ground; corrected by
+  sliding the target along its view ray to retain original Y. Added regression
+  assertion for orbit height, including low/high pitch. Initial Windows test
+  output decoding raised a cp949 reader-thread error despite success status;
+  set explicit UTF-8 and reran the full suite without that exception.
+- E2E: fresh `python -m metropogits build --repo FIXTURE --out OUTPUT` for
+  spring-positive/structural-showcase to aligned-framing-fixtures/spring,unknown;
+  `python -m scripts.street_grid BUILD --street-grid --aligned-blocks --out OUT`
+  produces *-ground-pivot after the fix. `junction_smoke.mjs aligned-framing-fixtures`
+  produced WebGL and SVG captures before the pivot correction (SVG unaffected).
+  Fresh default build framing-default-spring-r1 and framing-default-audit-r1
+  verify ordinary non-street-mode loading with the corrected camera.
+- Browser: `node scripts/viewer_audit.mjs CHROME OUT INPUT...` for final
+  aligned-framing-r2/gj,oj → aligned-framing-audit-r2 and cold →
+  aligned-framing-cold-audit-r2. Same installed Chrome executable as preceding
+  checkpoint. Three LODs, filters, pan/orbit, route inspection and Synthetic pass;
+  static rebuilds0. These CPU checks do not establish GPU FPS/performance gains.
+- Tests / stability: Python451 run,450 pass,1 existing Windows symlink skip via
+  `python -m unittest discover -s tests -q`. Seven Node suites43 pass (prior six
+  plus camera_framing). Independent projection tests cover rotations, aspect
+  ratios, displaced cities, outliers, degeneracy, near/far clipping and order
+  determinism. Ruff and whitespace checks pass. Get-FileHash comparison confirms
+  City/UCG/preview.svg/showcase.svg unchanged for GJ/cold/OJ; package comparison
+  confirms identical routing. No changed geography requiring neighbor churn tests.
+- Spec alignment: PASS, technical8 / FR-012 / AC-011, same structural experiment
+  meaning under ADR-020. Public contracts/evidence unchanged. Camera code is shared
+  by normal WebGL output; Canvas and CPU previews remain unchanged.
+- Open risks / next: improve physical width transitions and block readability;
+  framing does not solve these or justify default promotion of the street mode.
+- Commit / push: second independently verified work unit on experiment/street-grid;
+  stage review and normal upstream push follow. Exact hash/result in handoff.

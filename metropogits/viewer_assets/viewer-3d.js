@@ -76,6 +76,35 @@
     };
   }
 
+  function fitPerspective(points, camera, policy, aspect, minimumDistance = 8) {
+    if (!points.length) return {...camera};
+    const cy = Math.cos(camera.yaw), sy = Math.sin(camera.yaw);
+    const cp = Math.cos(camera.pitch), sp = Math.sin(camera.pitch);
+    const right = [cy, 0, -sy], up = [-sp * sy, cp, -sp * cy];
+    const forward = [cp * sy, sp, cp * cy];
+    const dot = (a,b) => a.reduce((sum,value,i)=>sum+value*b[i],0);
+    const horizontal = Math.tan(policy.fieldOfView / 2) * aspect * policy.horizontalMargin;
+    const vertical = Math.tan(policy.fieldOfView / 2) * policy.verticalMargin;
+    let left = Infinity, rightmost = -Infinity, bottom = Infinity, top = -Infinity, nearest = -Infinity;
+    for (const point of points) {
+      const x=dot(point,right), y=dot(point,up), z=dot(point,forward);
+      left=Math.min(left,x-horizontal*z); rightmost=Math.max(rightmost,x+horizontal*z);
+      bottom=Math.min(bottom,y-vertical*z); top=Math.max(top,y+vertical*z);
+      nearest=Math.max(nearest,z);
+    }
+    const x=(rightmost+left)/2, y=(top+bottom)/2;
+    // Slide the orbit target along the view ray to preserve its ground-relative
+    // height. Otherwise a good initial fit can put the zoom pivot underground.
+    const depth=Math.abs(sp)>1e-6 ? (camera.targetY-up[1]*y)/sp
+      : dot([camera.targetX,camera.targetY,camera.targetZ],forward);
+    // Intersect perspective-frustum inequalities, allowing lateral framing to
+    // move. Keeping the world AABB center fixed can waste half the viewport.
+    const eyeDepth=Math.max((rightmost-left)/(2*horizontal),(top-bottom)/(2*vertical),
+      depth+minimumDistance,nearest+Math.max(1,minimumDistance/100));
+    const target=right.map((value,i)=>value*x+up[i]*y+forward[i]*depth);
+    return {...camera,targetX:target[0],targetY:target[1],targetZ:target[2],distance:(eyeDepth-depth)*1.01};
+  }
+
   function stableVariant(value, count) {
     let hash = 2166136261;
     for (const character of String(value)) {
@@ -208,6 +237,7 @@
   });
 
   globalThis.METROPOGITS_WEBGL_MATH = Object.freeze({
+    fitPerspective,
     lookAt,
     multiply,
     perspective,
@@ -683,24 +713,12 @@
         );
       }
     }
-    function fits(distance) {
-      const matrix = cameraMatrixAtDistance(distance);
-      return points.every((point) => {
-        const clip = transformPoint(matrix, point);
-        if (clip[3] <= 0) return false;
-        return Math.abs(clip[0] / clip[3]) <= cameraPolicy.horizontalMargin
-          && Math.abs(clip[1] / clip[3]) <= cameraPolicy.verticalMargin;
-      });
+    const fitted=fitPerspective(points,state,cameraPolicy,viewportWidth/viewportHeight,Math.max(8,tallestBuilding));
+    for (const key of ['targetX','targetY','targetZ']) {
+      state[key]=fitted[key];
+      initialCamera[key]=fitted[key];
     }
-    let low = Math.max(8, tallestBuilding);
-    let high = Math.max(initialCamera.distance, low * 2);
-    while (!fits(high) && high < worldSpan * 20) high *= 1.35;
-    for (let iteration = 0; iteration < 24; iteration += 1) {
-      const middle = (low + high) / 2;
-      if (fits(middle)) high = middle;
-      else low = middle;
-    }
-    return high * 1.01;
+    return fitted.distance;
   }
 
   function selected(kind, id) {
