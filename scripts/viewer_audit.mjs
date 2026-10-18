@@ -65,6 +65,16 @@ export function instrument(source) {
       hitMs: auditHitEnd - auditDrawEnd, labelsMs: ended - auditHitEnd,`);
   return replaceOnce(result, '  new ResizeObserver(resize).observe(canvas);', `
   globalThis.__METRO_AUDIT__ = {
+    roadTargets() {
+      if (!accessPolicy) return [];
+      return hitRegions.filter(region => region.kind === 'network')
+        .map(region => ({id:region.id, x:(region.minX+region.maxX)/2, y:(region.minY+region.maxY)/2}))
+        .filter(point => point.x>8 && point.y>8 && point.x<viewportWidth-8 && point.y<viewportHeight-8
+          && hitTest(point.x,point.y)?.id===point.id)
+        .map(point => ({...point, choices:accessPolicy.choices(point.id,visibleBuildingIds,visibleNetworkIds)}))
+        .filter(point => point.choices.length>1)
+        .sort((a,b)=>a.choices.length-b.choices.length || a.id.localeCompare(b.id));
+    },
     accessTargets() {
       if (!accessPolicy) return [];
       return hitRegions.filter(region => region.kind === 'building')
@@ -453,6 +463,49 @@ export async function runAudit(browser, output, inputs, samples = 20) {
         const capture=await cdp.send('Page.captureScreenshot',{format:'png'});
         await writeFile(join(directory,'access-selected.png'),Buffer.from(capture.data,'base64'));
         result.accessInteraction=check;
+      }
+      await configure(cdp, {zoom:1.6});
+      const roadTargets=await cdp.evaluate('__METRO_AUDIT__.roadTargets()');
+      if (roadTargets.length) {
+        const target=roadTargets[0], before=await snapshot(cdp), route=target.choices[0];
+        const point={x:target.x+before.canvasRect.x,y:target.y+before.canvasRect.y};
+        await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
+        await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
+        await nextDraw(cdp,before.sequence);
+        const count=await cdp.evaluate('document.querySelector("#route-choice")?.options.length');
+        if(count!==target.choices.length+1) throw new Error('Shared-road choices missing');
+        await activate(cdp, `(()=>{const control=document.querySelector('#route-choice');control.value=${JSON.stringify(route.id)};control.dispatchEvent(new Event('change'));})()`);
+        const check=await cdp.evaluate('__METRO_AUDIT__.accessState()');
+        if(check.selected?.routeId!==route.id || JSON.stringify(check.routes)!==JSON.stringify([route.id])
+          || JSON.stringify(check.segments)!==JSON.stringify([...route.segmentIds].sort()) || !check.highlightComplete)
+          throw new Error('Single relation path drill-down failed');
+        const text=await cdp.evaluate('document.querySelector("#inspector-content").textContent');
+        if(!route.edgeIds.every(id=>text.includes(id))) throw new Error('Exact edge IDs missing from path inspector');
+        const capture=await cdp.send('Page.captureScreenshot',{format:'png'});
+        await writeFile(join(directory,'route-inspector.png'),Buffer.from(capture.data,'base64'));
+        const language=await cdp.evaluate(`(()=>{const current=METROPOGITS_DATA.ucg.entities.find(e=>e.id===${JSON.stringify(route.source)})?.language;
+          return [...document.querySelector('[data-filter=language]').options].find(o=>o.value && o.value!==current)?.value;})()`);
+        if (language) {
+          await activate(cdp, `(()=>{const control=document.querySelector('[data-filter=language]');control.value=${JSON.stringify(language)};control.dispatchEvent(new Event('change'));})()`);
+          if((await cdp.evaluate('__METRO_AUDIT__.accessState()')).selected!==null
+            || await cdp.evaluate('Boolean(document.querySelector("#route-choice"))'))
+            throw new Error('Hidden path selection survived an endpoint filter');
+          await activate(cdp,'document.querySelector("#clear-filters").click()');
+          // Restore through the same real road pointer interaction after filtering.
+          const fresh=(await cdp.evaluate('__METRO_AUDIT__.roadTargets()')).find(item=>item.id===target.id);
+          if(!fresh) throw new Error('Road target disappeared after clearing filters');
+          const frame=await snapshot(cdp), point={x:fresh.x+frame.canvasRect.x,y:fresh.y+frame.canvasRect.y};
+          await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
+          await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});
+          await nextDraw(cdp,frame.sequence);
+        }
+        await activate(cdp, `(()=>{const control=document.querySelector('#route-choice');control.value='';control.dispatchEvent(new Event('change'));})()`);
+        const restored=await cdp.evaluate('__METRO_AUDIT__.accessState()');
+        if(JSON.stringify(restored.routes)!==JSON.stringify(target.choices.map(r=>r.id).sort()))
+          throw new Error('Shared-road path restoration failed');
+        result.routeInteraction={segment:target.id,choices:count-1,route:route.id,edgeIds:route.edgeIds,filterReset:language || null,check};
+      } else if (await cdp.evaluate('Boolean(METROPOGITS_DATA.routing?.routes.length)')) {
+        throw new Error('No shared road hit target for drill-down audit');
       }
       // Real navigation controls: target translation must not turn into altitude/orbit.
       const cameraStart = await configure(cdp, {zoom:1.6});

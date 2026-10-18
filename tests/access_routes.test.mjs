@@ -45,6 +45,27 @@ test('selecting a shared segment exposes only its actual complete routes',()=>{
   assert.deepEqual([...frame.routeIds],['ab','cd']);
   assert.equal(frame.segmentIds.size,5);
 });
+test('drill-down isolates one complete path and keeps context optional',()=>{
+  const selected={kind:'network',id:'shared',routeId:'ab'};
+  const frame=policy.frame('overview',files,networks,selected);
+  assert.deepEqual([...frame.routeIds],['ab']);
+  assert.deepEqual([...frame.segmentIds].sort(),['a','b','shared']);
+  assert.ok(frame.segments.every(s=>s.highlighted));
+  const context=policy.frame('detail',files,networks,selected,true);
+  assert.deepEqual([...context.routeIds],['ab','cd']);
+  assert.deepEqual(context.segments.filter(s=>s.highlighted).map(s=>s.id).sort(),['a','b','shared']);
+  assert.deepEqual(policy.choices('shared',files,networks).map(r=>r.id),['ab','cd']);
+  assert.deepEqual(policy.choices('n',files,networks).map(r=>r.id),['ab','cd']);
+});
+test('drill-down cannot escape its road or bypass endpoint and network filters',()=>{
+  for(const selected of [{kind:'network',id:'a',routeId:'cd'}, {kind:'network',id:'shared',routeId:'missing'}]) {
+    assert.equal(policy.frame('detail',files,networks,selected).routes.length,0);
+  }
+  const selected={kind:'network',id:'shared',routeId:'ab'};
+  assert.equal(policy.frame('detail',new Set(['A','C','D']),networks,selected).routes.length,0);
+  assert.deepEqual(policy.choices('shared',new Set(['C','D']),networks).map(r=>r.id),['cd']);
+  assert.deepEqual(policy.choices('shared',files,new Set()),[]);
+});
 test('synthetic follows stored endpoint paths and cannot branch at a junction',()=>{
   const route=routing.routes[0];
   assert.deepEqual(policy.position(route,0).point,[0,0]);

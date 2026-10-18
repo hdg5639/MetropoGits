@@ -993,7 +993,8 @@
         && route.networkIds.some(id => networkIds.has(id)));
       const related = candidates.filter(route => (selected?.kind !== 'building' || route.source === selected.id || route.target === selected.id)
         && (selected?.kind !== 'aggregate' || memberIds.has(route.source) || memberIds.has(route.target))
-        && (selected?.kind !== 'network' || (selectedRoutes ? selectedRoutes.has(route.id) : route.networkIds.includes(selected.id))));
+        && (selected?.kind !== 'network' || ((selectedRoutes ? selectedRoutes.has(route.id) : route.networkIds.includes(selected.id))
+          && (!selected.routeId || selected.routeId === route.id))));
       const eligible = showAll ? candidates : related;
       const routeIds = new Set(eligible.map(route => route.id));
       const focused = ['building', 'network', 'aggregate'].includes(selected?.kind);
@@ -1019,6 +1020,12 @@
       return {id, kind: segment.kind, path: [segment.start, segment.end], routeIds: contributing,
         edgeIds: [...new Set(contributing.flatMap(key => routes.get(key).edgeIds))].sort()};
     }
+    function choices(id, buildingIds, networkIds) {
+      const segment = segments.get(id);
+      return routing.routes.filter(route => buildingIds.has(route.source) && buildingIds.has(route.target)
+        && route.networkIds.some(key => networkIds.has(key))
+        && (segment ? segment.routeIds.includes(route.id) : route.networkIds.includes(id)));
+    }
     function position(route, phase) {
       const trajectory = trajectories.get(route.id);
       const distance = Math.max(0, Math.min(1, phase)) * trajectory.distance;
@@ -1028,7 +1035,7 @@
       return {segmentId: step.segmentId, point: [step.start[0] + (step.end[0]-step.start[0])*fraction,
         step.start[1] + (step.end[1]-step.start[1])*fraction]};
     }
-    return Object.freeze({frame, network, position, segments, routes, status: routing.status,
+    return Object.freeze({frame, network, choices, position, segments, routes, status: routing.status,
       unresolved: routing.unresolvedEdgeIds.length});
   }
 

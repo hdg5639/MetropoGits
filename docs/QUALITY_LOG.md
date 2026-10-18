@@ -2708,3 +2708,50 @@
 - Commits created / pushed: separate renderer work-unit commit after b91446e;
   local main only. No push: latest instructions prohibit direct protected-main
   delivery; branch/workflow decision is still required.
+
+## Checkpoint 2026-10-18 — shared-road file-pair inspection
+- Implemented: road Inspector path selector in WebGL and Canvas; one source to
+  destination path highlights completely without acquiring other branches at a
+  shared crossing. Source/destination buttons lead to file inspection. Exact
+  original edge IDs are now printed alongside type, endpoints and confidence.
+  All-path selection restores the shared segment's contributors. Active filters
+  constrain choices and clear a selected path when either endpoint is hidden.
+- Fixtures / revisions: GJ-Cloud 3d9b53f and GamjaOJ b163acd validated snapshots
+  from road-hierarchy-r1; maintained spring-positive and structural-showcase.
+- Commands run: Python unittest discovery (266 run, 265 pass, one Windows symlink
+  skip); Node camera_navigation/access_routes/role_landmarks/viewer_audit suites
+  (27 pass); Ruff; JS syntax checks; git diff --check. Real CLI `build --repo
+  tests/fixtures/repositories/{spring-positive,structural-showcase} --out
+  ../artifacts/visual/route-inspection-r1/{spring,unknown}` generated 12 artifacts
+  each with COMPLETE status. Large snapshots repackaged with local trusted
+  repackage_camera.py, without rescanning or executing source repositories.
+- Browser command: `node scripts/viewer_audit.mjs <Chrome> ../artifacts/visual/
+  route-inspection-audit-r2 ../artifacts/visual/route-inspection-r2/gj
+  ../artifacts/visual/route-inspection-r2/oj`. Actual pointer clicks selected
+  shared roads, dropdown changes isolated full paths and exact edge IDs, and
+  JavaScript/C++ language filters cleared the respective incompatible selections.
+  Clearing filters and choosing all paths restored each shared road's contributors.
+- Artifacts inspected: both r1 route-inspector WebGL captures, r2 GJ route-inspector
+  and OJ preview PNG. Route isolation reduces visual clutter and preserves the
+  existing skyline. Long filenames wrap in the Inspector; narrow dropdowns and
+  remaining scene label collisions are not claimed solved. Canvas uses the same
+  tested policy and parses successfully; this interaction was not visually tested
+  in Canvas fallback during this checkpoint.
+- Tests / determinism / stability: UCG, City, routing payload, preview and showcase
+  are byte-identical to road-hierarchy-r1 for both large fixtures. Exact route
+  coverage remains 6157/2243 edges; no unresolved edges or pavement intersections.
+  Tests forbid unrelated route IDs, filtered endpoints, hidden networks and
+  accidental A-to-D links; All routes context does not broaden highlighted paths.
+- Performance: software WebGL orbit CPU p95 GJ Overview/District/Detail
+  3.5/7.8/8.4 ms; OJ 1.2/1.6/1.8 ms. Synthetic static rebuilds remain zero.
+  These are submission CPU observations, not GPU FPS or a new speedup claim.
+- Spec alignment: PASS, FR-007/012 and AC-006/011; no graph/scene/identity changes,
+  no inferred runtime traffic, new road geometry, external services or execution.
+- Fixes applied and reverified: stale network Inspector after filters now refreshes
+  or clears; dropdown styling matches the existing theme in the r2 capture.
+- Open risks / next actions: spatial density, thin route selection and contextual
+  labels remain independent visual tasks; long contributor lists may need search.
+- Commits created / pushed: one feat(viewer) work unit on main. The maintainer
+  explicitly renewed authorization for normal main pushes after ee9deab; use the
+  existing origin upstream without force or remote-policy changes. Delivery is
+  verified from the Git command outcome, not assumed from ownership.

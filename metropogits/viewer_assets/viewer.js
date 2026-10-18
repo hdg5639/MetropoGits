@@ -275,7 +275,7 @@
     const filtered = activeFilterCount() > 0;
     const nextDetailLevel = lodPolicy.levelForZoom(state.zoom, filtered);
     const selectionKey = state.selected
-      ? `${state.selected.kind}:${state.selected.id}`
+      ? `${state.selected.kind}:${state.selected.id}:${state.selected.routeId || ""}`
       : "none";
     const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${[...expandedAggregateIds].sort().join('|')}`;
     if (nextCacheKey === lodCacheKey) return;
@@ -328,6 +328,10 @@
 
   function selectionIsVisible() {
     if (!state.selected || state.selected.kind === "district") return true;
+    if (state.selected.kind === "network" && accessPolicy) {
+      return accessPolicy.choices(state.selected.id, visibleBuildingIds, visibleNetworkIds)
+        .some(route => !state.selected.routeId || route.id === state.selected.routeId);
+    }
     if (state.selected.kind === "aggregate") {
       return activeFilterCount() === 0 && aggregateFacilities.has(state.selected.id);
     }
@@ -363,6 +367,8 @@
     if (!selectionIsVisible()) {
       state.selected = null;
       resetInspector("The previous selection is hidden by the active filters.");
+    } else if (state.selected?.kind === "network") {
+      showNetwork(state.selected.id);
     }
     scheduleRender();
   }
@@ -1130,7 +1136,10 @@
   }
 
   function showNetwork(networkId) {
-    const network = networkForId(networkId);
+    const choices = accessPolicy?.choices(networkId, visibleBuildingIds, visibleNetworkIds) || [];
+    const chosen = choices.find(route => route.id === state.selected?.routeId);
+    const activeIds = new Set(choices.map(route => route.id));
+    const network = chosen || accessPolicy?.network(networkId, activeIds) || networkForId(networkId);
     inspector.replaceChildren();
     inspector.append(element("p", "NETWORK", "eyebrow"));
     inspector.append(element("h2", network.kind));
@@ -1142,12 +1151,42 @@
       inspector.append(element("p", "Shared geometry does not create new relationships. Highlighted paths retain their own source and destination.", "muted"));
     }
     inspector.append(details);
+    if (choices.length) {
+      const label = element("label", "Trace one source → destination path", "section-title");
+      label.htmlFor = "route-choice";
+      const control = element("select", undefined, "route-choice");
+      control.id = "route-choice";
+      const all = element("option", `All ${choices.length} paths through this road`);
+      all.value = "";
+      control.append(all);
+      for (const route of choices) {
+        const option = element("option", `${entities.get(route.source)?.path || route.source} → ${entities.get(route.target)?.path || route.target} · ${route.edgeIds.length} edges`);
+        option.value = route.id;
+        control.append(option);
+      }
+      control.value = chosen?.id || "";
+      control.addEventListener("change", () => {
+        showSelection({kind:"network", id:networkId, routeId:control.value});
+        document.getElementById("route-choice")?.focus();
+      });
+      inspector.append(label, control);
+    }
+    if (chosen) {
+      inspector.append(element("p", "One evidenced file-pair path. Shared crossings do not add destinations; this is not measured runtime traffic.", "muted"));
+      for (const [label, id] of [["Source", chosen.source], ["Destination", chosen.target]]) {
+        const button = element("button", `${label}: ${entities.get(id)?.path || id}`, "focus-button route-endpoint");
+        button.type = "button";
+        button.addEventListener("click", () => showSelection({kind:"building", id}));
+        inspector.append(button);
+      }
+      detailRow(details, "Path ID", chosen.id);
+    }
     factSection(
       inspector,
       "UNDERLYING EDGES",
       network.edgeIds.map((id) => {
         const edge = edges.get(id);
-        return edge ? `${edge.type}: ${edge.from} → ${edge.to} (${edge.confidence})` : id;
+        return edge ? `${id} · ${edge.type}: ${edge.from} → ${edge.to} (${edge.confidence})` : id;
       }),
     );
     const evidenceSummaries = network.edgeIds.flatMap((id) => {
@@ -1162,7 +1201,7 @@
   function showSelection(selection) {
     if (!selection) return;
     hoverLabel.hidden = true;
-    state.selected = { kind: selection.kind, id: selection.id };
+    state.selected = { kind: selection.kind, id: selection.id, routeId: selection.routeId || "" };
     if (selection.kind === "aggregate") showAggregate(selection.id);
     if (selection.kind === "building") showBuilding(selection.id);
     if (selection.kind === "district") showDistrict(selection.id);
