@@ -11,6 +11,12 @@ world plan and [ADR-024](adr/ADR-024.md).
 
 ## Direction
 
+2026-10-19 follow-up: [ADR-031](adr/ADR-031.md) adds an inherited **district
+street field** experiment. The maintainer finds r4's block-local restart/GRID
+fallback erases the large patterns. Reserve the shared macro hub/axes/phase
+first, then physically subdivide evidenced neighborhoods without resetting that
+field. Keep r4 available; do not revert to nonphysical soft reference zones.
+
 Keep three distinct graphs: immutable UCG truth, derived planning ownership,
 and physical infrastructure. A source-owned principal district can contain
 several evidence-backed neighborhoods; its entire territory need not repeat
