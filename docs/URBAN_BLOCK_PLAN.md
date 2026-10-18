@@ -1074,6 +1074,19 @@ python -m scripts.procedural_world BUILD --namespace owner/project --planning va
 [ADR-028](adr/ADR-028.md)에 기록했다. 기존 평지 월드 한 구역 전체에 같은 패턴을
 반복하는 대신, 부모 소유권 안에서 근거가 있는 역할별 동네를 만든다.
 
+후속 피드백과 미완료 요구를 [누적 실행 기준](WORLD_EXECUTION_LEDGER.md)에 통합했다.
+현재 `semantic`/`soft` 실험의 한계를 보존하며, 새 도로 우선 경로는 다음과 같다:
+
+```powershell
+python -m scripts.procedural_world BUILD --namespace owner/project --zoning neighborhoods --planning varied --outline varied --out NEW_NEIGHBORHOODS
+```
+
+소스 핵심 파일을 물리 동네 안에 유지하고, 실제 의존성 edge가 있는 미분류 보조 파일을
+묶은 뒤 큰길/개발 블록을 먼저 계산한다. 패턴은 그 안의 로컬 접도 문법이다.
+첫 개발 블록은 일부 외곽/행정 경계에 닿으며, 완전한 도로 폐합 면 추출이나
+도시 미학 완성을 뜻하지 않는다. 토지 사용 증가와 남은 역할 줄세우기/재질/LOD 문제를
+실행 기준에 기록했다. `neighborhoods-r4`는 실제 새 비교 출력이며 최종판이라는 뜻은 아니다.
+
 ```powershell
 python -m scripts.procedural_world BUILD --namespace owner/project --zoning semantic --out ZONED_WORLD
 python -m scripts.procedural_world BUILD --namespace owner/project --zoning semantic --outline varied --out ZONED_VARIED_WORLD

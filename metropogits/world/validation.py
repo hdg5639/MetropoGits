@@ -10,6 +10,7 @@ from . import VERSION
 from .geometry import area, bounds, inside, ribbon, nearest
 from .zoning import validate_zoning
 from .soft import validate_soft
+from .block_validation import validate_blocks
 
 
 def validate_world(world, scene, graph):
@@ -31,6 +32,7 @@ def validate_world(world, scene, graph):
     zones = {d["id"]: d for d in world["districts"]}
     neighborhoods = validate_zoning(world, scene, graph)
     validate_soft(world, scene, graph)
+    validate_blocks(world, scene, graph, neighborhoods)
     neighborhood_members = {
         key: set(z["memberEntityIds"]) for key, z in neighborhoods.items()
     }
@@ -125,7 +127,10 @@ def validate_world(world, scene, graph):
                 owner is None
                 or owner["parentId"] != p["districtId"]
                 or p["entityId"] not in neighborhood_members[owner["id"]]
-                or p.get("blockProfile") != owner["planningProfile"]
+                or (
+                    world.get("zoningPolicy") != "neighborhoods"
+                    and p.get("blockProfile") != owner["planningProfile"]
+                )
                 or not all(inside(v, owner["polygon"]) for v in p["parcel"] + poly)
             ):
                 raise ValueError("invalid semantic parcel ownership")

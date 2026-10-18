@@ -6008,3 +6008,107 @@
 - Tests: no runtime files changed since verified017df86; diff/Markdown link and
   local source references reviewed. No rerender or new performance claim. User
   caches untouched. Separate docs commit and normal feature-branch push follow.
+
+## Checkpoint 2026-10-19 — accumulated requirements and road-first neighborhood slice
+
+- Implemented: docs94838e9 consolidates22 accumulated requirements, rejected
+  experiments, deferred materials/LOD/terrain/performance work and continuation
+  rules in WORLD_EXECUTION_LEDGER.md, indexed from the plan and README. ADR-030
+  precedes the new opt-in `--zoning neighborhoods`: physical source cores,
+  exact supporting-edge attachments, capacity power neighborhoods, pre-frontage
+  road-cut development blocks/backbone, source-weighted access adjacency,
+  local existing grammars, exact UCG trips and both viewer/CPU projections.
+- Fixtures/revisions: fixed world-flat-reviewed-r2 input snapshots, GJ
+  local-sha256-06eb492d57141c16 and OJ local-sha256-c2e80f9d3908fec8 with
+  revision=null; PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b. Fresh maintained
+  spring-positive fixture (unchanged at94838e9) through real scanner/UCG/City;
+  owned48-file analyzed Spring/helper,30-file unknown Rust and150-member block
+  unit fixtures. No target repo dependency installation, build or code execution.
+- Commands run (repo cwd): `python -u ../artifacts/visual/neighborhoods_review.py
+  neighborhoods-r4`; `python -u ../artifacts/visual/verify_neighborhood_contracts.py`;
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --repo-id fixture/neighborhoods-e2e --out ../artifacts/visual/neighborhoods-e2e-r2/build`;
+  `python -m scripts.procedural_world ../artifacts/visual/neighborhoods-e2e-r2/build
+  --namespace fixture/neighborhoods-e2e --zoning neighborhoods --planning varied
+  --outline varied --out ../artifacts/visual/neighborhoods-e2e-r4/world`.
+  Full Python568 run/567 pass/one existing Windows symlink skip; eight new
+  targeted tests re-pass after final resource guards. Node56 pass, node --check
+  on both edited browser renderers, Ruff and Git diff checks pass. Corpus World
+  and planning0.3 schemas validated, before soft documents still validate0.2.
+- Browser: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/neighborhoods-reviewed-r4` followed by
+  neighborhoods-r4/gj/before, gj/after, oj/after, pocketbase/after,
+  sqlitebrowser/after and neighborhoods-e2e-r4/world (all under
+  ../artifacts/visual/), exit0. CHROME is the installed
+  C:/Program Files/Google/Chrome/Application/chrome.exe. Forced Canvas:
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs
+  ../artifacts/visual/neighborhoods-canvas-r4` with r4 GJ/OJ after and fresh
+  Spring. Three cases exit0. New browser assertions verify displayed core
+  membership, actual supporting edge IDs and core/block inspector counts.
+- Artifacts inspected: new four-corpus WebGL default views; GJ district and
+  exact route inspector; fresh six-file Spring; actual GJ/OJ/SQLite CPU showcases
+  and GJ Canvas neighborhood inspector. Earlier r2 images exposed low street/
+  ground contrast, especially on neutral PocketBase; final r4 adds the same
+  dark asphalt as CPU to both browser structural surfaces/junction fills.
+  Re-inspected final GJ/PocketBase WebGL and CPU/Canvas. No simulated mockups.
+- Fidelity/geometry:3175 corpus buildings,5782 original source-pair trips;
+  edge totals6157/2243/192/0 unchanged. All canonical City/UCG bytes match
+  snapshots. Zero parcel/building/full-width-road overlaps and owner escapes;
+  all entrances connected. GJ13 neighborhoods/29 blocks/224 core files/102
+  explicitly linked helpers; OJ11/16/267/45; PB8 neutral neighborhoods/15
+  blocks; SQLite3 neutral/10 blocks. Unknown Go/C++ roles were not fabricated.
+  Actual GJ profiles18GRID/8ORGANIC/1INDUSTRIAL/2HYBRID; not all five are
+  present after capacity fallbacks. Source-backed roles are not planning labels.
+- Determinism/stability: all four new complete packages double-run identically.
+  Legacy default World bytes match all four pinned baseline documents. Hinted
+  one-file addition preserves all48 existing full building frames and main-road
+  records, with updated members. Tampered cores/support edges/roads/block IDs,
+  malformed hints and excessive block count fail. Source/role evidence is
+  reconstructed independently, not trusted from output metadata.
+- Full-size ablation: all GJ local grammars forced to GRID, then independent
+  geometry/edge/access validation passed.452 building frames change; envelope,
+  block IDs/polygons and all120 reserved main-road records remain identical.
+  Main-road digest sha256:1605c756f5d3e5927fe8c75660b118f4234fdb1aca3a2c25340431c2539f479d.
+  The road/block planner has no local-profile argument. A fixed GRID capacity
+  certificate controls upstream repairs, so selecting a sparse local grammar
+  cannot cause a different global street plan; same-block fallback is explicit.
+- Corrections: first local-style ablation failed because grammar-dependent
+  capacity feedback moved upstream land; added the independent certificate,
+  not a weaker test. PocketBase had a quantized shared-T convexity violation;
+  new mode retries that parent with disclosed0.2% demand adjustment within the
+  existing bounded loop. Strict geometry tolerance remains unchanged. Initial
+  r1 PB failed before export; final r4 passes. Existing output modes were not
+  silently patched. Last guards cap block-hint/vertex work and spatial extents.
+- Performance: uncontrolled r4 generation seconds GJ11.05/OJ3.01/PB2.15/
+  SQLite1.23. Viewer-data32.47/11.84/4.00/2.52MB. Browser orbit submission CPU
+  p95 across six cases0.2–2.5ms, not GPU completion or FPS. All applicable
+  Synthetic samples show zero static city rebuilds; fresh Overview legitimately
+  has no complete animated route at that LOD. No invented SQLite traffic.
+  Peak process RSS/GPU memory were not measured; no universal SLA claim.
+- Visual findings: full-service rings/stencils break into smaller road-cut
+  blocks; principal services and substantial internal source neighborhoods are
+  visible together. Source cores can no longer be absent from their own region.
+  Road contrast is readable after correction. HOWEVER colored role rows and
+  generic-box repetition remain, and ground area grows versus retained soft:
+  GJ25.5%, OJ17.7%, PB9.1%, SQLite36.1%. This is not a density improvement or
+  accepted final visual direction. The comparison independently fits complete
+  cities; it is not equal area/pixel scale. Raw same-camera/common-scale captures
+  are retained in the browser report.
+- Spec alignment: PASS for this explicit flat/convex ADR-030 slice; rechecked
+  technical3/4/7/8/10/12, functional AC-001/002/003/006/008/011/012/014,
+  product fixed decisions and both proposal road/block sequences. Existing
+  City/UCG/IDs/defaults preserved, no new product dependency/AI/API/execution.
+  Not all HZ-03/04 visual goals are complete: blocks touching administrative
+  edges are disclosed, not falsely called fully enclosed road faces. Main
+  streets are structural infrastructure, not extra dependency claims.
+- Open risks/next actions: ledger W-03/05/06 are partial. Role-led core grouping
+  and unclassified-helper recruitment do not yet provide arbitrary mixed-role
+  functional neighborhoods. Improve actual block/frontage efficiency and useful
+  relationship-based mixing while retaining core/road invariants. Materials,
+  LOD/archetype/outline/terrain requests remain explicitly pending, not forgotten
+  or substituted with this implementation. Avoid another micro-road tuning loop.
+- Delivery: independent docs94838e9 and this coherent feature/checkpoint commit
+  on feat/semantic-zoning, normal configured upstream push after explicit staged
+  review and human identity verification. No main/protection changes, force
+  push, source-code attribution or unrelated user-cache inclusion.

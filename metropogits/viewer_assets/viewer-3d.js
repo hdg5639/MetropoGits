@@ -527,6 +527,7 @@
   let structureOverlay = false;
   const urbanContext = data.cityContext;
   function contextVisible(id) {
+    if (data.neighborhoodPlan && (data.semanticZoning?.[id]?.coreEntityIds.length || 0) >= 24) return true;
     return filterEngine.contextDetailVisible(Boolean(urbanContext),structureOverlay,
       majorDistrictIds.has(id),id,state.selected?.kind==='district' ? state.selected.id : null);
   }
@@ -1450,7 +1451,8 @@
     renderedDistrictIds = new Set(
       scene.districts
         .filter((district) => (
-          majorDistrictIds.has(district.id) || (
+          majorDistrictIds.has(district.id)
+          || (data.neighborhoodPlan && (data.semanticZoning?.[district.id]?.coreEntityIds.length || 0) >= 24) || (
             drawableDistrictIds.has(district.id)
             && lodPolicy.districtVisible(district.id, currentDetailLevel)
           )
@@ -1691,6 +1693,7 @@
       detailRow(details,"Street-facing rotation",`${(parcel.angle*180/Math.PI).toFixed(1)}° · visual, not geographic north`);
       detailRow(details,"Local displacement",`${parcel.displacement.toFixed(2)} world units`);
       detailRow(details,"Frontage street",parcel.streetId);
+      if(data.neighborhoodPlan) detailRow(details,"Road-cut block",parcel.blockId);
     }
     detailRow(details, "District", districtLabel(districts.get(building.districtId)));
     inspector.append(details);
@@ -1771,6 +1774,12 @@
       return;
     }
     inspector.append(element('p', data.softZoning ? 'Functional influence region, not a source module or runtime service. Occupants can have different roles; center evidence does not classify every member.' : 'Derived planning neighborhood, not a source module or runtime service. Unknown members remain unclassified.', 'muted'));
+    if (data.neighborhoodPlan) {
+      const blocks=Object.values(data.neighborhoodPlan.blocks).filter(b=>b.zoneId===districtId);
+      inspector.append(element('p',`${zone.coreEntityIds.length} source-core files · ${zone.supportingMembers.length} dependency-linked supporting files · ${blocks.length} road-cut blocks. Core files stay here; supporting files keep their original roles. Boundary blocks may touch administrative land edges, not closed roads.`, 'neighborhood-core-summary'));
+      factSection(inspector,'LOCAL BLOCK PLANS',blocks.map(b=>`${b.planningProfile} · ${b.memberEntityIds.length} files · ${b.id}`));
+      factSection(inspector,'SUPPORTING DEPENDENCY EDGES',zone.supportingMembers.slice(0,5).flatMap(m=>m.coreEdgeIds));
+    }
     factSection(inspector, 'ZONING BASIS', [zone.classification.status, `${zone.planningProfile} · ${zone.allocation.algorithm}`, ...zone.classification.ruleIds]);
     factSection(inspector, data.softZoning ? 'FUNCTIONAL CENTER EVIDENCE' : 'GROUPING EVIDENCE', zone.classification.evidenceIds.map(evidenceLabel));
     inspector.append(element('h3', `MEMBER FILES · ${offset + 1}–${Math.min(offset + 25, zone.memberEntityIds.length)} / ${zone.memberEntityIds.length}`, 'section-title'));

@@ -284,6 +284,18 @@ def plan_zones(
 
 
 def planning_document(world):
+    if world.get("zoningPolicy") == "neighborhoods":
+        return dict(
+            schemaVersion="planning/0.3-experimental",
+            zoningVersion=world["zoning"]["version"],
+            worldSeed=world["seed"],
+            ucgDigest=world["ucgDigest"],
+            sourceCityDigest=world["sourceCityDigest"],
+            terrainPreset="flat",
+            zones=world["zoning"]["zones"],
+            blocks=world["zoning"]["blocks"],
+            mainRoads=world["zoning"]["mainRoads"],
+        )
     if world.get("zoningPolicy") == "soft":
         return dict(
             schemaVersion="planning/0.2-experimental",
@@ -323,20 +335,32 @@ def validate_zoning(world, scene, graph):
         if "zoning" in world:
             raise ValueError("hard and soft zoning cannot both own parcels")
         return {}
-    if world.get("zoningPolicy") != "semantic":
+    physical_neighborhoods = world.get("zoningPolicy") == "neighborhoods"
+    if world.get("zoningPolicy") not in ("semantic", "neighborhoods"):
         if "zoning" in world or any("zoneId" in p for p in world["parcels"]):
             raise ValueError("zoning data lacks an explicit policy")
         return {}
     stored = world.get("zoning", {})
     records = stored.get("zones", [])
-    if stored.get("version") != VERSION or not 1 <= len(records) <= 448:
+    if (
+        stored.get("version")
+        != ("neighborhoods/0.1" if physical_neighborhoods else VERSION)
+        or not 1 <= len(records) <= 448
+    ):
         raise ValueError("invalid zoning version or zone limit")
     actual = {z["id"]: z for z in records}
     expected = {}
     entities = {e["id"]: e for e in graph["entities"]}
     grouped, _ = groups(scene)
     for key, members in grouped.items():
-        expected.update({z["id"]: z for z in candidates(members, entities, key)})
+        from .neighborhoods import neighborhood_candidates
+
+        choices = (
+            neighborhood_candidates(members, entities, key, graph)
+            if physical_neighborhoods
+            else candidates(members, entities, key)
+        )
+        expected.update({z["id"]: z for z in choices})
     if len(actual) != len(records) or set(actual) != set(expected):
         raise ValueError("zoning ownership or zone identity mismatch")
     for key, cluster in expected.items():
