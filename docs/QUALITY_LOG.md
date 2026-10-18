@@ -4549,3 +4549,72 @@
   one work unit on experiment/street-grid after verification. Normal upstream
   push follows; exact delivery hash/result recorded in handoff. Private sources,
   captures, generated cities and unrelated IDE caches excluded.
+
+## Checkpoint 2026-10-18 — aligned block street experiment
+- Implemented: opt-in `--aligned-blocks` removes the half-cell seed offset and
+  joins geometry-neighbor wavefronts with local alternate paths. Derived streets
+  version0.2; public City/UCG, buildings, original doors and trip budgets fixed.
+  Rejected per-trip entrance reorientation after the existing single-door oracle
+  failed. Rejected per-building perimeter roads: even with local loops their
+  GJ infrastructure54282 exceeded the prior34419.5. Neither trial is shipped.
+- Fixtures / revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766 (hinted/cold),
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896; spring-positive and unsupported
+  structural-showcase at base20053f7. Catalog0.4.0.
+- Commands: `python ../artifacts/visual/street_access_probe.py` for local
+  candidate measurements (latest script reproduces adopted aligned variant).
+  `python ../artifacts/visual/aligned_streets_review.py` with PYTHONPATH=.;tests
+  repeats all three assignments, checks unchanged canonical scenes, original
+  endpoint coordinates, complete budgets, exact segment memberships, no
+  full-width building intersections and network-independent infrastructure.
+  Packages `aligned-streets-r1/{gj,oj,cold}/{before,after}`. No source repo code
+  executed, no dependencies installed, no private artifacts staged.
+- Results (GJ/cold/OJ): assigned3642/3642/1113, fallback567/567/268; all
+  4209/4209/1381 original routes retained. Street infrastructure COMPLETE,
+  entrances1324/1324/681, infrastructure search states44407/44407/17119.
+  Assignment search states864991/839707/146564, capped searches0. Full numeric
+  before/after table is in STREET_GRID_PLAN. Structural length reduces6.75%/6.75%/
+  7.98%, all-trip pavement20.47%/21.39%/13.18%, all-trip junctions27.05%/27.39%/
+  18.70%. Complete trip length sums increase1.41%/1.31%/4.22%; original individual
+  bounds still pass. Overlapping infrastructure and relation length are not added.
+- Fresh E2E: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --out
+  ../artifacts/visual/aligned-streets-fixtures/spring`; same for structural-showcase
+  to unknown. `python -m scripts.street_grid BUILD --street-grid --aligned-blocks
+  --out ../artifacts/visual/aligned-streets-fixtures/NAME-study` for both.
+  Spring assignment1/2 (previous0/2); unsupported0 relations, no fabricated trips.
+  `node ../artifacts/visual/junction_smoke.mjs aligned-streets-fixtures` passes
+  real WebGL and SVG capture without browser exceptions.
+- Browser / images: `node ../artifacts/visual/parcel_focus_review.mjs
+  aligned-streets-r1 aligned-streets-focus-r1` asserts identical before/after
+  camera and Detail LOD. Inspected gj-before/focused.png, gj-after/focused.png,
+  oj-after/showcase.png, aligned-streets-fixtures/spring.png and
+  unknown-preview.png. Ops has fewer wide parallel surfaces while displaying
+  more assigned trips. OJ showcase is readable; sparse unknown still shows abrupt
+  safe-width transitions, and city overview whitespace/regular grids remain.
+  No universal city-like appearance or default promotion claimed.
+- Browser checks: `node scripts/viewer_audit.mjs CHROME OUT INPUT...` with
+  CHROME=C:/Program Files/Google/Chrome/Application/chrome.exe and inputs
+  aligned-streets-r1/{gj,oj}/after to aligned-streets-audit-r1; cold/after to
+  aligned-streets-cold-audit-r1. All three LODs, navigation, filters and exact
+  route inspection pass; Synthetic static rebuilds0. CPU submission checks are
+  not GPU FPS measurements. `node ../artifacts/visual/street_diagnostics_ui.mjs
+  ../artifacts/visual/aligned-streets-canvas-r1 GJ_AFTER OJ_AFTER` verifies WebGL
+  and forced Canvas fallback pagination/evidence with no browser exceptions.
+- Tests: `python -m unittest discover -s tests -q`:450 run,449 pass,1 existing
+  Windows symlink skip. Six maintained Node suites(access_routes,
+  junction_geometry,road_paint,viewer_audit,camera_navigation,role_landmarks):40
+  pass. `python -m ruff check .` and Git whitespace checks pass. New tests cover
+  aligned continuous gap streets, input-order/semantic independence, exact trip
+  bounds/doors/membership, bounded wave-neighbor loops, unknown/no-edge output,
+  optional legacy mode and no canonical mutation. Repeat large assignments
+  identical. All canonical positions unchanged; no claim of incremental locality
+  for connector geometry after future building edits.
+- Spec alignment: PASS within ADR-020 approved experiment; original semantic
+  deviation remains documented under technical7, FR-007/AC-006, DEC-011. No
+  schema migration, execution, relaxed evidence or hidden relation deletion.
+- Open risks / next: remaining fallbacks and sparse width transitions; improve
+  framing without changing geography or hiding entities, then assess block-level
+  aesthetics rather than reverting to per-relation shortcut roads.
+- Commit / push: separate verified feature unit on experiment/street-grid;
+  staged diff and ordinary upstream push follow this checkpoint. Delivery hash
+  recorded in handoff; no merge/main push or agent attribution.

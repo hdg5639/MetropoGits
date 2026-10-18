@@ -397,3 +397,14 @@ Older artifacts lacking reasons display `unrecorded` rather than an invented
 diagnosis. The opt-in viewer's Review fallbacks panel respects current endpoint
 and network filters, renders at most25 paths per page, and opens exact original
 path evidence. Default viewers do not gain this experimental control.
+
+`--aligned-blocks` optionally selects `structural-streets/0.2`, with basis
+`aligned-block-boundaries-and-building-geography`. It uses zero half-cell padding
+on block seed bounds, preserving the28-world-unit interior line period. A
+simultaneous, deterministic nearest-component wavefront retains one link per
+geometric wave-neighbor pair. Local alternate circuits are structural, not
+source relationships. Infrastructure search remains bounded by2M popped states,
+with the existing area/building/seed limits; incomplete exploration is PARTIAL.
+Original0.1 mode, City/UCG, canonical positions and original trip doors/budgets
+are unchanged. No full incremental stability guarantee for derived streets is
+introduced; geometry changes can change wave ownership and connector choices.

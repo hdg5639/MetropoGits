@@ -108,11 +108,14 @@ def _connect(grid, starts, targets, budget, max_distance=None):
     return None
 
 
-def build_streets(scene):
+def build_streets(scene, *, aligned=False):
     """No UCG or network input is read. All streets are explicitly non-semantic."""
     result = dict(version='structural-streets/0.1', semantic=False,
                   basis='directory-and-building-geography', segments=[], entrances=[],
                   blocks=[], diagnostics=[], status='COMPLETE', searchStates=0)
+    if aligned:
+        result['version'] = 'structural-streets/0.2'
+        result['basis'] = 'aligned-block-boundaries-and-building-geography'
     buildings = scene['buildings']
     if not buildings:
         return result
@@ -135,10 +138,13 @@ def build_streets(scene):
             keys.add(key)
             owners[key].add(district)
     for district, members in _blocks(scene):
-        lo_x = math.floor(min(b['x'] for b in members)/PITCH)-1
-        lo_z = math.floor(min(b['z'] for b in members)/PITCH)-1
-        hi_x = math.ceil(max(b['x']+b['width'] for b in members)/PITCH)+1
-        hi_z = math.ceil(max(b['z']+b['depth'] for b in members)/PITCH)+1
+        # Half-cell padding moves the fixed-period grid onto building centers
+        # in the seven-unit parcel layout. Align seed streets to its boundaries.
+        margin = 0 if aligned else 1
+        lo_x = math.floor(min(b['x'] for b in members)/PITCH)-margin
+        lo_z = math.floor(min(b['z'] for b in members)/PITCH)-margin
+        hi_x = math.ceil(max(b['x']+b['width'] for b in members)/PITCH)+margin
+        hi_z = math.ceil(max(b['z']+b['depth'] for b in members)/PITCH)+margin
         result['blocks'].append(dict(districtId=district, fileCount=len(members)))
         for z in sorted({lo_z, hi_z, *range(lo_z+STREET_SPACING, hi_z, STREET_SPACING)}):
             for x in range(lo_x, hi_x):
@@ -148,7 +154,11 @@ def build_streets(scene):
                 add((x, z), (x, z+1), district)
     budget = [0]
     # Infrastructure components are joined before any logical trips are known.
-    while keys:
+    if aligned and keys:
+        from metropogits.street_connectivity import join_components
+        if not join_components(grid, keys, _components(_adjacency(keys)), budget, MAX_STEPS):
+            result['diagnostics'].append('Disconnected structural components or search cap')
+    while keys and not aligned:
         groups = _components(_adjacency(keys))
         if len(groups) <= 1:
             break
@@ -204,12 +214,12 @@ def build_streets(scene):
     return result
 
 
-def assign_streets(scene, original):
+def assign_streets(scene, original, *, aligned=False):
     if original['version'] != 'visual-access/0.2' or original['status'] != 'COMPLETE':
         raise ValueError('street assignment requires complete original0.2 routing')
     if len(original['routes']) > MAX_ROUTES:
         raise ValueError('street assignment route limit')
-    streets = build_streets(scene)
+    streets = build_streets(scene, aligned=aligned)
     paths, widths = _expand(original)
     template = copy.deepcopy(original)
     template['version'] = 'visual-access/0.3'

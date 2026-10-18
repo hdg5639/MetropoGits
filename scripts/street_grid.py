@@ -15,14 +15,14 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph):
+def compare(scene, graph, *, aligned=False):
     errors = validate_document(scene, graph)
     if errors:
         raise ValueError('; '.join(errors[:8]))
     _bounded_geometry(scene)
     scene = json.loads(canonical_json_bytes(scene))
     before = derive_access_routes(scene, graph)
-    after = assign_streets(scene, before)
+    after = assign_streets(scene, before, aligned=aligned)
     def identity(routing):
         return {p['id']: [p[k] for k in ('source', 'target', 'kind', 'edgeIds', 'networkIds')]
                 for p in routing['routes']}
@@ -44,6 +44,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('build', type=Path)
     parser.add_argument('--street-grid', required=True, action='store_true', help='explicitly enable experimental structural streets')
+    parser.add_argument('--aligned-blocks', action='store_true', help='align block streets to parcel boundaries and join geometric neighbors')
     parser.add_argument('--out', required=True, type=Path)
     args = parser.parse_args()
     try:
@@ -55,7 +56,7 @@ def main():
                 raise ValueError('input exceeds 64 MiB')
             return loads_strict_json(path.read_text(encoding='utf-8'))
         scene, graph = read('city.json'), read('graph.ucg.json')
-        before, after, report = compare(scene, graph)
+        before, after, report = compare(scene, graph, aligned=args.aligned_blocks)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)

@@ -109,3 +109,41 @@ this unchanged baseline, measuring assignment, total infrastructure, detour and
 relocations together. Do not add per-fallback shortcut streets based on dependency
 edges: that would turn independent infrastructure back into relationship wiring.
 This diagnostic work is useful evidence, **not a visual road improvement**.
+
+## Aligned block streets / 2026-10-18
+
+```powershell
+python -m scripts.street_grid BUILD --street-grid --aligned-blocks --out NEW_DIRECTORY
+```
+
+The original half-cell padding put many periodical seed lines through parcel
+centers, causing gaps and extra detours. Align seeds to occupied block bounds,
+then connect geometric wave-neighbor components with bounded alternate loops.
+No building or original door moves. Do not reorient entrances independently per
+trip: that discarded trial violates the single-door consistency invariant.
+Per-building perimeter roads were also rejected: with neighbor loops GJ reached
+3328 assigned trips but infrastructure grew to54282, versus34419.5 previously.
+
+| Measure | Hinted GJ before → after | Cold GJ before → after | OJ before → after |
+| --- | ---: | ---: | ---: |
+| Assigned / all trips | 2487 → 3642 / 4209 | 2483 → 3642 / 4209 | 547 → 1113 / 1381 |
+| Structural centerline | 34419.5 → 32095.5 | 34419.5 → 32095.5 | 14393 → 13245 |
+| All-trip pavement centerline | 54998.5 → 43739 | 55558.5 → 43672.5 | 14522 → 12607.5 |
+| All-trip junctions | 4152 → 3029 | 4159 → 3020 | 1171 → 952 |
+| Nearby parallel pair length | 28175 → 19008.5 | 29148 → 19204.5 | 8242.5 → 6601 |
+| Sum of complete trip lengths | 752257 → 762890 | 746174 → 755981 | 167295 → 174351 |
+
+Infrastructure and all-trip pavement overlap: do not sum those measures.
+Original per-trip allowances and bend limits hold, although travel sums increase
+about1.4%/1.3%/4.2%. Coverage gains are real assignment, not relation omission.
+All input routes4209/4209/1381 survive. Canonical City/UCG and positions remain
+unchanged. Repeated outputs are identical and street geometry is independent
+of dependency input. Neither v0.1 nor v0.2 becomes the default CLI layout.
+
+Artifacts: `artifacts/visual/aligned-streets-r1/{gj,cold,oj}/{before,after}`;
+same-camera Detail gallery `aligned-streets-focus-r1/index.html`. Actual Ops
+capture has fewer broad parallel surfaces, while retaining more assigned trips.
+Remaining failures567/567/268, sparse-unknown width transitions, regular grid
+appearance and excess overview whitespace still need work. This improves the
+experimental street skeleton; it does not solve city composition or prove the
+new infrastructure is universally better than the older dependency-only renderer.
