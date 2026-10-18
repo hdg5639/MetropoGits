@@ -17,6 +17,12 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed")
     parser.add_argument(
+        "--planning",
+        choices=("grid", "mixed", "radial"),
+        default="grid",
+        help="visual planning grammar; grid retains the original default",
+    )
+    parser.add_argument(
         "--namespace", help="portable world identity; does not rewrite existing UCG IDs"
     )
     parser.add_argument("--previous-world", type=Path)
@@ -46,6 +52,7 @@ def main():
             seed=args.seed,
             namespace=args.namespace,
             previous=read(args.previous_world) if args.previous_world else None,
+            planning=args.planning,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)

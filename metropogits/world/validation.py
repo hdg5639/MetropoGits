@@ -63,6 +63,8 @@ def validate_world(world, scene, graph):
         ]
 
     index_entries = 0
+    parcel_cells = defaultdict(set)
+    parcel_polygons = {}
 
     def reserve(poly, key):
         nonlocal index_entries
@@ -93,6 +95,21 @@ def validate_world(world, scene, graph):
         if p["sourceDistrictId"] != b["districtId"]:
             raise ValueError("world directory ownership mismatch")
         poly = p["footprint"]
+        if not all(inside(v, p["parcel"]) for v in poly):
+            raise ValueError("world building escaped its parcel")
+        parcel_keys = buckets(p["parcel"])
+        index_entries += len(parcel_keys)
+        if index_entries > 2_000_000:
+            raise ValueError("world validation index limit")
+        for identity in sorted({k for cell in parcel_keys for k in parcel_cells[cell]}):
+            checks += 1
+            if checks > 5_000_000:
+                raise ValueError("world validation work limit")
+            if area(clip(p["parcel"], parcel_polygons[identity])) > 0.001:
+                raise ValueError("world parcel overlap")
+        parcel_polygons[p["entityId"]] = p["parcel"]
+        for cell in parcel_keys:
+            parcel_cells[cell].add(p["entityId"])
         if (
             min(
                 math.dist(p["entrance"], nearest(p["entrance"], a, b))

@@ -9,10 +9,15 @@ from . import VERSION
 from .geometry import area, centroid, partition, point, shared_boundaries
 from .infrastructure import atomic_streets, route_world
 from .planning import demand, groups, populate, slots
+from .radial import radial_slots
 from .seed import ALGORITHM, derive, draw, world_seed
 
 
-def generate_world(scene, graph, *, seed=None, namespace=None, previous=None):
+def generate_world(
+    scene, graph, *, seed=None, namespace=None, previous=None, planning="grid"
+):
+    if planning not in ("grid", "mixed", "radial"):
+        raise ValueError("unsupported world planning policy")
     if previous is not None:
         if (
             not isinstance(previous, dict)
@@ -79,9 +84,16 @@ def generate_world(scene, graph, *, seed=None, namespace=None, previous=None):
         and previous.get("schemaVersion") == VERSION
         and previous.get("seed") == resolved_seed
         and previous.get("repositoryNamespace") == identity
+        and previous.get("planningPolicy", "grid") == planning
         and set(d["id"] for d in previous.get("districts", [])) == set(grouped)
     )
     old_districts = {d["id"]: d for d in previous["districts"]} if compatible else {}
+    if any(
+        d.get("planningProfile")
+        not in (("GRID",) if planning == "grid" else ("GRID", "RADIAL"))
+        for d in old_districts.values()
+    ):
+        raise ValueError("invalid previous world planning profile")
     old_parcels = (
         {p["entityId"]: p["slotId"] for p in previous["parcels"]} if compatible else {}
     )
@@ -128,13 +140,37 @@ def generate_world(scene, graph, *, seed=None, namespace=None, previous=None):
         parcels = []
         raw = []
         failed = []
+        planning_diagnostics = []
         for key, members in grouped.items():
             local_seed = derive(
                 resolved_seed,
                 "district",
                 labels.get(key, "." if key.endswith(":directory:.") else key),
             )
-            candidates, lanes, angle = slots(polygons[key], local_seed)
+            profile = "GRID"
+            if planning == "radial" or (
+                planning == "mixed"
+                and draw(derive(local_seed, "planning-profile")) < 0.5
+            ):
+                profile = "RADIAL"
+            if attempt == 0 and compatible:
+                profile = old_districts[key]["planningProfile"]
+            planner = radial_slots if profile == "RADIAL" else slots
+            candidates, lanes, angle = planner(polygons[key], local_seed)
+            if (
+                planning == "mixed"
+                and profile == "RADIAL"
+                and len(candidates) < len(members)
+                and not (attempt == 0 and compatible)
+            ):
+                profile = "GRID"
+                candidates, lanes, angle = slots(polygons[key], local_seed)
+                planning_diagnostics.append(
+                    dict(
+                        reason="radial frontage capacity insufficient; local GRID fallback",
+                        districtIds=[key],
+                    )
+                )
             placed = populate(
                 members,
                 candidates,
@@ -158,7 +194,7 @@ def generate_world(scene, graph, *, seed=None, namespace=None, previous=None):
                     polygon=poly,
                     anchor=point(centroid(poly)),
                     localSeed=local_seed,
-                    planningProfile="GRID",
+                    planningProfile=profile,
                     primaryAxis=angle,
                     areaDemand=budgets[key],
                     areaAllocated=area(poly),
@@ -207,9 +243,11 @@ def generate_world(scene, graph, *, seed=None, namespace=None, previous=None):
         dict(id=d["id"], parentId=d["parentId"])
         for d in sorted(scene["districts"], key=lambda d: d["id"])
     ]
-    return dict(
+    world = dict(
         schemaVersion=VERSION,
-        generatorVersion="flat-capacity/0.1",
+        generatorVersion="flat-capacity/0.1"
+        if planning == "grid"
+        else "flat-planning/0.2",
         seed=resolved_seed,
         seedAlgorithm=ALGORITHM,
         repositoryNamespace=identity,
@@ -238,9 +276,12 @@ def generate_world(scene, graph, *, seed=None, namespace=None, previous=None):
         routing=routing,
         networks=networks,
         coverage=coverage,
-        diagnostics=repairs,
+        diagnostics=repairs + planning_diagnostics,
         anchors=dict(
             reusedDistrictIds=reused,
             replannedDistrictIds=sorted(set(grouped) - set(reused)),
         ),
     )
+    if planning != "grid":
+        world["planningPolicy"] = planning
+    return world

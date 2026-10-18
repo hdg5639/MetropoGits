@@ -19,6 +19,19 @@ The browser audit now returns one requested road's complete choices rather than
 serializing full trajectories for every visible road. This prevents oversized
 inspection payloads on highly shared street graphs; assertions are unchanged.
 
+## Radial world planning addition — 2026-10-19
+
+ADR-025 adds opt-in `--planning mixed|radial|grid` to the World command.
+`flat-planning/0.2` records non-default `planningPolicy` and per-zone GRID/RADIAL
+profiles; old `flat-capacity/0.1` worlds remain valid. Default GRID world bytes
+are unchanged. The extension is additive to the experimental World schema,
+not a City/UCG migration. Radial geometry, doors and source-backed trips share
+the same physical street graph in browser and CPU output. Mixed policy emits
+explicit local GRID fallback diagnostics when orbital frontage lacks capacity.
+Compatible hints preserve profile/slot choices; a policy change cold-replans.
+Independent validation now also rejects overlapping parcels and building
+envelopes outside their own parcels. See [ADR-025](../adr/ADR-025.md).
+
 ## Existing City/UCG baseline
 
 Verified 2026-10-18 against the checked-in producer, schemas, validators, and

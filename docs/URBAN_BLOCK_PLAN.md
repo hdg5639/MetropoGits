@@ -981,3 +981,38 @@ python -m scripts.procedural_world NEXT_BUILD --namespace owner/project --previo
 동일 스케일 밀도 측정으로 해석하지 않는다. 시간은 표준 cProfile과 단계별 시계로
 측정하고 정규 world/SVG에는 넣지 않는다. 구현 후 세부 조정보다 네 저장소의
 도시 구조와 가독성 차이를 다음 작업의 근거로 삼는다.
+
+## 2026-10-19 — 구역별 GRID / RADIAL 계획
+
+[ADR-025](adr/ADR-025.md)에 따라 평행한 격자만 생성하던 새 월드에 방사형 계획을 추가한다.
+도로 선을 사후에 둥글게 꾸미는 것이 아니라, 순환도로와 3~5갈래 방사 도로를 먼저
+예약하고 그 도로에 접한 필지를 만든다. 건물 전체와 출입구가 필지의 접선 방향을 따른다.
+순환도로는 양자화한 폴리라인이며, 실제 관계 경로·선택·Synthetic도 같은 구간을 사용한다.
+별도 교통 시뮬레이션이나 실제 런타임 흐름을 주장하지 않는다.
+
+```powershell
+python -m scripts.procedural_world BUILD --namespace owner/project --planning mixed --out NEW_WORLD
+python -m scripts.procedural_world BUILD --namespace owner/project --planning radial --out RADIAL_WORLD
+python -m scripts.procedural_world NEXT_BUILD --namespace owner/project --planning mixed --previous-world NEW_WORLD/world.json --out NEXT_WORLD
+```
+
+- `grid`: 기존 기본값. 첫 평지 월드의 메타데이터와 물리 배치 바이트를 유지한다.
+- `mixed`: 구역별 독립 시드로 GRID/RADIAL을 선택한다. 기술·코드 품질 판정이 아니다.
+  방사형 필지가 부족하면 해당 구역만 GRID로 폴백하고 이유를 진단에 남긴다.
+- `radial`: 방사형을 명시적으로 요청한다. 기존의 최대 5회 수용량 복구를 넘으면
+  실패를 보고한다. 건물을 축소·삭제하거나 무한히 땅을 늘리지 않는다.
+
+시드·네임스페이스·정책이 같은 previous-world는 구역/필지와 프로필 선택을 재사용한다.
+정책 변경은 명시적인 재배치다. 수용량 부족으로 이전 필지를 유지할 수 없는 경우에도
+재계획을 기록하며, GRID 폴백을 하면서 기존 위치를 재사용했다고 표시하지 않는다.
+
+검토 산출물: `artifacts/visual/world-planning-r1/index.html`. 첫 평지 월드와 같은 시드,
+같은 외곽과 구역 면적에서 비교했다. RADIAL 구역은 감자박스 2/6(Ops·Portal),
+감자OJ 2/6, PocketBase 1/8(API), SQLiteBrowser 0/3이다. SQLite는 수용량 조건에 따라
+GRID가 유지되므로 이번 변경으로 모든 저장소가 시각적으로 달라졌다고 주장하지 않는다.
+원본 3,175개 파일 건물과 5,782개 관계 경로를 보존했다. 전체 지형·수계와 역할 집계 LOD는
+여전히 후속 작업이다. 일부 순환 중심부의 여유 공간과 반복적인 동심원 형태도 남아 있다.
+
+곡선 구간의 꼭짓점이 늘어 감자박스의 viewer-data는 약 28MB에서 38MB로 커졌다.
+이는 상세한 공통 경로를 명시적으로 보존하는 비용이다. 실제 프로파일과 브라우저 검증을
+기준으로 기록하고, 미세한 곡률 튜닝보다는 다음 큰 단계의 집계 LOD/표현 비용 개선에 활용한다.

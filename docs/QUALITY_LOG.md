@@ -5511,3 +5511,101 @@
   the user explicitly retains owner-authorized normal push delivery. Review
   staged paths/identity and confirm the push command result before reporting
   remote delivery. No force push, protection changes or agent attribution.
+
+## Checkpoint 2026-10-19 — orbital streets and district planning
+- Implemented: ADR-025 opt-in `--planning mixed|radial|grid`. RADIAL reserves
+  clipped orbital streets, three to five spokes and shared boundary connections
+  before allocating tangential frontage parcels. Whole building models and
+  doors face their actual frontage. Mixed selection uses independent district
+  seed streams, never framework/name guesses. Capacity shortage falls back to
+  GRID locally and explicitly; forced radial retains bounded repair/failure.
+  The existing GRID default and its physical world bytes remain unchanged.
+- Fixtures/revisions: same four pinned world-flat-reviewed-r2 City/UCG inputs:
+  GJ local-sha256-06eb492d57141c16, OJ local-sha256-c2e80f9d3908fec8, PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522, SQLite Browser
+  ae32df153a64d250de7c77a5057deeff4092a39b. No new clone revision is implied.
+  Also freshly scanned maintained spring-positive plus temporary 40-file TS
+  dependency-cycle and 25-file unsupported Rust fixtures; no target execution.
+- Commands from MetropoGits: `python -m unittest discover -s tests -q`;
+  `node --test tests/*.test.mjs`; `python -m ruff check .`; `git diff --check`;
+  `python ../artifacts/visual/world_planning_review.py ignored --probe` then
+  `python ../artifacts/visual/world_planning_review.py world-planning-r1`.
+  Fresh end-to-end: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --repo-id fixture/world-planning-spring
+  --out ../artifacts/visual/world-planning-e2e-r1/build`, followed by
+  `python -m scripts.procedural_world ../artifacts/visual/world-planning-e2e-r1/build
+  --namespace fixture/world-planning-spring --planning radial
+  --out ../artifacts/visual/world-planning-e2e-r1/world` (6 buildings, 2 trips,
+  4 represented edges, 60 physical segments, all reachable, no collisions).
+- Browser commands: `node scripts/viewer_audit.mjs CHROME OUT INPUT...` against
+  all eight world-planning-r1/{gj,oj,pocketbase,sqlitebrowser}/{before,after}
+  outputs, writing world-planning-audit-r1; fresh Spring output separately in
+  world-planning-e2e-audit-r1. CHROME is C:/Program Files/Google/Chrome/Application/chrome.exe.
+  `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/world-planning-context-r1
+  ../artifacts/visual/world-planning-r1/gj/after
+  ../artifacts/visual/world-planning-r1/oj/after` exercises WebGL/forced Canvas
+  plus Structure toggling without changed camera/counts or geometry drift.
+- Artifacts inspected: world-planning-r1/index.html and report.json; all eight
+  actual before/after Overview PNGs in world-planning-audit-r1; after CPU showcase
+  PNGs cases 2/4/6/8; case-2/detail.png and route-inspector.png;
+  world-planning-context-r1/canvas-0/city.png. Three LODs, camera controls,
+  pointer picking, exact path inspector/edge IDs, filtering and Synthetic pass
+  in the browser audit. All runs finish without browser exceptions; Synthetic
+  makes zero static geometry rebuilds. SQLite has no invented semantic traffic.
+- Visual findings: GJ Ops and Portal visibly change from parallel strips into
+  connected orbital/spoke neighborhoods; building silhouettes rotate with each
+  lot. Other districts retain their existing grid. PocketBase APIs gains an
+  orbital pattern; OJ changes are smaller because only two small zones qualify.
+  SQLite stays GRID; do not claim every repository improved visually. Rounded
+  orbits are quantized straight polyline pieces, not Bezier road paint hiding
+  an orthogonal underlying route. Some open centers and repeated rings remain;
+  role compounds, semantic LOD and root-label polish remain open.
+- Quantitative comparison: all 3,175 file buildings and 5,782 source-pair trips
+  retained; exact edge membership and original City/UCG bytes unchanged. All
+  buildings reachable, no building/full-width-road intersections, parcel overlap
+  or owner escapes. GRID reproduces the prior world dictionaries exactly for
+  all four corpora. Mixed and GRID use identical envelopes and district areas
+  on these fixtures. Radial zones: GJ 2/6, OJ 2/6, PocketBase 1/8, SQLite 0/3.
+  Final local capacity fallbacks: 2/2/4/1 respectively, explicitly diagnosed.
+- Tests/determinism/stability: Python 529 run, 528 pass, one existing Windows
+  symlink skip; Node 56 pass. New seven tests cover exact source-backed paths,
+  non-cardinal frontage/whole model rotation, repeated schema/package bytes,
+  compatible added-file hints, policy-change replanning, legacy defaults,
+  local fallback, malformed profile hints, explicit infeasibility, unsupported
+  language and resource bounds. Independent parcel containment/overlap rejection
+  added and targeted suite rerun after that final negative assertion. Four-corpus
+  mixed packages reproduce byte-for-byte. No tests or collision gates weakened.
+- Performance: normal GJ/OJ/PocketBase/SQLite generation observed approximately
+  6.53/2.34/1.04/0.33 seconds from existing analyzed artifacts, not full scan.
+  GJ viewer-data grows from roughly 28 MB to 37.76 MB, physical street segments
+  2735 -> 3757; WebGL city triangles 65616 -> 76676. More curved path vertices
+  impose a real export cost. Separate command `python -m cProfile -o
+  ../artifacts/visual/world-planning-r1/gj-planning.prof -m scripts.procedural_world
+  ../artifacts/visual/world-flat-reviewed-r2/gj/after --namespace benchmark/gj-cloud
+  --planning mixed --out ../artifacts/visual/world-planning-r1/profile-gj` reports
+  cumulative radial_slots 0.81s (8 calls including repair/fallback candidates),
+  route_world 4.19s, atomic_streets 0.22s and package_world 20.72s. Instrumented
+  cumulative times overlap; do not add them or equate them to normal timings.
+  Browser CPU submission timings are not GPU FPS. Prefer measured export/LOD
+  improvements next over native rewrites or isolated curve micro-tuning.
+- Fixes applied/reverified: prior profile decisions survive compatible hints;
+  capacity overflow cannot silently switch planners while claiming reused
+  geography. Reject unsupported prior profiles. Bound candidate count, road
+  count, clearance work and spatial-index entries. Strengthened independent
+  parcel checks; no visible buildings shrunk to fit. Corrected the initial
+  non-package unittest module invocation to discovery; final suites pass.
+- Spec alignment: PASS under approved World Phase B / ADR-025 additive scope.
+  Technical contracts/network provenance/CPU parity, functional AC-002/003/006/
+  011/012 and product DEC-004/005/007/008/009/011 rechecked. The experimental
+  World schema accepts old and new generator/profile values; City/UCG schemas,
+  evidence, source IDs, default builds and runtime dependencies are unchanged.
+- Open risks/next actions: planning remains two grammars, not completed Phase B;
+  small/skinny zones often use GRID fallback. Land use and central gaps are not
+  universally solved. Integrate source-traceable role compounds/semantic LOD
+  with rotated parcels and reduce measured export duplication before layering
+  terrain detail. No new analyzer, terrain, water or communication inference.
+- Commits created/pushed: one atomic world-planning feature, regression tests,
+  ADR and checkpoint on current main. Verified normal delivery uses the user's
+  standing owner exception; staged paths/identity and actual remote SHA are
+  checked before reporting push. No force push or remote-rule change.
