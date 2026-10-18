@@ -5299,3 +5299,83 @@
 - Commit/push: one atomic feature unit with ADR, implementation, regression
   tests and this checkpoint. Verified delivery targets the existing upstream
   origin/experiment/street-grid after final staged review; no main integration.
+
+## Checkpoint 2026-10-19 — coordinated leaf blocks and occupied ground
+- Implemented: ADR-023 opt-in `--local-blocks`, whole-group rotation with a fixed
+  outer owner boundary and continuous road/paint/trip mapping. Tight derived
+  ground supports and LOD mass-sized plinths replace broad normal-view floors.
+  Full territory remains available through Structure overlay. This is a bounded
+  pilot, not completed block-local subdivision or physical city compaction.
+- Fixtures/revisions: reused street-facing-r2 canonical snapshots: GJ
+  local-sha256-06eb492d57141c16 (1,324 files), OJ local-sha256-c2e80f9d3908fec8
+  (681), PocketBase 6f370ea741f33adf889eef02e3c1b884a47aa522 (664), SQLite Browser
+  ae32df153a64d250de7c77a5057deeff4092a39b (506). Fresh maintained spring-positive
+  fixture scanned through the real CLI. No clone code or build script executed.
+- Commands from MetropoGits: `python -m unittest discover -s tests -q`;
+  `node --test tests/*.test.mjs`; `python -m ruff check .`; `git diff --check`.
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/local-blocks-e2e-r1/build`, followed by
+  `python -m scripts.street_grid ../artifacts/visual/local-blocks-e2e-r1/build
+  --street-grid --aligned-blocks --local-blocks
+  --out ../artifacts/visual/local-blocks-e2e-r1/street`.
+  Private-snapshot repeat/package helper: `python ../artifacts/visual/local_blocks_review.py
+  local-blocks-r3`; full spatial audit: `python ../artifacts/visual/local_blocks_geometry.py
+  local-blocks-r3`; comparison: `node ../artifacts/visual/diagonal_focus.mjs
+  local-blocks-r3 local-blocks-focus-r3 blocks`.
+- Artifacts inspected: `local-blocks-focus-r3/index.html`, GJ same-camera
+  before/after Detail and sparse-ground captures; OJ/SQLite Overview;
+  `local-blocks-audit-r3/case-{1,3}/showcase.png`, GJ forced-Canvas capture in
+  `local-blocks-context-r3/canvas-0/city.png`. Actual WebGL audit via
+  `node scripts/viewer_audit.mjs CHROME OUT INPUT...` covers GJ/PocketBase/SQLite/
+  fresh spring in local-blocks-audit-r3 and OJ in local-blocks-oj-audit-r3.
+  `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/local-blocks-context-r3
+  ../artifacts/visual/local-blocks-r3/gj/after
+  ../artifacts/visual/local-blocks-r3/oj/after` verifies WebGL/forced Canvas,
+  unchanged selection counts/camera and restored geometry after Structure toggle.
+- Quantitative outcome: GJ accepts three small two-file groups (-45,-45,-3.81
+  degrees); other three repositories accept none. Eight GJ physical route
+  segments change, used by48 trips. All5,782 logical trips preserve endpoints by
+  identity, evidence and continuity; physical door coordinates may move with their
+  blocks. Representative preserved RESOLVED REFERENCES edge9c0ea7a9... remains
+  DeploymentEditedComposeTest.java -> DeploymentController.java with original
+  evidence3639afeb.... Canonical graphs/scenes remain exactly unchanged.
+- Ground metrics: individual occupied-pad area upper bounds are39,799/51,101/
+  99,475/52,065 versus allocated root areas62,328/118,286/265,678/98,980 for
+  SQLite/PocketBase/GJ/OJ. These are world areas, not pixel coverage or a claim of
+  whole-city reduction: pad sums may overlap and exclude aggregate plinths.
+  Repeated packages are byte-identical. Geometry audit checks3,175 building
+  envelopes against full physical streets/demand pavement: overlaps0, owner
+  escapes0, uncovered buildings0; all moved doors remain on building perimeters.
+- Visual findings: oversized normal-view owner floors and aggregate platforms
+  recede, while source colors and district labels remain recognizable. GJ small
+  groups visibly rotate; the whole-city grid and inter-group distances largely
+  remain. Vacant space is now dark in some sparse areas instead of filled by a
+  slab. This does NOT solve packing or make the city universally more organic.
+  Full owner geometry remains inspectable. No decorative fillers were introduced.
+- Tests/determinism/stability: Python510 run,509 pass,1 existing Windows symlink
+  skip; Node55 pass. New cases cover fixed-boundary positive triangulation,
+  rigid interiors, continuous doors, envelope-vs-roof bounds, polygon area,
+  reversed input order, unrelated distant owner stability, concave ground
+  ownership, exact support membership, repeated packaging and explicit work
+  limits. All existing schema/golden/security/stability tests pass. Synthetic
+  audits in all three LODs report0 static geometry rebuilds. SQLite still has no
+  invented traffic. CPU submission samples are not GPU FPS measurements.
+- Fixes applied/reverified: r2 exposed a PocketBase owner escape because the
+  inner cage used small roof meshes rather than the full footprint. Included
+  full envelopes and doors; rejected that candidate and regenerated r3. Added
+  regression coverage rather than weakening collision tolerances. Compact
+  aggregate picking now uses the same smaller supports as drawing; supports
+  never expand beyond the represented mass. Earlier r1/r2 are not the delivered
+  milestone. Corrected an initial helper module path and test invocation.
+- Spec alignment: PASS under user-approved ADR-023 experimental scope. Rechecked
+  technical7/8, functional AC-002/003/006/011 and product DEC-007/008. No public
+  schema, stable ID, semantic evidence, default mode or remote setting changed.
+- Open risks/next actions: full parcel subdivision and genuine bounded local
+  compaction remain. Whole-group rotation is intentionally narrow; do not claim
+  general Phase B completion. Local affine road widths can vary; do not equate
+  those variations with traffic demand. Complete long-range packing and corner
+  lot handling need separate evidence and acceptance checks.
+- Commits created/pushed: one atomic feature unit, reviewed and delivered to
+  existing origin/experiment/street-grid; no main integration. Commit outcome is
+  checked after staged review and push, not inferred from this log entry.

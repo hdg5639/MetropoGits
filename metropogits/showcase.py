@@ -154,6 +154,13 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         for district_id in visible_districts
         for r in by_territory[district_id]["rectangles"]
     ]
+    if 'groundPlan' in routing:
+        surfaces = [(dict(footprint=p),pad['districtId']) for pad in routing['groundPlan']['pads'] for p in pad['polygons']]
+        for pad in routing['groundPlan']['pads']:
+            mapping.setdefault(pad['districtId'],dict(kind='district',districtId=pad['districtId']))
+        # Aggregate plinths follow their actual mass, not the full old plot.
+        surfaces += [(dict(x=m['x'],z=m['z'],width=m['width'],depth=m['depth']),owner)
+                     for m,owner in models if mapping[owner]['kind']=='visual-block']
     plots = [(p, b["id"]) for b in blocks for p in b["plots"]]
     cuboids = [
         (part, model["archetype"], owner)
@@ -240,6 +247,14 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         )
         for i, d in enumerate(major_ids)
     }
+    if 'groundPlan' in routing:
+        parents = {d['id']:d['parentId'] for d in scene['districts']}
+        for pad in routing['groundPlan']['pads']:
+            owner = pad['districtId']
+            while owner is not None and owner not in colors:
+                owner = parents[owner]
+            if owner is not None:
+                colors[pad['districtId']] = colors[owner]
     # Parent ground first; major overlays retain the same canonical locations.
     for rect, district_id in sorted(
         surfaces, key=lambda pair: (pair[1] in major_ids, pair[1])

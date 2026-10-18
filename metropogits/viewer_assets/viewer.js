@@ -512,7 +512,7 @@
     context.fillStyle = selected("district", district.id)
       ? "rgba(14, 165, 233, 0.24)"
       : urbanContext && !structureOverlay ? urbanContext.ground : "rgba(30, 41, 59, 0.72)";
-    for (const rectangle of territory.rectangles) {
+    for (const rectangle of data.occupiedGround && !structureOverlay ? [] : territory.rectangles) {
       const points = [
         project(rectangle.x, rectangle.z),
         project(rectangle.x + rectangle.width, rectangle.z),
@@ -559,6 +559,7 @@
   }
 
   function drawMajorDistrict(district) {
+    if(data.occupiedGround && !structureOverlay) return;
     const territory = districtTerritory(district);
     const index=[...majorDistrictIds].sort().indexOf(district.id);
     const tint=urbanContext?.majorColors[index % urbanContext.majorColors.length];
@@ -796,7 +797,7 @@
       && facility.memberEntityIds.includes(state.selected.id)
       ? scene.buildings.find(b => b.entityId === state.selected.id) : null;
     const isSelected = selected("aggregate", facility.id) || Boolean(selectedMember);
-    const outlines = (facility.plots || [facility]).map((plot) => drawVolume(
+    const outlines = filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay)).map((plot) => drawVolume(
       { ...plot, height: 2.2 },
       ["#475569", "#263449", "#172033"],
       isSelected ? "#f8fafc" : "#fbbf24",
@@ -856,6 +857,18 @@
     districtLabelCandidates = [];
     context.clearRect(0, 0, viewportWidth, viewportHeight);
     drawGrid();
+    if(data.occupiedGround && !structureOverlay) {
+      const majorOrder=[...majorDistrictIds].sort();
+      for(const pad of data.occupiedGround.pads) {
+        let owner=districts.get(pad.districtId);
+        while(owner && !majorDistrictIds.has(owner.id))owner=districts.get(owner.parentId);
+        context.fillStyle=owner?urbanContext.majorColors[majorOrder.indexOf(owner.id)%urbanContext.majorColors.length]:urbanContext.ground;
+        for(const poly of pad.polygons) {
+          const points=poly.map(([x,z])=>project(x,z));polygonPath(points);context.fill();
+          hitRegions.push({kind:'district',id:pad.districtId,points});
+        }
+      }
+    }
     for (const district of scene.districts) {
       if (renderedDistrictIds.has(district.id)) drawDistrict(district);
     }

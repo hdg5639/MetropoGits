@@ -485,7 +485,8 @@ def render_preview(
         "  <g id=\"districts\">",
     ]
 
-    for district in scene["districts"]:
+    compact_ground = (routing or {}).get('groundPlan')
+    for district in ([] if compact_ground else scene["districts"]):
         if district["id"] not in drawable_district_ids:
             continue
         territory = territories[district["id"]]
@@ -535,7 +536,7 @@ def render_preview(
         for index, district_id in enumerate(sorted(major_district_ids))
     }
     lines.append('  <g id="major-districts">')
-    for district_id in sorted(major_district_ids):
+    for district_id in ([] if compact_ground else sorted(major_district_ids)):
         territory = territories[district_id]
         full_label = district_labels.get(district_id, district_id)
         color = major_color_by_id[district_id]
@@ -577,7 +578,7 @@ def render_preview(
     lines.append(
         '  <g id="civic-blocks" aria-label="Decorative civic blocks; not dependency evidence">'
     )
-    for district_id in sorted(buildings_by_district):
+    for district_id in ([] if compact_ground else sorted(buildings_by_district)):
         members = buildings_by_district[district_id]
         min_block_x = min(float(item["x"]) for item in members) - 1.1
         min_block_z = min(float(item["z"]) for item in members) - 1.1
@@ -604,6 +605,13 @@ def render_preview(
         )
     lines.append("  </g>")
 
+    if compact_ground:
+        lines.append('<g id="occupied-ground" aria-label="Visual occupied ground, not allocated directory area">')
+        for pad in compact_ground['pads']:
+            for poly in pad['polygons']:
+                points = ' '.join(f'{_fmt(project(x,z)[0])},{_fmt(project(x,z)[1])}' for x,z in poly)
+                lines.append(f'<polygon data-district-id="{_escape(pad["districtId"])}" points="{points}" fill="{palette["district"]}"/>')
+        lines.append('</g>')
     routing = routing if routing is not None else derive_access_routes(scene, ucg)
     lines.extend(svg_access_lines(routing, project, hierarchy=derive_road_hierarchy(scene, routing)))
     # Keep canonical group identities discoverable; these are not legacy paths.

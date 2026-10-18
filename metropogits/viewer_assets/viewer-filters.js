@@ -499,6 +499,12 @@
     return result.sort((a, b) => a.id.localeCompare(b.id));
   }
 
+  function aggregateGroundPlots(facility, compact = false) {
+    if (!compact) return facility.plots || [facility];
+    // Each mass already fits its allocated plot. Never widen it into a road.
+    return aggregateParts(facility).map(p => ({x:p.x,z:p.z,width:p.width,depth:p.depth}));
+  }
+
   function aggregateParts(facility) {
     if (facility.role) return [{ ...facility, entityId: facility.id,
       archetype: facility.archetypeCounts[0].archetype,
@@ -1280,6 +1286,7 @@
     createAccessPolicy,
     corridorVisible,
     aggregateParts,
+    aggregateGroundPlots,
     aggregateLabel,
     roleVolumes,
     createLodPolicy,

@@ -55,6 +55,7 @@ def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -
             **({"streetCurves": curves} if curves else {}),
             **({"streetDemand": pavement} if pavement is not None else {}),
             **({"cityContext": city_context(routing)} if city_context(routing) else {}),
+            **({'occupiedGround': routing['groundPlan']} if 'groundPlan' in routing else {}),
             "streets": ({**derive_street_grid(scene), "structural": True, "surfaces": surfaces,
                          **({'orientedEntityIds': routing['parcelPlan']['changedFootprintIds']} if 'parcelPlan' in routing else {})}
                         if 'streetGrid' in routing else derive_street_grid(scene)),
@@ -90,6 +91,10 @@ def render_viewer(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> d
             b'METROPOGITS / STATIC CITY', b'METROPOGITS / EXPERIMENTAL PARCEL LAYOUT', 1)
     if routing is not None and 'parcelPlan' in routing:
         result['parcel-plan.json'] = canonical_json_bytes(routing['parcelPlan'])
+    if routing is not None and 'blockPlan' in routing:
+        result['block-plan.json'] = canonical_json_bytes(routing['blockPlan'])
+        result['occupied-ground.json'] = canonical_json_bytes(routing['groundPlan'])
+        result['index.html'] = result['index.html'].replace(b'Civic block (visual)', b'Occupied ground (visual; full bounds in Structure overlay)')
     if routing is not None and 'streetGrid' in routing:
         result['index.html'] = result['index.html'].replace(
             b'METROPOGITS / STATIC CITY', b'METROPOGITS / STRUCTURAL STREET EXPERIMENT').replace(

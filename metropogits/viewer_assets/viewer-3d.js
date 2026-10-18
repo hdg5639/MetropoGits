@@ -747,7 +747,18 @@
     const triangles = [];
     const lines = [];
     const accessOverlay = [];
+    if(data.occupiedGround && !structureOverlay) {
+      const majorOrder=[...majorDistrictIds].sort();
+      for(const pad of data.occupiedGround.pads) {
+        let owner=districts.get(pad.districtId);
+        while(owner && !majorDistrictIds.has(owner.id))owner=districts.get(owner.parentId);
+        const tint=color(owner?urbanContext.majorColors[majorOrder.indexOf(owner.id)%urbanContext.majorColors.length]:urbanContext.ground);
+        for(const p of pad.polygons)for(let i=1;i<p.length-1;i++)
+          quad(triangles,[p[0],p[i],p[i+1],p[i+1]].map(([x,z])=>[x,-.03,z]),[0,1,0],tint);
+      }
+    }
     for (const district of framingDistricts) {
+      if(data.occupiedGround && !structureOverlay) continue;
       for (const rectangle of districtTerritory(district).rectangles) {
         box(
           triangles,
@@ -763,6 +774,7 @@
     }
 
     for (const districtId of [...majorDistrictIds].sort()) {
+      if(data.occupiedGround && !structureOverlay) continue;
       const district = districts.get(districtId);
       if (!district) continue;
       const territory = districtTerritory(district);
@@ -997,7 +1009,7 @@
         && facility.memberEntityIds.includes(state.selected.id)
         ? scene.buildings.find(b => b.entityId === state.selected.id) : null;
       const isSelected = selected("aggregate", facility.id) || Boolean(selectedMember);
-      for (const plot of facility.plots || [facility]) {
+      for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         box(
           triangles,
           plot.x,
@@ -1028,7 +1040,7 @@
         }
       }
       const borderColor = color(isSelected ? "#f8fafc" : "#fbbf24");
-      for (const plot of facility.plots || [facility]) {
+      for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         const x0 = plot.x - 0.55;
         const x1 = plot.x + plot.width + 0.55;
         const z0 = plot.z - 0.55;
@@ -1174,7 +1186,7 @@
     }
     for (const aggregateId of renderedAggregateIds) {
       const facility = aggregateFacilities.get(aggregateId);
-      for (const plot of facility.plots || [facility]) {
+      for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         const corners = [];
         for (const x of [plot.x, plot.x + plot.width]) {
           for (const y of [0.2, facility.height + 2.4]) {

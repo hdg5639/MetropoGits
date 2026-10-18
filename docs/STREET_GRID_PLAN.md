@@ -429,3 +429,54 @@ Use stable block anchors and reject unsafe candidates atomically. Merely looseni
 door/collision tests or randomly rotating tight six-unit squares is not acceptable.
 Phase C adds corner-lot handling after that. Evidence-based role silhouettes stay
 authoritative; road hierarchy may influence visual placement, not invent roles.
+
+## Coordinated leaf-block pilot and occupied ground — ADR-023, 2026-10-19
+
+```powershell
+python -m scripts.street_grid BUILD --street-grid --aligned-blocks --local-blocks --out NEW_DIRECTORY
+```
+
+This explicit experiment includes frontage/junction planning. It is **not full
+Phase B parcel subdivision** and does not change the default CLI or canonical
+City/UCG. `block-plan.json` and `occupied-ground.json` describe derived geometry.
+Rectangular leaf owners with 2–32 files can rotate their whole building group
+toward a nearby physical street axis. The outer owner boundary stays fixed;
+inner buildings and doorways move rigidly, while the surrounding road surfaces,
+paint and complete-trip paths deform continuously through a positive-triangle
+partition. Reject inverted triangles and movements over 14 units. Preserve
+logical source/target pairs, edge IDs and every route. A complete trip may grow
+by at most 50% or 14 units, whichever allowance is larger. Resource limits fail
+explicitly. This bounded pilot accepts at most eight leaf blocks per scene.
+
+Occupied ground is distinct from allocated directory area. Nearby physical
+building supports merge only within a bounded area budget and are clipped to
+their original owner. Normal view shows these supports; Structure overlay
+restores allocated territory. Aggregate plinths follow actual displayed masses,
+including picking. No fake files, roles, roads, parks or runtime traffic are added.
+**Shrinking displayed ground is not evidence of denser canonical packing.**
+
+Same-camera comparison: `artifacts/visual/local-blocks-focus-r3/index.html`.
+Viewers: `local-blocks-r3/{sqlitebrowser,pocketbase,gj,oj}/after/index.html`.
+Before is the street-facing baseline, rebuilt with current viewer assets.
+
+| Snapshot | Allocated root area | Individual occupied-pad area upper bound | Rotated groups / files |
+| --- | ---: | ---: | ---: |
+| SQLite Browser | 62,328 | 39,799 | 0 / 0 |
+| PocketBase | 118,286 | 51,101 | 0 / 0 |
+| GJ Cloud | 265,678 | 99,475 | 3 / 6 |
+| GamjaOJ | 98,980 | 52,065 | 0 / 0 |
+
+Areas are world-unit squared, not pixels. The pad sum can include overlapping
+supports and excludes LOD-specific aggregate plinths; it is not a total visible
+city-area reduction. GJ accepts two -45-degree groups and one -3.81-degree group.
+Other fixtures retain their existing orientation because safe whole-group fits
+are unavailable. Canonical graphs/scenes and all 5,782 logical trips are unchanged.
+Physical trips remain continuous; road/building collisions and owner escapes are
+zero in the four-repository geometry audit. Repeated packages match byte-for-byte.
+
+Normal-view floors no longer cover long empty owner reserves. This makes some
+sparse areas visibly dark rather than actually bringing distant buildings closer.
+Do not describe it as solved city density. Next: local parcel subdivision and
+bounded compaction, prioritizing genuinely smaller occupied blocks over hiding
+vacancies. Keep entrance correspondence, full-width collision checks and stable
+outer anchors. No broad rollout or main-branch integration is implied.
