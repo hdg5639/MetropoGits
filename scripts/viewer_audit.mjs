@@ -70,7 +70,7 @@ export function instrument(source) {
       hitMs: auditHitEnd - auditDrawEnd, labelsMs: ended - auditHitEnd,`);
   return replaceOnce(result, '  new ResizeObserver(resize).observe(canvas);', `
   globalThis.__METRO_AUDIT__ = {
-    roadTargets() {
+    roadTargets(identity = null) {
       if (!accessPolicy) return [];
       return hitRegions.filter(region => region.kind === 'network')
         .map(region => ({id:region.id, x:(region.minX+region.maxX)/2, y:(region.minY+region.maxY)/2}))
@@ -78,7 +78,10 @@ export function instrument(source) {
           && hitTest(point.x,point.y)?.id===point.id)
         .map(point => ({...point, choices:accessPolicy.choices(point.id,visibleBuildingIds,visibleNetworkIds)}))
         .filter(point => point.choices.length>0)
-        .sort((a,b)=>a.choices.length-b.choices.length || a.id.localeCompare(b.id));
+        .sort((a,b)=>a.choices.length-b.choices.length || a.id.localeCompare(b.id))
+        .filter(point => !identity || point.id === identity)
+        .slice(0,1)
+        .map(point => ({...point, choices:point.choices.map(({id,source,edgeIds,segmentIds})=>({id,source,edgeIds,segmentIds}))}));
     },
     accessTargets() {
       if (!accessPolicy) return [];
@@ -553,7 +556,7 @@ export async function runAudit(browser, output, inputs, samples = 20) {
             throw new Error('Hidden path selection survived an endpoint filter');
           await activate(cdp,'document.querySelector("#clear-filters").click()');
           // Restore through the same real road pointer interaction after filtering.
-          const fresh=(await cdp.evaluate('__METRO_AUDIT__.roadTargets()')).find(item=>item.id===target.id);
+          const fresh=(await cdp.evaluate('__METRO_AUDIT__.roadTargets('+JSON.stringify(target.id)+')')).find(item=>item.id===target.id);
           if(!fresh) throw new Error('Road target disappeared after clearing filters');
           const frame=await snapshot(cdp), point={x:fresh.x+frame.canvasRect.x,y:fresh.y+frame.canvasRect.y};
           await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});
