@@ -81,8 +81,11 @@ The original 100/90 lattice-distance bound is preserved; at most two additional
 bends per original route are permitted. Total individual travel can increase
 slightly while global paved centerline/parallel overlap cannot increase. All
 consumers, selection and synthetic use the consolidated stored paths, not hidden
-old lines. Junction surface unification and selective roundabouts are subsequent
-work, not delivered by this pass. Inputs with partial routing are rejected.
+old lines. Inputs with partial routing are rejected. WebGL joins existing
+same-kind junction surfaces inside the original pavement envelope and clips
+ordinary markings at approach mouths; exact selection and animation paths
+remain complete. Canvas/SVG surfaces and all routing data are unchanged.
+Nearby approach merging and selective roundabouts remain subsequent work.
 
 ADR-017 exposes the measured parcel candidate through `scripts.parcel_viewer`.
 Only one selected leaf changes file coordinates; all directory geometry, file

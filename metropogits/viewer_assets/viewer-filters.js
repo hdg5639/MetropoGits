@@ -1046,6 +1046,92 @@
       marking:shared?'#bac8d4':'#748a9e'};
   }
 
+  // Presentation only: inset the union of existing approach rectangles. Never
+  // bridge empty corners, create a route, or widen the certified road footprint.
+  function accessJunctionGeometry(frame) {
+    const segments = new Map((frame?.segments || []).map(s => [s.id, s]));
+    const trims = new Map(), surfaces = [];
+    const unique = values => [...new Set(values.map(v => Math.round(v * 1e8) / 1e8))].sort((a,b) => a-b);
+    for (const junction of [...(frame?.junctions || [])].sort((a,b)=>a.id.localeCompare(b.id))) {
+      const groups = new Map();
+      for (const id of [...junction.segmentIds].sort()) {
+        const segment = segments.get(id);
+        if (!segment) continue;
+        if (!groups.has(segment.kind)) groups.set(segment.kind, []);
+        groups.get(segment.kind).push(segment);
+      }
+      for (const [kind, incident] of groups) {
+        if (incident.length < 3) continue;
+        const [x,z] = junction.point;
+        const widths = incident.map(s => accessRoadStyle(s).width);
+        const inset = Math.min(...widths) * .12, reach = Math.max(...widths) / 2 + inset;
+        const rectangles = [];
+        for (const segment of incident) {
+          const side = segment.start[0] === x && segment.start[1] === z ? 0 :
+            segment.end[0] === x && segment.end[1] === z ? 1 : -1;
+          if (side < 0) continue;
+          const other = side ? segment.start : segment.end;
+          const dx = other[0]-x, dz = other[1]-z;
+          if ((dx === 0) === (dz === 0)) continue;
+          const length = Math.abs(dx || dz), extent = Math.min(length, reach);
+          const half = accessRoadStyle(segment).width / 2;
+          const endX = Math.sign(dx)*extent, endZ = Math.sign(dz)*extent;
+          rectangles.push(dx ? [Math.min(0,endX),-half,Math.max(0,endX),half] :
+            [-half,Math.min(0,endZ),half,Math.max(0,endZ)]);
+          const trim = trims.get(segment.id) || [0,0];
+          trim[side] = Math.max(trim[side], extent);
+          trims.set(segment.id, trim);
+        }
+        if (rectangles.length < 3) continue;
+        const inside = (a,b) => rectangles.some(r => a>r[0]-1e-9 && a<r[2]+1e-9 && b>r[1]-1e-9 && b<r[3]+1e-9);
+        const xs = unique(rectangles.flatMap(r => [r[0],r[2]]));
+        const zs = unique(rectangles.flatMap(r => [r[1],r[3]]));
+        const boundaries = [];
+        for (let i=0;i<xs.length-1;i++) for (let j=0;j<zs.length-1;j++) {
+          const a=xs[i], b=zs[j], c=xs[i+1], d=zs[j+1];
+          if (!inside((a+c)/2,(b+d)/2)) continue;
+          if (!inside(a-1e-7,(b+d)/2)) boundaries.push([a,b,a,d]);
+          if (!inside(c+1e-7,(b+d)/2)) boundaries.push([c,b,c,d]);
+          if (!inside((a+c)/2,b-1e-7)) boundaries.push([a,b,c,b]);
+          if (!inside((a+c)/2,d+1e-7)) boundaries.push([a,d,c,d]);
+        }
+        const cutsX = unique(boundaries.flatMap(r => [r[0]-inset,r[0]+inset,r[2]-inset,r[2]+inset]));
+        const cutsZ = unique(boundaries.flatMap(r => [r[1]-inset,r[1]+inset,r[3]-inset,r[3]+inset]));
+        const tiles = [], open = new Map();
+        for (let j=0;j<cutsZ.length-1;j++) {
+          const b=cutsZ[j], d=cutsZ[j+1], active = new Set();
+          let start = null;
+          for (let i=0;i<cutsX.length;i++) {
+            const a=cutsX[i], c=cutsX[i+1], mx=(a+c)/2, mz=(b+d)/2;
+            const keep = i<cutsX.length-1 && inside(mx,mz) && boundaries.every(r =>
+              Math.max(r[0]-mx, mx-r[2], r[1]-mz, mz-r[3]) >= inset-1e-9);
+            if (keep && start === null) start=a;
+            if (!keep && start !== null) {
+              const key=`${start},${a}`, previous=open.get(key);
+              if (previous && Math.abs(previous[3]-b)<1e-8) previous[3]=d;
+              else {const tile=[start,b,a,d]; tiles.push(tile); open.set(key,tile);}
+              active.add(key); start=null;
+            }
+          }
+          for (const key of open.keys()) if (!active.has(key)) open.delete(key);
+        }
+        const shared=incident.some(s => accessRoadStyle(s).shared);
+        surfaces.push({kind, segmentIds:incident.map(s=>s.id), surface:shared?'#52677b':'#33465a',
+          rectangles:tiles.map(r=>[r[0]+x,r[1]+z,r[2]+x,r[3]+z])});
+      }
+    }
+    return {surfaces, trims};
+  }
+
+  function accessMarkingSegment(segment, trims) {
+    const [a,b]=trims.get(segment.id) || [0,0];
+    const dx=segment.end[0]-segment.start[0], dz=segment.end[1]-segment.start[1];
+    const length=Math.hypot(dx,dz);
+    if (length <= a+b+1e-8) return null;
+    return {start:[segment.start[0]+dx*a/length,segment.start[1]+dz*a/length],
+      end:[segment.end[0]-dx*b/length,segment.end[1]-dz*b/length]};
+  }
+
   function districtBuildings(scene, districtId) {
     const children = new Map(scene.districts.map(d => [d.id, []]));
     for (const district of scene.districts) children.get(district.parentId)?.push(district.id);
@@ -1077,6 +1163,8 @@
   }
 
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    accessJunctionGeometry,
+    accessMarkingSegment,
     accessRoadStyle,
     districtBuildings,
     groundPan,

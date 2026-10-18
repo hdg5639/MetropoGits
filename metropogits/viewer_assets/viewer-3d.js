@@ -833,6 +833,7 @@
     }
 
     const roadStyles = new Map((accessFrame?.segments || []).map(segment => [segment.id, filterEngine.accessRoadStyle(segment)]));
+    const junctionGeometry = filterEngine.accessJunctionGeometry(accessFrame);
     for (const segment of accessFrame?.segments || []) {
       if (segment.highlighted) {
         line(accessOverlay, [segment.start[0],0.22,segment.start[1]],
@@ -841,21 +842,22 @@
       const style = roadStyles.get(segment.id), width = style.width;
       roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
       roadSegment(triangles, segment.start, segment.end, width * 0.76, 0.14, color(style.surface));
-      if (segment.highlighted || segment.routeIds.length >= 4) {
-        roadSegment(triangles, segment.start, segment.end, Math.min(0.2, width * 0.24), 0.18,
+      const marking = filterEngine.accessMarkingSegment(segment, junctionGeometry.trims);
+      if (marking && (segment.highlighted || segment.routeIds.length >= 4)) {
+        roadSegment(triangles, marking.start, marking.end, Math.min(0.2, width * 0.24), 0.18,
           color(segment.highlighted ? "#67d7ff" : segment.kind === "DEPENDENCY_ROAD" ? style.marking : networkColors[segment.kind]));
       }
       // Depth-tested 1px cartographic centerline for subpixel shared corridors.
-      // It follows the same endpoints; it is not extra pavement or an x-ray road.
-      if (style.shared && width < 1.25) {
-        line(lines, [segment.start[0],.19,segment.start[1]], [segment.end[0],.19,segment.end[1]],
+      // Stop paint at junction mouths; selected x-ray paths above stay complete.
+      if (marking && style.shared && width < 1.25) {
+        line(lines, [marking.start[0],.19,marking.start[1]], [marking.end[0],.19,marking.end[1]],
           color(segment.kind === "DEPENDENCY_ROAD" ? "#8ea4b8" : networkColors[segment.kind]));
       }
     }
-    for (const junction of accessFrame?.junctions || []) {
-      const width = Math.min(...junction.segmentIds.filter(id=>roadStyles.has(id)).map(id => roadStyles.get(id).width));
-      const [x, z] = junction.point;
-      roadSegment(triangles, [x-width/2,z], [x+width/2,z], width, 0.145, color("#52677b"));
+    for (const surface of junctionGeometry.surfaces) {
+      for (const [x0,z0,x1,z1] of surface.rectangles) {
+        roadSegment(triangles, [x0,(z0+z1)/2], [x1,(z0+z1)/2], z1-z0, 0.16, color(surface.surface));
+      }
     }
     for (const network of accessPolicy ? [] : scene.networks) {
       if (!renderedNetworkIds.has(network.id)) continue;

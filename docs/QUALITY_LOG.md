@@ -3108,3 +3108,72 @@
   checkpoint separately committed after verification, followed by ordinary
   authorized upstream push. Private generated cities/harnesses and unrelated IDE
   caches remain excluded; no agent contributor attribution.
+
+## Checkpoint 2026-10-18 — continuous WebGL junction surfaces
+
+- Implemented: same-kind visible approach rectangle unions produce inset asphalt
+  tiles within existing pavement. Internal shoulder seams are covered; ordinary
+  centerlines stop at junction mouths, including short segments between joints.
+  Selected x-ray paths remain complete. No topology, route membership, animation
+  trajectory, UCG/City schema, stable ID, building placement or clearance change.
+  Canvas/SVG use unoutlined surfaces already and are unchanged. ADR-018 and the
+  urban block plan distinguish this rendering slice from future approach merging.
+- Fixtures / revisions: readonly GJ source3d9b53f and OJ sourceb163acd using the
+  road-consolidation-r2 after packages at parent264bffd; fresh spring-positive and
+  structural-showcase builds. No target source/build/dependency execution.
+- Commands: `python ../artifacts/visual/repackage_camera.py
+  ../artifacts/visual/road-consolidation-r2/<gj|oj>/after
+  ../artifacts/visual/junction-surface-r1/<gj|oj> --roads`;
+  `node ../artifacts/visual/verify_junctions.mjs`;
+  `node ../artifacts/visual/verify_access.mjs <new-build>` for both cities.
+  Fresh `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/junction-surface-fixtures/spring --repo-id fixtures/spring`
+  and analogous structural-showcase/unknown completed with 12 artifacts each.
+- Canonical fidelity and determinism: full embedded viewer data, UCG/City bytes,
+  preview.svg and showcase.svg equal baseline in both cities. All manifest hashes
+  checked. Repeated derived geometry is equal. For every patch at all three LODs,
+  independent rectangle subdivision verified containment in contributing pavement.
+  Detail GJ2,959 joints/10,160 merged tiles; OJ652 joints/2,083 tiles. GJ4,209 routes,
+  6,157 represented edges and OJ1,381 routes,2,243 edges unchanged. Unresolved edges
+  and pavement/building intersections0. Unrelated building movement0.
+- Browser commands: `node ../artifacts/visual/parcel_focus_review.mjs` captures
+  junction-surface-focus-r1. Baseline screenshots are preserved actual previous
+  captures; stale JS is not executed. Target/yaw/pitch/distance and1500x1000 viewport
+  match exactly. `node scripts/viewer_audit.mjs <Chrome>
+  ../artifacts/visual/junction-surface-audit-r1 <gj-build> <oj-build>` passes
+  three LODs, selection/drill-down, filters, camera pan/orbit/jump and synthetic.
+  `node ../artifacts/visual/junction_smoke.mjs` captures fresh sparse WebGL/SVG.
+- Artifacts inspected: focus-r1 GJ before/after and OJ after focused.png; both
+  after showcase.png; fixtures spring.png WebGL and unknown-preview.png SVG.
+  GJ crossings no longer carry continuous transverse curb/paint grids; some
+  short access paint and rectangular/parallel roads remain. OJ change is subtler
+  because buildings occlude many joints. Full-city SVG composition is unchanged;
+  unknown sparse margins remain an existing visual task, not fixed here.
+- Performance: geometry generated only at static-cache invalidation. Local Node
+  whole-city Detail geometry samples were GJ113ms/OJ15ms (not frame time).
+  Headless Chrome152 SwiftShader audit,20 samples/mode: synthetic CPU p95
+  GJ1.4/1.0/1.0ms, OJ4.0/1.2/1.0ms across Overview/District/Detail; static rebuilds0
+  in every synthetic mode. These are draw-submission CPU timings, not GPU FPS or
+  a speedup claim. More surface triangles are a tradeoff; same camera needs no
+  geometry rebuild while synthetic runs.
+- Test commands: `python -m unittest discover -s tests`;
+  `python -m ruff check metropogits scripts tests`; `node --check` on both changed
+  viewer assets; `node --test tests/junction_geometry.test.mjs
+  tests/access_routes.test.mjs tests/viewer_audit.test.mjs
+  tests/camera_navigation.test.mjs tests/role_landmarks.test.mjs`.
+- Tests: full unittest306 run,305 pass,1 Windows symlink skip; Ruff and changed
+  JS syntax checks pass. Five Node suites32 pass, including five new junction
+  cases covering T/X, empty corners, mixed widths, short approaches, filtering,
+  different kinds, ordering, endpoint reversal and paint exhaustion. No tests
+  weakened. Existing static-cache and complete route selection tests pass.
+- Spec alignment: PASS, technical sections7–8, product5.1 and functional
+  AC-002/003/006/014. Visualization remains a traceable depiction of static facts.
+  No runtime AI/cloud dependencies, inferred traffic claims or new source edges.
+- Open risks / next actions: close distinct approach junctions and rectilinear
+  routing still create clutter. Evaluate bounded approach merging before selective
+  roundabouts; do not add decorative circles or arbitrary branches for vehicles.
+- Commits created / pushed (main): feature, regression tests and documentation
+  are one work unit committed after this checkpoint. Maintainer explicitly
+  reconfirmed the owner exception to protected-main direct pushes this turn;
+  ordinary upstream push follows verification, without force or rule changes.
+  Private artifacts/review scripts and unrelated IDE caches are excluded.
