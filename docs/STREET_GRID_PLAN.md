@@ -204,3 +204,30 @@ not reclassified. All three renderers share these derived polygon fragments.
 are visibly reduced; preview-scale change remains modest. Polygon count9209/2632
 for8011/2372 dependency segments is presentation cost, not added streets or edges.
 Keep this verified unit separate from the following structure-overlay declutter.
+
+## City context and explicit structure overlay / 2026-10-18
+
+Aligned experimental viewers now default to major-service context, selected
+district boundaries and quieter neutral ground. Minor directory outlines,
+civic plot curbs and unselected minor labels no longer resemble extra roads.
+The Structure overlay button restores those details without moving anything;
+all districts remain pickable and exact route inspection is unchanged.
+This is a reversible presentation choice, not omitted source data or a new
+layout. Legacy viewers retain their existing appearance and controls.
+
+Showcase SVG uses the same context palette and omits decorative plot outlines;
+the accessible preview remains a detailed structural diagram. Both retain the
+same canonical buildings, roads and projection geometry. No invented facilities.
+
+Artifacts: `artifacts/visual/urban-street-r1/{gj,oj}/after/index.html`, comparison
+`urban-street-focus-r1/index.html`, and city/structure toggle captures at
+`urban-context-focus-r1/index.html`. Same-camera Portal Detail labels22->1 and
+line vertices3300->568; OJ29->2 and874->196. These are viewport-specific
+presentation counts, not deleted entities or a frame-rate claim. Toggle-back
+restores exact geometry counts. All4209/1381 routes and1324/681 buildings remain.
+
+WebGL and forced Canvas were exercised; three-LOD browser audits retain zero
+static rebuilds during Synthetic. Repeated generic towers, empty parcels and
+regular street geometry are still visible and should guide the next broader
+improvement. This milestone improves readability, not architectural coverage,
+and does not promote the experiment to the default pipeline.

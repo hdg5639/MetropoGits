@@ -445,3 +445,18 @@ No path, identity, source/destination, grade or assignment changes. Inspector
 separates physical width range from demand cap/target. Paint clips to sufficiently
 wide pieces and junction fills cannot enlarge the resulting envelope. All
 renderers use the same polygons; the500000-piece cap fails explicitly.
+
+### Experimental city context
+
+Aligned structural0.2 output optionally packages `cityContext` version
+`city-context/0.1`: neutral `ground` and ordered `majorColors` presentation
+values, not UCG/City facts. WebGL/Canvas initially suppress minor directory
+outlines, civic curbs and minor labels. Major identities and selected district
+context remain; district picking, buildings, aggregates and route membership
+are unchanged. Structure overlay restores full context and participates in
+static geometry cache invalidation, not per-frame Synthetic work.
+
+CPU showcase uses the same palette and removes decorative plot outlines.
+Accessible preview deliberately retains its detailed structural-diagram style.
+Neither changes canonical position/shape, road paths or evidence. Default and
+structural0.1 viewers do not gain this experimental toggle or styling.

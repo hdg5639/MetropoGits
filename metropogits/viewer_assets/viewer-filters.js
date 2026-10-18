@@ -971,6 +971,10 @@
     return !rectangle.networkIds || rectangle.networkIds.some(id => renderedNetworkIds.has(id));
   }
 
+  function contextDetailVisible(enabled, overlay, major, identity, selectedIdentity) {
+    return !enabled || overlay || major || identity === selectedIdentity;
+  }
+
   function createAccessPolicy(routing, hierarchy = null, pavement = null) {
     if (!routing) return null;
     const assigned = routing.streetGrid ? new Set(routing.streetGrid.assignment.assignedRouteIds) : null;
@@ -1236,6 +1240,7 @@
     accessMarkingSegment,
     accessMarkingSegments,
     accessRoadStyle,
+    contextDetailVisible,
     districtBuildings,
     groundPan,
     cameraKeyAction,

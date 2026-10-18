@@ -4767,3 +4767,50 @@
   roads. Preserve exact selection/overlay access rather than deleting structure.
 - Commit/push: independently verified unit on experiment/street-grid; normal
   upstream push after stage review, no private artifacts or agent attribution.
+
+## Checkpoint 2026-10-18 — city context without boundary-as-road clutter
+
+- Implemented: optional aligned-experiment city context, neutral ground,
+  major/selected-only directory context and reversible Structure overlay in
+  WebGL and Canvas. Showcase omits decorative plot outlines. Detailed preview
+  intentionally remains a structural diagram. No buildings or paths removed.
+- Fixtures: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896; catalog0.4.0;
+  maintained spring-positive and structural-showcase at parentc241550 plus
+  this unit. No target repository code/dependency installation executed.
+- Commands: `python ../artifacts/visual/shared_street_review.py urban-street-r1`;
+  `python -m metropogits build --repo tests/fixtures/repositories/NAME --out OUT`
+  to urban-street-fixtures/{spring,unknown}; `python -m scripts.street_grid
+  BUILD --street-grid --aligned-blocks --out OUT` to their -study directories.
+  Large canonical scene/UCG/routing equality and full path coverage checked.
+- Actual output: `node ../artifacts/visual/parcel_focus_review.mjs urban-street-r1
+  urban-street-focus-r1`; `node ../artifacts/visual/city_context_review.mjs
+  ../artifacts/visual/urban-context-focus-r1 INPUT...` for GJ/OJ after directories;
+  `node ../artifacts/visual/junction_smoke.mjs urban-street-fixtures` for small
+  WebGL/SVG. Inspected Portal city/structure and Canvas captures, Ops focus,
+  OJ showcase, unknown WebGL/preview. All are actual renderer output.
+- Visual findings: Portal labels22->1, line vertices3300->568; OJ29->2 and
+  874->196 at identical cameras. Counts of buildings, aggregates, districts,
+  networks and camera state remain equal through both toggle transitions.
+  Restoring city mode restores exact geometry counts. Less false road/label
+  clutter; repeated gray towers, empty parcels and regular grid still visible.
+  Unknown fixture retains3 generic buildings and0 source relationships.
+- Browser: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/urban-street-audit-r1 INPUT...` on both after directories.
+  CHROME=C:/Program Files/Google/Chrome/Application/chrome.exe,
+  152.0.7977.84/SwiftShader. All three LODs, navigation, filtering, exact route
+  inspection and Synthetic pass; static rebuilds0. CPU Synthetic p95 GJ1.1-2.8ms,
+  OJ1.1-1.3ms. These are submission timings, not GPU FPS or a speedup claim.
+  Separate real forced-Canvas toggle checks pass without browser exceptions.
+- Regression: `python -m unittest discover -s tests -q`:463 run,462 pass,
+  1 existing Windows symlink skip; seven Node suites46 pass; Ruff and diff
+  checks pass. Optional controls, deterministic packaging, source immutability
+  and visibility policy tested. Every GJ/OJ4209/1381 original trip retained;
+  assignment/fallback counts3642/567 and1113/268 unchanged. No layout churn.
+- Spec alignment: PASS ADR-020, technical8, FR-011/012 and AC-002/006/011/014.
+  Renderer-only presentation; no schema, IDs, evidence/security or default-mode
+  changes. Next: remaining parcel/skyline readability, not more per-trip tuning.
+- Commit/push: preceding pavement unitc241550 pushed normally to
+  origin/experiment/street-grid. This independently verified context unit is
+  committed/pushed on the same experimental branch after closing stage checks;
+  no private artifacts, IDE caches or agent attribution included.

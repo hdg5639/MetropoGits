@@ -11,6 +11,7 @@ from metropogits.access_routes import derive_access_routes
 from metropogits.road_hierarchy import derive_road_hierarchy
 from metropogits.structural_streets import street_rectangles
 from metropogits.street_demand import demand_pavement
+from metropogits.city_context import city_context
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
@@ -50,6 +51,7 @@ def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -
             "routing": routing,
             "roadHierarchy": hierarchy,
             **({"streetDemand": pavement} if pavement is not None else {}),
+            **({"cityContext": city_context(routing)} if city_context(routing) else {}),
             "streets": ({**derive_street_grid(scene), "structural": True, "surfaces": surfaces}
                         if 'streetGrid' in routing else derive_street_grid(scene)),
             "territories": derive_district_territories(scene),
@@ -89,6 +91,10 @@ def render_viewer(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> d
             b'Route corridor (derived)', b'Structural street (visual, not a relationship)').replace(
             b'Dependency road \xc2\xb7 width / paint = static demand', b'Assigned dependency demand (not runtime traffic)').replace(
             b'<span id="renderer-mode"', b'<button type="button" id="street-diagnostics">Review fallbacks</button><span id="renderer-mode"')
+    if routing is not None and city_context(routing):
+        result['index.html'] = result['index.html'].replace(
+            b'<span id="renderer-mode"',
+            b'<button type="button" data-action="toggle-structure" aria-pressed="false" title="Show all directory outlines and labels without changing buildings or relationships">Structure overlay</button><span id="renderer-mode"')
     return dict(sorted(result.items()))
 
 

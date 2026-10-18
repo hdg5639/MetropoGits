@@ -17,6 +17,15 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 const files=new Set(['A','B','C','D']), networks=new Set(['n']);
 
+test('city context hides minor decoration only and always exposes selected structure',()=>{
+  const visible=globalThis.METROPOGITS_FILTERS.contextDetailVisible;
+  assert.equal(visible(true,false,false,'minor',null),false);
+  assert.equal(visible(true,false,true,'major',null),true);
+  assert.equal(visible(true,false,false,'minor','minor'),true);
+  assert.equal(visible(true,true,false,'minor',null),true);
+  assert.equal(visible(false,false,false,'minor',null),true);
+});
+
 test('shared pavement is presentation only and survives exact filtering and animation',()=>{
   const pavement={segments:{shared:[{points:[[0,6],[7,6],[7,8],[0,8]],start:[0,7],end:[7,7],width:2,structural:true}]}};
   const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing,null,pavement);

@@ -209,15 +209,18 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
     ]
     polygons_for_occupancy = []
 
-    def polygon(points, color, attrs="", opacity=1):
+    from metropogits.city_context import city_context
+    context = city_context(routing)
+
+    def polygon(points, color, attrs="", opacity=1, outline=True):
         polygons_for_occupancy.append(points)
         lines.append(
             f'<polygon points="{points_text(points)}" fill="{color}" '
-            f'fill-opacity="{opacity}" stroke="{_shade(color, 1.2)}" stroke-width="0.4" {attrs}/>'
+            f'fill-opacity="{opacity}" stroke="{_shade(color, 1.2)}" stroke-width="{0.4 if outline else 0}" {attrs}/>'
         )
 
     colors = {
-        d: MAJOR_DISTRICT_COLORS[i % len(MAJOR_DISTRICT_COLORS)]
+        d: (context['majorColors'][i % len(context['majorColors'])] if context else MAJOR_DISTRICT_COLORS[i % len(MAJOR_DISTRICT_COLORS)])
         for i, d in enumerate(major_ids)
     }
     # Parent ground first; major overlays retain the same canonical locations.
@@ -226,10 +229,11 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
     ):
         polygon(
             [project(x, z) for x, z in _corners(rect)],
-            colors.get(district_id, "#172236"),
+            colors.get(district_id, context['ground'] if context else "#172236"),
             f'data-map-id="{_escape(district_id)}"',
+            outline=not bool(context),
         )
-    for plot, owner in plots:
+    for plot, owner in ([] if context else plots):
         polygon(
             [project(x, z, 0.05) for x, z in _corners(plot)],
             "#344154",

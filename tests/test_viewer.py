@@ -23,6 +23,24 @@ def load_fixture() -> dict:
 
 
 class ViewerTests(unittest.TestCase):
+    def test_structure_overlay_is_opt_in_street_presentation_not_scene_mutation(self):
+        from metropogits.access_routes import derive_access_routes
+        from metropogits.structural_streets import assign_streets
+        from metropogits.city_context import city_context
+        graph=load_fixture()
+        scene=generate_city(graph)
+        frozen=copy.deepcopy(scene)
+        plain=render_viewer(scene,graph)
+        self.assertNotIn(b'data-action="toggle-structure"',plain['index.html'])
+        original=derive_access_routes(scene,graph)
+        routing=assign_streets(scene,original,aligned=True)
+        output=render_viewer(scene,graph,routing)
+        self.assertIn(b'data-action="toggle-structure" aria-pressed="false"',output['index.html'])
+        self.assertIn(b'"cityContext":{"ground":',output['assets/viewer-data.js'])
+        self.assertEqual(frozen,scene)
+        self.assertEqual(output,render_viewer(scene,graph,routing))
+        self.assertIsNone(city_context(original))
+
     @unittest.skipUnless(shutil.which("node"), "Node unavailable")
     def test_camera_navigation_policy(self):
         subprocess.run(["node", "--test", str(Path(__file__).with_name("camera_navigation.test.mjs"))],

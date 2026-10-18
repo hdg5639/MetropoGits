@@ -512,6 +512,12 @@
   const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets, ucg);
   const expandedAggregateIds = new Set();
   let showAllNetworks = false;
+  let structureOverlay = false;
+  const urbanContext = data.cityContext;
+  function contextVisible(id) {
+    return filterEngine.contextDetailVisible(Boolean(urbanContext),structureOverlay,
+      majorDistrictIds.has(id),id,state.selected?.kind==='district' ? state.selected.id : null);
+  }
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -746,7 +752,7 @@
           rectangle.width,
           0.5,
           rectangle.depth,
-          color("#182337"),
+          color(urbanContext && !structureOverlay ? urbanContext.ground : "#182337"),
         );
       }
     }
@@ -755,7 +761,9 @@
       const district = districts.get(districtId);
       if (!district) continue;
       const territory = districtTerritory(district);
-      const districtColor = color(majorDistrictColorById.get(districtId));
+      const index=[...majorDistrictIds].sort().indexOf(districtId);
+      const districtColor = color(urbanContext && !structureOverlay
+        ? urbanContext.majorColors[index % urbanContext.majorColors.length] : majorDistrictColorById.get(districtId));
       for (const rectangle of territory.rectangles) {
         box(
           triangles,
@@ -770,6 +778,10 @@
       }
       const borderColor = lighten(districtColor, 0.48);
       for (const segment of territory.boundary) {
+        if (urbanContext && !structureOverlay) {
+          line(lines,[segment[0][0],.09,segment[0][1]],[segment[1][0],.09,segment[1][1]],borderColor);
+          continue;
+        }
         roadSegment(triangles, segment[0], segment[1], 1.2, 0.09, borderColor);
       }
     }
@@ -798,7 +810,7 @@
       );
     }
 
-    if (currentDetailLevel === "detail") {
+    if (currentDetailLevel === "detail" && (!urbanContext || structureOverlay)) {
       for (const block of civicBlocks) {
         const blockColor = color("#243248");
         const curbColor = color("#52637b");
@@ -827,6 +839,7 @@
 
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
+      if (!contextVisible(district.id)) continue;
       const depth = districtDepths.get(district.id) || 0;
       const y = 0.06 + depth * 0.025;
       const districtColor = selected("district", district.id)
@@ -1214,6 +1227,7 @@
     const candidates = [];
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
+      if (!contextVisible(district.id)) continue;
       const territory = districtTerritory(district);
       const anchor = projected([
         territory.labelAnchor[0],
@@ -1376,7 +1390,7 @@
     const selectionKey = state.selected
       ? `${state.selected.kind}:${state.selected.id}:${state.selected.routeId || ""}`
       : "none";
-    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${[...expandedAggregateIds].sort().join('|')}`;
+    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${structureOverlay}:${[...expandedAggregateIds].sort().join('|')}`;
     if (nextCacheKey === lodCacheKey) return;
     currentDetailLevel = nextDetailLevel;
     lodCacheKey = nextCacheKey;
@@ -1840,6 +1854,11 @@
   }
 
   function runAction(action) {
+    if (action === "toggle-structure" && urbanContext) {
+      structureOverlay = !structureOverlay;
+      document.querySelector('[data-action="toggle-structure"]').setAttribute('aria-pressed',String(structureOverlay));
+      projectionDirty = true;
+    }
     if (action === "toggle-pan") {
       state.moveMode = !state.moveMode;
       document.querySelector('[data-action="toggle-pan"]').setAttribute("aria-pressed", String(state.moveMode));

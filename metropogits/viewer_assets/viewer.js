@@ -133,6 +133,12 @@
   const lodPolicy = filterEngine.createLodPolicy(scene, data.territories, data.streets, ucg);
   const expandedAggregateIds = new Set();
   let showAllNetworks = false;
+  let structureOverlay = false;
+  const urbanContext = data.cityContext;
+  function contextVisible(id) {
+    return filterEngine.contextDetailVisible(Boolean(urbanContext),structureOverlay,
+      majorDistrictIds.has(id),id,state.selected?.kind==='district' ? state.selected.id : null);
+  }
   const aggregateFacilities = new Map(
     lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
   );
@@ -278,7 +284,7 @@
     const selectionKey = state.selected
       ? `${state.selected.kind}:${state.selected.id}:${state.selected.routeId || ""}`
       : "none";
-    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${[...expandedAggregateIds].sort().join('|')}`;
+    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${structureOverlay}:${[...expandedAggregateIds].sort().join('|')}`;
     if (nextCacheKey === lodCacheKey) return;
     currentDetailLevel = nextDetailLevel;
     lodCacheKey = nextCacheKey;
@@ -472,6 +478,7 @@
   function drawGrid() {
     context.fillStyle = "#070b14";
     context.fillRect(0, 0, viewportWidth, viewportHeight);
+    if (urbanContext && !structureOverlay) return;
     context.strokeStyle = "rgba(56, 189, 248, 0.075)";
     context.lineWidth = 1;
     const spacing = Math.max(24, 42 * state.zoom);
@@ -503,7 +510,7 @@
     const territory = districtTerritory(district);
     context.fillStyle = selected("district", district.id)
       ? "rgba(14, 165, 233, 0.24)"
-      : "rgba(30, 41, 59, 0.72)";
+      : urbanContext && !structureOverlay ? urbanContext.ground : "rgba(30, 41, 59, 0.72)";
     for (const rectangle of territory.rectangles) {
       const points = [
         project(rectangle.x, rectangle.z),
@@ -515,6 +522,7 @@
       context.fill();
       hitRegions.push({ kind: "district", id: district.id, points });
     }
+    if (!contextVisible(district.id)) return;
     context.strokeStyle = selected("district", district.id) ? "#38bdf8" : "#34445e";
     context.lineWidth = selected("district", district.id) ? 2.5 : 1;
     for (const segment of territory.boundary) {
@@ -551,8 +559,11 @@
 
   function drawMajorDistrict(district) {
     const territory = districtTerritory(district);
-    const channels = majorDistrictColorById.get(district.id) || [24, 50, 74];
-    context.fillStyle = `rgba(${channels.join(", ")}, 0.24)`;
+    const index=[...majorDistrictIds].sort().indexOf(district.id);
+    const tint=urbanContext?.majorColors[index % urbanContext.majorColors.length];
+    const channels = urbanContext && !structureOverlay
+      ? [1,3,5].map(i=>parseInt(tint.slice(i,i+2),16)) : majorDistrictColorById.get(district.id) || [24, 50, 74];
+    context.fillStyle = `rgba(${channels.join(", ")}, ${urbanContext && !structureOverlay ? 1 : .24})`;
     for (const rectangle of territory.rectangles) {
       polygonPath([
         project(rectangle.x, rectangle.z, 0.04),
@@ -563,7 +574,7 @@
       context.fill();
     }
     context.strokeStyle = `rgba(${channels.map((value) => Math.min(255, value + 90)).join(", ")}, 0.95)`;
-    context.lineWidth = 3;
+    context.lineWidth = urbanContext && !structureOverlay ? 1 : 3;
     for (const segment of territory.boundary) {
       const start = project(segment[0][0], segment[0][1], 0.04);
       const end = project(segment[1][0], segment[1][1], 0.04);
@@ -828,7 +839,17 @@
       const district = districts.get(districtId);
       if (district) drawMajorDistrict(district);
     }
-    if (currentDetailLevel === "detail") {
+    if (urbanContext && !structureOverlay && state.selected?.kind==='district') {
+      const district=districts.get(state.selected.id);
+      if (district && renderedDistrictIds.has(district.id)) {
+        context.strokeStyle='#38bdf8';context.lineWidth=2.5;
+        for (const [a,b] of districtTerritory(district).boundary) {
+          const start=project(...a,.1),end=project(...b,.1);
+          context.beginPath();context.moveTo(start.x,start.y);context.lineTo(end.x,end.y);context.stroke();
+        }
+      }
+    }
+    if (currentDetailLevel === "detail" && (!urbanContext || structureOverlay)) {
       for (const block of civicBlocks) drawCivicBlock(block);
     }
     for (const rectangle of accessPolicy && !data.streets?.structural ? [] : streetRectangles) drawStructuralStreet(rectangle);
@@ -1363,6 +1384,10 @@
   );
 
   function runAction(action) {
+    if (action === "toggle-structure" && urbanContext) {
+      structureOverlay = !structureOverlay;
+      document.querySelector('[data-action="toggle-structure"]').setAttribute('aria-pressed',String(structureOverlay));
+    }
     if (action === "toggle-pan") {
       state.moveMode = !state.moveMode;
       document.querySelector('[data-action="toggle-pan"]').setAttribute("aria-pressed", String(state.moveMode));
