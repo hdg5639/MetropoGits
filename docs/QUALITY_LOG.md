@@ -3525,3 +3525,76 @@
   committed after this checkpoint; normal upstream push under the maintainer's
   previously reconfirmed owner exception. No force, remote-setting changes or
   agent attribution. Private artifacts and unrelated IDE caches excluded.
+
+## Checkpoint 2026-10-18 — bend-preserving urban road continuity
+
+- Implemented: opt-in `--continuity` after the unchanged urban pass. Align paths
+  on existing roads without length/bend increases; then reconsider all remaining
+  cycle corridors, including former backbone roads. Atomic replacements retain
+  original urban distance bounds and may not add bends to any current path.
+  Turn cost includes fixed entrance/exit headings. Iterative bridge detection is
+  refreshed after accepted deletions; exact route memberships rebuild afterward.
+- Fixtures / revisions: GJ3d9b53f and OJb163acd parcel-3d-r2 JSON; fresh
+  spring-positive and unsupported structural-showcase at parent8aee6cc. No target
+  repository execution, dependency install or private artifact publication.
+- Commands: `python -m scripts.road_consolidation
+  ../artifacts/visual/parcel-3d-r2/<gj|oj> --out
+  ../artifacts/visual/urban-continuity-r2/<gj|oj> --continuity`.
+  Fresh `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/urban-continuity-fixtures-r2/<spring|unknown> --repo-id
+  fixtures/<spring|unknown>`, then continuity export into *-study. Both builds
+  COMPLETE; sparse paths unchanged, unknown input receives no invented roads.
+- Results vs prior urban output: GJ bends25671->23501 (-8.45%), pavement
+  28412.5->27800 (-2.16%), junctions1582->1507, parallel5736.5->5404;
+  OJ bends7050->6712 (-4.79%), pavement7438->7382 (-0.75%), junctions462->456,
+  parallel1949.5->1918. Route-distance sums717817->722773 and160701->160918:
+  +0.69%/+0.14%, within unchanged original urban bounds for every route.
+- Alignment improves712/133 paths; subsequent removal accepts40/4 corridors.
+  GJ cycle search stops at2M states after975 attempts (934 bounds/connectivity
+  rejections,1 budget rejection); OJ444 attempts/354726 states, no cap hit.
+  All incomplete candidates roll back. Earlier passes retain their own caps.
+  Refinement from r1: refresh bridges after deletions, skipping55/5 newly required
+  connectors. R2 geometry matches r1 here, but avoids provably futile searches.
+- Fidelity / determinism: `python ../artifacts/visual/verify_continuity.py
+  <gj|oj>` checks original ports/doors, identities, urban bounds and per-path bend
+  nonincrease; repeats routing and all14 packaged files per city byte-for-byte.
+  Prior `--urban` baseline matches its stored routing exactly; City/UCG bytes and
+  every building/district coordinate unchanged.1275/255 paths change;793/138
+  have fewer bends. Repeat consolidation+packaging95.18s/19.82s (not full input
+  analysis; concurrent load, not a controlled performance comparison).
+- `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/urban-continuity-r2/<gj|oj>/after`:6157/2243 evidenced edges,
+  1273/400 connected files,4209/1381 complete paths; unresolved0 and pavement/
+  building intersections0. These are scene-covered relations, not all possible
+  source relationships or measured runtime traffic.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs
+  urban-continuity-r2 urban-continuity-focus-r2`; all four identical-camera Detail
+  captures and both showcase captures viewed. GJ loses a few short side links;
+  OJ's selected dense district looks almost unchanged. Composition/skyline,
+  remaining right-angle streets and dense fine lines persist. No major aesthetic
+  breakthrough claimed. `node ../artifacts/visual/junction_smoke.mjs
+  urban-continuity-fixtures-r2`: Spring WebGL and unknown SVG inspected.
+- Browser: `node scripts/viewer_audit.mjs <Chrome>
+  ../artifacts/visual/urban-continuity-audit-r2
+  ../artifacts/visual/urban-continuity-r2/gj/after
+  ../artifacts/visual/urban-continuity-r2/oj/after` passes3 LODs, picking,
+  source/role inspection, route drill-down, filters, demand profiles, navigation,
+  Synthetic. GJ route-inspector capture viewed. Chrome152 SwiftShader,20 samples:
+  Synthetic CPU p95 GJ1.6/1.5/1.3ms, OJ1.5/1.2/1.5ms; static rebuilds0.
+  This measures CPU submission, not GPU FPS or a speedup claim.
+- Tests: `python -m unittest discover -s tests -q`:353 run,352 pass,1 Windows
+  symlink skip. Ruff passes. Node access_routes/junction_geometry/viewer_audit/
+  camera_navigation/role_landmarks:35 pass. Nine new tests cover actual staircase
+  removal, cycle reassignment, semantic isolation, bridge oracle/deep chains,
+  weighted-search Dijkstra oracle/heading costs, rollback, caps and determinism.
+- Spec alignment: PASS, technical7-8, AC-002/003/006/014, DEC-005/006/007/011,
+  ADR-019. No default routing, public contract, source ID or security change.
+- Open risks / next actions: improvement is modest, especially OJ. Prioritize
+  explicit block-level shared access/collector planning over endless deletion
+  passes; define a separate experiment before changing fixed-port policy. Profile
+  generation cost. Curves/roundabouts and road-first geography remain unimplemented.
+- Commits created / pushed (main): one coherent implementation/test/docs unit
+  after verification, normal upstream push under the maintainer's reconfirmed
+  owner exception. No force, remote-setting edits or agent attribution; private
+  outputs and unrelated IDE caches excluded.

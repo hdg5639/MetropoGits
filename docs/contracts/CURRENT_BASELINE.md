@@ -188,3 +188,15 @@ caps and safe atomic rejection remain. No new public schema or invented road.
 WebGL, SVG, inspection and Synthetic share the resulting paths. This is removal
 and rerouting on an existing orthogonal network, not curved highway/roundabout
 geometry or a default replacement for stable directory-first layout.
+
+`scripts.road_consolidation --continuity` compares urban routing with a further
+continuous-road cleanup. It first aligns routes on existing roads without adding
+length or bends, then reconsiders remaining cycle corridors (including former
+forest roads) with atomic rerouting. Each path may use the original urban distance
+allowance during deletion, but may not gain bends relative to its current path.
+Heading-change cost includes fixed entrance/exit directions. Iterative bridge
+detection is refreshed after deletions; indispensable connectors stay intact.
+Derived `roadContinuity` metadata uses `road-continuity/0.1` and discloses per-phase
+caps, alignment/removal counts and bend totals. Earlier modes/IDs/UCG/City remain
+unchanged. This does not create new alignments outside existing pavement or move
+access ports; a road-first placement experiment is still a separate decision.

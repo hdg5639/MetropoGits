@@ -19,7 +19,8 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False):
+def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False, continuity=False):
+    urban = urban or continuity
     backbone = backbone or urban
     errors = validate_document(scene, graph)
     if errors:
@@ -27,14 +28,16 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
     _bounded_geometry(scene)
     scene = json.loads(canonical_json_bytes(scene))
     original = derive_access_routes(scene, graph)
-    if backbone:
+    if continuity:
+        baseline = consolidate_routes(original, urban=True)
+    elif backbone:
         baseline = consolidate_routes(original, merge_junctions=True, avenues=True)
     elif avenues:
         baseline = consolidate_routes(original, merge_junctions=True)
     else:
         baseline = consolidate_routes(original) if merge_junctions else original
     candidate = consolidate_routes(original, merge_junctions=merge_junctions or avenues or backbone,
-                                   avenues=avenues or backbone, backbone=backbone, urban=urban)
+                                   avenues=avenues or backbone, backbone=backbone, urban=urban, continuity=continuity)
     def identities(routing):
         return {r['id']: (r['source'], r['target'], r['kind'], r['edgeIds'], r['networkIds'])
                 for r in routing['routes']}
@@ -58,6 +61,10 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
         report['avenueConsolidation'] = candidate['avenueConsolidation']
     if backbone:
         report['backboneConsolidation'] = candidate['backboneConsolidation']
+    if continuity:
+        if after['turns'] > before['turns']:
+            raise ValueError('road continuity increased route bends')
+        report['roadContinuity'] = candidate['roadContinuity']
     return baseline, candidate, report
 
 
@@ -94,6 +101,7 @@ def main():
     parser.add_argument('--avenues', action='store_true', help='compare junction-consolidated roads with additional evidenced avenue reuse')
     parser.add_argument('--backbone', action='store_true', help='divert redundant corridors across the whole demand-ranked street network')
     parser.add_argument('--urban', action='store_true', help='shared backbone with 50%% detour or 14-unit short-route allowance; keep fixed ports and evidence')
+    parser.add_argument('--continuity', action='store_true', help='compare urban roads with bend-preserving alignment and remaining cycle removal')
     args = parser.parse_args()
     try:
         if args.out.exists():
@@ -105,7 +113,7 @@ def main():
             return loads_strict_json(path.read_text(encoding='utf-8'))
         scene, graph = read('city.json'), read('graph.ucg.json')
         before, after, report = compare(scene, graph, merge_junctions=args.junctions, avenues=args.avenues,
-                                      backbone=args.backbone, urban=args.urban)
+                                      backbone=args.backbone, urban=args.urban, continuity=args.continuity)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)
