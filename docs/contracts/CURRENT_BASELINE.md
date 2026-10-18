@@ -157,3 +157,15 @@ fresh complete0.2 routing. Optional `avenueConsolidation` metadata (version
 reuse and limits in derived0.3. No UCG/City schema, default routing, building or
 source-ID changes. All renderers and Synthetic follow the same rebuilt paths.
 The pass removes existing roads only; reserved road space/curves remain pending.
+
+`scripts.avenue_reservation <parcel-build> --out <new-directory>` now provides a
+separate `avenue-reservation/0.1` opt-in clearance experiment. The existing
+`hierarchical-parcel/0.1-experimental` engine can reserve a demand-backed avenue
+inside one leaf, move at most eight blocking parcels locally, and certify a
+continuous 2.5-unit road. Through-centerlines/ports and provenance are preserved;
+only access endpoints and safe widths change. City fields/enums, dimensions,
+districts and IDs are unchanged; aggregate network paths follow new coordinates.
+Decision and manifest identify the option. Earlier experimental commands and
+default build output are unchanged. Optional `--previous-scene` uses the existing
+same-structure-only policy; no implicit growth allocator or cold reset is added.
+This implements local width reservation, not reserved city-wide trunks or curves.

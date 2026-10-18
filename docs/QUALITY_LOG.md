@@ -3365,3 +3365,79 @@
   form one work unit committed after verification; ordinary upstream push follows
   under the maintainer's reconfirmed owner exception. No force, remote setting
   changes or agent attribution. Private artifacts and unrelated IDE caches excluded.
+
+## Checkpoint 2026-10-18 — local avenue clearance reservation
+
+- Implemented: explicit `scripts.avenue_reservation` pilot inside the existing
+  experimental parcel engine. Reserve a real avenue's 2.5-unit width plus lateral
+  and endpoint clearance before relocating at most eight blocking parcels within
+  their leaf. Preserve through-centerlines/ports and exact memberships; update
+  access spurs and certify widths. Reject unsafe candidates atomically, limit
+  evaluation to 64, retain baseline if none fit. Default builds and schemas intact.
+- Fixtures / revisions: GJ3d9b53f and OJb163acd parcel-3d-r2 JSON inputs;
+  spring-positive and structural-showcase at parent d44899a. No target scripts,
+  dependencies or application code executed.
+- Commands: `python -m scripts.avenue_reservation
+  ../artifacts/visual/parcel-3d-r2/<gj|oj> --out
+  ../artifacts/visual/avenue-reservation-r2/<gj|oj>`; repeated into
+  avenue-reservation-repeat. `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/avenue-reservation-fixtures/<spring|unknown> --repo-id
+  fixtures/<spring|unknown>`, then `scripts.parcel_viewer` into *-parcel and the
+  reservation command into *-study. Fresh builds COMPLETE; sparse cases unchanged.
+- Results: GJ accepts candidate 9 of 89 proposed, moves one building 0.875 units
+  to clear a 59.5-unit alignment; certified surface area +18.27. OJ accepts
+  candidate 29 of 30, moves three buildings 0.875 each for a 14-unit alignment;
+  surface area +24.36. No later candidates searched after the first valid result.
+  Most rejections are lack of a local parcel preserving existing roads/ownership;
+  unsplit narrow boundary segments and a missed fixed access port also reject.
+- Fidelity / stability: `python ../artifacts/visual/verify_reservation.py` compares
+  all 28 before/after files per city with repeated generation byte-for-byte.
+  UCG, building attributes/dimensions/ownership and all districts unchanged;
+  every unselected building fixed. All 4209/1381 file-level through-paths, relation
+  IDs, ports and bends unchanged. Canonical aggregate paths change 0/2 in GJ/OJ,
+  with identical edge memberships. OJ access pavement +2.625 units and weighted
+  route length +57.75; every route's change bounded by its endpoints' movement.
+  GJ path lengths unchanged. Junction counts remain 2441/630.
+- `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/avenue-reservation-r2/<gj|oj>/after` confirms exact coverage
+  6157/2243 edges, connected files 1273/400, unresolved 0, pavement/building
+  intersections 0. Independent fixture checks retain unrelated coordinates after
+  a sparse neighboring file addition; same-structure hints retain all coordinates,
+  incompatible membership hints reject explicitly instead of silently relocating.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs
+  avenue-reservation-r2 avenue-reservation-focus-r2`; viewed four focused WebGL
+  images at identical cameras and both after showcase captures. Width bottlenecks
+  improve locally, but changes are small and orthogonal road complexity persists.
+  No broad composition improvement claimed. OJ role aggregates regroup 12 -> 13
+  while preserving 86 represented files; record small-movement visual sensitivity
+  for later correction. `node ../artifacts/visual/junction_smoke.mjs
+  avenue-reservation-fixtures`; Spring WebGL and unknown-language SVG inspected.
+- Browser: `node scripts/viewer_audit.mjs <Chrome>
+  ../artifacts/visual/avenue-reservation-audit-r2
+  ../artifacts/visual/avenue-reservation-r2/gj/after
+  ../artifacts/visual/avenue-reservation-r2/oj/after` passes three LODs, selection,
+  source-edge inspection/drill-down, filters, demand profiles, camera and Synthetic.
+  Chrome152 SwiftShader, 20 samples: synthetic CPU p95 GJ 1.4/1.0/1.0ms,
+  OJ 1.0/1.1/1.0ms; static rebuilds 0. Not GPU FPS or a controlled speedup claim.
+- Tests: `python -m unittest discover -s tests -q` 337 run, 336 pass, 1 Windows
+  symlink skip; Ruff passes. Node access_routes, junction_geometry, viewer_audit,
+  camera_navigation and role_landmarks suites: 35 pass. Nine new Python cases
+  cover actual width gain, exact through geometry/provenance, movement bounds,
+  determinism, unrelated additions, duplicate demand, concave/foreign ownership,
+  atomic fallback, access-port failures, hints and safe CLI/overwrite refusal.
+- Fixes applied and reverified: r1 checked lateral width but not endpoint clearance
+  or continuity through boundary-spanning segments. Added both checks; OJ's first
+  candidate now rejects and a different bounded candidate passes in r2. No tests
+  weakened to preserve the original candidate.
+- Spec alignment: PASS, technical 7–8, FR-006/007, AC-002/003/006/014, product 5.1,
+  DEC-005/006/007/011 and ADR-017/019. Experimental configuration is recorded in
+  decision/manifest; no semantic road, runtime flow or default layout change.
+- Open risks / next actions: this widens existing alignments, not city-wide trunk
+  planning or curved junctions. Inspect rejected candidates for longer reserved
+  avenues with coordinated merger/branch planning; address aggregate sensitivity
+  before broad parcel relocation. Cold candidate selection is not a growth hint.
+- Commits created / pushed (main): one coherent implementation/test/docs unit
+  committed after verification; ordinary upstream push under the maintainer's
+  reconfirmed owner exception. No force, remote changes or agent attribution.
+  Private review artifacts and unrelated IDE caches remain outside the commit.
