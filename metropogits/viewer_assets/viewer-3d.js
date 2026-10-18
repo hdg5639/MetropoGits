@@ -841,17 +841,10 @@
       }
       const style = roadStyles.get(segment.id), width = style.width;
       roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
-      roadSegment(triangles, segment.start, segment.end, width * 0.76, 0.14, color(style.surface));
-      const marking = filterEngine.accessMarkingSegment(segment, junctionGeometry.trims);
-      if (marking && (segment.highlighted || (segment.demand ? style.shared : segment.routeIds.length >= 4))) {
-        roadSegment(triangles, marking.start, marking.end, Math.min(0.2, width * 0.24), 0.18,
-          color(segment.highlighted ? "#67d7ff" : segment.kind === "DEPENDENCY_ROAD" ? style.marking : networkColors[segment.kind]));
-      }
-      // Depth-tested 1px cartographic centerline for subpixel shared corridors.
-      // Stop paint at junction mouths; selected x-ray paths above stay complete.
-      if (marking && style.shared && width < 1.25) {
-        line(lines, [marking.start[0],.19,marking.start[1]], [marking.end[0],.19,marking.end[1]],
-          color(segment.kind === "DEPENDENCY_ROAD" ? "#8ea4b8" : networkColors[segment.kind]));
+      roadSegment(triangles, segment.start, segment.end, width * 0.82, 0.14, color(style.surface));
+      for (const marking of filterEngine.accessMarkingSegments(segment, junctionGeometry.trims)) {
+        roadSegment(triangles, marking.start, marking.end, Math.min(0.13, width * 0.12), 0.18,
+          color(segment.kind === "DEPENDENCY_ROAD" ? style.marking : networkColors[segment.kind]));
       }
     }
     for (const surface of junctionGeometry.surfaces) {

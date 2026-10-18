@@ -47,6 +47,7 @@
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
   const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy);
   let accessFrame = null;
+  let accessPaint = new Map();
   function networkForId(id) {
     return accessPolicy?.network(id, accessFrame?.routeIds) || scene.networks.find(network => network.id === id);
   }
@@ -295,6 +296,9 @@
     if (accessPolicy) {
       accessFrame = accessPolicy.frame(currentDetailLevel, visibleBuildingIds, visibleNetworkIds, state.selected,
         showAllNetworks, aggregateFacilities.get(state.selected?.id)?.memberEntityIds || []);
+      const junctionGeometry=filterEngine.accessJunctionGeometry(accessFrame);
+      accessPaint=new Map(accessFrame.segments.map(segment=>
+        [segment.id,filterEngine.accessMarkingSegments(segment,junctionGeometry.trims)]));
       renderedNetworkIds = accessFrame.networkIds;
     }
     renderedDistrictIds = new Set(
@@ -839,6 +843,16 @@
       context.strokeStyle = segment.highlighted ? "#67d7ff" : segment.kind === "DEPENDENCY_ROAD" ? style.surface : networkColors[segment.kind];
       context.stroke();
       hitRegions.push({kind: "network", id: segment.id, points});
+    }
+    for (const segment of accessFrame?.segments || []) {
+      const style=filterEngine.accessRoadStyle(segment);
+      for (const paint of accessPaint.get(segment.id) || []) {
+        const a=project(...paint.start,.18), b=project(...paint.end,.18);
+        context.beginPath();context.moveTo(a.x,a.y);context.lineTo(b.x,b.y);
+        context.lineWidth=Math.max(.3,.13*baseScale()*state.zoom*.65);
+        context.strokeStyle=segment.kind==='DEPENDENCY_ROAD'?style.marking:networkColors[segment.kind];
+        context.stroke();
+      }
     }
     for (const network of accessPolicy ? [] : scene.networks) {
       if (renderedNetworkIds.has(network.id)) drawNetwork(network);

@@ -1,11 +1,11 @@
 """Static demand grades, not runtime traffic or new relationship kinds (ADR-019)."""
 
 STYLES = {
-    'ACCESS': ('Access', .7, '#33465a'),
-    'ALLEY': ('Alley', .9, '#33465a'),
-    'STREET': ('Street', 1.5, '#43566a'),
-    'AVENUE': ('Avenue', 2.5, '#607c92'),
-    'TRUNK': ('Interdistrict trunk demand', 3.5, '#7897ac'),
+    'ACCESS': ('Access', .7, '#394550'),
+    'ALLEY': ('Alley', .9, '#394550'),
+    'STREET': ('Street', 1.5, '#3b4652'),
+    'AVENUE': ('Avenue', 2.5, '#404c58'),
+    'TRUNK': ('Interdistrict trunk demand', 3.5, '#46525e'),
 }
 
 
@@ -58,5 +58,7 @@ def derive_road_hierarchy(scene, routing):
             crossDistrictEdgeCount=len(cross), unassignedBuildingCount=sum(owners.get(f) is None for f in files),
             routeCount=len(set(segment['routeIds'])), targetWidth=target, width=width,
             clearanceLimited=width < target, surface=surface,
+            shoulder='#77838e' if grade in ('AVENUE', 'TRUNK') else '#46525e',
+            marking='#d4c6a5', lanePattern='DASHED' if grade in ('AVENUE', 'TRUNK') else 'NONE',
         )
     return dict(version='road-hierarchy/0.1', segments=profiles)

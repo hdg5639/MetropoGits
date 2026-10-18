@@ -39,10 +39,24 @@ class PreviewTests(unittest.TestCase):
         root = element_tree.fromstring(first)
         self.assertEqual("{http://www.w3.org/2000/svg}svg", root.tag)
         self.assertEqual(
-            # ADR-019 changes road widths/titles, not buildings or dependency paths.
-            "c17e96f33ec0fce866e06f23d7b3ebcee340ea730bda84c15e372d0a8e2fee74",
+            # ADR-018 asphalt palette; canonical buildings/paths remain unchanged.
+            "88439c6be68991a3a45504d1a30238987ca62f64aaa9cad1aa2f59f64bdc577a",
             hashlib.sha256(first).hexdigest(),
         )
+
+    def test_asphalt_palette_explains_the_previous_golden_hash(self):
+        previous = {'ACCESS': ('Access', .7, '#33465a'), 'ALLEY': ('Alley', .9, '#33465a'),
+                    'STREET': ('Street', 1.5, '#43566a'), 'AVENUE': ('Avenue', 2.5, '#607c92'),
+                    'TRUNK': ('Interdistrict trunk demand', 3.5, '#7897ac')}
+        with patch.dict('metropogits.road_hierarchy.STYLES', previous):
+            old = render_preview(self.scene, self.ucg)
+        self.assertEqual('c17e96f33ec0fce866e06f23d7b3ebcee340ea730bda84c15e372d0a8e2fee74',
+                         hashlib.sha256(old).hexdigest())
+        current = element_tree.fromstring(render_preview(self.scene, self.ucg))
+        before = element_tree.fromstring(old)
+        for identity in ('buildings', 'districts', 'networks', 'access-routing'):
+            self.assertEqual(element_tree.tostring(current.find(f".//*[@id='{identity}']")),
+                             element_tree.tostring(before.find(f".//*[@id='{identity}']")))
 
     def test_demand_presentation_is_the_only_preview_baseline_change(self):
         with patch('metropogits.preview.derive_road_hierarchy', return_value=None):

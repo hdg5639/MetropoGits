@@ -1045,7 +1045,8 @@
       const profile = segment.demand, shared = ['AVENUE', 'TRUNK'].includes(profile.grade);
       const surface = {HTTP_HIGHWAY:'#f97316', MESSAGING_PATH:'#a855f7'}[segment.kind] || profile.surface;
       return {shared, width:Math.min(segment.width, profile.width), surface,
-        shoulder:shared?'#8c9aa8':'#4e6072', marking:shared?'#bac8d4':'#748a9e'};
+        shoulder:profile.shoulder || (shared?'#8c9aa8':'#4e6072'),
+        marking:profile.marking || (shared?'#bac8d4':'#748a9e')};
     }
     const shared = !segment.access && segment.routeIds.length >= 4;
     return {shared, width:Math.min(segment.width, .7+Math.log2(segment.routeIds.length+1)*.5),
@@ -1140,6 +1141,26 @@
       end:[segment.end[0]-dx*b/length,segment.end[1]-dz*b/length]};
   }
 
+  function accessMarkingSegments(segment, trims) {
+    const style=accessRoadStyle(segment), run=accessMarkingSegment(segment,trims);
+    if (!run || segment.access || !style.shared || style.width<1.25) return [];
+    if (segment.kind!=='DEPENDENCY_ROAD') return [run];
+    if (segment.demand?.lanePattern==='NONE') return [];
+    const horizontal=run.start[1]===run.end[1], axis=horizontal?0:1;
+    if (!horizontal && run.start[0]!==run.end[0]) return [];
+    const lo=Math.min(run.start[axis],run.end[axis]), hi=Math.max(run.start[axis],run.end[axis]);
+    const period=4, dash=1.6, first=Math.floor(lo/period), last=Math.floor(hi/period);
+    if (!Number.isFinite(lo+hi) || last-first>512) return []; // paint-only bound
+    const pieces=[];
+    for(let i=first;i<=last;i++) {
+      const a=Math.max(lo,i*period), b=Math.min(hi,i*period+dash);
+      if (b-a<1e-8) continue;
+      const start=[...run.start], end=[...run.start];start[axis]=a;end[axis]=b;
+      pieces.push({start,end});
+    }
+    return pieces;
+  }
+
   function districtBuildings(scene, districtId) {
     const children = new Map(scene.districts.map(d => [d.id, []]));
     for (const district of scene.districts) children.get(district.parentId)?.push(district.id);
@@ -1173,6 +1194,7 @@
   globalThis.METROPOGITS_FILTERS = Object.freeze({
     accessJunctionGeometry,
     accessMarkingSegment,
+    accessMarkingSegments,
     accessRoadStyle,
     districtBuildings,
     groundPan,

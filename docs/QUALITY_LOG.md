@@ -4005,3 +4005,71 @@
 - Commits created / pushed (main): checkpoint precedes this coherent feature/tests/
   docs commit and normal owner-authorized push. Actual Git result checked afterward.
   No attribution, force, remote settings change, private artifacts or unrelated caches.
+
+## Checkpoint 2026-10-18 — asphalt and bounded arterial paint (parent 5ba4e50)
+- Implemented: neutral dependency asphalt, subdued minor-road edges, globally
+  phase-aligned dashed AVENUE/TRUNK paint in WebGL/Canvas/SVG. Visible junction
+  mouths trim paint; selected relationship overlays remain continuous. Grade,
+  certified road width, geometry, endpoints and source evidence are unchanged.
+  ADR-018 was recorded before implementation. This follows the independently
+  committed/pushed complete-trip routing improvement5ba4e50, not another routing pass.
+- Fixture(s) / revision(s): same GJ3d9b53f (1324 buildings) and OJb163acd
+  (681 buildings), plus maintained spring-positive and structural-showcase.
+- Commands run: `python ../artifacts/visual/road_surface_trial.py` repackages
+  the verified preceding experiment with current trusted assets. Both canonical
+  City/UCG files and complete routing payloads match their preceding outputs;
+  all14 packaged files per case are repeat-identical. No target code executed.
+- Fresh E2E: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/road-surface-fixtures-r1/<spring|unknown> --repo-id
+  fixtures/<spring|unknown>`; `python -m scripts.road_consolidation
+  ../artifacts/visual/road-surface-fixtures-r1/<spring|unknown> --out
+  ../artifacts/visual/road-surface-fixtures-r1/<spring|unknown>-study --shared-frontage`.
+  Both COMPLETE. `node ../artifacts/visual/junction_smoke.mjs
+  road-surface-fixtures-r1` captures real WebGL/SVG without browser exceptions.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs
+  road-surface-r1 road-surface-focus-r1`; actual GJ/OJ focused WebGL images and
+  both showcase previews viewed, plus fresh unknown WebGL and Spring SVG.
+  `artifacts/visual/city-road-review-r1/index.html` links actual old gateway/old
+  palette captures and new shared-frontage/new palette captures. Exact camera
+  and LOD equality checked against both focus reports; no design mockups.
+- Visual findings: fewer redundant approaches and less bright continuous wiring;
+  major streets read as asphalt with dashed paint while minor access remains
+  visible. Skyline, selected district and README arrangement are unchanged.
+  Orthogonal routing and some dense intersections remain; no roundabouts/curves
+  or whole-city visual completion claim. No additional topology gain from paint.
+- Browser: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/road-surface-audit-r1
+  ../artifacts/visual/road-surface-r1/gj/after
+  ../artifacts/visual/road-surface-r1/oj/after`: three LODs, filters, inspection,
+  route drill-down, demand grades, navigation and Synthetic pass. Chrome152 /
+  SwiftShader20 samples: Synthetic CPU p95 GJ1.4/1.1/1.2ms, OJ1.0/1.0/1.4ms;
+  static geometry rebuilds0 throughout. Local CPU timings, not GPU FPS or speedup.
+- Fallback: `node ../artifacts/visual/road_surface_fallback.mjs` forces WebGL
+  unavailable on trusted bundled output; Canvas and Synthetic operate without
+  browser exceptions. Actual fallback screenshot inspected. Its overview's
+  yellow aggregate outlines are still crowded: explicit separate correction
+  task, not described as visually equivalent to WebGL. Paint is access-frame
+  cached; no claim of a full Canvas performance benchmark.
+- Tests / determinism / stability: `python -m unittest discover -s tests -q`:
+  405 run,404 pass,1 Windows symlink skip. `python -m ruff check .` passes.
+  `node --test tests/access_routes.test.mjs tests/junction_geometry.test.mjs
+  tests/road_paint.test.mjs tests/viewer_audit.test.mjs
+  tests/camera_navigation.test.mjs tests/role_landmarks.test.mjs`:38 pass.
+  Shared CPU/browser fixtures check reversal, negative coordinates, phase,
+  intersection trims, short/diagonal/capped paint and semantic-kind separation.
+- Fixes applied and reverified: legacy fixture without junctions now degrades
+  safely. Intentional palette golden change c17e96f3->88439c6b reviewed; a new
+  regression test restores the old palette and reconstructs the exact old hash,
+  while asserting building/district/network/routing metadata equality. Legacy
+  ungraded rendering still passes. No failing assertion was removed.
+- Spec alignment: PASS technical7-8, FR-007, AC-002/003/006/014 and
+  DEC-005/006/007/011. No public schema, stable ID, evidence or security change.
+- Open risks / next actions: remaining repeated right-angle bends require
+  geometric planning, not decorative curves. Correct crowded Canvas aggregate
+  outlines separately. Planning cost remains bounded and substantial; shared
+  frontage stays opt-in. No unrelated target caches or private artifacts staged.
+- Commits created / pushed (main): this checkpoint accompanies the renderer
+  feature/tests/docs commit. Verify final metadata and ordinary owner-authorized
+  push result; no force, attribution or remote-policy modification.

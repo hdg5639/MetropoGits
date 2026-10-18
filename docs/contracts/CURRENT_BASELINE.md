@@ -270,3 +270,14 @@ per trip,100000 candidate edges,20000 input routes,existing1M expanded-step limi
 Candidate connectors extend at most three obstacle-clear lattice steps from
 alternative faces. Only accepted route-used geometry is exported. Search caps
 retain the last safe result and are reported, not treated as infeasibility proofs.
+
+Road hierarchy grades and widths are unchanged. Derived `road-hierarchy/0.1`
+profiles now also carry optional `shoulder`, `marking`, and `lanePattern`
+presentation fields; older profiles retain compatible styling fallbacks.
+Dependency AVENUE/TRUNK paint uses world-aligned 1.6-unit dashes every4 units,
+trimmed at visible same-kind junction mouths. Narrow roads retain pavement without
+center paint. Each segment's paint expansion is capped at513 candidate intervals;
+the cap never removes roads, source relations, selection traces or Synthetic paths.
+Python SVG and browser renderers share geometry fixtures. Canvas caches paint
+with its access frame; WebGL retains static geometry caching. HTTP/messaging
+semantic colors and continuous selected-route overlays remain separate.

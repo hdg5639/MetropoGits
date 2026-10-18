@@ -8,6 +8,7 @@ import html
 from collections import defaultdict
 
 from scripts.canonical_json import canonical_json_bytes
+from metropogits.road_paint import dash_segments, junction_trims
 
 PITCH = 3.5
 MAX_NODES = 250_000
@@ -289,6 +290,7 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
                     routes=[{k: r[k] for k in ("id", "kind", "source", "target", "edgeIds", "networkIds")} for r in routes])
     lines = ['<metadata id="access-routing">' + html.escape(canonical_json_bytes(metadata).decode()) + '</metadata>',
              '<g id="shared-access-roads" aria-label="Shared geometry, not additional relationships">']
+    visible, widths, paints = [], {}, []
     for segment in routing["segments"]:
         active = [r for r in segment["routeIds"] if r in allowed]
         if not active or (overview and (segment["access"] or len(active) < 4)):
@@ -298,6 +300,8 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
         profile = (hierarchy or {}).get('segments', {}).get(segment['id'])
         if profile:
             width = profile['width']
+        visible.append(segment)
+        widths[segment['id']] = width
         horizontal = a[1] == b[1]
         dx, dz = (0, width/2) if horizontal else (width/2, 0)
         points = [project(a[0]-dx,a[1]-dz), project(b[0]-dx,b[1]-dz),
@@ -314,5 +318,16 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
         visibility = 'visible ' if profile else ''
         lines.append(f'<polygon data-access-segment-id="{segment["id"]}" data-route-indexes="{references}" '
                      f'points="{encoded}" fill="{color}"{grade}><title>{summary}{len(active)} {visibility}evidenced relation paths; shared geometry only</title></polygon>')
+        if profile and segment['kind'] == 'DEPENDENCY_ROAD' and profile.get('lanePattern') == 'DASHED' and width >= 1.25:
+            paints.append((segment, profile.get('marking', '#d4c6a5')))
+    trims = junction_trims(routing, visible, widths)
+    for segment, color in paints:
+        for paint in dash_segments(segment['start'], segment['end'], trims.get(segment['id'], (0, 0))):
+            a, b = paint['start'], paint['end']
+            dx, dz = (0, .065) if a[1] == b[1] else (.065, 0)
+            points = [project(a[0]-dx, a[1]-dz), project(b[0]-dx, b[1]-dz),
+                      project(b[0]+dx, b[1]+dz), project(a[0]+dx, a[1]+dz)]
+            encoded = ' '.join(f'{float(x):.3f},{float(y):.3f}' for x, y in points)
+            lines.append(f'<polygon data-road-paint="arterial-dash" points="{encoded}" fill="{color}" aria-hidden="true"/>')
     lines.append('</g>')
     return lines
