@@ -3598,3 +3598,89 @@
   after verification, normal upstream push under the maintainer's reconfirmed
   owner exception. No force, remote-setting edits or agent attribution; private
   outputs and unrelated IDE caches excluded.
+
+## Checkpoint 2026-10-18 — block collector planning (parent 945af02)
+- Implemented: separate `--collectors` comparison, planning local shared trees
+  across actual ports/boundary crossings with obstacle-certified new pavement.
+  Necessary old paths remain when original urban distance/+4-bend bounds fail.
+  Commit a local proposal only if total pavement strictly decreases and junctions/
+  nearby parallel length do not increase. Rebuild exact memberships; no fake edges.
+- Fixtures / revisions: GJ3d9b53f and OJb163acd parcel JSON, maintained
+  spring-positive and unsupported structural-showcase at parent945af02. Target
+  repository scripts/dependencies were not executed or installed.
+- Commands: private JSON-only `python ../artifacts/visual/collector_trial.py
+  <gj|oj>` uses fresh0.2 cached data from road-consolidation-r2 and unchanged
+  urban-continuity-r2 routing. Export: `artifacts/visual/block-collectors-r3/
+  {gj,oj}/{before,after}`. Fresh pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/block-collectors-fixtures-r3/<spring|unknown> --repo-id
+  fixtures/<spring|unknown>`, then `python -m scripts.road_consolidation
+  ../artifacts/visual/block-collectors-fixtures-r3/<spring|unknown> --out
+  ../artifacts/visual/block-collectors-fixtures-r3/<spring|unknown>-study
+  --collectors`. Both real builds COMPLETE; sparse paths remain, unknown has no roads.
+- GJ:17 accepted block proposals/160 attempts (attempt cap reached),173362
+  search expansions. Pavement27800->27579.5 (-0.79%), parallel5404->5204.5,
+  junctions1507->1501, route-distance sum722773->724495 (+0.24%), bends23501->23787.
+  OJ:3/42 accepted,44558 states, no cap. Pavement7382->7361 (-0.28%),
+  parallel1918->1893.5, junctions456->456, route-distance160918->161114 (+0.12%),
+  bends6712->6750. The extra turns are an explicit tradeoff, not a continuity gain.
+- Fidelity: `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/block-collectors-r3/<gj|oj>/after` passes:6157/2243
+  scene-backed edges,1273/400 connected files,4209/1381 complete routes, unresolved0,
+  full-width pavement/building intersections0. Canonical City/UCG bytes, building
+  positions, original doors/access ports and all route identities unchanged.
+- Determinism: `python ../artifacts/visual/verify_collectors.py gj oj` repeats
+  collector routing and all14 packaged files per city byte-identically, checks
+  every route's original bounds and provenance.563/187 paths change; new unit
+  lattice edges73/7, removed136/13. Original length ratio p95=1.333 both,
+  max2/3 with28/15 short-block exceptions, all within max(floor(1.5*N),N+4).
+  This is not a universal50% cap. The cached continuity baseline matches exactly.
+- Performance correction: initial candidate trials rebuilt full JSON geometry
+  repeatedly. Replace with exact unit-lattice pavement/junction/parallel guards,
+  validated against independent full metrics; rebuild only final geometry.
+  Initial OJ hybrid run123.12s vs corrected trial5.28s under differing concurrent
+  load, not a controlled speedup benchmark. Repeated GJ pass43.29s; profiled OJ
+  12.48s. cProfile identifies bend calculations and final ID/JSON generation as
+  remaining costs. Stopped the obsolete slow GJ prototype process; no user process
+  or artifact was deleted. Private profile is `block-collectors-r3/oj/collector-profile.pstats`.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs
+  block-collectors-r3 block-collectors-focus-r4
+  Backend/Vm/src/main/java/gj/cloud/vm/application/org
+  backend/src/main/java/dev/gamjaoj/account`; all four actual Detail captures and
+  both showcase captures viewed, before/after cameras exactly equal. GJ org loses
+  a few ladder-like cross-links and shares a straighter local corridor. OJ account
+  change is slight. Skyline, density, README composition remain; orthogonal/circuit
+  appearance is NOT solved. Earlier unchanged deployment/generation comparison
+  is retained separately in block-collectors-focus-r3, not presented as a large gain.
+- `node ../artifacts/visual/junction_smoke.mjs block-collectors-fixtures-r3`:
+  actual Spring WebGL and unknown SVG inspected. Unknown generic facilities remain
+  legible; no invented network. Existing Spring sparse directory layering remains.
+- Browser: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/block-collectors-audit-r3
+  ../artifacts/visual/block-collectors-r3/gj/after
+  ../artifacts/visual/block-collectors-r3/oj/after` passes three LODs, picking,
+  role/source inspection, route drill-down, filters, road grades, navigation and
+  Synthetic. Route-inspector screenshot viewed. Chrome152 SwiftShader20 samples:
+  Synthetic CPU p95 GJ1.4/1.1/1.0ms, OJ1.1/1.0/1.3ms, static rebuilds0.
+  CPU submission measurements are not GPU FPS or a performance improvement claim.
+- Tests: `python -m unittest discover -s tests -q`:364 run,363 pass,1 Windows
+  symlink skip. Ruff and diff whitespace checks pass. Node access_routes,
+  junction_geometry, viewer_audit, camera_navigation, role_landmarks:35 pass.
+  Eleven collector tests cover real building clearance/doors, exact memberships,
+  repeatability, geometry-guard oracle, mixed network kinds, isolated inputs,
+  disconnected graphs, input/budget limits, and invalid provenance/endpoints.
+  A mixed-kind zero-through-path test exposed segment-ID remapping in rebuild;
+  fixed it and reran the entire suite without weakening assertions.
+- Spec alignment: PASS, technical7-8, FR-007, AC-002/003/006/014,
+  DEC-005/006/007/011, ADR-019 documented before implementation. Public UCG/City,
+  default layout/routing, IDs and security unchanged. This is a bounded optional
+  experiment with modest visual gains, not the finished city-road design.
+- Open risks / next actions: boundary ports and individual access directions
+  still constrain topology. Define road-first block connectors and allowable
+  endpoint/parcel adjustments before further implementation; don't simply raise
+  caps or add decorative roundabouts. Total bends increased; this remains opt-in.
+- Commits created / pushed (main): this checkpoint precedes the coherent
+  implementation/test/docs commit and verified normal upstream push under the
+  maintainer's owner exception. Git outcome is reported separately after the
+  commands succeed. No force, settings edits, agent credit or private artifacts.

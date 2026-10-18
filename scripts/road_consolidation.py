@@ -7,6 +7,7 @@ from pathlib import Path
 
 from metropogits import __version__
 from metropogits.access_routes import derive_access_routes
+from metropogits.block_collectors import plan_collectors
 from metropogits.cli import _artifact_record, _diagnostic_summary
 from metropogits.preview import render_preview
 from metropogits.road_consolidation import consolidate_routes
@@ -19,7 +20,8 @@ from scripts.road_metrics import road_metrics
 from scripts.validate_city import validate_document
 
 
-def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False, continuity=False):
+def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=False, urban=False, continuity=False, collectors=False):
+    continuity = continuity or collectors
     urban = urban or continuity
     backbone = backbone or urban
     errors = validate_document(scene, graph)
@@ -28,7 +30,9 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
     _bounded_geometry(scene)
     scene = json.loads(canonical_json_bytes(scene))
     original = derive_access_routes(scene, graph)
-    if continuity:
+    if collectors:
+        baseline = consolidate_routes(original, continuity=True)
+    elif continuity:
         baseline = consolidate_routes(original, urban=True)
     elif backbone:
         baseline = consolidate_routes(original, merge_junctions=True, avenues=True)
@@ -36,8 +40,9 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
         baseline = consolidate_routes(original, merge_junctions=True)
     else:
         baseline = consolidate_routes(original) if merge_junctions else original
-    candidate = consolidate_routes(original, merge_junctions=merge_junctions or avenues or backbone,
-                                   avenues=avenues or backbone, backbone=backbone, urban=urban, continuity=continuity)
+    candidate = (plan_collectors(scene, original, baseline) if collectors else
+                 consolidate_routes(original, merge_junctions=merge_junctions or avenues or backbone,
+                                    avenues=avenues or backbone, backbone=backbone, urban=urban, continuity=continuity))
     def identities(routing):
         return {r['id']: (r['source'], r['target'], r['kind'], r['edgeIds'], r['networkIds'])
                 for r in routing['routes']}
@@ -61,10 +66,12 @@ def compare(scene, graph, *, merge_junctions=False, avenues=False, backbone=Fals
         report['avenueConsolidation'] = candidate['avenueConsolidation']
     if backbone:
         report['backboneConsolidation'] = candidate['backboneConsolidation']
-    if continuity:
+    if continuity and not collectors:
         if after['turns'] > before['turns']:
             raise ValueError('road continuity increased route bends')
         report['roadContinuity'] = candidate['roadContinuity']
+    if collectors:
+        report['blockCollectors'] = candidate['blockCollectors']
     return baseline, candidate, report
 
 
@@ -102,6 +109,7 @@ def main():
     parser.add_argument('--backbone', action='store_true', help='divert redundant corridors across the whole demand-ranked street network')
     parser.add_argument('--urban', action='store_true', help='shared backbone with 50%% detour or 14-unit short-route allowance; keep fixed ports and evidence')
     parser.add_argument('--continuity', action='store_true', help='compare urban roads with bend-preserving alignment and remaining cycle removal')
+    parser.add_argument('--collectors', action='store_true', help='replan bounded blocks as shared collector trees against continuity roads')
     args = parser.parse_args()
     try:
         if args.out.exists():
@@ -113,7 +121,7 @@ def main():
             return loads_strict_json(path.read_text(encoding='utf-8'))
         scene, graph = read('city.json'), read('graph.ucg.json')
         before, after, report = compare(scene, graph, merge_junctions=args.junctions, avenues=args.avenues,
-                                      backbone=args.backbone, urban=args.urban, continuity=args.continuity)
+                                      backbone=args.backbone, urban=args.urban, continuity=args.continuity, collectors=args.collectors)
         outputs = {name: package(scene, graph, routing, report)
                    for name, routing in [('before', before), ('after', after)]}
         args.out.mkdir(parents=True, exist_ok=False)

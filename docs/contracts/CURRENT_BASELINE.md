@@ -200,3 +200,21 @@ Derived `roadContinuity` metadata uses `road-continuity/0.1` and discloses per-p
 caps, alignment/removal counts and bend totals. Earlier modes/IDs/UCG/City remain
 unchanged. This does not create new alignments outside existing pavement or move
 access ports; a road-first placement experiment is still a separate decision.
+
+`scripts.road_consolidation --collectors` compares continuity output against
+bounded block collector planning. Derived `blockCollectors` (`block-collectors/0.1`)
+records accepted ownership blocks, actual terminal counts, retained cross-link
+routes and search limits in the existing visual-access/0.3 payload. It can add
+obstacle-certified local pavement and reroute complete paths, unlike deletion-only
+passes. UCG/City, source IDs, buildings, doors, access spurs and boundary terminals
+stay fixed. Original0.2 urban distance and +4-bend bounds apply, not continuity's
+stricter per-route bend nonincrease; individual paths can become longer/more bent.
+Necessary old cross-links remain, so this is not a mandatory tree topology.
+All accepted local proposals strictly reduce total pavement without increasing
+junctions or nearby parallel length. Unused candidate roads are never emitted.
+Limits: 160 block/kind proposals, three demand-ranked roots each, 4096 lattice
+nodes per block, 96 terminals, 2M search expansions, 1M input through steps.
+Only directories containing 4–64 files are eligible, smallest first. These are
+planning limits, not semantic truncation; rejected blocks keep their old routes.
+Defaults/earlier options are unchanged. Curves, moved doors and road-first parcel
+placement remain separate work. Prior-stage metrics describe those stages only.
