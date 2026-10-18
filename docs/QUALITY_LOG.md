@@ -2638,3 +2638,33 @@
 - Delivery: one fix(scanner) local commit; no push to protected main under the
   latest instructions. Earlier camera commit, unrelated local caches and the
   deferred communication stash remain preserved; delivery branch needs direction.
+
+## Checkpoint 2026-10-18 — Cache shared picking geometry during camera motion
+- Implemented: cache world-space pick descriptors by existing LOD/filter/selection
+  key; deduplicate shared vertices and reuse fixed-shape screen regions. Camera
+  motion projects each vertex once without recreating geometry/point arrays.
+  Off-screen regions are culled; hit priority, depth order and exact path identity
+  remain unchanged. Render geometry, canonical data and synthetic routes untouched.
+- Evidence: prior generated-output-filter audit attributes GJ District 17.8 ms
+  p95 to hit-region projection out of 18.0 ms orbit CPU. Initial cache reduced
+  Overview more than District; fixed-shape region reuse then improved both.
+- Fixtures: unchanged GJ-Cloud 3d9b53f / GamjaOJ b163acd generated-output-filter-r1
+  snapshots; full CLI structural-showcase build for unsupported fallback.
+- Commands: Python unittest discovery (265 run, 264 pass, one symlink skip);
+  Node viewer_audit.test.mjs (9 pass); Ruff; diff --check; trusted local viewer
+  repackaging; viewer_audit.mjs with Chrome on picking-cache-r2/{gj,oj}.
+  Artifacts: artifacts/visual/picking-cache-r2 and picking-cache-audit-r2.
+- Actual GJ access-selected.png inspected: selection, complete highlighted path
+  and source Inspector remain readable. Browser file/facility selection, all
+  LODs, camera drag/keyboard/jump and synthetic path checks pass in both projects.
+  Graph, City, viewer-data, preview and showcase bytes are unchanged in both.
+- Timing: orbit CPU p95 GJ Overview/District/Detail 13.2/18.0/18.9 ->
+  5.1/10.4/9.2 ms; OJ 2.9/4.9/5.4 -> 2.1/2.6/2.9 ms. Software SwiftShader
+  submission CPU, not FPS. Synthetic has zero static rebuilds; OJ's final
+  synthetic p95 was noisy (7.0 ms Detail), so no animation speedup is claimed.
+- Regression: independent reference projection checks 120 regions over twelve
+  transforms/viewports, shared vertices, ordering, behind-camera rejection and
+  input immutability. Cache invalidation retains existing filter/LOD contracts.
+- Spec alignment: PASS; no schema, layout, evidence, safety or framework changes.
+  Next separate work unit: road hierarchy/contrast without widening through files.
+- Delivery: one perf(viewer) local commit; protected-main push remains deferred.

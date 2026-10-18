@@ -233,6 +233,55 @@
   }
   globalThis.METROPOGITS_GEOMETRY_CACHE = createGeometryCache;
 
+  function createPickProjection(descriptors) {
+    const unique = new Map(), vertices = [], projectedPoints = [];
+    const regions = descriptors.map(descriptor => ({id:descriptor.id, kind:descriptor.kind,
+      priority:descriptor.priority, minX:0, minY:0, maxX:0, maxY:0, depth:0,
+      points: descriptor.points.map(point => {
+        const key = point.join(',');
+        let index = unique.get(key);
+        if (index === undefined) {
+          index = vertices.length;
+          unique.set(key, index);
+          vertices.push(point.slice());
+          projectedPoints.push({x:0, y:0, depth:0, valid:false});
+        }
+        return projectedPoints[index];
+      })}));
+    // Regions and vertices belong to this cache. Consumers use them only until
+    // the next projection; no scene/graph object is mutated.
+    function project(matrix, width, height) {
+      for (let i=0; i<vertices.length; i+=1) {
+        const [x,y,z] = vertices[i], point = projectedPoints[i];
+        const w = matrix[3]*x + matrix[7]*y + matrix[11]*z + matrix[15];
+        point.valid = w > 0;
+        if (!point.valid) continue;
+        point.x = ((matrix[0]*x+matrix[4]*y+matrix[8]*z+matrix[12])/w*.5+.5)*width;
+        point.y = (1-((matrix[1]*x+matrix[5]*y+matrix[9]*z+matrix[13])/w*.5+.5))*height;
+        point.depth = (matrix[2]*x+matrix[6]*y+matrix[10]*z+matrix[14])/w;
+      }
+      const visible = [];
+      for (const region of regions) {
+        let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity, depth=Infinity, valid=true;
+        for (const point of region.points) {
+          if (!point.valid) { valid=false; break; }
+          minX=Math.min(minX,point.x); minY=Math.min(minY,point.y);
+          maxX=Math.max(maxX,point.x); maxY=Math.max(maxY,point.y);
+          depth=Math.min(depth,point.depth);
+        }
+        if (!valid) continue;
+        const margin = region.kind === 'network' ? 8 : 0;
+        if (maxX < -margin || maxY < -margin || minX > width+margin || minY > height+margin) continue;
+        region.minX=minX-margin; region.minY=minY-margin;
+        region.maxX=maxX+margin; region.maxY=maxY+margin; region.depth=depth;
+        visible.push(region);
+      }
+      return visible.sort((a,b)=>b.priority-a.priority || a.depth-b.depth);
+    }
+    return Object.freeze({project, vertexCount:vertices.length, regionCount:regions.length});
+  }
+  globalThis.METROPOGITS_PICK_PROJECTION = createPickProjection;
+
   if (typeof document === "undefined") return;
 
   const data = globalThis.METROPOGITS_DATA;
@@ -1002,21 +1051,20 @@
     return projectPoint(viewProjection, point, viewportWidth, viewportHeight);
   }
 
-  function buildHitRegions() {
-    if (!projectionDirty) return hitRegions;
+  const pickCache = createGeometryCache();
+  function buildPickDescriptors() {
     const regions = [];
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
       for (const rectangle of districtTerritory(district).rectangles) {
         const points = [
-          projected([rectangle.x, 0.08, rectangle.z]),
-          projected([rectangle.x + rectangle.width, 0.08, rectangle.z]),
-          projected([rectangle.x + rectangle.width, 0.08, rectangle.z + rectangle.depth]),
-          projected([rectangle.x, 0.08, rectangle.z + rectangle.depth]),
+          [rectangle.x, 0.08, rectangle.z],
+          [rectangle.x + rectangle.width, 0.08, rectangle.z],
+          [rectangle.x + rectangle.width, 0.08, rectangle.z + rectangle.depth],
+          [rectangle.x, 0.08, rectangle.z + rectangle.depth],
         ];
         if (points.every(Boolean)) {
           regions.push({
-            depth: Math.min(...points.map((point) => point.depth)),
             id: district.id,
             kind: "district",
             points,
@@ -1027,14 +1075,9 @@
     }
     for (const network of accessFrame ? accessFrame.segments.map(s => ({id: s.id, path: [s.start, s.end]})) : scene.networks) {
       if (!accessFrame && !renderedNetworkIds.has(network.id)) continue;
-      const points = network.path.map((point) => projected([point[0], 0.22, point[1]]));
+      const points = network.path.map((point) => [point[0], 0.22, point[1]]);
       if (points.every(Boolean)) {
-        const minX = Math.min(...points.map(p => p.x)), maxX = Math.max(...points.map(p => p.x));
-        const minY = Math.min(...points.map(p => p.y)), maxY = Math.max(...points.map(p => p.y));
-        if (maxX < -8 || maxY < -8 || minX > viewportWidth + 8 || minY > viewportHeight + 8) continue;
         regions.push({
-          minX: minX - 8, minY: minY - 8, maxX: maxX + 8, maxY: maxY + 8,
-          depth: Math.min(...points.map((point) => point.depth)),
           id: network.id,
           kind: "network",
           points,
@@ -1048,20 +1091,15 @@
       for (const x of [building.x, building.x + building.width]) {
         for (const y of [0.2, building.height + 0.2]) {
           for (const z of [building.z, building.z + building.depth]) {
-            const point = projected([x, y, z]);
-            if (point) corners.push(point);
+            corners.push([x, y, z]);
           }
         }
       }
       if (corners.length === 8) {
         regions.push({
-          depth: Math.min(...corners.map((point) => point.depth)),
           id: building.entityId,
           kind: "building",
-          maxX: Math.max(...corners.map((point) => point.x)),
-          maxY: Math.max(...corners.map((point) => point.y)),
-          minX: Math.min(...corners.map((point) => point.x)),
-          minY: Math.min(...corners.map((point) => point.y)),
+          points: corners,
           priority: 200,
         });
       }
@@ -1073,26 +1111,26 @@
         for (const x of [plot.x, plot.x + plot.width]) {
           for (const y of [0.2, facility.height + 2.4]) {
             for (const z of [plot.z, plot.z + plot.depth]) {
-              const point = projected([x, y, z]);
-              if (point) corners.push(point);
+              corners.push([x, y, z]);
             }
           }
         }
         if (corners.length === 8) {
           regions.push({
-            depth: Math.min(...corners.map((point) => point.depth)),
             id: facility.id,
             kind: "aggregate",
-            maxX: Math.max(...corners.map((point) => point.x)),
-            maxY: Math.max(...corners.map((point) => point.y)),
-            minX: Math.min(...corners.map((point) => point.x)),
-            minY: Math.min(...corners.map((point) => point.y)),
+            points: corners,
             priority: 250,
           });
         }
       }
     }
-    return regions.sort((left, right) => right.priority - left.priority || left.depth - right.depth);
+    return createPickProjection(regions);
+  }
+
+  function buildHitRegions() {
+    if (!projectionDirty) return hitRegions;
+    return pickCache(lodCacheKey, buildPickDescriptors).project(viewProjection, viewportWidth, viewportHeight);
   }
 
   function pointInPolygon(x, y, points) {

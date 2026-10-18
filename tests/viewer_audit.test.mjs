@@ -34,6 +34,38 @@ test('static geometry cache survives animation ticks and invalidates visual stat
   assert.equal(cache('district:1:building:a', build).triangles[0], 4);
 });
 
+test('cached picking matches independent projection, ordering and viewport culling', () => {
+  const descriptors = Array.from({length:120}, (_,i)=>({id:`r${i}`,
+    kind:['district','network','building','aggregate'][i%4],priority:[1,100,200,250][i%4],
+    points:[[i%9-4,0,Math.floor(i/9)-6],[i%9-3,.2,Math.floor(i/9)-5]]}));
+  descriptors.push({...descriptors[0],id:'shared'});
+  const original=JSON.stringify(descriptors), cache=globalThis.METROPOGITS_PICK_PROJECTION(descriptors);
+  assert.ok(cache.vertexCount < descriptors.reduce((n,r)=>n+r.points.length,0));
+  for (let frame=0;frame<12;frame+=1) {
+    const angle=frame*.35, c=Math.cos(angle), s=Math.sin(angle);
+    const m=[c,.1,s,.03,0,1,0,0,-s,.3,c,.12,frame*.1,0,0,frame===11?-5:1];
+    const width=600+frame*15, height=400+frame*9;
+    const expected=descriptors.map(r=>{
+      const points=r.points.map(([x,y,z])=>{
+        const w=m[3]*x+m[7]*y+m[11]*z+m[15];
+        if(w<=0) return null;
+        return {x:((m[0]*x+m[4]*y+m[8]*z+m[12])/w*.5+.5)*width,
+          y:(1-((m[1]*x+m[5]*y+m[9]*z+m[13])/w*.5+.5))*height,
+          depth:(m[2]*x+m[6]*y+m[10]*z+m[14])/w};
+      });
+      if(points.some(p=>!p)) return null;
+      const margin=r.kind==='network'?8:0;
+      const minX=Math.min(...points.map(p=>p.x))-margin,maxX=Math.max(...points.map(p=>p.x))+margin;
+      const minY=Math.min(...points.map(p=>p.y))-margin,maxY=Math.max(...points.map(p=>p.y))+margin;
+      if(maxX<0||maxY<0||minX>width||minY>height) return null;
+      return {id:r.id,priority:r.priority,minX,minY,maxX,maxY,depth:Math.min(...points.map(p=>p.depth))};
+    }).filter(Boolean).sort((a,b)=>b.priority-a.priority||a.depth-b.depth);
+    const actual=cache.project(m,width,height).map(r=>Object.fromEntries(Object.keys(expected[0]||{id:0}).map(k=>[k,r[k]])));
+    assert.deepEqual(actual,expected);
+  }
+  assert.equal(JSON.stringify(descriptors),original);
+});
+
 test('animation uses its own dynamic buffer and never disables static cache', async () => {
   const source = await readFile(new URL('../metropogits/viewer_assets/viewer-3d.js', import.meta.url), 'utf8');
   assert.ok(source.includes('bindAndDraw(activityBuffer, buildActivityGeometry(timestamp), gl.TRIANGLES, gl.DYNAMIC_DRAW)'));
