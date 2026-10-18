@@ -3684,3 +3684,89 @@
   implementation/test/docs commit and verified normal upstream push under the
   maintainer's owner exception. Git outcome is reported separately after the
   commands succeed. No force, settings edits, agent credit or private artifacts.
+
+## Checkpoint 2026-10-18 — road-first visual frontage (parent 01e4217)
+- Implemented: opt-in `--frontage` plans an existing evidenced local collector
+  before reorienting a building's visual door. Reconnect all incident relations
+  atomically; reject incomplete proposals. Building positions, dimensions,
+  districts, canonical City/UCG and semantic identities remain unchanged.
+  Prioritize long exclusive approaches, then unique-edge demand. Require strictly
+  less pavement and non-increasing junction/nearby-parallel counts. Preserve the
+  original urban full-world-distance and +4-bend bounds, including access spurs.
+- Fixtures / revisions: GJ3d9b53f and OJb163acd parcel JSON; spring-positive and
+  unsupported structural-showcase at parent01e4217. No target code, dependency
+  installation or build scripts executed. Public schemas/default routing unchanged.
+- Commands: `python ../artifacts/visual/frontage_trial.py <gj|oj>` reads JSON-only
+  original0.2 routing from road-consolidation-r2 and reproduces the exact
+  block-collectors-r3 baseline. Outputs: `artifacts/visual/road-frontage-r2/
+  {gj,oj}/{before,after}`. `python ../artifacts/visual/verify_frontage.py gj oj`
+  repeats planning and verifies all14 packaged files per city byte-identically,
+  unchanged canonical City/UCG bytes, original budgets, source provenance,
+  consistent building-face doors and unchanged paths outside affected frontages.
+- GJ:33 accepted frontages,151 affected paths,600 candidate attempts/370170 search
+  states. Pavement27579.5->27212 (-1.33%), parallel5204.5->4917.5 (-5.51%),
+  junctions1501->1497, bends23787->23726, route-distance724495->724614 (+0.016%).
+  OJ:33 frontages,246 affected paths,600 attempts/340464 states. Pavement7361->7165
+  (-2.66%), parallel1893.5->1701 (-10.17%), junctions456->450, bends6750->6646,
+  route-distance161114->161520 (+0.252%). Both hit the600-proposal cap, not the
+  1M-state cap; this is a bounded heuristic, not an exhaustive city optimum.
+- Correction: initial demand-first priority accepted11/13 frontages and saved
+  only80.5/45.5 pavement units. Exclusive-approach-first priority saves367.5/196
+  with the same caps. A reconstructed-approach guard enforces the12-step limit
+  even when search labels change. Reverified all outputs after this correction.
+- Fidelity: `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/road-frontage-r2/<gj|oj>/after` passes:6157/2243 scene-backed
+  edges,1273/400 connected files,4209/1381 complete routes, unresolved0,
+  full-width pavement/building intersections0. All route IDs, source/target,
+  kinds and evidence memberships preserved. Original length ratio p95=1.329/1.326,
+  max1.933/2.75 with28/16 short-block exceptions. The approved14-world-unit
+  short-route allowance means this is NOT a universal50% ratio cap.
+- Fresh end-to-end: `python -m metropogits build --repo
+  tests/fixtures/repositories/<spring-positive|structural-showcase> --out
+  ../artifacts/visual/road-frontage-fixtures-r2/<spring|unknown> --repo-id
+  fixtures/<spring|unknown>`, then `python -m scripts.road_consolidation
+  ../artifacts/visual/road-frontage-fixtures-r2/<spring|unknown> --out
+  ../artifacts/visual/road-frontage-fixtures-r2/<spring|unknown>-study --frontage`.
+  Both COMPLETE. Spring6 buildings/11 districts/2 networks retains2 paths;
+  unknown3 buildings/4 districts has no fabricated roads or frontage proposals.
+  `node ../artifacts/visual/junction_smoke.mjs road-frontage-fixtures-r2` generated
+  real captures; Spring WebGL and unknown SVG inspected.
+- Artifacts inspected: `node ../artifacts/visual/parcel_focus_review.mjs
+  road-frontage-r2 road-frontage-focus-r2
+  Backend/Vm/src/main/java/gj/cloud/vm/application/vm/dto
+  backend/src/main/java/dev/gamjaoj/generation/service`. All four before/after
+  WebGL captures and both showcase captures viewed; cameras exactly match.
+  GJ VM loses several return/zigzag approaches; OJ's dense buildings hide much
+  of its road change, so visible improvement is modest. Skyline, density,
+  district colors and README composition remain. No observed clipping/overlap
+  regression. Orthogonal/circuit appearance remains; no roundabout claim.
+- Browser: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/road-frontage-audit-r2
+  ../artifacts/visual/road-frontage-r2/gj/after
+  ../artifacts/visual/road-frontage-r2/oj/after` passes three LODs, picking,
+  role/source inspection, exact route drill-down, filters, grades, camera and
+  Synthetic. Route-inspector capture inspected. Chrome152/SwiftShader20 samples:
+  Synthetic CPU p95 GJ1.3/1.1/1.0ms, OJ1.1/1.1/1.4ms; static rebuilds0.
+  These are CPU submission measurements, not GPU FPS or a speedup claim.
+- Tests: `python -m unittest discover -s tests -q`:375 run,374 pass,1 Windows
+  symlink skip. `python -m ruff check metropogits scripts tests` and
+  `git diff --check` pass. `node --test tests/access_routes.test.mjs
+  tests/junction_geometry.test.mjs tests/viewer_audit.test.mjs
+  tests/camera_navigation.test.mjs tests/role_landmarks.test.mjs`:35 pass.
+  Eleven frontage tests cover atomic rollback, original bounds, door clearance,
+  exact memberships, repeatability/order independence, budget exhaustion,
+  no fabricated connectivity, provenance rejection and geometry-guard oracle.
+- Spec alignment: PASS, technical7-8, FR-007, AC-002/003/006/014,
+  DEC-005/006/007/011, ADR-019 documented before implementation. Derived doors
+  are visual routing, not inferred semantic facts. No default/layout/ID/security
+  change. Cached planner repeat43.12s GJ/12.4s OJ under local load, not full
+  analysis timings or a controlled performance comparison.
+- Open risks / next actions: remaining parallel corridors and fixed block
+  gateways still constrain topology. Next jointly plan multiple entrances and
+  block-boundary merge points; do not just raise caps or add decorative circles.
+  This opt-in frontage slice does not complete the city-road design.
+- Commits created / pushed (main): checkpoint precedes the coherent code/test/
+  documentation commit and verified normal upstream push under the maintainer's
+  explicit owner exception. Actual Git outcome is reported after execution.
+  No force, remote settings changes, agent attribution or private artifacts.

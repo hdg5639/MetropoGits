@@ -218,3 +218,20 @@ Only directories containing 4–64 files are eligible, smallest first. These are
 planning limits, not semantic truncation; rejected blocks keep their old routes.
 Defaults/earlier options are unchanged. Curves, moved doors and road-first parcel
 placement remain separate work. Prior-stage metrics describe those stages only.
+
+`scripts.road_consolidation --frontage` adds an opt-in comparison against block
+collectors. It chooses an existing evidenced local collector before reconnecting
+the building's visual entrance; the whole incident-route set changes atomically.
+Buildings, districts, canonical UCG/City and source IDs stay fixed. Derived doors
+and ports may move to another clear face; this explicitly differs from fixed-port
+experiments. New spur length counts inside the original0.2 urban world-distance
+budget, with original complete-path bends+4. No compounded allowance or fabricated
+edges. `roadFrontage` / `road-frontage/0.1` in visual-access/0.3 records changed
+doors, chosen collector, planning-time unique-edge demand, attempts and limits.
+Private dead-end length precedes unique demand in candidate ranking. Limits:
+600 proposals, 1M popped states, 21-unit local radius, 7-unit ownership margin,
+12 approach steps. Mixed-kind or zero-through-route endpoints retain old doors.
+Only actual route-used pavement is exported. Preview, viewer, Inspector and
+Synthetic consume the same paths; earlier diagnostic blocks describe earlier
+passes. This first road-first frontage slice is not a parcel reallocator,
+city-wide arterial planner or curved/roundabout implementation. Defaults stay intact.
