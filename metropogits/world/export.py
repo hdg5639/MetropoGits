@@ -13,8 +13,17 @@ from metropogits.cli import _artifact_record, _diagnostic_summary
 from scripts.canonical_json import canonical_json_bytes
 from .geometry import bounds, centroid, point, ribbon
 from .seed import derive
+from .zoning import planning_document
 
 GROUND = ["#33464b", "#4a4149", "#354b42", "#504835", "#3e4454", "#4e3c42", "#3b4c50"]
+ZONE_COLORS = {
+    "GENERAL_MIXED": "#414b50",
+    "SERVICE_QUARTER": "#3c5260",
+    "INDUSTRIAL_LOGISTICS": "#3c574d",
+    "CAMPUS_RESEARCH": "#5b5540",
+    "GATEWAY_CIVIC": "#5d4555",
+    "COMMERCIAL_FRONTEND": "#474b60",
+}
 COLORS = dict(
     GENERIC_BUILDING="#a2adbb",
     SERVICE_OFFICE="#60a5fa",
@@ -38,14 +47,24 @@ def view_data(world, scene, graph):
 
     districts = [dict(id=root, parentId=None, **envelope(world["envelope"]))]
     territories = []
+    neighborhoods = world.get("zoning", {}).get("zones", [])
+    physical_polygons = {d["id"]: d["polygon"] for d in world["districts"]}
+    physical_polygons.update({z["id"]: z["polygon"] for z in neighborhoods})
     for d in world["districts"]:
         districts.append(dict(id=d["id"], parentId=root, **envelope(d["polygon"])))
-    for d in districts:
-        polygon = (
-            world["envelope"]
-            if d["id"] == root
-            else next(z["polygon"] for z in world["districts"] if z["id"] == d["id"])
+        if neighborhoods:
+            districts[-1]["label"] = d["label"]
+    for z in neighborhoods:
+        districts.append(
+            dict(
+                id=z["id"],
+                label=z["label"],
+                parentId=z["parentId"],
+                **envelope(z["polygon"]),
+            )
         )
+    for d in districts:
+        polygon = world["envelope"] if d["id"] == root else physical_polygons[d["id"]]
         x, z, right, bottom = bounds(polygon)
         territories.append(
             dict(
@@ -73,6 +92,8 @@ def view_data(world, scene, graph):
             )
         }
         b.update(x=p["center"][0] - p["width"] / 2, z=p["center"][1] - p["depth"] / 2)
+        if "zoneId" in p:
+            b["districtId"] = p["zoneId"]
         buildings.append(b)
         models[p["entityId"]] = dict(
             p,
@@ -137,7 +158,7 @@ def view_data(world, scene, graph):
             for s in routing["segments"]
         },
     )
-    return dict(
+    data = dict(
         scene=physical_scene,
         canonicalScene=scene,
         ucg=graph,
@@ -175,6 +196,17 @@ def view_data(world, scene, graph):
         ),
         territories=dict(districts=territories),
     )
+    if neighborhoods:
+        data["semanticZoning"] = {z["id"]: z for z in neighborhoods}
+        data["occupiedGround"]["pads"] = [
+            dict(
+                districtId=z["id"],
+                polygons=[list(reversed(z["polygon"]))],
+                color=ZONE_COLORS[z["clusterKey"]],
+            )
+            for z in neighborhoods
+        ]
+    return data
 
 
 def render_svg(world, width=1200, height=750):
@@ -220,6 +252,14 @@ def render_svg(world, width=1200, height=750):
                 [project(p) for p in d["polygon"]],
                 GROUND[i % len(GROUND)],
                 f'data-directory-id="{escape(d["id"])}" stroke="#62727c" stroke-width=".6"',
+            )
+        )
+    for z in world.get("zoning", {}).get("zones", []):
+        lines.append(
+            polygon(
+                [project(p) for p in z["polygon"]],
+                ZONE_COLORS[z["clusterKey"]],
+                f'data-zone-id="{escape(z["id"])}"',
             )
         )
     for s in world["streets"]:
@@ -309,6 +349,8 @@ def package_world(world, scene, graph, validation):
     page = page.replace(
         b"Civic block (visual)", b"World district (structural)"
     ).replace(b"Route corridor (derived)", b"Structural street (visual)")
+    if "zoning" in world:
+        page = page.replace(b"World district (structural)", b"Planning neighborhood (derived)")
     page = page.replace(
         b'<span id="renderer-mode"',
         b'<button type="button" data-action="toggle-structure" aria-pressed="false">Structure overlay</button><span id="renderer-mode"',
@@ -329,6 +371,8 @@ def package_world(world, scene, graph, validation):
             "README_SNIPPET.md": b"[![Procedural source city](showcase.svg)](index.html)\n",
         }
     )
+    if "zoning" in world:
+        artifacts["planning.json"] = canonical_json_bytes(planning_document(world))
     types = {
         ".html": "text/html",
         ".js": "text/javascript",

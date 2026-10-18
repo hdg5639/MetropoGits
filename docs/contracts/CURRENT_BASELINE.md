@@ -46,6 +46,49 @@ ellipse/default GRID worlds reproduce their original bytes. This is convex
 connected land only, not a terrain/coastline or concave polygon implementation.
 Original UCG/City contracts and browser source inspection remain unchanged.
 
+## Internal semantic neighborhoods — 2026-10-19
+
+[ADR-028](../adr/ADR-028.md) adds opt-in `--zoning semantic` to the World
+command, with `flat-zoning/0.1` and an optional `zoning` object. Existing
+experimental World documents remain valid; `--zoning none` is unchanged.
+[`planning/0.1-experimental`](../../schemas/planning-0.1.schema.json) is a
+canonical projection of those same zones, not a second source of truth.
+
+Each neighborhood stores stable parent/category/version ID, exact member files,
+original role claims/evidence, requested/actual grammar, land demand/target/area,
+capacity and allocator diagnostics. Source City/UCG and source-directory
+ownership are retained. Derived browser zones are not new source modules.
+The inspector and counts distinguish principal districts from planning zones.
+
+Role-quarter policy only accepts DIRECT/RESOLVED evidence-backed claims. Groups
+below12 files or districts below24 are neutral; ambiguous/unknown files remain
+GENERAL_MIXED. SERVICE_QUARTER does not claim CBD/orchestration; CAMPUS_RESEARCH
+is labeled Test campus and does not establish research/AI technology. Missing
+Go/C++ role support never manufactures a specialized zone. Only one internal
+level and six current categories are generated, within a seven-cell solver cap.
+
+Clipped power cells use fixed sites, Newton weight balancing with32 iterations
+and16 backtracking steps,1.5% relative target-area tolerance and deterministic
+capacity-bisection fallback. Frontage capacity is checked separately. A bounded
+capacity-feedback repartition inside the same parent precedes wider envelope
+repair. `areaTarget` discloses the final target rather than pretending the
+initial analytic demand predicted exact frontage efficiency. Four bounded local
+GRID axis/phase fits avoid avoidable expansion. New parcels have0.01-unit inset
+clearance; default legacy lots/bytes are not changed.
+
+Only required local frontage and selected adjacency access ports are linked;
+the largest port-free boundary arc is omitted. Raw power-cell borders are not
+automatically full roads or semantic dependencies. Source-backed trips still
+use the shared physical graph and retain exact edges/endpoints.
+
+Compatible hints preserve parent/zone polygons, actual profiles and available
+file slots. Changed zone sets, exhausted capacity or changed policy explicitly
+replan. This is not arbitrary-rename or cold-build stability. The optional
+`--outline varied` remains compatible; `--planning` must remain its default
+`grid` because semantic policy chooses local grammars itself. No silent ignored
+grammar override. Full block polygons, graph-affinity sub-clustering, terrain,
+water, bridges/tunnels and rotated semantic aggregate LOD remain pending.
+
 ## Existing City/UCG baseline (unchanged)
 
 Verified 2026-10-18 against the checked-in producer, schemas, validators, and

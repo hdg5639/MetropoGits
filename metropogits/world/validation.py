@@ -8,6 +8,7 @@ from metropogits.block_orientation import clip
 from scripts.canonical_json import sha256_digest
 from . import VERSION
 from .geometry import area, bounds, inside, ribbon, nearest
+from .zoning import validate_zoning
 
 
 def validate_world(world, scene, graph):
@@ -27,6 +28,10 @@ def validate_world(world, scene, graph):
         if not 1 <= len(edge["districtIds"]) <= 2:
             raise ValueError("invalid shared boundary ownership")
     zones = {d["id"]: d for d in world["districts"]}
+    neighborhoods = validate_zoning(world, scene, graph)
+    neighborhood_members = {
+        key: set(z["memberEntityIds"]) for key, z in neighborhoods.items()
+    }
     if len(parcels) != len(source) or {p["entityId"] for p in parcels} != set(source):
         raise ValueError("world omitted or duplicated source buildings")
     if abs(
@@ -112,6 +117,16 @@ def validate_world(world, scene, graph):
         if p["sourceDistrictId"] != b["districtId"]:
             raise ValueError("world directory ownership mismatch")
         poly = p["footprint"]
+        if neighborhoods:
+            owner = neighborhoods.get(p.get("zoneId"))
+            if (
+                owner is None
+                or owner["parentId"] != p["districtId"]
+                or p["entityId"] not in neighborhood_members[owner["id"]]
+                or p.get("blockProfile") != owner["planningProfile"]
+                or not all(inside(v, owner["polygon"]) for v in p["parcel"] + poly)
+            ):
+                raise ValueError("invalid semantic parcel ownership")
         if zones[p["districtId"]].get("planningProfile") == "HYBRID":
             region = regions.get((p["districtId"], p.get("planningRegionId")))
             if (
@@ -131,7 +146,7 @@ def validate_world(world, scene, graph):
             if checks > 5_000_000:
                 raise ValueError("world validation work limit")
             if area(clip(p["parcel"], parcel_polygons[identity])) > 0.001:
-                raise ValueError("world parcel overlap")
+                raise ValueError(f"world parcel overlap: {p['entityId']} / {identity}")
         parcel_polygons[p["entityId"]] = p["parcel"]
         for cell in parcel_keys:
             parcel_cells[cell].add(p["entityId"])

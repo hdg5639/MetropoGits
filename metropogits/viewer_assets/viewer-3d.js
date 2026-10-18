@@ -752,7 +752,7 @@
       for(const pad of data.occupiedGround.pads) {
         let owner=districts.get(pad.districtId);
         while(owner && !majorDistrictIds.has(owner.id))owner=districts.get(owner.parentId);
-        const tint=color(owner?urbanContext.majorColors[majorOrder.indexOf(owner.id)%urbanContext.majorColors.length]:urbanContext.ground);
+        const tint=color(pad.color || (owner?urbanContext.majorColors[majorOrder.indexOf(owner.id)%urbanContext.majorColors.length]:urbanContext.ground));
         for(const p of pad.polygons)for(let i=1;i<p.length-1;i++)
           quad(triangles,[p[0],p[i],p[i+1],p[i+1]].map(([x,z])=>[x,-.03,z]),[0,1,0],tint);
       }
@@ -1112,6 +1112,7 @@
     const entity = entities.get(district?.id);
     const member = repositoriesByRootDistrict.get(district?.id);
     return entity?.path
+      || district?.label
       || member?.id
       || (district?.parentId === null ? ucg.repository.id : district?.id)
       || "Unknown district";
@@ -1503,7 +1504,8 @@
     visibilityVersion += 1;
     const activeCount = activeFilterCount();
     cityStats.replaceChildren();
-    addStat(scene.districts.length, "districts");
+    addStat(data.semanticZoning ? majorDistrictIds.size : scene.districts.length, "districts");
+    if (data.semanticZoning) addStat(Object.keys(data.semanticZoning).length, "planning zones");
     addStat(`${visibleBuildingIds.size}/${scene.buildings.length}`, "buildings");
     addStat(`${visibleNetworkIds.size}/${scene.networks.length}`, "networks");
     filterSummary.textContent = activeCount
@@ -1690,6 +1692,11 @@
     }
     detailRow(details, "District", districtLabel(districts.get(building.districtId)));
     inspector.append(details);
+    if (data.semanticZoning?.[building.districtId]) {
+      const button = element('button', 'Inspect planning neighborhood', 'focus-button'); button.type = 'button';
+      button.addEventListener('click', () => showSelection({kind: 'district', id: building.districtId})); inspector.append(button);
+      inspector.append(element('p', `Source directory: ${entities.get(parcel?.sourceDistrictId)?.path || parcel?.sourceDistrictId}`, 'muted'));
+    }
     const facility = lodPolicy.facilityForEntity(entityId);
     if (facility) {
       inspector.append(element("p", `${facility.title}: selected constituent. Cyan outline marks its original footprint above the compound; it is not another building. Routes are aggregates containing this file's actual edges.`, "aggregate-disclosure"));
@@ -1727,7 +1734,7 @@
     ));
   }
 
-  function showDistrict(districtId) {
+  function showDistrict(districtId, offset = 0) {
     const district = districts.get(districtId);
     const districtBuildings = filterEngine.districtBuildings(scene, districtId);
     const visibleCount = districtBuildings.filter((item) => visibleBuildingIds.has(item.entityId)).length;
@@ -1741,6 +1748,7 @@
       : "City root");
     detailRow(details, "Size", `${district.width} × ${district.depth}`);
     inspector.append(details);
+    showZoningDetails(districtId, offset);
     inspector.append(focusButton(
       district.x + district.width / 2,
       tallestBuilding * 0.12,
@@ -1748,6 +1756,32 @@
       Math.max(32, Math.hypot(district.width, district.depth) * 1.15),
       "Focus district",
     ));
+  }
+
+  function showZoningDetails(districtId, offset) {
+    const zone = data.semanticZoning?.[districtId];
+    if (!zone) {
+      for (const child of Object.values(data.semanticZoning || {}).filter(z => z.parentId === districtId)) {
+        const button = element('button', `${child.label} · ${child.memberEntityIds.length} files`, 'focus-button');
+        button.type = 'button'; button.addEventListener('click', () => showSelection({kind: 'district', id: child.id}));
+        inspector.append(button);
+      }
+      return;
+    }
+    inspector.append(element('p', 'Derived planning neighborhood, not a source module or runtime service. Unknown members remain unclassified.', 'muted'));
+    factSection(inspector, 'ZONING BASIS', [zone.classification.status, `${zone.planningProfile} · ${zone.allocation.algorithm}`, ...zone.classification.ruleIds]);
+    factSection(inspector, 'GROUPING EVIDENCE', zone.classification.evidenceIds.map(evidenceLabel));
+    inspector.append(element('h3', `MEMBER FILES · ${offset + 1}–${Math.min(offset + 25, zone.memberEntityIds.length)} / ${zone.memberEntityIds.length}`, 'section-title'));
+    for (const id of zone.memberEntityIds.slice(offset, offset + 25)) {
+      const button = element('button', entities.get(id)?.path || id, 'focus-button zoning-member');
+      button.type = 'button'; button.dataset.entityId = id;
+      button.addEventListener('click', () => showSelection({kind: 'building', id})); inspector.append(button);
+    }
+    for (const [label, next] of [['Previous members', offset - 25], ['Next members', offset + 25]]) {
+      if (next < 0 || next >= zone.memberEntityIds.length) continue;
+      const button = element('button', label, 'focus-button'); button.type = 'button';
+      button.addEventListener('click', () => showDistrict(districtId, next)); inspector.append(button);
+    }
   }
 
   function showStreetDiagnostics(offset=0, reason='') {
