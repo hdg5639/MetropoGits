@@ -2937,3 +2937,95 @@
 - Commits created / pushed (main): one measured-selection work unit including
   tests and documentation; commit and normal authorized upstream push follow
   this checkpoint. Private outputs and unrelated IDE caches remain unstaged.
+
+## Checkpoint 2026-10-18 — opt-in parcel City/3D export (ADR-017)
+
+- Implemented: explicit `scripts.parcel_viewer` export from validated layout 1.14
+  to `hierarchical-parcel/0.1-experimental`; normal CLI/Action unchanged. Single
+  selected leaf coordinates, fresh canonical network paths and full-city access
+  graph; one scene/routeset shared by WebGL, detailed SVG and showcase. Export
+  refuses partial coverage, pavement/building intersections and existing output
+  directories. Fresh bundled assets, visible experimental label, decision report,
+  compatible manifest diagnostic summary/media types/checksums; no source HTML
+  or JavaScript is loaded. Added layout enum; older validators require updating.
+- Hint policy: same experimental version and exact directory geometry/file
+  membership/ownership/footprint size. X/Z remain fixed while current graph facts,
+  heights and relationships are retained. Structural changes explicitly reject
+  hints; no silent cold reset. Default 1.14 continues to reject experimental hints.
+  This does not certify experimental file-addition stability (AC-003).
+- Fixtures / revisions: GJ-Cloud 3d9b53f, GamjaOJ b163acd, readonly baseline
+  `artifacts/visual/road-continuity-r2/{gj,oj}`; fresh maintained spring-positive
+  and structural-showcase repositories at implementation parent b85a829.
+  No target build/test/dependency installation was executed.
+- Commands run (repo root): `python -m scripts.parcel_viewer
+  ../artifacts/visual/road-continuity-r2/{gj,oj} --out
+  ../artifacts/visual/parcel-3d-r2/{gj,oj}` (two separate invocations).
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --out ../artifacts/visual/parcel-3d-fixtures/spring --repo-id fixtures/spring`;
+  equivalent structural-showcase command with unknown output/repo ID. Both normal
+  builds COMPLETE; exported both as `*-experimental`, baseline retained (6/3
+  buildings, 2/0 routes). The developer script is not a new public CLI default.
+- Real-data checks: `node ../artifacts/visual/verify_access.mjs
+  ../artifacts/visual/parcel-3d-r2/{gj,oj}` verifies each route source/target,
+  edge membership, segment provenance and pavement AABB. GJ 4,209 routes,
+  6,157 edges, 1,273 connected files; OJ 1,381 routes, 2,243 edges, 400 connected
+  files. Both COMPLETE; missing represented edges and pavement intersections 0.
+  Disconnected files are not falsely connected to fill land.
+- Determinism / stability: `python ../artifacts/visual/verify_parcel_export.py`
+  independently reruns both cold exports and same-structure hints. All 14 packaged
+  artifacts per city repeat byte-for-byte; hinted scene and routes equal cold
+  result. GJ 35/OJ 49 file positions change only inside the selected leaf; all
+  district records and all other file fields/positions are unchanged. Graph and
+  original input bytes retained. Repeat/package/hint check took 116.49s / 37.26s
+  locally; this includes multiple generations and is not a single-build benchmark.
+- Actual browser commands: `node scripts/viewer_audit.mjs
+  'C:\Program Files\Google\Chrome\Application\chrome.exe'
+  ../artifacts/visual/parcel-3d-audit-r3
+  ../artifacts/visual/parcel-3d-r2/gj ../artifacts/visual/parcel-3d-r2/oj`.
+  Chrome 152 SwiftShader, 1280x800, 20 samples per mode. All overview/district/detail
+  camera, selection/provenance, filtering and synthetic checks pass. Synthetic
+  draw-submission CPU p95 GJ 1.3/1.4/1.1ms, OJ 1.5/1.1/1.1ms; static mesh rebuilds
+  0. Software renderer CPU measurements, not GPU frame completion or FPS.
+- Artifacts inspected: actual WebGL detail captures, preview and showcase SVG
+  captures; `parcel-3d-focus-r3/{gj,oj}-{before,after}/focused.png`, generated with
+  `node ../artifacts/visual/parcel_focus_review.mjs` from trusted bundled assets.
+  Exact before/after target, distance113.844, yaw-.68, pitch.62 and Detail are
+  asserted; 1500x1000 viewport. GJ selected 36-file analysis leaf and OJ 49-file
+  service leaf show clearer separated rows/frontage, but thin parallel rectilinear
+  roads remain. Fixed land area/outer city geometry are not denser. Overview/README
+  differences are subtle; scope is deliberately one leaf, not citywide adoption.
+  Spring WebGL and unknown preview screenshots in parcel-3d-fixtures were also
+  inspected: usable fallback, sparse unknown still has oversized reserved margins.
+- Global routing findings: GJ length698560→690307, turns24516→24261,
+  parallel31206→30366, centerline51796→51481. OJ length163515→154618,
+  turns7915→7476, centerline12376.5→12282, **parallel6916→7280 (+5.3%)**.
+  Incident-only pilot scoring does not predict all-city shared-route effects.
+  OJ is retained solely as an opt-in comparison, not approved visual replacement.
+  Explicit next correction: include global routing non-regression in selection
+  before default adoption or broader allocation; then incremental file-addition hints.
+- Fixes applied/reverified: manifest status/diagnostics restored to existing
+  contract shape; hint validation separated old semantic evidence from transferred
+  geometry so current-graph changes are supported. Malformed/overlapping hints fail.
+  Initial test invocations used an unsupported module path/CLI flag and were rerun
+  correctly. Initial focus capture ran before OJ finished; completed in focus-r3.
+  Audit-r2 included small fixtures and stopped on its large-scene natural-LOD
+  expectation (small Spring correctly starts in Detail). No test was weakened:
+  large-city audit reran as r3; small fallback rendering checked separately, not
+  claimed as a passing full interaction/performance audit.
+- Tests: 13 exporter tests cover selected overrides/path refresh, fallback,
+  current-relation hint updates, incompatible and colliding hints, deterministic
+  packaging, default preservation, fail-closed routing, untrusted input asset
+  exclusion, strict JSON and no-overwrite/no-output-on-invalid-input. `python -m
+  unittest discover -s tests -q`: 295 run, 294 passed, one Windows symlink skip.
+  `python -m ruff check .`: pass. `node --test tests/access_routes.test.mjs
+  tests/viewer_audit.test.mjs tests/camera_navigation.test.mjs
+  tests/role_landmarks.test.mjs`: 27 passed. `git diff --check`: pass.
+- Spec alignment: PASS for bounded experimental scope under ADR-014/016/017,
+  technical §7–8, FR-006/007, AC-002/006/014 and DEC-001–009. Geometry version is
+  explicit, not silently relabeled. Default AC-003 tests remain intact; experimental
+  incremental growth not implemented. No AI/service dependency, invented edges,
+  unsafe repository execution, source-ID changes or automatic publication.
+- Commits created / pushed (main): ADR work unit b85a829; implementation/checkpoint
+  is a separate commit. Verified ordinary owner-authorized upstream push follows
+  this checkpoint. Private artifacts, review harnesses and unrelated IDE caches
+  are excluded from source control; no agent attribution added.

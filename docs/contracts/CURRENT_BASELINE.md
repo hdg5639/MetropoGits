@@ -10,6 +10,7 @@ introduce a new schema or weaken a requirement.
 | UCG | `ucg/0.1` | [Schema](../../schemas/ucg-0.1.schema.json); file/edge/evidence identities are unchanged |
 | City Scene | `city/0.2` | [Schema](../../schemas/city-0.2.schema.json), [ADR-009](../adr/ADR-009.md); `city/0.1` remains readable and validated under its original contract |
 | Single-repository layout | `hierarchical-paged/1.14` | [ADR-009](../adr/ADR-009.md), [ADR-010](../adr/ADR-010.md), [ADR-011](../adr/ADR-011.md), [ADR-014](../adr/ADR-014.md); hints require the current supported layout version |
+| Opt-in developer layout | `hierarchical-parcel/0.1-experimental` | [ADR-017](../adr/ADR-017.md); single-district measured candidate, not the CLI/Action default; older enum validators need updating |
 | Catalog | release `0.4.0`, schema `catalog/0.1` | [Catalog](../../catalog/0.4.0/catalog.json), [path rules](../PATH_SEMANTICS.md) |
 | Viewer | browser-native WebGL with 2D fallback | [ADR-002](../adr/ADR-002.md), [ADR-005](../adr/ADR-005.md) amend the original Three.js candidate |
 | Static preview | CPU-only deterministic detailed and isometric SVG | `preview.svg` and `showcase.svg`; [ADR-013](../adr/ADR-013.md) and [output guide](../SHOWCASE.md) |
@@ -56,7 +57,8 @@ or schema versions; aggregate route anchors are not per-file doorways.
 
 ## Functional scope and open work
 
-ADR-016 supersedes mean-anchor rendering with `visual-access/0.1` derived data.
+ADR-016 supersedes mean-anchor rendering with `visual-access/0.2` derived data
+(arrival-direction-aware continuity; see the urban block plan).
 Canonical City/UCG and building coordinates remain unchanged; network groups
 remain compatibility/inspection records, not the displayed file endpoints.
 Viewer, detailed SVG and showcase derive geometry from the same access graph.
@@ -69,6 +71,22 @@ branches. Synthetic is a bounded sample (at most 96) of stored complete routes,
 not a random walk or measured traffic. Partial routing is disclosed in viewer,
 SVG metadata and CLI manifest diagnostics. Java nested imports remain unresolved
 work; communication-renderer changes were deferred at maintainer direction.
+
+ADR-017 exposes the measured parcel candidate through `scripts.parcel_viewer`.
+Only one selected leaf changes file coordinates; all directory geometry, file
+ownership and semantic facts remain intact. Canonical network paths and the
+whole-city access graph are recomputed. All three renderers consume the same
+scene/routes; incomplete coverage or pavement/building overlap blocks export.
+The experimental label and manifest `options.experimental` are explicit, while
+manifest status retains its existing COMPLETE/PARTIAL diagnostic meaning.
+Existing UCG/City fields, IDs, normal builds and renderer logic are unchanged.
+
+Experimental hints lock X/Z only when directory geometry and file membership,
+ownership and footprint dimensions match exactly. Current graph facts win over
+old hint evidence. Structural changes require an explicit cold experiment;
+incompatible hints fail rather than silently relocate files. This is NOT a claim
+that the experiment meets AC-003's file-addition workflow or is ready to replace
+the default layout. See [usage and open risks](../URBAN_BLOCK_PLAN.md#opt-in-3d-실험).
 
 JS/TS configured-path resolution reads bounded `tsconfig.json`/`jsconfig.json`
 without executing plugins. Exact and single-wildcard `compilerOptions.paths`

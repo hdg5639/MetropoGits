@@ -14,6 +14,7 @@
         "hierarchical-paged/1.12",
         "hierarchical-paged/1.13",
         "hierarchical-paged/1.14",
+        "hierarchical-parcel/0.1-experimental",
         "metropolis-grid/0.2"
       ]
     },

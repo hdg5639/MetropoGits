@@ -69,6 +69,9 @@ def render_viewer(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> d
         "assets/viewer.js": resources.joinpath("viewer.js").read_bytes(),
         "assets/viewer-data.js": _javascript_data(scene, ucg, routing),
     }
+    if scene['layoutAlgorithm'] == 'hierarchical-parcel/0.1-experimental':
+        result['index.html'] = result['index.html'].replace(
+            b'METROPOGITS / STATIC CITY', b'METROPOGITS / EXPERIMENTAL PARCEL LAYOUT', 1)
     return dict(sorted(result.items()))
 
 
