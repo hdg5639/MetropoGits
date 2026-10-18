@@ -971,7 +971,7 @@
     return !rectangle.networkIds || rectangle.networkIds.some(id => renderedNetworkIds.has(id));
   }
 
-  function createAccessPolicy(routing, hierarchy = null) {
+  function createAccessPolicy(routing, hierarchy = null, pavement = null) {
     if (!routing) return null;
     const assigned = routing.streetGrid ? new Set(routing.streetGrid.assignment.assignedRouteIds) : null;
     const fallbackIds = new Set(routing.streetGrid?.assignment.fallbackRouteIds || []);
@@ -1004,7 +1004,7 @@
     }
     const routes = new Map(routing.routes.map(route => [route.id, route]));
     const segments = new Map(routing.segments.map(segment => [segment.id,
-      {...segment, demand: hierarchy?.segments?.[segment.id]}]));
+      {...segment, demand: hierarchy?.segments?.[segment.id], pavement: pavement?.segments?.[segment.id]}]));
     const trajectories = new Map(routing.routes.map(route => {
       let distance = 0;
       const steps = route.path.slice(1).map((end, i) => {
@@ -1049,6 +1049,8 @@
       if (!segment) return null;
       const contributing = segment.routeIds.filter(key => !activeRouteIds || activeRouteIds.has(key));
       return {id, kind: segment.kind, path: [segment.start, segment.end], routeIds: contributing, demand:segment.demand,
+        pavementWidth:segment.pavement ? {min:Math.min(...segment.pavement.map(p=>p.width)),
+          max:Math.max(...segment.pavement.map(p=>p.maxWidth ?? p.width))} : null,
         edgeIds: [...new Set(contributing.flatMap(key => routes.get(key).edgeIds))].sort()};
     }
     function choices(id, buildingIds, networkIds) {
@@ -1121,7 +1123,7 @@
           trim[side] = Math.max(trim[side], extent);
           trims.set(segment.id, trim);
         }
-        if (rectangles.length < 3) continue;
+        if (rectangles.length < 3 || incident.some(s=>s.pavement)) continue;
         const inside = (a,b) => rectangles.some(r => a>r[0]-1e-9 && a<r[2]+1e-9 && b>r[1]-1e-9 && b<r[3]+1e-9);
         const xs = unique(rectangles.flatMap(r => [r[0],r[2]]));
         const zs = unique(rectangles.flatMap(r => [r[1],r[3]]));
@@ -1189,7 +1191,14 @@
       const start=[...run.start], end=[...run.start];start[axis]=a;end[axis]=b;
       pieces.push({start,end});
     }
-    return pieces;
+    if (!segment.pavement) return pieces;
+    return pieces.flatMap(paint => segment.pavement.filter(p=>p.width>=1.25).flatMap(p=>{
+      const a=Math.max(paint.start[axis],Math.min(p.start[axis],p.end[axis]));
+      const b=Math.min(paint.end[axis],Math.max(p.start[axis],p.end[axis]));
+      if (b-a<1e-8) return [];
+      const start=[...paint.start],end=[...paint.end];start[axis]=a;end[axis]=b;
+      return [{start,end}];
+    }));
   }
 
   function districtBuildings(scene, districtId) {

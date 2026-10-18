@@ -282,6 +282,8 @@ def derive_access_routes(scene, graph):
 
 def svg_access_lines(routing, project, overview=False, network_ids=None, hierarchy=None):
     """Traceable SVG polygons from the same shared segments used by the viewer."""
+    from metropogits.street_demand import demand_pavement, clip_paint
+    pavement = demand_pavement(routing, hierarchy)
     routes = routing["routes"]
     indices = {route["id"]: i for i, route in enumerate(routes)}
     allowed = {r["id"] for r in routes if network_ids is None or set(r["networkIds"]) & network_ids}
@@ -331,13 +333,20 @@ def svg_access_lines(routing, project, overview=False, network_ids=None, hierarc
                    f'{profile["buildingCount"]} files, {profile["crossDistrictEdgeCount"]} cross-major edges; '
                    'full-road static demand; ') if profile else ''
         visibility = 'visible ' if profile else ''
-        lines.append(f'<polygon data-access-segment-id="{segment["id"]}" data-route-indexes="{references}" '
-                     f'points="{encoded}" fill="{color}"{grade}><title>{summary}{len(active)} {visibility}evidenced relation paths; shared geometry only</title></polygon>')
+        polygons = ([p['points'] for p in pavement['segments'][segment['id']]]
+                    if pavement and segment['id'] in pavement['segments'] else None)
+        encodings = [' '.join(f'{float(x):.3f},{float(y):.3f}' for x,y in
+                     (project(a,b) for a,b in polygon)) for polygon in polygons] if polygons else [encoded]
+        for encoding in encodings:
+            lines.append(f'<polygon data-access-segment-id="{segment["id"]}" data-route-indexes="{references}" '
+                         f'points="{encoding}" fill="{color}"{grade}><title>{summary}{len(active)} {visibility}evidenced relation paths; shared geometry only</title></polygon>')
         if profile and segment['kind'] == 'DEPENDENCY_ROAD' and profile.get('lanePattern') == 'DASHED' and width >= 1.25:
             paints.append((segment, profile.get('marking', '#d4c6a5')))
     trims = junction_trims(routing, visible, widths)
     for segment, color in paints:
-        for paint in dash_segments(segment['start'], segment['end'], trims.get(segment['id'], (0, 0))):
+        raw = dash_segments(segment['start'], segment['end'], trims.get(segment['id'], (0, 0)))
+        pieces = pavement['segments'].get(segment['id']) if pavement else None
+        for paint in (part for item in raw for part in clip_paint(item,pieces)):
             a, b = paint['start'], paint['end']
             dx, dz = (0, .065) if a[1] == b[1] else (.065, 0)
             points = [project(a[0]-dx, a[1]-dz), project(b[0]-dx, b[1]-dz),

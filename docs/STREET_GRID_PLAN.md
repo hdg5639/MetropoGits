@@ -190,3 +190,17 @@ surface. Keep paths, fallbacks and demand values intact; do not describe the
 entire layered road model as continuous. Regular grids, empty parcels and
 aggregate silhouettes remain broader tasks, not reasons for endless per-trip
 micro-optimization. No default promotion of the street experiment.
+
+## Shared physical envelope / 2026-10-18
+
+Dependency pavement now fits inside the structural taper, not a wider rectangular
+second road. Remove repeated shoulder strips and additional rectangular junction
+fills; retain every connector, fallback and exact route. Inspector distinguishes
+physical width from the unchanged quantitative demand grade. HTTP/messaging are
+not reclassified. All three renderers share these derived polygon fragments.
+
+`artifacts/visual/shared-street-r2/{gj,oj}/after/index.html` and same-camera
+`shared-street-focus-r2/index.html` show the change. GJ's interrupted edge strips
+are visibly reduced; preview-scale change remains modest. Polygon count9209/2632
+for8011/2372 dependency segments is presentation cost, not added streets or edges.
+Keep this verified unit separate from the following structure-overlay declutter.

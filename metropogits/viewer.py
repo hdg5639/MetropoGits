@@ -10,6 +10,7 @@ from metropogits.streets import derive_street_grid
 from metropogits.access_routes import derive_access_routes
 from metropogits.road_hierarchy import derive_road_hierarchy
 from metropogits.structural_streets import street_rectangles
+from metropogits.street_demand import demand_pavement
 from scripts.canonical_json import canonical_json_bytes, sha256_digest
 from scripts.validate_city import validate_document as validate_city_document
 from scripts.validate_history import validate_document as validate_history_document
@@ -39,13 +40,17 @@ def _javascript_assignment(name: str, document: Any) -> bytes:
 
 def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -> bytes:
     routing = routing if routing is not None else derive_access_routes(scene, ucg)
+    hierarchy = derive_road_hierarchy(scene, routing)
+    surfaces = street_rectangles(routing) if 'streetGrid' in routing else None
+    pavement = demand_pavement(routing, hierarchy, surfaces)
     return _javascript_assignment(
         "METROPOGITS_DATA",
         {
             "scene": scene,
             "routing": routing,
-            "roadHierarchy": derive_road_hierarchy(scene, routing),
-            "streets": ({**derive_street_grid(scene), "structural": True, "surfaces": street_rectangles(routing)}
+            "roadHierarchy": hierarchy,
+            **({"streetDemand": pavement} if pavement is not None else {}),
+            "streets": ({**derive_street_grid(scene), "structural": True, "surfaces": surfaces}
                         if 'streetGrid' in routing else derive_street_grid(scene)),
             "territories": derive_district_territories(scene),
             "ucg": ucg,

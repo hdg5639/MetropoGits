@@ -4728,3 +4728,42 @@
   Next: shared layer envelope, then broader block/parcel readability.
 - Commit / push: one atomic work unit on experiment/street-grid; normal upstream
   push after closing checks. No private fixture artifacts or IDE caches staged.
+
+## Checkpoint 2026-10-18 — shared structural and dependency pavement
+
+- Implemented: a renderer-only intersection envelope, clipped paint and no
+  double shoulders/junction slabs. Every original centerline interval remains;
+  unchanged canonical scene/UCG/routing verified on GJ/OJ. Grade and measured
+  physical width range are now separately labeled in both inspectors.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896; catalog0.4.0. Fresh maintained
+  spring-positive/structural-showcase at parentffbe40a plus this work unit.
+- Commands: `python ../artifacts/visual/shared_street_review.py shared-street-r2`;
+  `python -m metropogits build --repo tests/fixtures/repositories/NAME --out OUT`
+  to shared-street-fixtures/{spring,unknown}; `python -m scripts.street_grid
+  BUILD --street-grid --aligned-blocks --out OUT` to spring-r2/unknown-r2 there.
+  Repeated polygons, source bytes and full per-segment length/clearance checked.
+- Actual visuals: `node ../artifacts/visual/parcel_focus_review.mjs shared-street-r2
+  shared-street-focus-r2`. Inspected gj-after/focused.png and oj-after/showcase.png.
+  Same cameras asserted; interrupted road-edge strips reduced, but large empty
+  parcels, repeated labels and district outlines remain. No grand city-completion
+  claim. Shared envelope introduces9209/2632 polygons, not additional relations.
+- Browser: `node scripts/viewer_audit.mjs CHROME OUT INPUT...` on GJ/OJ after
+  -> shared-street-audit-r2; Chrome152.0.7977.84 at
+  C:/Program Files/Google/Chrome/Application/chrome.exe, SwiftShader. Three LODs,
+  pan/orbit, filter, route inspection and Synthetic pass; static rebuilds0.
+  GJ Synthetic CPU p95=1.2-1.5ms, OJ1.5-1.9ms; not GPU FPS or a speedup claim.
+  `street_diagnostics_ui.mjs` on fresh spring-r2/unknown-r2 after directories
+  -> shared-street-canvas-r2 verifies real WebGL and forced Canvas, exact fallback
+  selection and empty unknown state without exceptions. Fresh WebGL/SVG also
+  captured through junction_smoke.mjs shared-street-fixtures.
+- Regression:462 Python tests,461 pass/1 existing Windows symlink skip;
+  seven Node suites45 pass; Ruff/diff checks. Tests cover complete interval
+  preservation, cap/clearance, non-overlapping crossings, legacy modes, source
+  metadata, paint clipping, filter-safe membership and Synthetic endpoints.
+- Spec alignment: PASS ADR-020/FR-011/012/AC-002/006/011/014. No schema, stable
+  ID, grade, route, assignment or source changes. No target code execution.
+- Next: default city view should not draw directory boundaries as additional
+  roads. Preserve exact selection/overlay access rather than deleting structure.
+- Commit/push: independently verified unit on experiment/street-grid; normal
+  upstream push after stage review, no private artifacts or agent attribution.

@@ -16,6 +16,26 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 const files=new Set(['A','B','C','D']), networks=new Set(['n']);
+
+test('shared pavement is presentation only and survives exact filtering and animation',()=>{
+  const pavement={segments:{shared:[{points:[[0,6],[7,6],[7,8],[0,8]],start:[0,7],end:[7,7],width:2,structural:true}]}};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing,null,pavement);
+  const frame=p.frame('detail',files,networks,{kind:'building',id:'A'});
+  assert.deepEqual([...frame.routeIds],['ab']);
+  assert.deepEqual(frame.segments.find(s=>s.id==='shared').pavement,pavement.segments.shared);
+  assert.deepEqual(p.position(frame.animated[0],1).point,[7,0]);
+  assert.deepEqual(p.network('shared',frame.routeIds).edgeIds,['edge-ab']);
+  assert.equal(p.frame('detail',new Set(['C','D']),networks,{kind:'building',id:'A'}).routes.length,0);
+});
+
+test('paint never crosses a narrowed pavement throat',()=>{
+  const s={id:'s',start:[0,0],end:[14,0],width:3.5,kind:'DEPENDENCY_ROAD',routeIds:['a'],
+    demand:{grade:'AVENUE',width:2.5,lanePattern:'DASHED'},
+    pavement:[{start:[0,0],end:[7,0],width:.75},{start:[7,0],end:[14,0],width:2.5}]};
+  const paint=globalThis.METROPOGITS_FILTERS.accessMarkingSegments(s,new Map());
+  assert.ok(paint.length);
+  assert.ok(paint.every(p=>p.start[0]>=7&&p.end[0]<=14));
+});
 test('fallback review is paged, filter-aware and honest for legacy artifacts',()=>{
   const input=structuredClone(routing);
   input.routes=Array.from({length:70},(_,i)=>({...input.routes[1],id:`r${i}`}));

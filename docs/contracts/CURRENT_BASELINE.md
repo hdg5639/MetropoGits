@@ -435,3 +435,13 @@ width. Polygons remain subsets of previous clearance rectangles. Sampling is
 capped at500000 with an explicit error, not silent street truncation.
 Equal-slope pieces coalesce; order is deterministic. Legacy structural0.1 and
 normal nonexperimental output retain their prior form.
+
+`streetDemand` (`street-demand-surfaces/0.1`) is optional renderer data for the
+aligned experiment. Its segment-ID-keyed polygons intersect each dependency
+segment's demand/clearance cap with collinear structural pavement. Perpendicular
+crossings do not count as coverage. Uncovered intervals remain intact at their
+original certified width; HTTP/messaging retain their category geometry.
+No path, identity, source/destination, grade or assignment changes. Inspector
+separates physical width range from demand cap/target. Paint clips to sufficiently
+wide pieces and junction fills cannot enlarge the resulting envelope. All
+renderers use the same polygons; the500000-piece cap fails explicitly.

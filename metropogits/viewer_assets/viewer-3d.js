@@ -424,7 +424,7 @@
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
-  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy);
+  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand);
   let accessFrame = null;
   function networkForId(id) {
     return accessPolicy?.network(id, accessFrame?.routeIds) || scene.networks.find(network => network.id === id);
@@ -863,8 +863,14 @@
           [segment.end[0],0.22,segment.end[1]], color("#67d7ff"));
       }
       const style = roadStyles.get(segment.id), width = style.width;
-      roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
-      roadSegment(triangles, segment.start, segment.end, width * 0.82, 0.14, color(style.surface));
+      if (segment.pavement) {
+        for (const piece of segment.pavement) {
+          quad(triangles, piece.points.map(([x,z]) => [x,.14,z]), [0,1,0], color(style.surface));
+        }
+      } else {
+        roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
+        roadSegment(triangles, segment.start, segment.end, width * 0.82, 0.14, color(style.surface));
+      }
       for (const marking of filterEngine.accessMarkingSegments(segment, junctionGeometry.trims)) {
         roadSegment(triangles, marking.start, marking.end, Math.min(0.13, width * 0.12), 0.18,
           color(segment.kind === "DEPENDENCY_ROAD" ? style.marking : networkColors[segment.kind]));
@@ -1749,7 +1755,9 @@
       detailRow(details, "Major structural districts", demand.majorDistrictCount);
       detailRow(details, "Cross-major edges", demand.crossDistrictEdgeCount);
       detailRow(details, "Files outside major districts", demand.unassignedBuildingCount);
-      detailRow(details, "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
+      const pavementWidth=accessPolicy?.network(networkId)?.pavementWidth;
+      detailRow(details, pavementWidth ? "Demand cap / target width" : "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
+      if (pavementWidth) detailRow(details,"Physical width range",`${pavementWidth.min.toFixed(2)} – ${pavementWidth.max.toFixed(2)} · shared street envelope`);
       inspector.append(element("p", "Grade uses full-road static dependency demand, not runtime traffic. Filters and path selection do not change it. Trunk demand does not imply highway geometry.", "muted"));
     }
     inspector.append(details);

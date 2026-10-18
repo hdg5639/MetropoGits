@@ -45,7 +45,7 @@
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
-  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy);
+  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand);
   let accessFrame = null;
   let accessPaint = new Map();
   function networkForId(id) {
@@ -835,6 +835,15 @@
     for (const segment of accessFrame?.segments || []) {
       const points = [segment.start, segment.end].map(p => project(...p, 0.15));
       const style = filterEngine.accessRoadStyle(segment), width = style.width;
+      if (segment.pavement) {
+        for (const piece of segment.pavement) {
+          polygonPath(piece.points.map(([x,z]) => project(x,z,.14)));
+          context.fillStyle = style.surface;
+          context.fill();
+        }
+        hitRegions.push({kind:"network",id:segment.id,points});
+        continue;
+      }
       context.beginPath();
       context.moveTo(points[0].x, points[0].y);
       context.lineTo(points[1].x, points[1].y);
@@ -1210,7 +1219,9 @@
       detailRow(details, "Major structural districts", demand.majorDistrictCount);
       detailRow(details, "Cross-major edges", demand.crossDistrictEdgeCount);
       detailRow(details, "Files outside major districts", demand.unassignedBuildingCount);
-      detailRow(details, "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
+      const pavementWidth=accessPolicy?.network(networkId)?.pavementWidth;
+      detailRow(details, pavementWidth ? "Demand cap / target width" : "Rendered / target width", `${demand.width} / ${demand.targetWidth}${demand.clearanceLimited ? ' · clearance limited' : ''}`);
+      if (pavementWidth) detailRow(details,"Physical width range",`${pavementWidth.min.toFixed(2)} – ${pavementWidth.max.toFixed(2)} · shared street envelope`);
       inspector.append(element("p", "Grade uses full-road static dependency demand, not runtime traffic. Filters and path selection do not change it. Trunk demand does not imply highway geometry.", "muted"));
     }
     inspector.append(details);
