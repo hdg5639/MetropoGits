@@ -19,6 +19,7 @@ from .landscape import generate_landscape
 from .rivers import bridge_faces, height_at
 from .street_hierarchy import COLORS as STREET_COLORS, marking_surfaces
 from .elevation import surface as terrain_surface, pavement as graded_pavement, lifted_faces, foundation_faces
+from .street_mesh import street_mesh, VERSION as STREET_MESH_VERSION
 
 GROUND = ["#33464b", "#4a4149", "#354b42", "#504835", "#3e4454", "#4e3c42", "#3b4c50"]
 ZONE_COLORS = {
@@ -194,6 +195,8 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic")
             dict(points=[b, b, a, list(p)], color=pavement_color)
             for a, b in zip(ring, ring[1:] + ring[:1])
         )
+    if 'streetPlan' in world:
+        surfaces=street_mesh(world)
     pavement = dict(
         version="world-pavement/0.1",
         segments={
@@ -223,6 +226,7 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic")
         streets=dict(
             structural=True,
             surfaces=surfaces,
+            **(dict(meshVersion=STREET_MESH_VERSION) if 'streetPlan' in world else {}),
             orientedEntityIds=sorted(models),
             rectangles=[],
         ),
@@ -376,7 +380,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
                 continue
             lines.append(polygon([project(p, .01) for p in patch["polygon"]],
                                  patch["color"], 'data-decorative="green-pocket"'))
-    for s in world["streets"]:
+    for s in ([] if 'streetPlan' in world else world["streets"]):
         road_color = (STREET_COLORS[world["streetPlan"]["segments"][s["id"]]["streetClass"]]["overview"]
                       if "streetPlan" in world else "#26333e")
         if graded:
@@ -389,6 +393,12 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
                 road_color,
             )
         )
+    if 'streetPlan' in world:
+        for p in street_mesh(world):
+            color=STREET_COLORS[p['streetClass']]['overview']
+            heights=p.get('pointHeights',[.08]*len(p['points']))
+            lines.append(polygon([project(v,y) for v,y in zip(p['points'],heights)],color,
+                                 'data-structural="street-mesh"'))
     for p in marking_surfaces(world):
         if p["streetClass"] != "ARTERIAL":
             continue
