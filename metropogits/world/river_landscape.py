@@ -90,6 +90,30 @@ def _crossing(a,b,p,water,seed):
                 heights=[.08,deck,deck,.08],width=4.5,maxGrade=.16,clearance=q(deck-.09),structural=True)
 
 
+def _bridge_conflict(candidate, crossings):
+    """Separate entire bridge approaches, not only their over-water decks."""
+    return any(overlap(ribbon(a,b,candidate["width"]+.3),ribbon(c,d,other["width"]+.3))
+               for other in crossings
+               for a,b in zip(candidate["path"],candidate["path"][1:])
+               for c,d in zip(other["path"],other["path"][1:]))
+
+
+def _planned_crossing(a,b,fraction,water,seed,envelope,crossings):
+    # Fixed, local alternatives preserve the water/terrain seed and earlier
+    # feasible bridges. Never change heights to hide intersecting sloped ramps.
+    for offset in (0,-.15,.15,-.3,.3):
+        at=max(.05,min(.95,fraction+offset))
+        p=point([a[j]+at*(b[j]-a[j]) for j in (0,1)])
+        crossing=_crossing(a,b,p,water,seed)
+        if not crossing or not all(inside(p,envelope) for p in crossing["path"]):
+            if offset==0:
+                return None  # Preserve prior no-crossing outcomes, not a new bridge search.
+            continue
+        if not _bridge_conflict(crossing,crossings):
+            return crossing
+    raise ValueError("river bridge approaches cannot be separated within placement budget")
+
+
 def generate_landscape_terrain(envelope, seed):
     from .elevation import generate_valley, surface
     from .rivers import _feature
@@ -121,9 +145,8 @@ def generate_landscape_terrain(envelope, seed):
     # and the smaller stream, rather than losing a bridge at the confluence.
     crossings=[]
     for i,(a,b,fraction) in enumerate(((line[1],line[2],.5),(line[6],line[7],.5),(*branch[:2],.42))):
-        p=point([a[j]+fraction*(b[j]-a[j]) for j in (0,1)])
-        crossing=_crossing(a,b,p,water,derive(seed,"crossing",str(i)))
-        if crossing and all(inside(p,envelope) for p in crossing["path"]):
+        crossing=_planned_crossing(a,b,fraction,water,derive(seed,"crossing",str(i)),envelope,crossings)
+        if crossing:
             crossings.append(crossing)
     ridge,axis=_ridge(envelope,[ends[0],*line,ends[1]],water,seed)
     features=water+([ridge] if ridge else [])

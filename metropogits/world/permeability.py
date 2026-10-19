@@ -216,7 +216,10 @@ def reserve_links(plans, main, boundary, polygon, pattern, required, terrain=Non
                         continue
                     if terrain and "elevation" in terrain:
                         from .elevation import surface
+                        from .rivers import blocks_ground_connection
 
+                        if blocks_ground_connection(a,b,terrain):
+                            continue
                         profile = surface(terrain).profile(a, b)
                         if any(
                             abs(y[2] - x[2]) / math.dist(x[:2], y[:2]) > 0.1598

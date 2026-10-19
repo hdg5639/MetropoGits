@@ -7412,3 +7412,86 @@
   upstream before normal push; actual push outcome is checked at handoff.
   Generated worlds/Chrome captures/helpers and input clones stay outside Git.
   Three pre-existing fixture build caches remain untracked and untouched.
+
+## Checkpoint 2026-10-19 — Repair rejected bridge-approach geography
+
+- Implemented: localized terrain-first bridge reservation repair, plus rejection
+  of porous ground-alley connections into elevated bridge spans. Retain earlier
+  safe bridges, natural water/height field, bridge identity, original source
+  facts, strict certificates, grade/clearance/junction tolerances and work caps.
+  Try original+four fixed fractions on the same reach only when the original
+  feasible candidate conflicts with another full bridge/approach. Exhaustion
+  fails explicitly; an originally infeasible candidate remains absent.
+- Fixture/revision: engine starting0bae646 on feat/semantic-zoning. Maintained
+  48-file Spring service/persistence/helper fixture from test_world_neighborhoods,
+  user-seedhierarchy-test => normalizedf5cf1d027b1e287d. Its unmodified baseline
+  failed before this feature;49-file hinted variant adds only zz_extra.rs.
+  Frozen GJ/OJ/PocketBase/SQLiteBrowser/Hanul revisions and seeds are the same
+  pinned records as the preceding RC-00/01 checkpoint,3211files/5793trips/8603edges.
+- Cause/evidence: old bridges7fc3795aa0068488/ce336759d9a10c76 intersected at
+  [-0.5684,22.7705] with heights0.5565/0.2415, not a floating-point tolerance
+  issue or building-foundation problem. Full-approach clearance relocated only
+  bridge7fc3795aa0068488. This exposed a second defect: a porous1.8-unit ground
+  alley attached to an elevated ramp at [-9.845,10.3185], height0.08 vs0.7821.
+  Candidate intersection checks now reject such false at-grade joins, while
+  retaining valid flat bank-end access. No fake flyover/flattened bridge repair.
+- Commands (cwd MetropoGits):
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/bridge_junction_review.py',run_name='__main__')" bridge-junction-before-r2` before edits;
+  repeat after fix with output bridge-junction-after-r2;
+  `python -X utf8 -m metropogits build --repo ../artifacts/visual/bridge-junction-after-r2/fixture --repo-id fixture/neighborhoods --out ../artifacts/visual/bridge-stability-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/bridge-stability-e2e-r1/build --seed hierarchy-test --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --terrain river-landscape --street-hierarchy --out ../artifacts/visual/bridge-stability-e2e-r1/world`;
+  repeat last command with out bridge-stability-e2e-r1/repeat;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/bridge_junction_verify.py',run_name='__main__')"`;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/bridge_junction_corpus.py',run_name='__main__')"`;
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/bridge-stability-reviewed-r1 ../artifacts/visual/bridge-junction-after-r2/viewer ../artifacts/visual/street-hierarchy-r2/gj/after ../artifacts/visual/street-hierarchy-r2/oj/after ../artifacts/visual/street-hierarchy-r2/sqlitebrowser/after`;
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/bridge-stability-canvas-r1 ../artifacts/visual/bridge-junction-after-r2/viewer`;
+  `python -X utf8 -m unittest discover -s tests -q`;
+  `$testFiles=(rg --files tests -g '*.test.mjs'); node --test $testFiles`;
+  `python -m ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; `git diff --check`.
+- Artifacts inspected: old failure and joint certificates in
+  bridge-junction-before-r2 (diagnostics only, not a packaged invalid city);
+  corrected viewer bridge-junction-after-r2/viewer; actual Chrome WebGL/CPU
+  Overview/Detail/showcase/route-inspector at bridge-stability-reviewed-r1/case-1.
+  Real forced Canvas navigation, member evidence and Structure restore in
+  bridge-stability-canvas-r1. GJ/OJ/SQLite actual three-LOD browser regression
+  included; five frozen worlds independently revalidated against final producer.
+- Result: formerly rejected48-file input now validates48 accessible buildings,
+  32 exact trips/32 represented edges,217 atomic streets,3 physical bridges,
+  0 building/road overlaps and0 owner escapes. Same source City/UCG bytes,
+  natural features/channel/elevation and48 original complete parcel frames as
+  the previously INVALID geography; one bridge alignment changed as intended.
+  Existing five VALID corpus worlds keep exact terrain/crossings/permeability/
+  parcels/source data and pass full validation. No broad city regeneration.
+- Visual findings: corrected small city actually renders with through main
+  river/tributary and three separated bridge approaches; source buildings stay
+  in mixed service/persistence neighborhoods with their original rotations.
+  No claim of a new urban look or completed CAMPUS: this restores a broken
+  end-to-end seed. Small scene retains visible thin land-edge seams and some
+  close bank junctions; material/bridge appearance remains later design work.
+- Tests/determinism/stability:664 Python tests run,1 Windows symlink skip;
+  63 Node tests pass, Ruff/compileall pass. Four new regression tests exercise
+  full-span bridge conflict, fixed-budget retries/no dropped blocked crossing,
+  flat-bank vs elevated-ground joins, and actual48→49 hinted regeneration.
+  Original strict bridge/profile/terrain/schema validators unchanged. World/
+  planning schemas pass;17 final package artifacts match byte-for-byte across
+  two CLI runs and a third API reconstruction. Hinted growth preserves initial
+  terrain and48 original complete frames. WebGL four inputs×three LODs retain
+  source edge/route drill-down; Synthetic movement and static builds0 measured
+  where source routes exist, explicitly not applicable for SQLite's0 routes.
+- Spec alignment: PASS. Re-read technical geometry/normalization/networks/
+  rendering and resource bounds, functional AC-002/003/006/008/009/011/014 and
+  product deterministic/evidence/local-first principles. Meets new road/campus
+  design4.3 bridge connectivity/grade and8.1 hard geometry gates; this is a
+  repair inside approved architecture, not a public schema or stable-ID change.
+  No target dependency installation/build/execution, runtime AI/API or forged
+  traffic. Canonical terrain repair is limited to formerly invalid conflicts.
+- Open risks/next actions: not universal seed feasibility or a general grade-
+  separated interchange solver. Other infeasible candidates still fail safely.
+  CAMPUS CP-00/01 remains next: bounded evidence-based weighted eligibility,
+  capacity-aware pre-reserved shared space and real connected walking access;
+  never unconditional test=>campus or ornamental paths impersonating code facts.
+- Commits/delivery: cohesive fix/tests/contract notes/checkpoint on the existing
+  feature branch. Check human metadata/explicit staged paths and normal intended
+  upstream push at handoff. No generated worlds/Chrome images/helpers in Git;
+  existing fixture build caches untouched. Exact commit/push verified at delivery.
