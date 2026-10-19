@@ -8112,3 +8112,86 @@
   feat/semantic-zoning. Configured human author/committer verified; normal upstream
   push is the delivery step after this log commit. No generated
   packages/clones/helpers or pre-existing fixture caches are staged.
+
+## Checkpoint 2026-10-19 — reject repeated spokes and restore World role compounds
+
+- User correction:0.5's fixed six-ray fan and universal ellipse failed visual
+  acceptance despite passing geometry tests. Acknowledge that result rather
+  than defending it with yaw counts. Also confirm an actual regression: World
+  marked every source oriented and the legacy LOD filter removed all aggregates.
+- Implemented: ADR-051 `fabric` / campus-plan/0.6, separate non-radial malls,
+  open arcades and staggered garden lanes with distinct commons outlines and
+  local bearings from actual streets. Keep whole source neighborhoods, graph
+  affinity, capacity/terrain/access gates; no0.5 fan fallback. ADR-052 restores
+  checked rotated role compounds offline without removing the old orientation
+  guard. CPU/WebGL/Canvas share models; retain exact members/evidence, all-LOD
+  persistence, explicit expansion, filters and source-route inspection.
+- Fixtures/revisions: GJ local-sha256-06eb492d57141c16, OJ
+  local-sha256-c2e80f9d3908fec8, PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522, SQLiteBrowser
+  ae32df153a64d250de7c77a5057deeff4092a39b. Fresh48-file campus source fixture
+  at ../artifacts/visual/campus-e2e-r1/fixture. Same terrain as previous delivery.
+- Commands from repository root:
+  `python ../artifacts/visual/organic_review.py organic-campus-r2 campus-fabric-r1 gj oj pocketbase sqlitebrowser` with CAMPUS_STYLE=fabric;
+  `python ../artifacts/visual/campus_neighborhood_verify.py campus-fabric-r1 gj oj pocketbase sqlitebrowser`;
+  `python ../artifacts/visual/campus_fabric_package.py campus-fabric-r3 gj oj pocketbase sqlitebrowser`;
+  same package helper with `world-compounds-r2 gj oj` for same-World comparison;
+  `python ../artifacts/visual/fabric_integrity.py`;
+  `python ../artifacts/visual/verify_inherited_compatibility.py`;
+  `python -m unittest discover -s tests`; `node --test tests/*.test.mjs`.
+  Fresh input pipeline:
+  `python -m metropogits build --repo ../artifacts/visual/campus-e2e-r1/fixture --repo-id fixture/campus --out ../artifacts/visual/campus-fabric-e2e-r1/build --json`;
+  `python scripts/procedural_world.py ../artifacts/visual/campus-fabric-e2e-r1/build --out ../artifacts/visual/campus-fabric-e2e-r1/world --seed campus-fixture --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied --street-policy porous --street-hierarchy --campus --campus-style fabric`;
+  repeat with output ../artifacts/visual/campus-fabric-e2e-r1/repeat.
+- Actual renderer commands/artifacts:
+  `node ../artifacts/visual/campus_focus.mjs campus-fabric-r3 campus-fabric-reviewed-r2 gj oj pocketbase sqlitebrowser`;
+  same helper with `world-compounds-r2 world-compounds-reviewed-r2 gj oj`;
+  same helper with `campus-fabric-r3 campus-fabric-canvas-r2 gj oj sqlitebrowser`, CAMPUS_CANVAS=1;
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/campus-fabric-audit-r2 ../artifacts/visual/campus-fabric-r3/gj/after ../artifacts/visual/campus-fabric-r3/oj/after ../artifacts/visual/campus-fabric-r3/pocketbase/after ../artifacts/visual/campus-fabric-r3/sqlitebrowser/after ../artifacts/visual/campus-fabric-e2e-r1/world`.
+  Inspected actual GJ/OJ campus before/after and gate/test compound close-ups,
+  final CPU GJ showcase raster and OJ Canvas overview. No mockup proof.
+- Observed: GJ86/50-source and OJ64-source campuses use distinct non-radial
+  components; no fan paths or identical16-vertex ellipse requirement. Actual
+  GJ136/OJ64 frames change, outside these neighborhoods0. Terrain/surface/envelope/
+  districts identical; canonical City/UCG identical. GJ built streets5046->4953,
+  OJ2875->2789. PB/SQLite geometry retained, no fabricated campus or compound.
+  Total trip length vs0.5 GJ+0.283%, OJ-0.023%; not a road-optimization claim.
+- Compound evidence: GJ2 page halls plus1 test center,4 files each (12 total);
+  OJ4 test centers,4/4/5/5 files (18 total). Do not imply all gates/tests merged.
+  Sixteen-source compact rotated fixture really promotes to the larger tier.
+  Real GJ/OJ browser hover, exact member list, source path, focused constituent,
+  explicit expand (individuals reappear), collapse and all-route inspection pass.
+  Same-World aggregate comparison preserves all four canonical artifact bytes.
+- Safety/regression: at most16 members/56-unit spans;50000 candidate tests,
+  300000 clearance checks/500000 index entries. Whole display degrades to source
+  individuals on exhaustion. Reject public-road, unrelated parcel, natural/court
+  and previous-compound envelope overlap. Only a member's own final door stub is
+  allowed at its original building. All original entrances/routes stay unchanged.
+  Keep old axis-aligned safety guard; do not unconditionally enable old masses.
+- Tests/determinism:708 Python checks, one existing Windows symlink skip;68 Node
+  checks. Full source set3175 files/5782 trips/8592 edges conserved on4 real repos;
+  separate fresh fixture48/24/24. All buildings accessible; source building/road
+  overlaps and owner escapes0. Four World byte-exact repeats,12 older World goldens
+  exact,17 fresh CLI artifacts exact,4 schemas and64 manifest hashes pass.
+  Named48->49 hinted growth retains all48 complete frames. Independent
+  reconstruction rejects forged composition labels; seed tests cover three
+  different outline/path topologies, not only rotation. New tests cover role/
+  module/terrain/occupant separation, bounds, legacy guard, partial filters,
+  expansion and compound non-overlap. No failing gate was weakened.
+- Performance/spec audit: GJ generation70.94s/OJ17.81s/PB11.03s/SQLite7.56s in
+  this run; not an isolated speedup benchmark. Actual5-case3LOD audits pass,
+  Synthetic static builds0, SQLite explicitly N/A. Concurrent SwiftShader first
+  draw submission101.6..2404.0ms and Synthetic JS CPU p95 about0.5..2.3ms; not FPS
+  or GPU completion. No new runtime dependency, AI/cloud, target execution,
+  UCG/City schema change or invented source meaning. PASS against campus design
+  5.1..5.4, technical7/8/10, AC-002/003/006/008/009/011/014, DEC-005..009/011.
+- Open risks: only three current composition families, still some long peripheral
+  rows; not all campus/riverside/service-access/architecture variants complete.
+  A universal ordinary-block aggregate on rotated terrain is not restored: this
+  explicitly fixes eligible role facilities.0.5 remains reproducible but rejected
+  as the recommended visual baseline. Earlier r1/r2 packaging is diagnostic;
+  final code packages are campus-fabric-r3 and world-compounds-r2.
+- Commits/delivery:6244eb3 campus,66c5cba rotated compound restoration, then this
+  checkpoint. Configured human author/committer metadata verified; ordinary
+  upstream feat/semantic-zoning push follows this log commit. Generated outputs/helpers and pre-existing caches
+  remain outside staging.

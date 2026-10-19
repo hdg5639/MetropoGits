@@ -1315,3 +1315,30 @@ affected campus interior frames and source-trip geometry deliberately change.
 Exact original source/target/edge identities must be conserved. No per-frame
 planning is added. This does not complete riverside-specific design, emergency
 vehicle semantics, or all natural campus variants.
+
+### Non-radial campus compositions and rotated role compounds — ADR-051/052
+
+User visual review rejected the0.5 fan as repeated sunburst emblems despite
+passing geometry checks. Keep0.5 reproducible, not the recommended baseline.
+Optional `--campus-style fabric`, campus-plan/0.6, combines meandering malls,
+open arcades and staggered garden lanes with different convex commons outlines.
+Use real neighboring street bearings, zone/terrain clearance and connected
+feasible frontage runs. Full membership and graph-aware source assignment remain;
+fallback is the complete0.4/0.3 precinct, never the rejected0.5 spokes.
+
+World export previously marked every building oriented, so the legacy LOD guard
+removed every aggregate. Do not remove that safety guard. Offline
+`world-role-compounds/0.1` supplies separately checked rotated envelopes for at
+least4 adjacent same-evidence page/API/gate/test files, bounded by module/zone,
+source occupancy, public streets, commons and nature. Absorb all eligible
+occupants; never cover an omitted unrelated source. Only members' own final door
+stubs can meet their building envelope. At most16 members and56-unit spans,
+300000 clearance checks/500000 index entries; exhaustion retains individuals.
+
+CPU/WebGL/Canvas share actual oriented compound models. Existing LOD/inspector
+keeps compounds at all zooms, lists exact source members/evidence and explicitly
+expands originals; filtering and selected-source routes remain exact. World,
+City, UCG, planning, source entrances and paths are unchanged by aggregation.
+The export-only `role_compounds=False` option is available for controlled
+same-World comparisons. Generic overview plates remain excluded on rotated
+World geometry. This restores eligible role landmarks, not arbitrary mass merging.
