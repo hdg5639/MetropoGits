@@ -16,6 +16,16 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 
+test('mountain tunnel inspection retains its exact source routes and physical height',()=>{
+  const input=structuredClone(routing),s=input.segments.find(s=>s.id==='shared');
+  Object.assign(s,{tunnelId:'mountain-pass',heights:[2,3],heightProfile:[[0,7,2],[7,7,3]]});
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy(input);
+  assert.equal(p.network('shared').tunnelId,'mountain-pass');
+  assert.deepEqual(p.network('shared').edgeIds,['edge-ab','edge-cd']);
+  assert.deepEqual(p.network('shared',new Set(['ab'])).edgeIds,['edge-ab']);
+  assert.equal(globalThis.METROPOGITS_FILTERS.accessHeight(s,[3.5,7]),2.5);
+});
+
 test('graded paths use interior elevation breakpoints and one shared ground lattice',()=>{
   const f=globalThis.METROPOGITS_FILTERS;
   const segment={start:[0,0],end:[20,0],heights:[0,0],heightProfile:[[0,0,0],[10,0,4],[20,0,0]]};

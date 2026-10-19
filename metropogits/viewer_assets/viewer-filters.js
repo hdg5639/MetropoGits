@@ -1068,6 +1068,7 @@
       const contributing = segment.routeIds.filter(key => !activeRouteIds || activeRouteIds.has(key));
       return {id, kind: segment.kind, path: segment.path, routeIds: contributing, demand:segment.demand,
         ...(segment.bridgeId ? {bridgeId:segment.bridgeId,heights:segment.heights} : {}),
+        ...(segment.tunnelId ? {tunnelId:segment.tunnelId,heights:segment.heights} : {}),
         pavementWidth:segment.pavement ? {min:Math.min(...segment.pavement.map(p=>p.width)),
           max:Math.max(...segment.pavement.map(p=>p.maxWidth ?? p.width))} : null,
         edgeIds: [...new Set(contributing.flatMap(key => routes.get(key).edgeIds))].sort()};

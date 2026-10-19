@@ -1892,6 +1892,7 @@
     detailRow(details, "Graph edges", network.edgeIds.length);
     detailRow(details, "Route points", network.path.length);
     const crossing=accessPolicy?.network(networkId);
+    if(crossing?.tunnelId) detailRow(details,"Structural mountain tunnel",crossing.tunnelId);
     if(crossing?.bridgeId) {
       detailRow(details,"Structural bridge",crossing.bridgeId);
       detailRow(details,"Deck height (world units)",crossing.heights.map(y=>y.toFixed(2)).join(" → "));

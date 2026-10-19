@@ -17,6 +17,9 @@ MAX_WORK = 2_000_000
 def generate_terrain(envelope, seed, preset=PRESET):
     """Only demand-sized land and seed are inputs. No buildings/streets exist yet."""
     if preset != PRESET:
+        from .river_landscape import PRESET as LANDSCAPE_PRESET, generate_landscape_terrain
+        if preset == LANDSCAPE_PRESET:
+            return generate_landscape_terrain(envelope,seed)
         from .elevation import PRESET as VALLEY_PRESET, generate_valley
         if preset == VALLEY_PRESET:
             return generate_valley(envelope, seed)
@@ -137,7 +140,7 @@ def terrain_plan(plans, main, boundary, ports, pattern, polygon, terrain):
     adapted_main = adapt_roads(main+boundary, terrain)
     if terrain.get("crossings"):
         from .rivers import river_roads
-        for i, r in enumerate(river_roads(terrain)):
+        for i, r in enumerate(river_roads(terrain,polygon if terrain.get("version")=="terrain/0.4" else None)):
             from .geometry import ribbon
             if overlap(ribbon(r["start"], r["end"], r["width"]), polygon):
                 adapted_main.append(dict(r, id="world:river-road:"+derive(pattern["id"],str(i)),
@@ -177,14 +180,15 @@ def terrain_plan(plans, main, boundary, ports, pattern, polygon, terrain):
 def validate_terrain(terrain, seed):
     from .rivers import VERSION as RIVER_VERSION, MAX_FEATURES
     from .elevation import VERSION as VALLEY_VERSION
+    from .river_landscape import VERSION as LANDSCAPE_VERSION
 
     if (not isinstance(terrain, dict) or terrain.get("version") != VERSION
             or not 3 <= len(terrain.get("initialEnvelope", [])) <= 512
             or not 1 <= len(terrain.get("features", [])) <= 5):
-        if (not isinstance(terrain, dict) or terrain.get("version") not in (RIVER_VERSION, VALLEY_VERSION)
+        if (not isinstance(terrain, dict) or terrain.get("version") not in (RIVER_VERSION, VALLEY_VERSION, LANDSCAPE_VERSION)
                 or not 3 <= len(terrain.get("initialEnvelope", [])) <= 512
                 or not 1 <= len(terrain.get("features", [])) <= MAX_FEATURES
-                or not 1 <= len(terrain.get("crossings", [])) <= 3):
+                or not 1 <= len(terrain.get("crossings", [])) <= (4 if terrain.get("version")==LANDSCAPE_VERSION else 3)):
             raise ValueError("invalid terrain payload or resource limit")
     expected = generate_terrain(terrain["initialEnvelope"], seed, terrain.get("preset"))
     if expected != terrain:

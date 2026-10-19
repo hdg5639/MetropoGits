@@ -1,5 +1,46 @@
 # Current implementation contract baseline
 
+## Open river landscape and conditional mountain passes — 2026-10-19
+
+[ADR-039](../adr/ADR-039.md) adds opt-in `river-landscape`, terrain/0.4 and
+terrain-adaptive/0.4. Canonical City/UCG and all existing generator versions are
+unchanged. The older bounded river/valley prototypes retain their original meaning.
+
+Before streets/parcels, extend the same main river's end cross sections beyond
+the bounded urban repair domain and connect one narrower tributary. No terminal
+pools. Fixed topology has11 main stations,3 tributary stations and12 convex water
+reaches. The shared height field includes both water paths. Only open water
+reserves may extend beyond the urban envelope; independent validation checks
+that both main ends and the stream end stay outside, not trapped in a larger city.
+Renderers clip one shared natural mesh to the final boundary; this is not water
+regeneration after urban placement. Bank streets are clipped to current land.
+
+One elongated protected ridge is selected where the initial envelope allows it.
+It is procedural natural terrain, not an inferred code role. Up to one tunnel
+candidate joins existing mountain contour roads. After ordinary streets are
+routed, retain a mountain crossing only if an actual source-backed shortest
+trip uses it. No traffic is created to justify a tunnel; unsupported/no-edge
+input does not construct one. Complete spans, widths, cover, water exclusion,
+height profiles and exact logical endpoints/edge IDs are independently checked.
+
+The slope-aware road/picking/animation profile follows the base terrain under
+the ridge. A genuine passage prism is subtracted from the ridge surface; open
+portal lintels and interior lining share CPU/WebGL/Canvas geometry. Selected
+paths remain complete x-ray traces; ordinary cars are occluded by the mountain.
+The inspector discloses the structural tunnel separately from evidence records.
+
+New-mode clipping seams within0.0005 units are joined deterministically while
+source entrance/frontage and certified crossing anchors remain pinned. This
+repairs quantization cracks, not merging unrelated streets. One actual vacant
+address per new district is required for practical hinted growth. Version
+changes may still reallocate the city; land cost must be reported, not hidden.
+
+Bounds:24 features,4 crossings,1 tunnel candidate,2M shore/junction work and
+50k raw junction roads, plus prior terrain/mesh/route/parcel/repair limits.
+Mountain height is capped at35 procedural units. Sparse land may have no ridge
+or tunnel. General watershed hydrology, curved civil-engineering tunnels,
+steep switchbacks and arbitrary mountain chains are not implemented.
+
 ## Graded valley, shared street profiles and foundations — 2026-10-19
 
 [ADR-038](../adr/ADR-038.md) adds opt-in `river-valley`, terrain/0.3 and

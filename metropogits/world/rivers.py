@@ -131,7 +131,7 @@ def generate_river(envelope, seed):
                 crossings=crossings)
 
 
-def river_roads(terrain):
+def river_roads(terrain, polygon=None):
     """Exposed union banks only: no internal tile loops or per-road bridges."""
     from .terrain import outside
 
@@ -150,6 +150,10 @@ def river_roads(terrain):
             roads.extend(dict(start=a,end=b,width=3.5,access=False) for a,b in pieces)
     roads.extend(dict(start=a,end=b,width=c["width"],access=False)
                  for c in terrain["crossings"] for a,b in zip(c["path"],c["path"][1:]))
+    if polygon is not None:
+        from .river_landscape import clip_line
+        roads=[dict(r,start=p[0],end=p[1]) for r in roads
+               if (p:=clip_line(r["start"],r["end"],polygon))]
     return roads
 
 
