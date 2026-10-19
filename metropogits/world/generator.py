@@ -635,6 +635,14 @@ def generate_world(
             used={s["physicalId"] for s in new_routing["segments"]}
             if any(s.get("tunnelId")==tunnel["id"] and s["id"] in used for s in candidate):
                 streets,routing,networks,coverage=candidate,new_routing,new_networks,new_coverage
+    if campus and campus_style == "neighborhood":
+        from .campus_circulation import prune_campus_tails
+
+        streets, circulation_note = prune_campus_tails(
+            streets, [b["campusSite"] for b in development_blocks if "campusSite" in b],
+            main_roads + boundaries, parcels, routing,
+        )
+        planning_diagnostics.append(circulation_note)
     reused = sorted(grouped) if compatible and attempt == 0 else []
     if zoned:
         reused = sorted(reused_zoned) if compatible and attempt == 0 else []
