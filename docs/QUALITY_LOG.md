@@ -7849,3 +7849,83 @@
   checkpoint unit on `feat/semantic-zoning`; inspect human commit metadata and
   normal upstream push at handoff. Generated artifacts/clones/helpers stay
   outside source control; the pre-existing three fixture caches are untouched.
+
+## Checkpoint 2026-10-19 — Purposeful campus walking circulation (ADR-046)
+
+- Implemented: deletion-only `campus-circulation/0.1` after atomic intersections,
+  access and exact source routing. Remove walking graph tails only beyond useful
+  frontage/public circulation; retain all courts, promenades, exterior gates,
+  generic/unreferenced-file access, non-campus reserves, crossings and trip
+  pavement. No building motion, semantic change or per-frame work. Work limits
+  retain the original complete graph. Existing quad/varied modes are untouched.
+- Fixture(s) / revision(s): frozen `campus-neighborhood-r2` scene/UCG corpus from
+  d7393de. GJ local-sha256-06eb492d57141c16; OJ local-sha256-c2e80f9d3908fec8;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b;
+  Hanul7432c67e91f472e7e9c3be54c07dcb7cbe4837d8. Same namespaces/seeds, options,
+  terrain and role colours. Maintained48-source TS fixture freshly scanned.
+- Commands run from `MetropoGits/`:
+  - `python -m unittest discover -s tests`; `node --test tests/*.test.mjs`.
+  - `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/campus_circulation_review.py',run_name='__main__')" campus-circulation-r2 fixture oj pocketbase gj sqlitebrowser hanul`.
+  - `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/campus_neighborhood_verify.py',run_name='__main__')" campus-circulation-r2 fixture oj pocketbase gj sqlitebrowser hanul`.
+  - `python -X utf8 -m metropogits build --repo ../artifacts/visual/campus-e2e-r1/fixture --repo-id fixture/campus --out ../artifacts/visual/campus-circulation-e2e-r2/build`;
+    `python -X utf8 -m scripts.procedural_world ../artifacts/visual/campus-circulation-e2e-r2/build --seed campus-fixture --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --campus --campus-style neighborhood --out ../artifacts/visual/campus-circulation-e2e-r2/world`;
+    repeat with output `../artifacts/visual/campus-circulation-e2e-r2/repeat`.
+  - `node ../artifacts/visual/campus_focus.mjs campus-circulation-r2 campus-circulation-reviewed-r1 fixture gj oj pocketbase`;
+    `CAMPUS_CANVAS=1` equivalent PowerShell environment with output
+    `campus-circulation-canvas-r1`, cases fixture/oj/sqlitebrowser.
+  - `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/campus-circulation-audit-r1` with
+    `../artifacts/visual/campus-circulation-r2/{fixture,gj,oj,pocketbase}/after`
+    expanded as four arguments. Second output `campus-circulation-negative-audit-r1`
+    with sqlitebrowser/hanul inputs. `python -X utf8 ../artifacts/visual/verify_inherited_compatibility.py`.
+- Actual result: GJ53 unused atomic tails/737.4988 ground units removed,21.42% of
+  its PEDESTRIAN length; OJ33/278.128/11.85%; PB19/179.247/12.78%; fixture12/
+  102.1076/13.31%. Total physical street counts GJ5036->4983, OJ2912->2879,
+  PB2732->2713, fixture156->144. SQLite1618/Hanul314 unchanged. These percentages
+  describe walking length, NOT all city roads, runtime traffic or visual score.
+- Conservation / stability: ALL full parcel frames, complete campus plans,
+  activity memberships, zoning/main-road reservations, terrain/surface/envelope,
+  exact routing/network/coverage records unchanged. Real corpus3211 buildings,
+  5793 trips/8603 edges; fixture48/24/24 separately. Unrelated building displacement0.
+  Independent geometry/source validation passes all6 cases: all accessible,
+  building/road overlaps/owner escapes0. World/planning schemas pass;192 artifact
+  hashes verified. All17 fresh CLI output files repeat byte-identically. Twelve
+  older World golden cases remain byte-identical. All6 independently regenerated
+  canonical World outputs repeat byte-identically as well.
+- Tests:687 Python checks, one existing Windows symlink skip;66 Node checks.
+  Added public-circulation/unknown-file access, actual split junction, used path,
+  bridge, budget fallback, old pocket, idempotence, exact routing/frames and forged
+  omission regressions. Existing nearby48->49 source growth remains stable.
+- Artifacts inspected: actual same-camera WebGL fixture/GJ/OJ/PB comparison,
+  whole precinct and court/tail close-ups; actual GJ long-tail before/after, OJ
+  whole-precinct before/after, PB precinct, fixture before/after. Actual GJ/SQLite
+  CPU README raster and OJ forced Canvas inspected. Source/group navigation passes
+  all changed campuses;6 cases at3LOD pass real viewer route/evidence/filter/pan
+  audits. No fabricated SQLite networks/Synthetic traffic.
+- Visual findings: the long bare walking extensions recede to real frontage;
+  commons and occupied paths remain. Court rectangles and regular building wings
+  are still evident. README silhouette/terrain identity stay coherent; this is
+  a focused circulation correction, not a new organic campus or final city design.
+- Fixes applied/reverified: the first independent omission check re-atomized raw
+  reservations, introducing different nodes across existing repaired/quantized
+  seams on OJ. Preserve exact omitted atomic geometry, verify its canonical IDs,
+  and rerun purpose tests against reconstructed reservations before accepting any
+  coverage omission. Missing useful roads/forged metadata still fail. No source,
+  grade, clearance or overlap tolerance was weakened. Early r1/probe artifacts
+  are diagnostic; r2 is the handed-off canonical corpus.
+- Performance: Synthetic static rebuilds0 at all tested LODs; animation follows
+  unchanged own source paths. Concurrent SwiftShader draw-submission CPU p95
+  roughly0.4..1.8ms for Synthetic, first submission166.9..1339.2ms across6 cases.
+  These are JS/submission measurements, not GPU completion, FPS or a speedup
+  claim. Observed cold generation GJ73.37/OJ28.26/PB19.17s; no universal SLA.
+- Spec alignment: PASS. Re-read technical contracts/layout/limits, functional
+  AC-002/003/006/008/009/011/014, product DEC-005..009/011 and campus design4.3/5/8.
+  No AI/API dependency, target execution, public schema break or guessed semantics.
+  Reserved paths and built pavement are explicitly distinguished; physical
+  cleanup cannot invent/delete a source relationship.
+- Open risks / next actions: finish larger-scale campus morphology/architectural
+  character rather than repeatedly micro-tuning the same trimmed branch. Riverside
+  precinct forms, emergency/service travel modes and landmarks remain incomplete.
+- Commits created / pushed: this coherent repair/tests/docs/checkpoint unit on
+  `feat/semantic-zoning`; verify human metadata and normal upstream push at handoff.
+  Generated artifacts/helpers stay outside Git; pre-existing fixture caches remain.

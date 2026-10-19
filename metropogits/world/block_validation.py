@@ -196,10 +196,15 @@ def validate_blocks(world, scene, graph, neighborhoods):
                            or parcels[k]["districtId"] != r["districtId"] for k in r["rowEntityIds"])):
                 raise ValueError("invalid alley frontage provenance")
             expected_main.append(r)
-    # Verify complete reserved centerline coverage by actual full-width streets.
+    # Only independently reconstructed, purpose-free campus tails may be unbuilt.
+    # Never accept a diagnostic alone as permission to omit reserved main roads.
+    from .campus_circulation import verified_omissions
+
+    omissions = verified_omissions(world, expected_main + world["topology"]["edges"])
+    # Verify complete reserved coverage by built streets or proven omissions.
     index = defaultdict(list)
     entries = 0
-    for s in world["streets"]:
+    for s in world["streets"] + omissions:
         x0, z0, x1, z1 = bounds([s["start"], s["end"]])
         if max(x1 - x0, z1 - z0) > 10000:
             raise ValueError("neighborhood backbone spatial extent limit")

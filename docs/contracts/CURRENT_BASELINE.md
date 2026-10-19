@@ -1241,3 +1241,25 @@ branches, retained major through roads, no differentiated emergency/service
 vehicle model, riverside-specific precinct or finished architectural landscape.
 The0.3 correction makes campus the planning unit; it is not the full road/campus
 milestone or a claim that every eligible neighborhood must fit this form.
+
+### Purposeful built campus circulation — ADR-046
+
+Neighborhood mode now applies offline `campus-circulation/0.1`: peel only unused
+walking graph leaves beyond real frontage, not every street without dependency
+demand. Retain court loops, promenades, exterior gates, occupied access (including
+generic files), vehicle corridors, crossings and exact trip pavement. Keep every
+parcel frame, all planning reservations and all source routing records identical.
+No per-frame repair or source rerouting is added; resource exhaustion retains the
+original complete graph.
+
+`campus-plan/0.3` remains the pre-assignment plan; authoritative built pavement is
+`streets`. An optional diagnostic records exact omitted atomic geometry/IDs and
+length. Validation restores those atomic pieces, independently retests their
+purpose against reconstructed reservations, and only then allows them to satisfy
+unbuilt reservation coverage. A diagnostic is not blanket permission to omit a
+main road. Old artifacts without the policy record still validate under complete
+coverage; old quad/varied outputs are unchanged. The older untrimmed neighborhood
+output is reproducible at its pinned revision `d7393de`.
+
+This addresses excess tails, not rectilinear court morphology, riverside campus
+forms, service/emergency travel semantics or finished architectural archetypes.
