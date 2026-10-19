@@ -8,7 +8,7 @@
     "schemaVersion": {"const":"planning/0.5-experimental"},
     "zoningVersion": {"const":"functional-neighborhoods/0.1"},
     "patternScale": {"const":"adaptive"},
-    "districtPatterns": {"type":"array","minItems":1,"maxItems":64,"items":{"type":"object","required":["id","version","parentId","profile","seed","protectedStreetIds","fullFieldRoadCount","roadCount"],"properties":{"version":{"const":"adaptive-patterns/0.1"},"profile":{"enum":["GRID","ORGANIC","RADIAL","INDUSTRIAL","HYBRID"]}}}},
+    "districtPatterns": {"type":"array","minItems":1,"maxItems":64,"items":{"type":"object","required":["id","version","parentId","profile","seed","protectedStreetIds","fullFieldRoadCount","roadCount"],"properties":{"version":{"enum":["adaptive-patterns/0.1","adaptive-patterns/0.2"]},"profile":{"enum":["GRID","ORGANIC","RADIAL","INDUSTRIAL","HYBRID"]}}}},
     "worldSeed": {"type":"string","pattern":"^[0-9a-f]{16}$"},
     "ucgDigest": {"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
     "sourceCityDigest": {"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},

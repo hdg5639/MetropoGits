@@ -6323,3 +6323,90 @@
 - Delivery: separate docs-only commit on feat/semantic-zoning; normal upstream
   push after staged-diff and identity review. No source or generated artifacts
   changed, and no public contract or architecture decision changed.
+
+## Checkpoint 2026-10-19 — adaptive neighborhood seam correction
+
+- Implemented: ADR-032 adaptive0.2 reserves connecting parent collectors/spokes/
+  spines without overlaying a second frontage-row/orbit lattice across adapted
+  neighborhoods. Inherited local patterns and source-mixed membership remain.
+  Keep old address/source identity seed namespaces; version the new reservation
+  policy, validate old adaptive0.1 with its original policy and reject old hints
+  explicitly. Add only compatible experimental version enums; no City/UCG fields
+  or semantics changed. New child-land containment checks repair quantized cuts
+  inside the existing four local/five parent attempts, never weaker tolerances.
+- Fixtures/revisions: maintained spring-positive, namespace fixture/adaptive-seams-e2e;
+  snapshots from adaptive-neighborhoods-r3: GJ local-sha256-06eb492d57141c16,
+  OJ local-sha256-c2e80f9d3908fec8 (both revision null), PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522 and SQLiteBrowser
+  ae32df153a64d250de7c77a5057deeff4092a39b. Same input City/UCG, namespaces,
+  seeded varied planning/outline as the comparison baseline; targets not executed.
+- Commands run (repo cwd, Python UTF-8 for review input):
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/adaptive-seams-e2e --out ../artifacts/visual/adaptive-seams-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/adaptive-seams-e2e-r1/build --namespace fixture/adaptive-seams-e2e --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied --out ../artifacts/visual/adaptive-seams-e2e-r1/world`;
+  `python -X utf8 -c "import runpy,sys;sys.argv=['seams','adaptive-seams-r4'];runpy.run_path('../artifacts/visual/adaptive_seams_review.py',run_name='__main__')"`;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/verify_inherited_compatibility.py',run_name='__main__')"`;
+  `python -X utf8 -m unittest discover -s tests -q`;
+  `node --test tests/*.test.mjs`; `ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; `git diff --check`.
+- Renderer commands: `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/adaptive-seams-reviewed-r1 ../artifacts/visual/adaptive-seams-r2/gj/before ../artifacts/visual/adaptive-seams-r2/gj/after ../artifacts/visual/adaptive-seams-e2e-r1/world`;
+  same command with output adaptive-seams-corpus-reviewed-r1 and inputs
+  adaptive-seams-r3/{oj/before,oj/after,pocketbase/after,sqlitebrowser/after};
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/adaptive-seams-canvas-r1` with
+  adaptive-seams-r3/{gj,oj,pocketbase,sqlitebrowser}/after and the new Spring world.
+  All exit0. GJ r2/r3 inspected World bytes agree; r3 includes the bounded
+  quantization correction for other corpora. Final r4 retains failed-attempt
+  diagnostics; every r4 viewer-data/CPU-preview/City/UCG byte matches inspected
+  r3 output. Audit copies are instrumented locally,
+  not distributed source changes. No renderer assertion was weakened.
+- Artifacts inspected: actual GJ old/new CPU showcase, WebGL default and exact
+  common-distance Overview, GJ Canvas detail/member inspector; OJ WebGL default
+  and Detail, PocketBase/SQLiteBrowser CPU showcase. Browser galleries include
+  Overview/District/Detail, exact route selection, filters, navigation and source
+  evidence; forced Canvas checks member paging/source navigation/context restore.
+  Entry adaptive-seams-focus-r1/index.html links these real captures and new viewers.
+- Visual findings: fewer superimposed streets, preserved large circular/curved
+  local forms and mixed original role silhouettes. This is not a terrain-engine
+  implementation or proof that every apparent overlap is gone. Convex clipping
+  estimates of ground overlap remain microscopic (old corpus total per city
+  below0.006 square world units); it was not a large double-land allocation.
+  Empty parcels, some visible dead-end stubs, repeated gray facades and complex
+  junctions remain; OJ/PocketBase are not density improvements.
+- Quantitative comparison: GJ road centerline length33417.8→26241.5 (-21.5%),
+  area407636.7→313912.1 (-23.0%); OJ18458.1→17476.7 (-5.3%), area unchanged220041.5;
+  PB16331.6→15999.3 (-2.0%), area unchanged187911.2;
+  SQLite13135.7→9345.9 (-28.9%), area155370.9→107253.1 (-31.0%). These are physical
+  centerline lengths, not road-union surface area or runtime traffic measurements.
+  Neighborhood memberships/role claims and every trip ID/source/target/edge list
+  are identical. GJ cross-role co-location388/473 and OJ196/310 remain; mean
+  cross-role distances75.1→63.8 and113.8→102.1. Unsupported typed pairs are N/A.
+- Tests/determinism/stability: 584 Python tests (583 pass, one existing Windows
+  symlink skip), 56 Node pass, lint/compile/diff checks pass. New tests cover
+  arterial-versus-frontage ownership, fallback, legacy validation/version mismatch,
+  old-hint rejection and repairing invalid quantized child land before acceptance.
+  Existing 48→49 hinted edit preserves all48 complete frames/main reservations.
+  All12 legacy default/block/district World canonical snapshots are unchanged.
+  Four new corpus exports are double-generated, full package bytes compared and
+  original City/UCG bytes unchanged. All3175 buildings accessible, 5782 exact
+  trips, 8592 represented edges; no building/parcel/full-width-road collisions
+  or owner escapes. New Spring:6 files,2 trips,4 edges, complete access.
+  All7 WebGL cases complete without exceptions; tested Synthetic ticks rebuild
+  static geometry0 times. Software-browser submission timings are not GPU FPS.
+- Fixes applied/reverified: first review used implicit Windows decoding for old
+  labels; explicitly read UTF-8 (harness only). Initial PocketBase probe exposed
+  invalid quantized child geometry and stopped; repair the cut within the local
+  budget instead of accepting it or spending the final parent attempt blindly.
+  Preserve failed-attempt repair diagnostics. Fresh corpus, tests and both
+  renderers reverified; incomplete r1/r2 probes are not promoted as final corpus.
+  A final-code comparison caught stale failed-attempt diagnostics in r3's OJ
+  World; regenerate/double-check r4 packages and assert identical inspected
+  viewer/preview/source bytes rather than silently publishing stale metadata.
+- Spec alignment: PASS within opt-in ADR-024/032; technical3/4/7/8/10/12,
+  functional AC-001/002/003/006/008/011/012/014. No role fabrication, graph
+  mutation, unsafe execution, external dependency, source ID or security change.
+- Open risks/next actions: this generator revision intentionally replans old cold
+  geography; not a claim of old0.1 coordinate stability. Maintain cross-role
+  locality and macro/local variety in further density/stub corrections. Material
+  separation, LOD/compound landmarks, concave coasts and true terrain remain open.
+- Commits/delivery: one coherent fix/test/docs unit on feat/semantic-zoning,
+  normal configured-upstream push after staged diff/identity review. No generated
+  artifacts, unrelated user caches, attribution or protection bypass included.

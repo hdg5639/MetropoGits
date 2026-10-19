@@ -3,8 +3,8 @@
 ## Mixed functional neighborhoods and adaptive patterns — 2026-10-19
 
 [ADR-032](../adr/ADR-032.md) adds `--pattern-scale adaptive` with neighborhoods,
-`flat-adaptive-neighborhoods/0.1`, `functional-neighborhoods/0.1`,
-`adaptive-patterns/0.1` and [planning0.5](../../schemas/planning-0.5.schema.json).
+`flat-adaptive-neighborhoods/0.2`, `functional-neighborhoods/0.1`,
+`adaptive-patterns/0.2` and [planning0.5](../../schemas/planning-0.5.schema.json).
 The earlier block/district modes remain reproducible ablations, not accepted
 visual baselines. Original City/UCG and source IDs/roles/evidence stay intact.
 
@@ -24,9 +24,12 @@ internal edge IDs remain inspectable. Source reconstruction rejects fabricated
 members/role counts/edges; relation locality is measured on real cross-role
 pairs rather than an invented target color mix.
 
-Reserve sparse collectors/spokes and selected orbital/row corridors from the
-parent grammar first. Keep the largest source-anchored neighborhood on that
-field; select other local grammars from actual roles and neutral base-pattern
+Reserve connecting collectors/spokes/spines from the parent grammar first.
+Do not overlay every third parent frontage row/court or fourth orbit across an
+adapted neighborhood when connecting arteries already exist. The bounded
+no-artery fallback retains the former sparse selection. Keep the largest
+source-anchored neighborhood on its full original local field; select other
+local grammars from actual roles and neutral base-pattern
 context, with local axes facing the nearest reserved corridor. Unused original
 full-stencil roads are not overlaid under replacements. Adapted local grids do
 not add redundant automatic cross-collectors beside the reserved shared network.
@@ -48,6 +51,16 @@ may change derived groups and require replanning. Administrative development
 sectors are not yet extracted enclosed road faces. Terrain, materials, source
 metrics and detailed semantic landmarks remain separate work. Growing land and
 road count must be reported, not hidden by cross-role co-location improvements.
+
+The seam correction is an explicit generator revision, not old geography
+stability: address seed namespaces/source IDs remain unchanged but smaller land
+and changed reservations can relocate buildings and physical trips. Old
+adaptive0.1 exports still validate against their original reservation policy;
+their hints are explicitly rejected for a cold0.2 rebuild. Experimental schema
+version enums expand compatibly; original fields and City/UCG remain unchanged.
+Invalid quantized child supporting edges trigger a tiny shared-cut demand repair
+within the existing four local attempts, then bounded parent repair as needed.
+Keep the same strict containment/clearance checks and retain repair diagnostics.
 
 ## Inherited district street patterns — 2026-10-19
 

@@ -42,6 +42,7 @@ def validate_blocks(world, scene, graph, neighborhoods):
                 requested_profile(
                     world.get("planningPolicy", "grid"), parent["localSeed"]
                 ),
+                stitch=world["generatorVersion"] == "flat-adaptive-neighborhoods/0.2",
             )
             expected_patterns.append(pattern)
         elif inherited:

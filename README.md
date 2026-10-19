@@ -89,7 +89,9 @@ groups genuinely connected files across their original roles. It does not
 randomly mix colors or infer runtime services. Open `world-preview/index.html`
 or CPU `showcase.svg`. Original City/UCG remain intact; `district` retains the
 rigid full-pattern ablation and `block` the older local experiment. Unsupported
-frameworks stay neutral. See [the World contract and limits](docs/contracts/CURRENT_BASELINE.md#mixed-functional-neighborhoods-and-adaptive-patterns--2026-10-19).
+frameworks stay neutral. Adaptive generator0.2 shares connecting arteries without
+overlaying a second parent frontage lattice across local replacements; older
+adaptive hints trigger a disclosed cold rebuild. See [the World contract and limits](docs/contracts/CURRENT_BASELINE.md#mixed-functional-neighborhoods-and-adaptive-patterns--2026-10-19).
 
 ## GitHub Action
 

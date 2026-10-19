@@ -26,7 +26,11 @@ from .neighborhoods import VERSION as NEIGHBORHOOD_VERSION, neighborhood_candida
 from .neighborhood_layout import neighborhood_demand, plan_neighborhoods
 from .district_patterns import pattern_demand, plan_district_pattern
 from .functional import functional_candidates, VERSION as FUNCTIONAL_VERSION
-from .adaptive import plan_adaptive, adaptive_demand
+from .adaptive import (
+    GENERATOR_VERSION as ADAPTIVE_GENERATOR_VERSION,
+    plan_adaptive,
+    adaptive_demand,
+)
 
 
 def requested_profile(planning, seed):
@@ -231,7 +235,7 @@ def generate_world(
             pattern_scale == "block"
             or previous.get("generatorVersion")
             == (
-                "flat-adaptive-neighborhoods/0.1"
+                ADAPTIVE_GENERATOR_VERSION
                 if pattern_scale == "adaptive"
                 else "flat-neighborhood-patterns/0.1"
             )
@@ -422,6 +426,18 @@ def generate_world(
                 )
             if placed is None:
                 failed.append(key)
+                if pattern_scale == "adaptive":
+                    repairs.extend(
+                        n
+                        for n in notes
+                        if n["reason"] == "adaptive shared-cut quantization repair"
+                    )
+                if (
+                    pattern_scale == "adaptive"
+                    and notes
+                    and notes[-1]["reason"] == "adaptive shared-cut quantization repair"
+                ):
+                    quantization_failed.add(key)
                 continue
             parcels += placed
             poly = polygons[key]
@@ -574,7 +590,7 @@ def generate_world(
             if pattern_scale != "block":
                 world.update(
                     patternScale=pattern_scale,
-                    generatorVersion="flat-adaptive-neighborhoods/0.1"
+                    generatorVersion=ADAPTIVE_GENERATOR_VERSION
                     if pattern_scale == "adaptive"
                     else "flat-neighborhood-patterns/0.1",
                 )
