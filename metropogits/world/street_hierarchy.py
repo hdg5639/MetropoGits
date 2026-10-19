@@ -324,4 +324,6 @@ def marking_surfaces(world):
             )
             if len(result) > MAX_PAINT:
                 raise ValueError("street hierarchy paint work limit")
-    return result
+    from .street_markings import clean_markings
+
+    return clean_markings(world, result)

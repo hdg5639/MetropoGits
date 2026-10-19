@@ -1371,3 +1371,25 @@ within the existing reserved-street validation tolerance; source entrances and
 bridge endpoints are fixed. Budget exhaustion never silently drops waterways.
 Changing profiles deliberately changes geography; compatible same-mode hints
 retain terrain and existing frames in the named growth fixture.
+
+### Coplanar road corruption and intersection paint — ADR-054
+
+`world-street-mesh/0.2` partitions overlapping same-level span/joint polygons
+into single-owner asphalt, using stable class/width/ID precedence. It also
+deduplicates ordinary shared walking surfaces; individual door ramps retain
+their own slope groups. Grade-separated bridge/tunnel surfaces are not merged
+with ground beneath. Joint patches keep the existing bounded bevel/parcel/
+nature/campus-clearance rules and use the dominant incident street class.
+
+Structural center paint is clipped at actual overlapping crossing/merge mouths,
+not merely a half-width distance from a graph node. Collinear atomic spans keep
+their dash phase, and different crossing levels do not erase each other's paint.
+Spatial indexes and work/output bounds fail explicitly; no per-frame clipping,
+additional browser draw pass, physical road deletion or source rerouting is added.
+The source World/City/UCG/planning and natural geography remain unchanged.
+
+The reported GJ close-up's same-level face overlap pairs fall691->0 (80x80
+region, positive intersection area>.001). This is overdraw removal, not691
+removed roads or a global speedup. Polygon subdivision increases static face
+counts/payload somewhat; actual viewer/Synthetic regressions remain checked.
+Old saved packages keep their old meshes; regenerate/export to see the repair.
