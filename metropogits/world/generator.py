@@ -20,6 +20,7 @@ from .terrain import (
     GENERATOR_VERSION as TERRAIN_GENERATOR_VERSION, PRESET as NATURAL_PRESET,
     adapt_roads, generate_terrain, validate_terrain,
 )
+from .rivers import GENERATOR_VERSION as RIVER_GENERATOR_VERSION, PRESET as RIVER_PRESET, annotate_crossings
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
 from .organic import organic_slots
@@ -70,7 +71,7 @@ def generate_world(
     terrain="flat",
     _route=True,
 ):
-    if terrain not in ("flat", NATURAL_PRESET) or (
+    if terrain not in ("flat", NATURAL_PRESET, RIVER_PRESET) or (
         terrain != "flat" and (pattern_scale != "adaptive" or not _route)
     ):
         raise ValueError("natural terrain requires routed adaptive neighborhoods")
@@ -265,7 +266,7 @@ def generate_world(
         and (
             pattern_scale == "block"
             or previous.get("generatorVersion") in (
-                (TERRAIN_GENERATOR_VERSION,) if terrain != "flat" else
+                ((RIVER_GENERATOR_VERSION,) if terrain == RIVER_PRESET else (TERRAIN_GENERATOR_VERSION,)) if terrain != "flat" else
                 (ADAPTIVE_GENERATOR_VERSION, SHARED_GENERATOR_VERSION, ALLEY_GENERATOR_VERSION)
                 if pattern_scale == "adaptive"
                 else ("flat-neighborhood-patterns/0.1",)
@@ -326,7 +327,8 @@ def generate_world(
             envelope = [point([v * radius for v in p]) for p in envelope]
             if terrain != "flat" and terrain_data is None:
                 # Natural reserves precede district polygons, roads and source addresses.
-                terrain_data = generate_terrain(envelope, resolved_seed)
+                terrain_data = (generate_terrain(envelope, resolved_seed, terrain) if terrain == RIVER_PRESET
+                                else generate_terrain(envelope, resolved_seed))
             polygons = partition(
                 envelope,
                 [(k, budgets[k]["total"]) for k in grouped],
@@ -685,6 +687,8 @@ def generate_world(
     elif street_policy == "permeable":
         world["generatorVersion"] = ALLEY_GENERATOR_VERSION
     if terrain_data:
-        world.update(generatorVersion=TERRAIN_GENERATOR_VERSION, terrainPreset=terrain,
+        if terrain == RIVER_PRESET:
+            annotate_crossings(streets, routing, terrain_data)
+        world.update(generatorVersion=RIVER_GENERATOR_VERSION if terrain == RIVER_PRESET else TERRAIN_GENERATOR_VERSION, terrainPreset=terrain,
                      terrain=terrain_data, streetPolicy=street_policy)
     return world

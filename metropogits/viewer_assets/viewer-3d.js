@@ -771,7 +771,7 @@
           quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color));
       }
     }
-    for(const feature of data.terrain?.features || [])for(const face of feature.faces) {
+    for(const feature of [...(data.terrain?.features || []), ...(data.infrastructure ? [data.infrastructure] : [])])for(const face of feature.faces) {
       const p=face.points;
       const normal=normalize(cross(subtract(p[1],p[0]),subtract(p[2],p[0])));
       for(let i=1;i<p.length-1;i++)
@@ -833,7 +833,7 @@
       if (accessPolicy && !data.streets?.structural) break;
       if (!filterEngine.corridorVisible(rectangle, renderedNetworkIds)) continue;
       if (rectangle.points) {
-        quad(triangles, rectangle.points.map(([x,z]) => [x, rectangle.elevation ?? 0.08, z]),
+        quad(triangles, rectangle.points.map(([x,z],i) => [x, rectangle.pointHeights?.[i] ?? rectangle.elevation ?? 0.08, z]),
           [0,1,0], color(rectangle.color || streetColors.STREET));
         continue;
       }
@@ -913,19 +913,30 @@
       if (segment.highlighted) {
         for(let i=1;i<segment.path.length;i++) {
           const a=segment.path[i-1],b=segment.path[i];
-          line(accessOverlay,[a[0],.22,a[1]],[b[0],.22,b[1]],color("#67d7ff"));
+          line(accessOverlay,[a[0],filterEngine.accessHeight(segment,a,.08)+.14,a[1]],
+            [b[0],filterEngine.accessHeight(segment,b,.08)+.14,b[1]],color("#67d7ff"));
         }
       }
       const style = roadStyles.get(segment.id), width = style.width;
       if (segment.pavement) {
         for (const piece of segment.pavement) {
-          quad(triangles, piece.points.map(([x,z]) => [x,.14,z]), [0,1,0], color(style.surface));
+          quad(triangles, piece.points.map(([x,z],i) => [x,piece.pointHeights?.[i] ?? .14,z]), [0,1,0], color(style.surface));
         }
       } else {
         roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
         roadSegment(triangles, segment.start, segment.end, width * 0.82, 0.14, color(style.surface));
       }
       for (const marking of filterEngine.accessMarkingSegments(segment, junctionGeometry.trims)) {
+        if(segment.heights) {
+          const a=marking.start,b=marking.end,length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+          if(length<1e-8) continue;
+          const nx=-(b[1]-a[1])/length*.065,nz=(b[0]-a[0])/length*.065;
+          const ya=filterEngine.accessHeight(segment,a)+.06,yb=filterEngine.accessHeight(segment,b)+.06;
+          quad(triangles,[[a[0]-nx,ya,a[1]-nz],[a[0]+nx,ya,a[1]+nz],
+            [b[0]+nx,yb,b[1]+nz],[b[0]-nx,yb,b[1]-nz]],[0,1,0],
+            color(segment.kind === "DEPENDENCY_ROAD" ? style.marking : networkColors[segment.kind]));
+          continue;
+        }
         roadSegment(triangles, marking.start, marking.end, Math.min(0.13, width * 0.12), 0.18,
           color(segment.kind === "DEPENDENCY_ROAD" ? style.marking : networkColors[segment.kind]));
       }
@@ -1094,7 +1105,7 @@
           const progress = (elapsed / 6000 + activityEngine.phaseForId(route.id)) % 1;
           const sample = accessPolicy.position(route, progress);
           if (!sample || !accessFrame.segmentIds.has(sample.segmentId)) continue;
-          box(triangles, sample.point[0]-0.22, 0.25, sample.point[1]-0.22, 0.44, 0.44, 0.44, color("#f8fafc"));
+          box(triangles, sample.point[0]-0.22, (sample.height ?? .08)+.17, sample.point[1]-0.22, 0.44, 0.44, 0.44, color("#f8fafc"));
         }
       }
       return triangles;
@@ -1166,9 +1177,9 @@
         }
       }
     }
-    for (const network of accessFrame ? accessFrame.segments.map(s => ({id: s.id, path: s.path})) : scene.networks) {
+    for (const network of accessFrame ? accessFrame.segments : scene.networks) {
       if (!accessFrame && !renderedNetworkIds.has(network.id)) continue;
-      const points = network.path.map((point) => [point[0], 0.22, point[1]]);
+      const points = network.path.map((point) => [point[0],filterEngine.accessHeight(network,point,.08)+.14, point[1]]);
       if (points.every(Boolean)) {
         regions.push({
           id: network.id,
@@ -1863,6 +1874,11 @@
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Graph edges", network.edgeIds.length);
     detailRow(details, "Route points", network.path.length);
+    const crossing=accessPolicy?.network(networkId);
+    if(crossing?.bridgeId) {
+      detailRow(details,"Structural bridge",crossing.bridgeId);
+      detailRow(details,"Deck height (world units)",crossing.heights.map(y=>y.toFixed(2)).join(" → "));
+    }
     if (chosen && data.routing?.streetGrid) {
       const diagnostic=accessPolicy.assignmentReason(chosen.id);
       detailRow(details,'Street assignment',diagnostic.label);

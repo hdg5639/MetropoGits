@@ -12,17 +12,21 @@ from .zoning import validate_zoning
 from .soft import validate_soft
 from .block_validation import validate_blocks
 from .terrain import GENERATOR_VERSION as TERRAIN_GENERATOR_VERSION, PRESET as NATURAL_PRESET, validate_terrain
+from .rivers import GENERATOR_VERSION as RIVER_GENERATOR_VERSION, PRESET as RIVER_PRESET, crossing_piece, validate_crossings
 
 
 def validate_world(world, scene, graph):
     if world.get("schemaVersion") != VERSION:
         raise ValueError("unsupported world schema")
-    natural = world.get("generatorVersion") == TERRAIN_GENERATOR_VERSION
+    river = world.get("generatorVersion") == RIVER_GENERATOR_VERSION
+    natural = river or world.get("generatorVersion") == TERRAIN_GENERATOR_VERSION
     if natural:
-        if (world.get("terrainPreset") != NATURAL_PRESET
+        if (world.get("terrainPreset") != (RIVER_PRESET if river else NATURAL_PRESET)
                 or world.get("streetPolicy") not in ("original", "shared", "permeable")):
             raise ValueError("terrain preset/version mismatch")
         validate_terrain(world.get("terrain"), world["seed"])
+        if river:
+            validate_crossings(world["streets"], world["terrain"])
     elif "terrain" in world or world.get("terrainPreset") != "flat":
         raise ValueError("terrain requires its explicit generator version")
     if "patternScale" in world and (
@@ -30,7 +34,7 @@ def validate_world(world, scene, graph):
         or world.get("zoningPolicy") != "neighborhoods"
         or world.get("generatorVersion")
         not in (
-            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", TERRAIN_GENERATOR_VERSION)
+            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION)
             if world["patternScale"] == "adaptive"
             else ("flat-neighborhood-patterns/0.1",)
         )
@@ -46,6 +50,7 @@ def validate_world(world, scene, graph):
             "flat-adaptive-neighborhoods/0.4",
             "flat-adaptive-neighborhoods/0.5",
             TERRAIN_GENERATOR_VERSION,
+            RIVER_GENERATOR_VERSION,
         )
     ) != (world.get("patternScale") in ("district", "adaptive")):
         raise ValueError("world pattern scale version mismatch")
@@ -141,6 +146,7 @@ def validate_world(world, scene, graph):
 
     for s in world["streets"]:
         reserve(ribbon(s["start"], s["end"], s["width"]), ("road", s["id"]))
+    physical_geometry = {s["id"]: s for s in world["streets"]}
     if natural:
         for f in world["terrain"]["features"]:
             if not all(inside(v, world["envelope"]) for v in f["roadPolygon"]):
@@ -149,7 +155,10 @@ def validate_world(world, scene, graph):
                 checks += 1
                 if checks > 5_000_000:
                     raise ValueError("world validation work limit")
-                if overlap(f["noBuildPolygon"], polygons[key]):
+                if key[0] != "road":
+                    continue  # Adjacent reaches are one protected water/bank union.
+                if overlap(f["noBuildPolygon"], polygons[key]) and not (river and crossing_piece(
+                        physical_geometry[key[1]], world["terrain"])):
                     raise ValueError("physical road crosses protected water/slope")
             reserve(f["noBuildPolygon"], ("terrain", f["id"]))
     if world["generatorVersion"] == "flat-adaptive-neighborhoods/0.5" or world.get("streetPolicy") == "permeable":
@@ -161,7 +170,6 @@ def validate_world(world, scene, graph):
                     if owner is None or not all(inside(v, owner["polygon"]) for v in poly):
                         raise ValueError("alley escaped its principal district")
                     reserve(poly, ("alley", alley["id"]))
-    physical_geometry = {s["id"]: s for s in world["streets"]}
     for p in parcels:
         b = source[p["entityId"]]
         if any(
@@ -179,7 +187,7 @@ def validate_world(world, scene, graph):
         if p["sourceDistrictId"] != b["districtId"]:
             raise ValueError("world directory ownership mismatch")
         poly = p["footprint"]
-        if world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", TERRAIN_GENERATOR_VERSION):
+        if world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION):
             # Reuse the independent validation index/budget. Optional optimizer
             # exhaustion must not make its untouched fallback invalid.
             connected = False
@@ -297,6 +305,8 @@ def validate_world(world, scene, graph):
             or any(s[k] != physical[s["physicalId"]][k] for k in ("start", "end", "width"))
         ):
             raise ValueError("world trip lost its physical pavement")
+        if river and any(s.get(k) != physical[s["physicalId"]].get(k) for k in ("bridgeId", "heights")):
+            raise ValueError("world trip lost its bridge profile")
     by_entity = {p["entityId"]: p for p in parcels}
     represented = []
     edge_records = {e["id"]: e for e in graph["edges"]}

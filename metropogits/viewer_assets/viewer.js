@@ -655,7 +655,7 @@
       ROUTE_ACCESS: "#1c293b",
       STREET: "#172437",
     };
-    const points = rectangle.points ? rectangle.points.map(([x,z]) => project(x,z,rectangle.elevation ?? 0.09)) : [
+    const points = rectangle.points ? rectangle.points.map(([x,z],i) => project(x,z,rectangle.pointHeights?.[i] ?? rectangle.elevation ?? 0.09)) : [
       project(rectangle.x, rectangle.z, 0.09),
       project(rectangle.x + rectangle.width, rectangle.z, 0.09),
       project(rectangle.x + rectangle.width, rectangle.z + rectangle.depth, 0.09),
@@ -703,7 +703,7 @@
         const phase = (elapsed / 6000 + activityEngine.phaseForId(route.id)) % 1;
         const sample = accessPolicy.position(route, phase);
         if (!sample || !accessFrame.segmentIds.has(sample.segmentId)) continue;
-        const point = project(...sample.point, 0.6);
+        const point = project(...sample.point, (sample.height ?? .08)+.52);
         context.beginPath();
         context.arc(point.x, point.y, 2, 0, Math.PI * 2);
         context.fillStyle = "#f8fafc";
@@ -917,11 +917,11 @@
     }
     for (const rectangle of accessPolicy && !data.streets?.structural ? [] : streetRectangles) drawStructuralStreet(rectangle);
     for (const segment of accessFrame?.segments || []) {
-      const points = segment.path.map(p => project(...p, 0.15));
+      const points = segment.path.map(p => project(...p, filterEngine.accessHeight(segment,p,.08)+.07));
       const style = filterEngine.accessRoadStyle(segment), width = style.width;
       if (segment.pavement) {
         for (const piece of segment.pavement) {
-          polygonPath(piece.points.map(([x,z]) => project(x,z,.14)));
+          polygonPath(piece.points.map(([x,z],i) => project(x,z,piece.pointHeights?.[i] ?? .14)));
           context.fillStyle = style.surface;
           context.fill();
         }
@@ -940,7 +940,8 @@
     for (const segment of accessFrame?.segments || []) {
       const style=filterEngine.accessRoadStyle(segment);
       for (const paint of accessPaint.get(segment.id) || []) {
-        const a=project(...paint.start,.18), b=project(...paint.end,.18);
+        const a=project(...paint.start,filterEngine.accessHeight(segment,paint.start,.12)+.06),
+          b=project(...paint.end,filterEngine.accessHeight(segment,paint.end,.12)+.06);
         context.beginPath();context.moveTo(a.x,a.y);context.lineTo(b.x,b.y);
         context.lineWidth=Math.max(.3,.13*baseScale()*state.zoom*.65);
         context.strokeStyle=segment.kind==='DEPENDENCY_ROAD'?style.marking:networkColors[segment.kind];
@@ -963,13 +964,32 @@
       if(building.landscapeTree) {drawLandscapeTree(building.landscapeTree);continue;}
       if (renderedBuildingIds.has(building.entityId)) drawBuilding(building);
     }
+    if(data.infrastructure) {
+      drawLandscapeTree({...data.infrastructure,faces:data.infrastructure.faces.filter(f=>f.surface==='deck')});
+      for(const segment of accessFrame?.segments || []) {
+        if(!segment.bridgeId) continue;
+        const style=filterEngine.accessRoadStyle(segment);
+        for(const piece of segment.pavement || []) {
+          polygonPath(piece.points.map(([x,z],i)=>project(x,z,piece.pointHeights[i])));
+          context.fillStyle=style.surface;context.fill();
+        }
+        for(const paint of accessPaint.get(segment.id) || []) {
+          const a=project(...paint.start,filterEngine.accessHeight(segment,paint.start)+.06),
+            b=project(...paint.end,filterEngine.accessHeight(segment,paint.end)+.06);
+          context.beginPath();context.moveTo(a.x,a.y);context.lineTo(b.x,b.y);
+          context.lineWidth=Math.max(.3,.13*baseScale()*state.zoom*.65);
+          context.strokeStyle=segment.kind==='DEPENDENCY_ROAD'?style.marking:networkColors[segment.kind];context.stroke();
+        }
+      }
+      drawLandscapeTree({...data.infrastructure,faces:data.infrastructure.faces.filter(f=>f.surface==='parapet')});
+    }
     for (const aggregateId of [...renderedAggregateIds].sort()) {
       drawAggregateFacility(aggregateFacilities.get(aggregateId));
     }
     for (const segment of accessFrame?.segments || []) {
       if (!segment.highlighted) continue;
       context.beginPath();
-      segment.path.forEach((p,i)=>{const q=project(...p,.22);if(i) context.lineTo(q.x,q.y);else context.moveTo(q.x,q.y);});
+      segment.path.forEach((p,i)=>{const q=project(...p,filterEngine.accessHeight(segment,p,.08)+.14);if(i) context.lineTo(q.x,q.y);else context.moveTo(q.x,q.y);});
       context.lineWidth=1.5; context.strokeStyle="#67d7ff"; context.stroke();
     }
     drawDistrictLabels();
@@ -1345,6 +1365,11 @@
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Graph edges", network.edgeIds.length);
     detailRow(details, "Route points", network.path.length);
+    const crossing=accessPolicy?.network(networkId);
+    if(crossing?.bridgeId) {
+      detailRow(details,"Structural bridge",crossing.bridgeId);
+      detailRow(details,"Deck height (world units)",crossing.heights.map(y=>y.toFixed(2)).join(" → "));
+    }
     if (chosen && data.routing?.streetGrid) {
       const diagnostic=accessPolicy.assignmentReason(chosen.id);
       detailRow(details,'Street assignment',diagnostic.label);

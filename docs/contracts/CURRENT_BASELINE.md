@@ -1,5 +1,45 @@
 # Current implementation contract baseline
 
+## Connected water and physical crossings — 2026-10-19
+
+[ADR-037](../adr/ADR-037.md) adds opt-in `--terrain river-corridor`, generator
+`terrain-adaptive/0.2`, with terrain/0.2. Flat and lake-district/terrain0.1 are
+unchanged; compatible enum/optional-field additions only in experimental World
+and planning0.5. Source City/UCG versions and bytes stay intact.
+
+Before source assignment, generate one seeded continuous nine-station channel,
+eight convex reaches sharing cross-sections, two terminal pools and feasible
+protected hills. Persist the original envelope, channel and fixed crossing
+profiles. Adjacent masks form one protected union; exposed bank edges are
+shared physical streets, never separate road rings around water tiles. Maximum
+three transverse bridges, with one/two for smaller demand envelopes. Capacity
+repairs may change urban land but cannot reroll that initial water geography.
+
+The first river is an analytical connected corridor with a level water surface,
+not a height-field drainage solver. Buildable plains remain flat. Graded terrain,
+watershed hydrology, coastlines and tunnels remain future W-19 work.
+
+Crossings contain path/height profiles,4.5-unit physical widths, ground-level
+abutments and approach grades at most0.16. Ordinary roads and whole source lots
+cannot enter protected water/slopes. Certified bridge pieces carry `bridgeId`
+and per-endpoint `heights` after atomization; validators independently regenerate
+terrain and check full spans, grades, endpoint-height continuity and route/physical
+profile identity. Labels alone are not water-crossing permits. Shared bridges
+remain structural infrastructure even with zero evidenced traffic.
+
+The derived viewer adapter carries matching per-vertex pavement heights and
+structural fascia/parapet faces. CPU/WebGL/Canvas use these geometry profiles.
+Picking, route overlays, markings and forward/reverse Synthetic interpolate the
+same physical heights without changing XZ source paths or inventing destinations.
+The inspector exposes a selected bridge's structural identity and endpoint heights.
+Geometry is static-batched; Synthetic retains its separate dynamic buffer.
+
+Caps:24 terrain features (currently8 reaches+2 pools+up to3 hills),9 channel
+stations,3 crossings,2M bank-union clipping work; existing24k adapted-road,
+2M per-plan clipping/projection,50k atomic-piece and bounded repair/routing caps
+apply. Different presets reject geography hints; compatible river hints preserve
+terrain and complete frames in the maintained one-file-addition fixture.
+
 ## Terrain before urban placement — 2026-10-19
 
 [ADR-036](../adr/ADR-036.md) adds explicit `--terrain lake-district` to adaptive
