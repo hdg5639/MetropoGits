@@ -1191,3 +1191,53 @@ repository execution. Reduced role salience at thumbnail size is intentional;
 use the explicit semantic view for high-contrast analysis. This is not new
 archetype geometry, physical material inference, lighting/AO or a complete city
 aesthetic milestone.
+
+### Whole-neighborhood campus precincts (ADR-045)
+
+`scripts.procedural_world INPUT --campus --campus-style neighborhood` with the
+adaptive/neighborhood options selects the whole-neighborhood `campus-plan/0.3`
+experiment. Quad0.1 and varied0.2 remain reproducible pocket prototypes, not the
+completed interpretation of the original campus design. City/UCG/IDs/source
+dimensions and evidence remain unchanged. Style switches reject old geography
+hints explicitly; same-style growth retains compatible source addresses.
+
+The selected source neighborhood keeps its membership, parent, polygon, terrain
+and protected major/inter-zone corridors, but its ordinary local road/address
+plan is REPLACED before source assignment. Two or three actual activity centers
+reserve shared courts, connected promenades, short frontage wings and a real
+external street join. Known source-pair degree/affinity chooses actual anchor
+files and guides local address optimization; no research role or new logical
+dependency is inferred. This is not new authoritative community detection.
+
+All neighborhood files participate:12..256 members, no eight-file quota or
+retained ordinary remainder. A bounded12x12 center search measures surrounding
+developable room; at most three layout trials. Secondary walking wings are
+accepted only if they increase safe frontage. At least half the required file
+capacity comes from internal pedestrian frontage; where needed, additional
+frontage uses EXISTING protected vehicle corridors. Those corridors remain
+vehicular, not falsely reclassified as pedestrian-only. No old local road grid
+is retained simply to satisfy campus capacity. If full capacity/connectivity/
+grade/clearance fails, the original neighborhood is retained with a reason, never
+a successful-looking small garden pocket. No unrelated land enlargement.
+
+Additive0.3 site metadata includes scope NEIGHBORHOOD, variant PEDESTRIAN_PRECINCT,
+activityCenters with real anchors and candidate slot IDs, anchorSlots, and
+vehicleFrontageSlotIds. It is a physical precinct form, not completion of all
+Academic/Tech/Riverside variants. The existing inspectors enumerate ALL original
+members and provide source-counted activity-group focus in WebGL and Canvas.
+Independent reconstruction checks selection, complete membership, slots, anchor
+placement, group occupancy, court clearance and block grammar. All-source route
+and physical access validators remain strict. New late-stage alleys may not cut
+through the reserved whole precinct after assignment.
+
+Work is bounded by300000 clearance tests per layout invocation; existing output,
+terrain/routing/spatial limits still apply. The new mode preserves exact local
+axes instead of re-deriving yaw from a slightly moved quantized wing endpoint:
+48->49 file hinted growth preserves all48 complete frames. No per-frame campus
+planning or geometry generation is added.
+
+Remaining limitations: rectilinear courts/wing grammar, some long/unused walking
+branches, retained major through roads, no differentiated emergency/service
+vehicle model, riverside-specific precinct or finished architectural landscape.
+The0.3 correction makes campus the planning unit; it is not the full road/campus
+milestone or a claim that every eligible neighborhood must fit this form.

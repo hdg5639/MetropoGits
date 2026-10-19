@@ -1859,7 +1859,14 @@
       factSection(inspector,'LOCAL BLOCK PLANS',blocks.map(b=>`${b.planningProfile} · ${b.memberEntityIds.length} files · ${b.id}`));
       for (const block of blocks.filter(b=>b.campusSite)) {
         const site=block.campusSite;
-        inspector.append(element('p',`MIXED CAMPUS · ${site.variant} · ${site.memberEntityIds.length} of ${block.memberEntityIds.length} source files around ${site.courts.length} reserved courts. Remaining files retain the local street grammar. Walking access is physical planning, not a research or runtime-communication claim.`, 'campus-summary'));
+        inspector.append(element('p',site.scope==='NEIGHBORHOOD'
+          ? `CAMPUS NEIGHBORHOOD · ${site.variant} · All ${site.memberEntityIds.length} source files in ${site.activityCenters.length} connected activity groups. Local vehicle rows replaced by shared courts and pedestrian frontage. Existing major through roads remain. Walking access is physical planning, not a research or runtime-communication claim.`
+          : `MIXED CAMPUS · ${site.variant} · ${site.memberEntityIds.length} of ${block.memberEntityIds.length} source files around ${site.courts.length} reserved courts. Remaining files retain the local street grammar. Walking access is physical planning, not a research or runtime-communication claim.`, 'campus-summary'));
+        for (const [i,group] of (site.activityCenters || []).entries()) {
+          const count=site.memberEntityIds.filter(k=>group.slotIds.includes(orientedBuildings[k]?.slotId)).length;
+          const button=focusButton(group.center[0],groundY(...group.center),group.center[1],110,`Activity group ${i+1} · ${count} original files`);
+          button.classList.add('campus-group');button.dataset.anchorEntityId=group.anchorEntityId;inspector.append(button);
+        }
         factSection(inspector,'CAMPUS BASIS',[block.campusDecision.reason,`${block.campusDecision.supportingEntityIds.length} evidence-supported test files · ${block.campusDecision.internalPairCount} original internal file pairs`]);
         for (const id of site.memberEntityIds) {
           const button=element('button',entities.get(id)?.path || id,'focus-button campus-member');

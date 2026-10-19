@@ -7753,3 +7753,99 @@
   checkpoint work unit on `feat/semantic-zoning`; inspect staged paths/human
   metadata and normal upstream push at handoff. Generated worlds, helpers and
   captures remain outside Git; pre-existing fixture caches are untouched.
+
+## Checkpoint 2026-10-19 — Whole-neighborhood campus correction
+
+- Implemented: ADR-045. The user rejected8-file garden pockets as fulfillment
+  of the campus design. New opt-in `--campus-style neighborhood` / campus-plan0.3
+  replaces selected neighborhoods' ordinary local circulation/address plans
+  BEFORE assigning ALL original members. Two or three shared activity courts,
+  connected promenades/frontage wings, actual exterior access and original
+  source anchors. Internal walking frontage supplies at least half the required
+  capacity; additional edge/through-road frontage uses existing vehicle corridors,
+  never a fabricated street or falsely pedestrian-only road. Old pilots remain.
+- Fixtures / revisions: same frozen `campus-forms-r1/{name}/after` sources and
+  seeds as the preceding checkpoint: GJ local-sha256-06eb492d57141c16;
+  OJ local-sha256-c2e80f9d3908fec8; PB6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLite ae32df153a64d250de7c77a5057deeff4092a39b;
+  Hanul7432c67e91f472e7e9c3be54c07dcb7cbe4837d8. Five repositories3211 original
+  buildings /5793 exact source-pair trips /8603 represented edges. Maintained
+ 48-file/24-import fixture rebuilt from source, not target code execution.
+- Commands run from `workspace/MetropoGits` (helpers/artifacts outside Git):
+  - `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/campus_neighborhood_review.py',run_name='__main__')" campus-neighborhood-r2 fixture gj oj pocketbase sqlitebrowser hanul`
+  - `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/campus_neighborhood_verify.py',run_name='__main__')" campus-neighborhood-r2 gj fixture oj pocketbase sqlitebrowser hanul`
+  - `node ../artifacts/visual/campus_focus.mjs campus-neighborhood-r2 campus-neighborhood-reviewed-r1 gj oj pocketbase sqlitebrowser hanul fixture`
+  - `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/campus-neighborhood-audit-r1 ../artifacts/visual/campus-neighborhood-r2/{gj,oj,pocketbase,sqlitebrowser,hanul,fixture}/after`
+    (six explicit path arguments at execution; braces are shorthand here).
+  - PowerShell `$env:CAMPUS_CANVAS='1'`, same focus helper with output
+    `campus-neighborhood-canvas-r1` and names fixture/OJ/PB, then unset.
+  - Fresh `python -X utf8 -m metropogits build --repo ../artifacts/visual/campus-e2e-r1/fixture --repo-id fixture/campus --out ../artifacts/visual/campus-neighborhood-e2e-r1/build`;
+    `python -X utf8 -m scripts.procedural_world ../artifacts/visual/campus-neighborhood-e2e-r1/build --seed campus-fixture --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --campus --campus-style neighborhood --out ../artifacts/visual/campus-neighborhood-e2e-r1/world`;
+    repeat with output `repeat`. All17 artifact bytes identical.
+  - Full unittest discovery, Node `--test` on all `rg --files tests -g '*.test.mjs'`
+    paths, changed-Python Ruff, compileall, schema checks, Git diff check, and
+    `python -X utf8 ../artifacts/visual/verify_inherited_compatibility.py`.
+- Actual result: GJ3 full neighborhoods86/112/50 files (248 total), OJ2 at112/64,
+  PB1 at112; SQLite/Hanul0 without forced semantics. Actual occupied group counts
+  GJ[23,34,29]/[44,30,38]/[31,19]; OJ[27,32,53]/[34,30]; PB[38,27,47]. Fixture
+ 48 files in two groups28/20. GJ93 files, OJ11 and PB9 use existing vehicle
+  frontage; other selected files use internal pedestrian frontage. No pure
+  pedestrian-campus/emergency-access assertion is made.
+- Conservation / stability: exact original City/UCG bytes, entity dimensions,
+  ownership, role/evidence, source/target/edge identities, shared terrain,
+  parent/neighborhood polygons and original protected macro roads. Full-frame
+  changes versus prior pockets GJ274/OJ176/PB112; GJ includes26 in the old pocket
+  neighborhood reverting to its base grammar, not new campus membership.
+  **Outside the union of old/new selected neighborhoods, moved0.** Same-style
+  hinted48->49 source-file growth retains all48 original full frames.
+- Physical validation: all6 worlds independently reconstruct with all buildings
+  accessible, overlaps/owner escapes0 and one occupied connected component.
+  Street counts GJ5217->5036, OJ3094->2912, PB2786->2732; SQLite1618 and Hanul314
+  unchanged. Fixture150->156: walkable access can add useful segments, so do not
+  claim every repository has fewer streets. Source trips/evidence remain exact.
+  World/planning schemas pass; all6 repeated World byte comparisons pass;
+ 192 manifest artifact hashes verified. All12 older World golden cases exact.
+- Tests:682 Python checks, one existing Windows symlink skip;66 Node checks.
+  Tests cover complete membership/groups/anchors, deterministic package and
+  source geometry, incompatible version forgery, infeasible full-campus fallback
+  without a pocket, and hinted source growth. Existing positives/negatives,
+  evidence/security/default-mode regressions remain enabled.
+- Artifacts inspected: the six-case real WebGL matched Overview/District/whole-
+  campus/court gallery; GJ before/after full precincts, OJ/PB whole precincts,
+  fixture Overview/close-up, OJ CPU showcase and OJ forced Canvas overview.
+  Campus inspectors expose ALL members plus actual activity-group focus; all
+  eligible sites' source navigation verified. Six-case3LOD browser audit also
+  passes exact file/edge paths, role/filter behavior and camera navigation.
+- Visual findings: large neighborhoods now read as related groups around several
+  commons linked by light pedestrian axes instead of a tiny enclave inside long
+  original vehicle rows. Role colours are held constant for the comparison;
+  W-15 architectural styling remains available, not used to mask geometry.
+  Macro district pattern/terrain identity remains. Rectilinear courts, some long
+  or unused walking branches, retained through roads and plain building forms
+  remain visible; this is not final visual acceptance or all CAMPUS variants.
+- Fixes/reverification: the first probe only supplied40 safe plots for48 files,
+  and full GJ neighborhoods initially failed. Added capacity-improving frontage
+  wings and actual existing vehicle frontage, not smaller buildings/quotas.
+  Nearby-edit regression initially differed by about1e-7 in yaw after a wing
+  endpoint moved; using the exact local axes fixes all48 complete frames.
+  Original slopes/whole-parcel/court/road/evidence tolerances were not relaxed.
+  Earlier probe artifacts remain diagnostic, not the handoff baseline.
+- Performance: static Synthetic builds0 across all3LOD on all6 cases; evidenced
+  cases move on their own complete paths; SQLite explicitly unavailable, no fake
+  traffic. Concurrent SwiftShader Synthetic draw-submission CPU p95 roughly
+ 0.4..1.9ms; first submission67.7..1544.1ms. No GPU completion/FPS/RSS/speedup
+  claim. Observed generation GJ72.03/OJ31.96/PB19.00s; planning costs real time
+  and is bounded. Do not turn this into an SLA or a reason for a Rust rewrite.
+- Spec alignment: PASS for the user-authorized correction, not completion of the
+  entire campus/road milestone. Re-read technical contracts/layout/rendering/
+  limits; functional AC-002/003/006/008/009/011/014; product DEC-005..009/011;
+  original road/campus design5/8/9 and the explicit user clarification. No
+  runtime AI/API, target build/execution, schema break or fabricated source facts.
+- Open risks / next actions: campus morphology now applies to the correct unit;
+  spatial naturalness, spare walking branches, riverside forms, service/emergency
+  access and landmark/LOD work remain open. Do not spend repeated cycles tuning
+  a particular GJ courtyard or call the original milestone fully finished.
+- Commits/delivery: design9cfebf8 and this coherent planner/schema/viewer/tests/
+  checkpoint unit on `feat/semantic-zoning`; inspect human commit metadata and
+  normal upstream push at handoff. Generated artifacts/clones/helpers stay
+  outside source control; the pre-existing three fixture caches are untouched.

@@ -534,6 +534,27 @@ def apply_campuses(
         if sites:
             decision["reason"] = "PARENT_DIVERSITY_LIMIT"
             continue
+        if style == "neighborhood":
+            from .campus_neighborhood import neighborhood_layout
+
+            fit = {}
+            try:
+                layout = neighborhood_layout(z, polygons[z['id']], selections[z['id']]['axis'],
+                                             derive(seed,z['id'],VERSION),roads,terrain,pairs,fit)
+            except ValueError as error:
+                if not str(error).startswith('campus neighborhood ') or 'limit' not in str(error):
+                    raise
+                decision.update(reason='RESOURCE_LIMIT_FALLBACK',fit={'limit':str(error)})
+                continue
+            decision['fit'] = fit
+            if layout is None:
+                decision['reason'] = 'FULL_NEIGHBORHOOD_FIT_FALLBACK'
+                continue
+            plots, walks, site = layout
+            plans[z['id']] = (plots,walks,site['axis'],None)
+            sites[z['id']] = site
+            decision.update(status='SELECTED',reason='WHOLE_NEIGHBORHOOD_PLANNED')
+            continue
         mixed = None
         variants = ["ACADEMIC_QUAD"]
         if style == "varied":
@@ -609,13 +630,17 @@ def collect_plan(blocks, style="quad"):
         from .campus_forms import VERSION as FORM_VERSION
 
         result.update(version=FORM_VERSION, style=style)
+    if style == "neighborhood":
+        from .campus_neighborhood import VERSION as NEIGHBORHOOD_VERSION
+
+        result.update(version=NEIGHBORHOOD_VERSION,style=style)
     return result
 
 
 def validate_campuses(world):
     """Reconstruction is checked upstream; independently check occupied courts."""
     style = world["campusPlan"].get("style", "quad")
-    if style not in ("quad", "varied") or world["campusPlan"] != collect_plan(
+    if style not in ("quad", "varied", "neighborhood") or world["campusPlan"] != collect_plan(
         world["zoning"]["blocks"], style
     ):
         raise ValueError("campus plan differs from verified block records")
@@ -639,6 +664,16 @@ def validate_campuses(world):
     for site in sites:
         if not set(site["anchorEntityIds"]).issubset(site["memberEntityIds"]):
             raise ValueError("campus anchor is not an original member")
+        if style == 'neighborhood':
+            zone=next(z for z in world['zoning']['zones'] if z['id']==site['zoneId'])
+            if site['memberEntityIds']!=sorted(zone['memberEntityIds']) or site['retainedMemberEntityIds']:
+                raise ValueError('campus precinct must include the entire source neighborhood')
+            parcels={p['entityId']:p for p in world['parcels']}
+            if not all(parcels[k]['slotId']==slot for k,slot in site['anchorSlots'].items()):
+                raise ValueError('campus activity anchor left its planned group')
+            for group in site['activityCenters']:
+                if not any(parcels[k]['slotId'] in group['slotIds'] for k in site['memberEntityIds']):
+                    raise ValueError('campus activity group has no original source members')
         for court in site["courts"]:
             x0, z0, x1, z1 = bounds(court["polygon"])
             near = {
