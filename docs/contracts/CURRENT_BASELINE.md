@@ -1,5 +1,38 @@
 # Current implementation contract baseline
 
+## Continuous district fabric and flat landscaping — 2026-10-19
+
+[ADR-033](../adr/ADR-033.md) adds a presentation-only `landscape/0.1` artifact
+to adaptive World packages. Existing World/City/UCG/planning bytes, parcel
+frames, physical streets, source roles/membership and exact trips are unchanged.
+Other World modes retain their former presentation. The local Python packaging
+API accepts `landscaping=False` for a same-world ablation; Structure overlay hides
+the decorative layer in the viewer. This is not elevation/hydrology or a new
+City archetype. No additional runtime package or network service is required.
+
+`landscape.json` and the derived adapter's `landscape` hold `decorative:true`,
+`terrainPreset:"flat"`, green `patches`, explicit low-poly tree `faces`, and
+bounded-work diagnostics. CPU SVG/WebGL/Canvas consume this same geometry.
+No source entity/edge is created for scenery. Parent districts provide continuous
+ground materials; administrative neighborhoods remain exact selectable polygons
+and inspectable memberships, not individually colored solid floor plates.
+
+Planting follows one seeded smooth world-space field, clipped by parent land
+and subtracted against buffered whole parcels, full-width streets/driveways
+including their end caps, and junction clearance. Rounded polygons retain a
+conservative margin. Trees fit fully in retained patches and avoid each other.
+Caps:16k candidates,250k index entries,2M broad/500k narrow checks,64 temporary
+pieces per candidate,12k output patches and900 trees. On incomplete indexing,
+emit no planting; on later budget exhaustion, retain only already-certified
+pieces and report the reason. These limits never truncate source facts.
+
+Real four-repository before/after outputs are `district-fabric-reviewed-r1`,
+with actual WebGL comparisons in `district-fabric-focus-r1`. Patches/trees:
+OJ2320/538, GJ2815/645, PocketBase1468/319, SQLite1191/210; no budget exhausted.
+Repeated packages match and unchanged physical worlds need no hint migration.
+More geometry and larger packages are a real presentation cost; cached Synthetic
+builds stay0. Crowded pattern intersections remain open, not solved by planting.
+
 ## Mixed functional neighborhoods and adaptive patterns — 2026-10-19
 
 [ADR-032](../adr/ADR-032.md) adds `--pattern-scale adaptive` with neighborhoods,

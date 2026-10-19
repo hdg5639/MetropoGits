@@ -14,6 +14,7 @@ from scripts.canonical_json import canonical_json_bytes
 from .geometry import bounds, centroid, point, ribbon
 from .seed import derive
 from .zoning import planning_document
+from .landscape import generate_landscape
 
 GROUND = ["#33464b", "#4a4149", "#354b42", "#504835", "#3e4454", "#4e3c42", "#3b4c50"]
 ZONE_COLORS = {
@@ -38,7 +39,14 @@ COLORS = dict(
 )
 
 
-def view_data(world, scene, graph):
+def _landscape(world, value):
+    if value is None:
+        return generate_landscape(world) if world.get("patternScale") == "adaptive" else False
+    return value
+
+
+def view_data(world, scene, graph, *, landscape=None):
+    landscape = _landscape(world, landscape)
     root = "visual:world-root:" + derive(world["repositoryNamespace"])
 
     def envelope(poly):
@@ -227,10 +235,20 @@ def view_data(world, scene, graph):
                 )
                 for z in neighborhoods
             ]
+    if landscape:
+        # Local administrative cells live in one continuous parent material.
+        # Keep the actual cells in territories/inspectors, not separate plates.
+        data["occupiedGround"]["pads"] = [
+            dict(districtId=d["id"], polygons=[list(reversed(d["polygon"]))],
+                 color=GROUND[i % len(GROUND)])
+            for i, d in enumerate(world["districts"])
+        ]
+        data["landscape"] = landscape
     return data
 
 
-def render_svg(world, width=1200, height=750):
+def render_svg(world, width=1200, height=750, *, landscape=None):
+    landscape = _landscape(world, landscape)
     def iso(p, y=0):
         return [(p[0] - p[1]) * 0.866, (p[0] + p[1]) * 0.5 - y]
 
@@ -275,7 +293,7 @@ def render_svg(world, width=1200, height=750):
                 f'data-directory-id="{escape(d["id"])}" stroke="#62727c" stroke-width=".6"',
             )
         )
-    for z in world.get("zoning", {}).get("zones", []):
+    for z in ([] if landscape else world.get("zoning", {}).get("zones", [])):
         lines.append(
             polygon(
                 [project(p) for p in z["polygon"]],
@@ -283,6 +301,10 @@ def render_svg(world, width=1200, height=750):
                 f'data-zone-id="{escape(z["id"])}"',
             )
         )
+    if landscape:
+        for patch in landscape["patches"]:
+            lines.append(polygon([project(p, .01) for p in patch["polygon"]],
+                                 patch["color"], 'data-decorative="green-pocket"'))
     for s in world["streets"]:
         lines.append(
             polygon(
@@ -291,6 +313,13 @@ def render_svg(world, width=1200, height=750):
             )
         )
     faces = []
+    if landscape:
+        for tree in landscape["trees"]:
+            for face in tree["faces"]:
+                vertices = face["points"]
+                depth = sum(x + z + y for x, y, z in vertices) / len(vertices)
+                faces.append((depth, [project([x, z], y) for x, y, z in vertices],
+                              face["color"], None, 1))
     for b in world["parcels"]:
         color = COLORS.get(b["archetype"], COLORS["GENERIC_BUILDING"])
         for part in b["parts"]:
@@ -333,7 +362,8 @@ def render_svg(world, width=1200, height=750):
             polygon(
                 vertices,
                 color,
-                f'data-entity-id="{escape(identity)}" stroke="#10202a" stroke-width=".15"',
+                (f'data-entity-id="{escape(identity)}" stroke="#10202a" stroke-width=".15"'
+                 if identity else 'data-decorative="tree"'),
             )
         )
     for d in world["districts"]:
@@ -347,10 +377,13 @@ def render_svg(world, width=1200, height=750):
         f'<text x="28" y="{height - 17}" fill="#8da9b8" font-family="sans-serif" font-size="11">Flat capacity prototype · {len(world["routing"]["routes"])} source-backed trips · No runtime traffic measurement</text>',
         "</svg>",
     ]
+    if landscape:
+        lines[-2] = lines[-2].replace("Flat capacity prototype", "Flat landscaping (decorative)")
     return "\n".join(lines).encode("utf8")
 
 
-def package_world(world, scene, graph, validation):
+def package_world(world, scene, graph, validation, *, landscaping=True):
+    landscape = _landscape(world, None if landscaping else False)
     resources = files("metropogits.viewer_assets")
     artifacts = {
         f"assets/{name}": resources.joinpath(name).read_bytes()
@@ -378,12 +411,18 @@ def package_world(world, scene, graph, validation):
         b'<span id="renderer-mode"',
         b'<button type="button" data-action="toggle-structure" aria-pressed="false">Structure overlay</button><span id="renderer-mode"',
     )
-    svg = render_svg(world)
+    if landscape:
+        page = page.replace(
+            b'<span><i class="line messaging"></i>Messaging path</span>',
+            b'<span><i class="line messaging"></i>Messaging path</span>'
+            b'<span title="Procedural flat greenery; not source architecture. Hidden by Structure overlay."><i class="swatch landscape"></i>Landscape (decorative)</span>',
+        )
+    svg = render_svg(world, landscape=landscape)
     artifacts.update(
         {
             "index.html": page,
             "assets/viewer-data.js": _javascript_assignment(
-                "METROPOGITS_DATA", view_data(world, scene, graph)
+                "METROPOGITS_DATA", view_data(world, scene, graph, landscape=landscape)
             ),
             "world.json": canonical_json_bytes(world),
             "city.json": canonical_json_bytes(scene),
@@ -394,6 +433,8 @@ def package_world(world, scene, graph, validation):
             "README_SNIPPET.md": b"[![Procedural source city](showcase.svg)](index.html)\n",
         }
     )
+    if landscape:
+        artifacts["landscape.json"] = canonical_json_bytes(landscape)
     if "zoning" in world or "softZoning" in world:
         artifacts["planning.json"] = canonical_json_bytes(planning_document(world))
     types = {

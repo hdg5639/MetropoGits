@@ -2,6 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import '../metropogits/viewer_assets/viewer-filters.js';
 const engine=globalThis.METROPOGITS_FILTERS;
+test('continuous polygon ground retains exact child picking without painted plates',()=>{
+  const poly=[[0,0],[10,0],[4,7],[0,5]];
+  const territory={rectangles:[],boundary:poly.map((p,i)=>[p,poly[(i+1)%poly.length]])};
+  assert.deepEqual(engine.territoryPickPolygons(territory),[poly]);
+  assert.deepEqual(engine.territoryPickPolygons({...territory,boundary:territory.boundary.slice(1)}),[]);
+  assert.deepEqual(engine.territoryPickPolygons({...territory,rectangles:[{x:1,z:2,width:3,depth:4}]}),
+    [[[1,2],[4,2],[4,6],[1,6]]]);
+});
 test('compact aggregate ground follows masses without changing membership or allocated plots',()=>{
   const f={id:'a',x:0,z:0,width:100,depth:100,height:15,
     plots:[{x:0,z:0,width:100,depth:100}],memberEntityIds:['1','2','3','4'],

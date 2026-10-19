@@ -758,6 +758,19 @@
           quad(triangles,[p[0],p[i],p[i+1],p[i+1]].map(([x,z])=>[x,-.03,z]),[0,1,0],tint);
       }
     }
+    if(data.landscape && !structureOverlay) {
+      for(const patch of data.landscape.patches) {
+        const p=patch.polygon;
+        for(let i=1;i<p.length-1;i++)
+          quad(triangles,[p[0],p[i+1],p[i],p[i]].map(([x,z])=>[x,.01,z]),[0,1,0],color(patch.color));
+      }
+      for(const tree of data.landscape.trees)for(const face of tree.faces) {
+        const p=face.points;
+        const normal=normalize(cross(subtract(p[1],p[0]),subtract(p[2],p[0])));
+        for(let i=1;i<p.length-1;i++)
+          quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color));
+      }
+    }
     for (const district of framingDistricts) {
       if(data.occupiedGround && !structureOverlay) continue;
       for (const rectangle of districtTerritory(district).rectangles) {
@@ -1133,13 +1146,8 @@
     const regions = [];
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
-      for (const rectangle of districtTerritory(district).rectangles) {
-        const points = [
-          [rectangle.x, 0.08, rectangle.z],
-          [rectangle.x + rectangle.width, 0.08, rectangle.z],
-          [rectangle.x + rectangle.width, 0.08, rectangle.z + rectangle.depth],
-          [rectangle.x, 0.08, rectangle.z + rectangle.depth],
-        ];
+      for (const polygon of filterEngine.territoryPickPolygons(districtTerritory(district))) {
+        const points = polygon.map(([x,z])=>[x,.08,z]);
         if (points.every(Boolean)) {
           regions.push({
             id: district.id,
