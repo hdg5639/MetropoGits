@@ -15,6 +15,7 @@ from .terrain import GENERATOR_VERSION as TERRAIN_GENERATOR_VERSION, PRESET as N
 from .rivers import GENERATOR_VERSION as RIVER_GENERATOR_VERSION, PRESET as RIVER_PRESET, crossing_piece, validate_crossings
 from .elevation import GENERATOR_VERSION as VALLEY_GENERATOR_VERSION, PRESET as VALLEY_PRESET, build_surface, validate_profiles
 from .river_landscape import GENERATOR_VERSION as LANDSCAPE_GENERATOR_VERSION, PRESET as LANDSCAPE_PRESET, tunnel_piece, validate_landscape
+from .terrain_varied import GENERATOR_VERSION as VARIED_GENERATOR_VERSION, PRESET as VARIED_PRESET
 
 
 def validate_world(world, scene, graph):
@@ -22,7 +23,8 @@ def validate_world(world, scene, graph):
         raise ValueError("unsupported world schema")
     if "campusPlan" in world and not isinstance(world["campusPlan"], dict):
         raise ValueError("invalid campus plan")
-    landscape = world.get("generatorVersion") == LANDSCAPE_GENERATOR_VERSION
+    varied = world.get("generatorVersion") == VARIED_GENERATOR_VERSION
+    landscape = varied or world.get("generatorVersion") == LANDSCAPE_GENERATOR_VERSION
     valley = landscape or world.get("generatorVersion") == VALLEY_GENERATOR_VERSION
     river = valley or world.get("generatorVersion") == RIVER_GENERATOR_VERSION
     natural = river or world.get("generatorVersion") == TERRAIN_GENERATOR_VERSION
@@ -31,7 +33,7 @@ def validate_world(world, scene, graph):
     ):
         raise ValueError("porous street policy/version mismatch")
     if natural:
-        if (world.get("terrainPreset") != (LANDSCAPE_PRESET if landscape else VALLEY_PRESET if valley else RIVER_PRESET if river else NATURAL_PRESET)
+        if (world.get("terrainPreset") != (VARIED_PRESET if varied else LANDSCAPE_PRESET if landscape else VALLEY_PRESET if valley else RIVER_PRESET if river else NATURAL_PRESET)
                 or world.get("streetPolicy") not in ("original", "shared", "permeable", "porous")):
             raise ValueError("terrain preset/version mismatch")
         validate_terrain(world.get("terrain"), world["seed"])
@@ -52,7 +54,7 @@ def validate_world(world, scene, graph):
         or world.get("zoningPolicy") != "neighborhoods"
         or world.get("generatorVersion")
         not in (
-            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION, VALLEY_GENERATOR_VERSION, LANDSCAPE_GENERATOR_VERSION)
+            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION, VALLEY_GENERATOR_VERSION, LANDSCAPE_GENERATOR_VERSION,VARIED_GENERATOR_VERSION)
             if world["patternScale"] == "adaptive"
             else ("flat-neighborhood-patterns/0.1",)
         )
@@ -71,6 +73,7 @@ def validate_world(world, scene, graph):
             RIVER_GENERATOR_VERSION,
             VALLEY_GENERATOR_VERSION,
             LANDSCAPE_GENERATOR_VERSION,
+            VARIED_GENERATOR_VERSION,
         )
     ) != (world.get("patternScale") in ("district", "adaptive")):
         raise ValueError("world pattern scale version mismatch")

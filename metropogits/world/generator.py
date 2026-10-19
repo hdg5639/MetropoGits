@@ -24,6 +24,7 @@ from .terrain import (
 from .rivers import GENERATOR_VERSION as RIVER_GENERATOR_VERSION, PRESET as RIVER_PRESET, annotate_crossings
 from .elevation import GENERATOR_VERSION as VALLEY_GENERATOR_VERSION, PRESET as VALLEY_PRESET, annotate, build_surface
 from .river_landscape import GENERATOR_VERSION as LANDSCAPE_GENERATOR_VERSION, PRESET as LANDSCAPE_PRESET
+from .terrain_varied import GENERATOR_VERSION as VARIED_GENERATOR_VERSION, PRESET as VARIED_PRESET
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
 from .organic import organic_slots
@@ -83,7 +84,8 @@ def generate_world(
         raise ValueError('campus requires routed adaptive neighborhoods')
     if street_hierarchy and (pattern_scale != "adaptive" or not _route):
         raise ValueError("street hierarchy requires routed adaptive neighborhoods")
-    if terrain not in ("flat", NATURAL_PRESET, RIVER_PRESET, VALLEY_PRESET, LANDSCAPE_PRESET) or (
+    landscape_presets = (LANDSCAPE_PRESET, VARIED_PRESET)
+    if terrain not in ("flat", NATURAL_PRESET, RIVER_PRESET, VALLEY_PRESET, *landscape_presets) or (
         terrain != "flat" and (pattern_scale != "adaptive" or not _route)
     ):
         raise ValueError("natural terrain requires routed adaptive neighborhoods")
@@ -253,6 +255,13 @@ def generate_world(
     owners = {b["entityId"]: key for key, members in grouped.items() for b in members}
     pairs = dependency_pairs(graph, owners) if zoning == "neighborhoods" else {}
     campus_pairs = dependency_pairs(graph, dict.fromkeys(owners, "campus")) if campus else None
+    if terrain == VARIED_PRESET:
+        # Multiple independent basins/ridges need developable room in addition
+        # to the old single-corridor budget, before the fixed terrain is seeded.
+        for budget in budgets.values():
+            extra=budget['total']*.7
+            budget['terrainEnvelopeReserve']=budget.get('terrainEnvelopeReserve',0)+extra
+            budget['total']+=extra
     # A tiny corner district still needs a complete frontage/circulation cell.
     # Budget it locally rather than inflating every large district to repair it.
     if len(grouped) > 1:
@@ -284,7 +293,7 @@ def generate_world(
         and (
             pattern_scale == "block"
             or previous.get("generatorVersion") in (
-                ((LANDSCAPE_GENERATOR_VERSION,) if terrain == LANDSCAPE_PRESET else
+                ((VARIED_GENERATOR_VERSION,) if terrain == VARIED_PRESET else (LANDSCAPE_GENERATOR_VERSION,) if terrain == LANDSCAPE_PRESET else
                  (VALLEY_GENERATOR_VERSION,) if terrain == VALLEY_PRESET else
                  (RIVER_GENERATOR_VERSION,) if terrain == RIVER_PRESET else (TERRAIN_GENERATOR_VERSION,)) if terrain != "flat" else
                 (ADAPTIVE_GENERATOR_VERSION, SHARED_GENERATOR_VERSION, ALLEY_GENERATOR_VERSION, POROUS_GENERATOR_VERSION)
@@ -347,7 +356,7 @@ def generate_world(
             envelope = [point([v * radius for v in p]) for p in envelope]
             if terrain != "flat" and terrain_data is None:
                 # Natural reserves precede district polygons, roads and source addresses.
-                terrain_data = (generate_terrain(envelope, resolved_seed, terrain) if terrain in (RIVER_PRESET, VALLEY_PRESET, LANDSCAPE_PRESET)
+                terrain_data = (generate_terrain(envelope, resolved_seed, terrain) if terrain in (RIVER_PRESET, VALLEY_PRESET, *landscape_presets)
                                 else generate_terrain(envelope, resolved_seed))
             polygons = partition(
                 envelope,
@@ -484,7 +493,7 @@ def generate_world(
                     local_seed,
                     old_parcels if attempt == 0 and compatible else None,
                 )
-            if terrain == LANDSCAPE_PRESET and not compatible and placed is not None and len(candidates)<len(members)+1:
+            if terrain in landscape_presets and not compatible and placed is not None and len(candidates)<len(members)+1:
                 # Do not accept a terrain-constrained district at exactly full
                 # capacity: retain one real vacant address for hinted growth.
                 placed=None
@@ -565,11 +574,11 @@ def generate_world(
         raise ValueError(
             "world parcel capacity infeasible after bounded envelope repair"
         )
-    if terrain == LANDSCAPE_PRESET:
+    if terrain in landscape_presets:
         from .river_landscape import joined_streets
         raw=joined_streets(raw,parcels,terrain_data)
     streets = atomic_streets(raw)
-    if terrain in (VALLEY_PRESET,LANDSCAPE_PRESET):
+    if terrain in (VALLEY_PRESET,*landscape_presets):
         annotate(streets,parcels,terrain_data)
     routing, networks, coverage = (
         route_world(graph, parcels, streets) if _route else ({}, [], {})
@@ -612,7 +621,7 @@ def generate_world(
             if additions:
                 try:
                     candidate = atomic_streets(streets + additions)
-                    if terrain in (VALLEY_PRESET,LANDSCAPE_PRESET):
+                    if terrain in (VALLEY_PRESET,*landscape_presets):
                         annotate(candidate,parcels,terrain_data)
                     new_routing, new_networks, new_coverage = route_world(graph, parcels, candidate)
                     check_trip_budgets(routing, new_routing)
@@ -625,7 +634,7 @@ def generate_world(
                 else:
                     streets, routing, networks, coverage = candidate, new_routing, new_networks, new_coverage
             planning_diagnostics.append(alley_note)
-    if terrain == LANDSCAPE_PRESET and terrain_data["tunnels"]:
+    if terrain in landscape_presets and terrain_data["tunnels"]:
         # Candidates join existing mountain contour streets. Construct only when
         # a real source trip chooses the shorter complete mountain crossing.
         for tunnel in terrain_data["tunnels"]:
@@ -745,16 +754,16 @@ def generate_world(
         world["generatorVersion"] = POROUS_GENERATOR_VERSION
         world["streetPolicy"] = street_policy
     if terrain_data:
-        if terrain in (RIVER_PRESET,VALLEY_PRESET,LANDSCAPE_PRESET):
+        if terrain in (RIVER_PRESET,VALLEY_PRESET,*landscape_presets):
             annotate_crossings(streets, routing, terrain_data)
-        if terrain in (VALLEY_PRESET,LANDSCAPE_PRESET):
+        if terrain in (VALLEY_PRESET,*landscape_presets):
             world["surface"]=build_surface(terrain_data,districts)
             physical={s["id"]:s for s in streets}
             for s in routing["segments"]:
                 for field in ("heights","heightProfile","tunnelId"):
                     if field in physical[s["physicalId"]]:
                         s[field]=physical[s["physicalId"]][field]
-        world.update(generatorVersion=LANDSCAPE_GENERATOR_VERSION if terrain == LANDSCAPE_PRESET else VALLEY_GENERATOR_VERSION if terrain == VALLEY_PRESET else RIVER_GENERATOR_VERSION if terrain == RIVER_PRESET else TERRAIN_GENERATOR_VERSION, terrainPreset=terrain,
+        world.update(generatorVersion=VARIED_GENERATOR_VERSION if terrain == VARIED_PRESET else LANDSCAPE_GENERATOR_VERSION if terrain == LANDSCAPE_PRESET else VALLEY_GENERATOR_VERSION if terrain == VALLEY_PRESET else RIVER_GENERATOR_VERSION if terrain == RIVER_PRESET else TERRAIN_GENERATOR_VERSION, terrainPreset=terrain,
                      terrain=terrain_data, streetPolicy=street_policy)
     if campus:
         from .campus import collect_plan

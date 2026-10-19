@@ -257,7 +257,7 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic")
                 f["faces"]=lifted_faces(f["faces"],world["terrain"])
         if world["terrain"].get("crossings"):
             data["infrastructure"] = dict(structural=True, faces=bridge_faces(world["terrain"]))
-        if world["terrain"].get("version")=="terrain/0.4":
+        if world["terrain"].get("version") in ("terrain/0.4","terrain/0.5"):
             from .river_landscape import natural_faces
             data["terrain"]["features"]=natural_faces(world)
     if "surface" in world:
@@ -395,7 +395,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
         lines.append(polygon([project(v,p.get("pointHeights",[p.get("elevation",.12)]*len(p["points"]))[i])
                               for i,v in enumerate(p["points"])],p["color"], 'data-structural="street-marking"'))
     faces = []
-    open_river=world.get("terrain",{}).get("version")=="terrain/0.4"
+    open_river=world.get("terrain",{}).get("version") in ("terrain/0.4","terrain/0.5")
     if open_river:
         from .river_landscape import natural_faces
     for feature in (natural_faces(world) if open_river else world.get("terrain", {}).get("features", [])):
