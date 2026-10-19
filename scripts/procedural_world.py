@@ -48,6 +48,7 @@ def main():
         "--namespace", help="portable world identity; does not rewrite existing UCG IDs"
     )
     parser.add_argument("--previous-world", type=Path)
+    parser.add_argument('--campus',action='store_true',help='adaptive only: evidence-bounded shared-courtyard pockets with real walking access')
     parser.add_argument("--street-hierarchy", action="store_true",
                         help="adaptive only: offline structural street classes and connected backbone")
     parser.add_argument(
@@ -93,6 +94,7 @@ def main():
             street_policy=args.street_policy,
             terrain=args.terrain,
             street_hierarchy=args.street_hierarchy,
+            campus=args.campus,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)

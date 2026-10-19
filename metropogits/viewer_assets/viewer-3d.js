@@ -1819,6 +1819,7 @@
     if (!zone) {
       for (const child of Object.values(data.semanticZoning || {}).filter(z => z.parentId === districtId)) {
         const button = element('button', `${child.label} · ${child.memberEntityIds.length} files`, 'focus-button');
+        button.dataset.zoneId = child.id;
         button.type = 'button'; button.addEventListener('click', () => showSelection({kind: 'district', id: child.id}));
         inspector.append(button);
       }
@@ -1839,6 +1840,16 @@
         inspector.append(element('p',`${zone.internalEdgeIds.length} original internal relations; ${zone.structuralMemberEntityIds.length} additional structural members. Role counts describe actual files, not an exclusive zoning rule.`, 'functional-neighborhood-summary'));
       }
       factSection(inspector,'LOCAL BLOCK PLANS',blocks.map(b=>`${b.planningProfile} · ${b.memberEntityIds.length} files · ${b.id}`));
+      for (const block of blocks.filter(b=>b.campusSite)) {
+        const site=block.campusSite;
+        inspector.append(element('p',`MIXED CAMPUS · ${site.memberEntityIds.length} of ${block.memberEntityIds.length} source files around ${site.courts.length} reserved courts. Remaining files retain the local street grammar. Walking access is physical planning, not a research or runtime-communication claim.`, 'campus-summary'));
+        factSection(inspector,'CAMPUS BASIS',[block.campusDecision.reason,`${block.campusDecision.supportingEntityIds.length} evidence-supported test files · ${block.campusDecision.internalPairCount} original internal file pairs`]);
+        for (const id of site.memberEntityIds) {
+          const button=element('button',entities.get(id)?.path || id,'focus-button campus-member');
+          button.type='button';button.dataset.entityId=id;
+          button.addEventListener('click',()=>showSelection({kind:'building',id}));inspector.append(button);
+        }
+      }
       factSection(inspector,'SUPPORTING DEPENDENCY EDGES',zone.supportingMembers.slice(0,5).flatMap(m=>m.coreEdgeIds));
     }
     factSection(inspector, 'ZONING BASIS', [zone.classification.status, `${zone.planningProfile} · ${zone.allocation.algorithm}`, ...zone.classification.ruleIds]);

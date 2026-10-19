@@ -1084,3 +1084,43 @@ bank endpoint, but cannot attach to or cross an elevated approach/deck at a
 different height. No flat ramp join is fabricated after source routing. The
 existing independent bridge/profile validators remain unchanged. This repairs
 formerly rejected geography; valid frozen corpus fields/geography stay exact.
+
+### Opt-in source-mixed courtyard pockets (ADR-042)
+
+`scripts.procedural_world INPUT --zoning neighborhoods --pattern-scale adaptive
+--campus ...` enables the bounded CP-00/01 pilot and derives street hierarchy.
+World/planning optionally carry `campusPlan` version `campus-plan/0.1` with
+reproducible eligibility, evidence IDs, actual member/anchor IDs, court polygons
+and physical walking segments. City/UCG/IDs and original source sizes/roles stay
+unchanged. Without the flag, old canonical World output stays unchanged.
+
+Eligibility uses verified TEST claims or actual internal source-pair cohesion,
+including cross-parent pairs in the external-coupling count. Seeded weighted
+choice is not a role mapping: a tests directory alone does not qualify. At most
+one feasible MIXED_CAMPUS pocket per parent uses8..32 actual related files;
+remaining source files retain the base local planning grammar. Blocks retain
+planningProfile/patternMode and add urbanGrammar/campusSite; selected parcels
+use blockProfile CAMPUS. No research/framework capability is inferred.
+
+First finish the original neighborhood capacity repairs. Then reserve1..3 courts
+and full rotated parcels, remove conflicting unoccupied local address candidates
+and connect a width1.2 walking loop/spur to existing actual streets before file
+assignment. Terrain, parent/zone boundaries and protected macro roads stay fixed.
+Insufficient supply, disconnected/unsafe access or campus resource exhaustion
+retains the original grammar with an explicit reason, not enlarged city land.
+Require at least three non-corner frontage sides and bounded lawn per potential
+member; a large lawn with every building on one side is not a successful campus.
+
+Walkways belong to the authoritative physical graph and are PEDESTRIAN with
+CAMPUS_WALKWAY provenance, not promoted vehicular collectors. Original source
+pair/edge identities are retained while routes follow the changed local graph.
+CPU/WebGL/Canvas share reserved lawns and paths; procedural trees avoid courts.
+Both interactive inspectors enumerate exact pocket members and disclose that
+physical planning is not research or runtime-communication evidence. Synthetic
+uses stored complete original-pair paths and reuses static meshes.
+
+Limits per candidate:384 centers,200000 clearance/access checks,256 walking
+pieces; independent final court validation checks whole parcels and pavement.
+Cross-policy hints are incompatible; same-policy growth preserves actual slots
+when feasible. Riverside/other campus variants, vehicle service/emergency access,
+materials, and campus-derived landmark redesign remain outside this pilot.

@@ -11,7 +11,7 @@ from .adaptive import (
 from .seed import derive
 
 
-def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False, terrain=None, porous=False):
+def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False, terrain=None, porous=False, campus=False, campus_pairs=None):
     candidates, roads, main, pattern = adaptive_field(
         parent["polygon"], parent["localSeed"], base, parent["id"], stitch=stitch, morphology=morphology
     )
@@ -44,11 +44,26 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
             plans, main, boundary, parent["polygon"], pattern,
             {z["id"]: len(z["memberEntityIds"]) for z in zones}, terrain,
         )
+    decisions, sites = {}, {}
+    if campus:
+        from .campus import apply_campuses
+
+        decisions, sites = apply_campuses(plans,selections,zones,polygons,parent['localSeed'],main+boundary,terrain,
+                                         campus_pairs if campus_pairs is not None else pairs)
+    if sites:
+        walks = [w for site in sites.values() for w in site['walkways']]
+        for w in walks:
+            w['patternId'] = pattern['id']
+        main = main + walks
+        pattern = dict(pattern,campusWalkwayCount=len(walks),roadCount=pattern['roadCount']+len(walks),
+                       protectedStreetIds=sorted(set(pattern['protectedStreetIds'])|{w['id'] for w in walks}))
     for z in zones:
         children = [b for b in blocks if b["zoneId"] == z["id"]]
         if len(children) != 1:
             raise ValueError("adaptive neighborhood sector count mismatch")
         b = children[0]
+        if campus and (b.get('campusDecision')!=decisions[z['id']] or b.get('campusSite')!=sites.get(z['id'])):
+            raise ValueError('campus decision or reserved geometry mismatch')
         selection = selections[z["id"]]
         choices = plans[z["id"]][0]
         if (
@@ -74,6 +89,8 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
                 raise ValueError(
                     "adaptive frontage did not follow its reserved road plan"
                 )
+            if z['id'] in sites and ((key in sites[z['id']]['memberEntityIds']) != (s.get('blockProfile')=='CAMPUS')):
+                raise ValueError('campus source membership did not follow its assigned plots')
     expected = [
         dict(b, boundaryTypes=["NEIGHBORHOOD_BOUNDARY"] * len(b["polygon"]))
         for b in blocks

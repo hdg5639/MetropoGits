@@ -92,17 +92,26 @@ def derive_street_plan(world):
         )
         for s in streets
     }
+    walking = set()
+    for site in world.get('campusPlan',{}).get('sites',[]):
+        for r in site['walkways']:
+            for s in nearby([r['start'],r['end']]):
+                if not s['access'] and s['width']<=r['width']+.002 and all(
+                    math.dist(p,nearest(p,r['start'],r['end']))<.002 for p in (s['start'],s['end'])):
+                    walking.add(s['id'])
+    for identity in walking:
+        profiles[identity].update(streetClass='PEDESTRIAN',reasons=['CAMPUS_WALKWAY'])
 
     def promote(s, cls, reason):
         p = profiles[s["id"]]
-        if s["access"]:
+        if s["access"] or s['id'] in walking:
             return
         if CLASSES.index(cls) < CLASSES.index(p["streetClass"]):
             p["streetClass"] = cls
         p["reasons"] = sorted(set(p["reasons"] + [reason]))
 
     for r in world.get("zoning", {}).get("mainRoads", []):
-        if r["id"].startswith("world:permeability:"):
+        if r["id"].startswith(("world:permeability:","world:campus-court:")):
             continue  # A protected narrow alley is not a collector by fiat.
         for s in nearby([r["start"], r["end"]]):
             if all(
@@ -128,7 +137,7 @@ def derive_street_plan(world):
     seen = set()
     for node in sorted(adjacency):
         if node in seen or not any(
-            not by_id[k]["access"] for _, k, _ in adjacency[node]
+            not by_id[k]["access"] and k not in walking for _, k, _ in adjacency[node]
         ):
             continue
         nodes, ids, queue = {node}, set(), [node]
@@ -136,7 +145,7 @@ def derive_street_plan(world):
         while queue:
             at = queue.pop()
             for other, k, _ in adjacency[at]:
-                if by_id[k]["access"]:
+                if by_id[k]["access"] or k in walking:
                     continue
                 ids.add(k)
                 if other not in seen:

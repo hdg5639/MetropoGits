@@ -287,6 +287,8 @@ def plan_adaptive(
     previous_slots=None,
     terrain=None,
     porous=False,
+    campus=False,
+    campus_pairs=None,
 ):
     parent = clusters[0]["parentId"]
     parent_candidates, parent_roads, main, pattern = adaptive_field(
@@ -409,8 +411,24 @@ def plan_adaptive(
             ]
     else:
         return None, [], [], notes, False, [], [], pattern
+    # First finish the original capacity repairs. An optional pocket must not
+    # rescue an earlier allocation attempt and change unrelated zone boundaries.
+    campus_decisions, campus_sites = {}, {}
+    if campus:
+        from .campus import apply_campuses
+
+        campus_decisions, campus_sites = apply_campuses(
+            plans, selections, clusters, polygons, seed, actual_main + boundary, terrain,
+            campus_pairs if campus_pairs is not None else pairs)
     main = actual_main + boundary
     pattern = actual_pattern
+    if campus_sites:
+        walks = [w for site in campus_sites.values() for w in site['walkways']]
+        for w in walks:
+            w['patternId'] = pattern['id']
+        main += walks
+        pattern = dict(pattern, campusWalkwayCount=len(walks), roadCount=pattern['roadCount']+len(walks),
+                       protectedStreetIds=sorted(set(pattern['protectedStreetIds'])|{w['id'] for w in walks}))
     parcels, records, blocks = [], [], []
     total = sum(v for _, v in demands)
     targets = {key: area(polygon) * v / total for key, v in demands}
@@ -436,22 +454,25 @@ def plan_adaptive(
             preferred = retained_addresses(
                 population, unreserved_plans[key][0], choices, parent, paths, local_seed, local_pairs
             )
-        placed = populate(
-            population,
-            choices,
-            parent,
-            paths,
-            local_seed,
-            preferred,
-        )
-        assignment, affinity = optimize_addresses(
-            placed,
-            local_pairs,
-            {},
-            local_seed,
-            preferred or (),
-        )
-        placed = populate(population, choices, parent, paths, local_seed, assignment)
+        if key in campus_sites:
+            campus_ids = set(campus_sites[key]['memberEntityIds'])
+            placed = []
+            for is_campus in (False,True):
+                selected_population = [b for b in population if (b['entityId'] in campus_ids)==is_campus]
+                selected_choices = [s for s in choices if (s.get('blockProfile')=='CAMPUS')==is_campus]
+                portion = populate(selected_population,selected_choices,parent,paths,local_seed,preferred)
+                fixed_pairs = {(a,b):w for (a,b),w in local_pairs.items()
+                               if a in {p['entityId'] for p in portion} and b in {p['entityId'] for p in portion}}
+                assignment, _ = optimize_addresses(portion,fixed_pairs,{},local_seed,preferred or ())
+                placed.extend(populate(selected_population,selected_choices,parent,paths,local_seed,assignment))
+            placed.sort(key=lambda p:p['entityId'])
+            affinity = dict(algorithm='campus-fixed-members/0.1', preservedMembers=True)
+        else:
+            placed = populate(
+                population, choices, parent, paths, local_seed, preferred)
+            assignment, affinity = optimize_addresses(
+                placed, local_pairs, {}, local_seed, preferred or ())
+            placed = populate(population, choices, parent, paths, local_seed, assignment)
         block_id = "world:block:" + derive(key, VERSION)
         for p in placed:
             p.update(zoneId=key, blockId=block_id)
@@ -474,6 +495,10 @@ def plan_adaptive(
             reused=reuse,
             affinity=affinity,
         )
+        if campus:
+            block['campusDecision'] = campus_decisions[key]
+        if key in campus_sites:
+            block.update(urbanGrammar='MIXED_CAMPUS',campusSite=campus_sites[key])
         if regions:
             block["planningRegions"] = regions
         elif selections[key]["mode"] == "INHERITED" and base == "HYBRID":
