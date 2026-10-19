@@ -11,7 +11,7 @@ from .adaptive import (
 from .seed import derive
 
 
-def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False, terrain=None):
+def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False, terrain=None, porous=False):
     candidates, roads, main, pattern = adaptive_field(
         parent["polygon"], parent["localSeed"], base, parent["id"], stitch=stitch, morphology=morphology
     )
@@ -36,6 +36,13 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
 
         plans, main, boundary, ports, pattern = terrain_plan(
             plans, main, boundary, ports, pattern, parent["polygon"], terrain
+        )
+    if porous:
+        from .permeability import reserve_links
+
+        plans, main, pattern = reserve_links(
+            plans, main, boundary, parent["polygon"], pattern,
+            {z["id"]: len(z["memberEntityIds"]) for z in zones}, terrain,
         )
     for z in zones:
         children = [b for b in blocks if b["zoneId"] == z["id"]]

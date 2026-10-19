@@ -7143,3 +7143,108 @@
   Normal configured-upstream push after final identity/staged-diff/remote review;
   actual result reported at handoff. No generated outputs/user caches, agent
   credits, force push or protection bypass.
+
+## Checkpoint 2026-10-19 — ADR-040 sparse internal street permeability
+
+- Implemented: explicit `--street-policy porous`; terrain-first, pre-occupation
+  cross-street reservations, including curved chains, wide gaps and reclaimable
+  vacant lots. Rank bounded candidates by physical isolation/detour, reject
+  redundant cuts and protect whole retained lots/terrain. Retain surviving
+  baseline addresses and original graph-aware role mixtures. Real atomization,
+  shared routing and exact source pairs remain in the existing infrastructure.
+  Independent block reconstruction verifies the new plan/capacity/reserved
+  full-width pavement. Experimental flat generator0.6; natural versions retain
+  pinned porous policy. City/UCG contracts, defaults and previous artifacts stay.
+- Fixtures/revisions: GJ local snapshot06eb492d57141c16, OJ snapshotc2e80f9d3908fec8;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b. Pinned graph/City inputs
+  from river-landscape-r2; additionally fresh analysis of maintained
+  tests/fixtures/repositories/spring-positive at source baselinebd5582e.
+  Target repositories never executed/built/installed.
+- Commands (cwd MetropoGits; task-owned helpers in ../artifacts/visual):
+  `python -X utf8 -m unittest discover -s tests -q`;
+  `$testFiles=(rg --files tests -g '*.test.mjs'); node --test $testFiles`;
+  `python -m ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; `git diff --check`.
+  `python -X utf8 -c "import sys,runpy;sys.argv=['review','permeability-r2','oj'];runpy.run_path('../artifacts/visual/permeability_review.py',run_name='__main__')"`;
+  repeat helper with argv review/permeability-r2/sqlitebrowser/pocketbase/gj.
+  `python -X utf8 -c "import sys,runpy;sys.argv=['check','oj'];runpy.run_path('../artifacts/visual/permeability_current_check.py',run_name='__main__')"`
+  repeated to verify final OJ package bytes after frontage correction;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/verify_inherited_compatibility.py',run_name='__main__')"`.
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/porosity-e2e --out ../artifacts/visual/permeability-e2e-r2/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/permeability-e2e-r2/build --namespace fixture/porosity-e2e --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --terrain river-landscape --out ../artifacts/visual/permeability-e2e-r2/world`.
+- Final artifacts: GJ/PB/SQLite permeability-r2/{gj,pocketbase,sqlitebrowser}/after;
+  OJ permeability-current-r1/oj/after (supersedes r2 OJ's cleanup diagnostic).
+  Fresh Spring permeability-e2e-r2/world. Schema checks for World/planning,
+  canonical source City/UCG byte preservation and full-package determinism pass.
+  Original12 flat/neighborhood/inherited corpus cases retain canonical bytes.
+  Earlier permeability-r1 and diagnostic outputs are retained, not deliverables.
+
+  | Corpus | New links | Reclaimed candidates | Relocated buildings | Trips shortened / longer | Final streets |
+  | --- | ---: | ---: | ---: | ---: | ---: |
+  | GJ | 11 | 0 | 0 | 69 / 0 | 5218 |
+  | OJ | 8 | 4 | 1 | 11 / 0 | 3069 |
+  | PocketBase | 9 | 1 | 1 | 0 / 0 | 2785 |
+  | SQLiteBrowser | 5 | 0 | 0 | no observed trips | 1618 |
+
+  Streets are atomic pieces, not independent logical relations. All3175 source
+  buildings,5782 exact source-pair trips and8592 edges retained; source roles,
+  neighborhood cores/supporting members/mixes, parent/zone polygons, envelope
+  and complete natural terrain unchanged (land ratio1.000 for all four).
+  All source entrances accessible; building/road overlaps and owner escapes0.
+  GJ trip-length sum719111.384→717696.040, OJ250703.498→250214.427 world units;
+  PB unchanged within numerical tolerance; SQLite has0 fabricated routes.
+  Reservation work-budget exhaustion0 across corpus. Generation on this local
+  run GJ55.59s/OJ26.96s/PB16.24s/SQLite8.78s, not a controlled performance SLA.
+- Browser commands: `node scripts/viewer_audit.mjs <Chrome> ../artifacts/visual/permeability-gj-review-r2 ../artifacts/visual/permeability-r2/gj/after ../artifacts/visual/permeability-e2e-r2/world`;
+  same command outputpermeability-reviewed-audit-r1 with final OJ/PB/SQLite paths.
+  `node ../artifacts/visual/permeability_focus.mjs permeability-r2 permeability-reviewed-r1 gj oj pocketbase sqlitebrowser`;
+  `node ../artifacts/visual/permeability_trace.mjs permeability-trace-r2`.
+  Chrome executable C:/Program Files/Google/Chrome/Application/chrome.exe.
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/permeability-final-canvas-r1 <final OJ/PB/SQLite/Spring paths>`;
+  earlier permeability-canvas-r1 includes GJ. All real source/member navigation
+  and Structure overlay/restore checks pass. WebGL passes Overview/District/
+  Detail, camera movement, representative exact source road/route inspection,
+  real source-role member interaction and Synthetic static builds0. Sparse Spring
+  has no complete animated route at Overview; SQLite correctly reports no traffic.
+- Artifacts inspected: actual matched WebGL overview and new-crossing close-ups
+  in permeability-reviewed-r1; real CPU showcase raster captures for GJ/OJ
+  from the audits and PB/SQLite outputs; actual Canvas inspector/Structure output.
+  New alley in GJ was physically pointer-clicked, one original edge-backed trip
+  selected, complete highlight and own-path Synthetic movement verified
+  (permeability-trace-r2/report.json and trace.png). Browser uses SwiftShader;
+  reported timings are CPU instrumentation, not hardware GPU FPS.
+- Visual findings: large radial/industrial/local patterns and broad terrain
+  composition are preserved. Portal's isolated curved bands gain a few slender
+  transverse connections; OJ's tightly occupied frontage gains one real cleared
+  passage without rerolling its neighborhood. PB/unknown SQLite gain sparse
+  structural connections without inventing semantic facilities or traffic.
+  At README thumbnail this is a local readability change, not a new skyline.
+  Some isolated bands intentionally remain; not every gap is paved. Existing
+  hard-cut terrain corners, repetitive silhouettes, strong role paint and sparse
+  reserves remain W-12/15/13/14/19 work, not hidden by cosmetic additions.
+- Fixes applied and reverified: initial OJ candidate reclamation rerolled126
+  addresses; surviving optimized baseline address retention reduces this to1
+  (PB31→1). Added explicit regression for one-candidate reclamation. New shortcut
+  made one SQLite zero-edge frontage deletable in old unused-seam cleanup;
+  preserve all actual frontages under porous policy, revalidate506/506 accessible.
+  Old defaults remain unchanged. Initial helper compared whole parent records
+  despite intentional capacity change; corrected to compare actual geography.
+  First dedicated trace helper had a pre-load global ReferenceError; corrected
+  guarded access and reran real trace successfully, no product renderer defect.
+- Tests/determinism/stability:652 Python run,651 pass,1 existing Windows symlink
+  skip;61 Node pass; Ruff/compileall/diff check pass. New10 tests cover curved
+  rows, dense cuts, spared capacity, terrain, nearby alternatives, bounded
+  frequency/work, canonical order, honest metadata, forged plan/full-width
+  rejection, frontage protection, assignment-cascade regression and small hinted
+  edit. Same porous terrain mode keeps48 previous complete building frames after
+  adding one unsupported Rust file. No source facts silently truncated.
+- Spec alignment: PASS under user-authorized ADR-040 and earlier structural/
+  terrain extension. Rechecked technical§7/8, functional AC-001/002/003/006/008/
+  011/012/014 and product evidence/local/static principles. No runtime AI/service,
+  unsafe target execution, public City/UCG break or unsupported semantic claims.
+- Commits/delivery: design080940c, followed by this coherent permeability feature,
+  correction tests and records; intended feat/semantic-zoning upstream. Explicit
+  staging, human identity and attribution/remote review before normal push.
+  No generated outputs, user caches, force push or protection bypass. Actual
+  push outcome is checked and reported at handoff.

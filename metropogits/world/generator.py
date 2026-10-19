@@ -16,6 +16,7 @@ from .junctions import (
     path_length,
 )
 from .alleys import GENERATOR_VERSION as ALLEY_GENERATOR_VERSION, add_alleys
+from .permeability import GENERATOR_VERSION as POROUS_GENERATOR_VERSION
 from .terrain import (
     GENERATOR_VERSION as TERRAIN_GENERATOR_VERSION, PRESET as NATURAL_PRESET,
     adapt_roads, generate_terrain, validate_terrain,
@@ -77,7 +78,7 @@ def generate_world(
         terrain != "flat" and (pattern_scale != "adaptive" or not _route)
     ):
         raise ValueError("natural terrain requires routed adaptive neighborhoods")
-    if street_policy not in ("original", "shared", "permeable") or (
+    if street_policy not in ("original", "shared", "permeable", "porous") or (
         street_policy != "original" and (pattern_scale != "adaptive" or not _route)
     ):
         raise ValueError("shared street policy requires routed adaptive neighborhoods")
@@ -265,13 +266,14 @@ def generate_world(
         and previous.get("zoningPolicy", "none") == zoning
         and previous.get("patternScale", "block") == pattern_scale
         and previous.get("terrainPreset", "flat") == terrain
+        and (previous.get("streetPolicy") == "porous") == (street_policy == "porous")
         and (
             pattern_scale == "block"
             or previous.get("generatorVersion") in (
                 ((LANDSCAPE_GENERATOR_VERSION,) if terrain == LANDSCAPE_PRESET else
                  (VALLEY_GENERATOR_VERSION,) if terrain == VALLEY_PRESET else
                  (RIVER_GENERATOR_VERSION,) if terrain == RIVER_PRESET else (TERRAIN_GENERATOR_VERSION,)) if terrain != "flat" else
-                (ADAPTIVE_GENERATOR_VERSION, SHARED_GENERATOR_VERSION, ALLEY_GENERATOR_VERSION)
+                (ADAPTIVE_GENERATOR_VERSION, SHARED_GENERATOR_VERSION, ALLEY_GENERATOR_VERSION, POROUS_GENERATOR_VERSION)
                 if pattern_scale == "adaptive"
                 else ("flat-neighborhood-patterns/0.1",)
             )
@@ -416,7 +418,8 @@ def generate_world(
                             plan_adaptive
                             if pattern_scale == "adaptive"
                             else plan_district_pattern
-                        )(*args, **(dict(terrain=terrain_data) if terrain_data else {}))
+                        )(*args, **(dict(terrain=terrain_data, porous=street_policy == "porous")
+                                    if pattern_scale == "adaptive" else {}))
                         district_patterns.append(pattern)
                     else:
                         placed, lanes, records, notes, zone_reuse, blocks, backbone = (
@@ -564,10 +567,11 @@ def generate_world(
             for a, b in zip(d["polygon"], d["polygon"][1:] + d["polygon"][:1])
         ]
         streets, seam_note = stitch_unused_streets(
-            streets, main_roads + boundaries, routing, parcels
+            streets, main_roads + boundaries, routing, parcels,
+            **(dict(preserve_frontages=True) if street_policy == "porous" else {}),
         )
         planning_diagnostics.append(seam_note)
-        if street_policy in ("shared", "permeable"):
+        if street_policy in ("shared", "permeable", "porous"):
             candidate, junction_note = consolidate_junctions(
                 streets, main_roads + boundaries, parcels, routing
             )
@@ -584,7 +588,7 @@ def generate_world(
                 else:
                     streets, routing, networks, coverage = candidate, new_routing, new_networks, new_coverage
             planning_diagnostics.append(junction_note)
-        if street_policy == "permeable":
+        if street_policy in ("permeable", "porous"):
             additions, alley_note = add_alleys(streets, parcels, districts, **(
                 dict(reserves=[f["noBuildPolygon"] for f in terrain_data["features"]]) if terrain_data else {}
             ))
@@ -712,6 +716,9 @@ def generate_world(
         world["generatorVersion"] = SHARED_GENERATOR_VERSION
     elif street_policy == "permeable":
         world["generatorVersion"] = ALLEY_GENERATOR_VERSION
+    elif street_policy == "porous":
+        world["generatorVersion"] = POROUS_GENERATOR_VERSION
+        world["streetPolicy"] = street_policy
     if terrain_data:
         if terrain in (RIVER_PRESET,VALLEY_PRESET,LANDSCAPE_PRESET):
             annotate_crossings(streets, routing, terrain_data)

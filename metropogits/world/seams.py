@@ -12,7 +12,7 @@ MAX_ATTEMPTS = 256
 MAX_STATES = 100_000
 
 
-def stitch_unused_streets(streets, reserved, routing, parcels):
+def stitch_unused_streets(streets, reserved, routing, parcels, *, preserve_frontages=False):
     """A deletion-only local pass. On exhausted work retain certified geometry."""
     streets = sorted(streets, key=lambda s: s["id"])
     index = defaultdict(set)
@@ -62,6 +62,17 @@ def stitch_unused_streets(streets, reserved, routing, parcels):
                     for p in (s["start"], s["end"])
                 ):
                     protected.add(key)
+        if preserve_frontages:
+            # A new shortcut can make a previously indispensable tangent road
+            # removable, even on a zero-relationship repository. Its building
+            # frontage remains physical infrastructure, not unused decoration.
+            for p in parcels:
+                at = p["streetPoint"]
+                for key in nearby(dict(start=at, end=at), .003):
+                    charge()
+                    s = kept[key]
+                    if not s["access"] and math.dist(at, nearest(at, s["start"], s["end"])) < .002:
+                        protected.add(key)
         candidates = []
         for s in streets:
             key = s["id"]
