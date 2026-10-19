@@ -6,7 +6,7 @@
   "required": ["schemaVersion","zoningVersion","patternScale","districtPatterns","worldSeed","ucgDigest","sourceCityDigest","terrainPreset","zones","blocks","mainRoads"],
   "properties": {
     "schemaVersion": {"const":"planning/0.5-experimental"},
-    "campusPlan":{"type":"object","required":["version","structural","decisions","sites"],"properties":{"version":{"enum":["campus-plan/0.1","campus-plan/0.2","campus-plan/0.3"]},"style":{"enum":["varied","neighborhood"]},"structural":{"const":true},"sites":{"type":"array","maxItems":64}}},
+    "campusPlan":{"type":"object","required":["version","structural","decisions","sites"],"properties":{"version":{"enum":["campus-plan/0.1","campus-plan/0.2","campus-plan/0.3","campus-plan/0.4"]},"style":{"enum":["varied","neighborhood","landscape"]},"structural":{"const":true},"sites":{"type":"array","maxItems":64}}},
     "streetPlan": {"type":"object","required":["version","structural","segments","summary"],"properties":{"version":{"const":"street-plan/0.1"},"structural":{"const":true}}},
     "zoningVersion": {"const":"functional-neighborhoods/0.1"},
     "patternScale": {"const":"adaptive"},
