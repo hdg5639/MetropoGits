@@ -1263,3 +1263,31 @@ output is reproducible at its pinned revision `d7393de`.
 
 This addresses excess tails, not rectilinear court morphology, riverside campus
 forms, service/emergency travel semantics or finished architectural archetypes.
+
+### Diverse nature and continuous pavement — ADR-047/048/049
+
+Explicit `--terrain varied-landscape` uses terrain/0.5 / terrain-adaptive/0.5.
+Counts, locations, outlines, bearings and heights vary by independent local
+seeds and domain area: up to4 lakes,6 hill/ridge groups,0..3 branch paths and
+sometimes a second through-flowing river. Feasibility can reduce these budgets;
+small domains do not receive stacked bridge ramps. Limits are48 convex feature
+pieces,8 crossings,3 conditional tunnels; old versions retain their old limits.
+Independent lakes use level basins in the shared height field with gentle
+transitions, not tilted water faces. This profile reserves additional land
+BEFORE terrain/urban assignment. Source/edge identities stay intact but changing
+the terrain profile deliberately changes geography; compatible hints retain it.
+
+`world-street-mesh/0.1` is an offline presentation mesh shared by CPU/Canvas/
+WebGL: bounded actual-node bevel joins, parcel/nature/court clearance, no fake
+ground connection at a bridge, and walking/entry colour clipped at vehicle
+curbs. Four-corner triangle faces retain all vertices in the existing quad
+consumers. World/source paths are unchanged by this presentation-only repair.
+
+Optional `--campus-style landscape`, campus-plan/0.4, retains whole neighborhoods
+and offers softer commons with actual walking arcs at unused square corners.
+It keeps occupied straight frontage and reconnects gates/promenades. Coordinated
+group bearings are attempted only under full capacity, clearance and grade
+checks. The roomy positive fixture really rotates; dense GJ/OJ groups retain
+zero rotations and some GJ courts retain their original form after safe fallback.
+Do not claim the original row-monotony problem is completely solved. Existing
+quad/varied/neighborhood modes and canonical UCG/City contracts remain intact.

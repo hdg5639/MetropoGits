@@ -7929,3 +7929,106 @@
 - Commits created / pushed: this coherent repair/tests/docs/checkpoint unit on
   `feat/semantic-zoning`; verify human metadata and normal upstream push at handoff.
   Generated artifacts/helpers stay outside Git; pre-existing fixture caches remain.
+
+## Checkpoint 2026-10-19 — Diverse terrain, continuous pavement and softer campus loops
+
+- Implemented: ADR-047/048/049. New explicit `varied-landscape` terrain/0.5
+  restores independent level lakes and seeded scale-aware hill/ridge/waterway
+  counts, locations and shapes. Additional land is reserved before nature and
+  urban planning. Shared offline road mesh joins real bends and clips walking
+  colour at vehicle curbs. Optional campus-plan/0.4 replaces unused square loop
+  corners with real short walking arcs, reconnects gates/promeneades and guards
+  group-bearing proposals without losing full neighborhoods or source members.
+- Fixture(s) / revision(s): frozen GJ local-sha256-06eb492d57141c16 and OJ
+  local-sha256-c2e80f9d3908fec8; PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b;
+  Hanul7432c67e91f472e7e9c3be54c07dcb7cbe4837d8; maintained48-source fixture.
+  All source inputs come from the preceding verified corpus, not target execution.
+- Commands run from `MetropoGits/`:
+  - `python -m unittest discover -s tests`; `node --test tests/*.test.mjs`.
+  - `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/varied_nature_review.py',run_name='__main__')" varied-nature-r3 gj oj pocketbase sqlitebrowser hanul fixture`.
+  - `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/campus_neighborhood_verify.py',run_name='__main__')" varied-nature-r3 fixture oj pocketbase gj sqlitebrowser hanul`;
+    `python -X utf8 ../artifacts/visual/verify_inherited_compatibility.py`.
+  - `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/campus_landscape_review.py',run_name='__main__')" varied-nature-r3 natural-campus-r2 gj oj pocketbase`.
+  - `python -X utf8 -m metropogits build --repo ../artifacts/visual/campus-e2e-r1/fixture --repo-id fixture/campus --out ../artifacts/visual/nature-campus-e2e-r1/build`;
+    `python -X utf8 -m scripts.procedural_world ../artifacts/visual/nature-campus-e2e-r1/build --seed campus-fixture --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --terrain varied-landscape --campus --campus-style landscape --out ../artifacts/visual/nature-campus-e2e-r1/world`;
+    repeat to sibling `repeat`. Also omit `--terrain varied-landscape` and write
+    `../artifacts/visual/soft-commons-e2e-r1/{world,repeat}` for a positive campus.
+    After the pedestrian-join fix, rerun both pairs under the corresponding r2
+    output paths with the same freshly analyzed build; all17 final-code files
+    in each pair match byte-for-byte.
+  - Run `nature_seed_atlas.py`, `street_mesh_review.py street-mesh-r1 oj pocketbase`,
+    and `environment_refresh_package.py` using the same runpy command prefix.
+  - `node ../artifacts/visual/campus_focus.mjs varied-nature-r3 varied-nature-reviewed-r1 gj oj pocketbase sqlitebrowser hanul fixture`;
+    same helper for street-mesh-r1/street-mesh-reviewed-r2 and natural-campus-r2
+    comparison captures. Final after-only env `CAMPUS_AFTER_ONLY=1` source
+    environment-refresh-r1/output environment-refresh-final-reviewed-r1 gj/oj;
+    additionally `CAMPUS_CANVAS=1` for final-canvas-r1 gj/sqlitebrowser/fixture.
+  - `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/environment-refresh-final-audit-r1`
+    with six expanded inputs `../artifacts/visual/environment-refresh-r1/{gj,oj,pocketbase,sqlitebrowser,hanul,fixture}/after`.
+- Actual terrain result: GJ3 lakes/2 hill groups; OJ2/3; PB2/1; SQLite2/2;
+  Hanul1/1; fixture1/1. The four larger pinned examples happen to choose one
+  tributary; small examples choose0. This does NOT mean branch count is fixed.
+  The separately labelled12-seed terrain-only atlas on the SAME initial GJ land
+  has lakes1..3, hills1..3, branch paths0..2 and through rivers1..2. Unit corpus
+  on a larger domain also reaches4 lakes/4 hills. Count RIVER convex pieces
+  separately from independent rivers. Same seed reproduces; new seeds vary.
+- Conservation / stability: five real inputs retain3211 source files,5793 exact
+  source/target trips and8603 edge references; fixture48/24/24 separately. All
+  City/UCG bytes remain exact. Changing terrain intentionally changes geography;
+  do NOT claim old building positions remain fixed. Compatible hinted48->49 file
+  growth retains the entire terrain and all48 original full parcel frames.
+  Isolated mesh comparison keeps World/City/UCG/planning bytes exact. Campus
+  comparison keeps terrain, parent/neighborhood ownership and unrelated frames.
+- Physical results: independent full validation for all6 natural outputs and3
+  final campus cases: all source buildings accessible, building/road overlaps and
+  owner escapes0, no slope/crossing tolerances relaxed. Campus curve additions
+  change GJ4913->4945 streets, OJ2798->2846; PB2580 unchanged. Natural-corpus
+  World repeats match exactly on all6 cases. Both fresh CLI package pairs match
+  all17 files byte-for-byte. Twelve older World golden cases remain exact;
+  final World/planning schemas and96 manifest artifact hashes pass.
+- Tests:698 Python checks, one existing Windows symlink skip;66 Node checks.
+  Includes seed/scale diversity, flat lake water, budgets, schema/version and
+  legacy behavior, source growth, curb clipping, bend clearance, bridge-level
+  isolation, shared quad faces, full campus membership and honest dense fallback.
+- Artifacts inspected: actual WebGL six-repository before/after nature gallery,
+  GJ lakes/hills and whole city; isolated OJ winding-riverside joint before/after;
+  GJ rectangular/curved court before/after; final GJ WebGL court and CPU README
+  raster plus final forced Canvas overview. Final GJ/OJ member/group source
+  navigation and all6 at3LOD route/source/filter/pan/Synthetic audits pass.
+  `environment-refresh-reviewed-r1/index.html` links final viewers, comparisons
+  and the explicitly TERRAIN-ONLY12-seed map. No mockup is used as city proof.
+- Visual findings: lakes and more than one hill are visible again; nature changes
+  city geography. Bend caps no longer leave the previous open pavement wedge;
+  walking colour stops at asphalt. Final curved walking corners no longer show
+  the new tiny segment gaps caught during review. GJ86-file site's2 courts and
+  OJ64-file site's3 courts use curved loops. GJ50-file site retains its original
+  form after clearance fallback; PB has no eligible whole campus on this terrain.
+  Actual dense GJ/OJ group rotations remain0. The roomy positive planner fixture
+  rotates groups, but this is NOT completion of real-city row-monotony work.
+- Fixes applied/reverified: initial lake-basin blending lifted river approaches;
+  using level low basins preserves their certificates. An initially too-short
+  basin transition exceeded the unchanged road grade gate; extend the transition,
+  not the tolerance. PB needed pre-seeding room for multiple reserves, not removed
+  files. Independent group rotation collided with neighbors; coordinated bounded
+  tests retain safe fallback. Review exposed pedestrian arc seams after fixing
+  vehicle joins; shared walking joins and their regression test correct them.
+  Early varied-nature-r1/r2 and natural-campus-r1 are diagnostic, not final output.
+- Performance: final Synthetic static rebuilds0 at all3LOD; SQLite honestly N/A.
+  SwiftShader JS draw-submission Synthetic p95 about0.4..1.7ms; first submission
+  85.1..1656.8ms across6 cases. No GPU FPS/completion/RSS or speedup claim.
+  Extra nature and pavement faces increase static preparation/output cost; GJ
+  viewer-data is about55MB. No per-frame triangulation, clipping or generation.
+- Spec alignment: PASS for explicit new experimental modes and localized surface
+  repair; not final organic campus acceptance. Re-read technical source/evidence,
+  geometry, rendering and bounds; functional AC-002/003/006/008/009/011/014;
+  product DEC-005..009/011 and original campus design4.3/5/8. No new dependency,
+  runtime AI/cloud, target execution, semantic fabrication or broken old schema.
+- Open risks / next actions: before-assignment campus redevelopment is still needed
+  to break dense interlocked rows. Do not continue angle micro-tuning or claim
+  painted grass fixes it. No actual tunnel candidate/use in this real corpus;
+  conditional tunnel machinery remains but is not newly visually proven here.
+- Commits/delivery: ec61aaf nature,286363b vehicle/curb mesh,17c040d campus arcs,
+  29acc09 walking-joint regression; this checkpoint/baseline ledger follows.
+  Verify legitimate human metadata and normal upstream push on feat/semantic-zoning.
+  Generated outputs/helpers remain outside Git; pre-existing fixture caches stay.
