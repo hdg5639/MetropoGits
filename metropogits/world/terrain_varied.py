@@ -99,6 +99,14 @@ def generate_varied_terrain(envelope, seed):
             crossings.append(crossing)
     if not crossings:
         raise ValueError("varied terrain has no feasible water crossings")
+    channel=dict(t["channel"],centerline=[ends[0],*line,ends[1]],tributaries=branches,
+                 extentPolicy="open-through-boundary/0.1")
+    return complete_landscape(t,envelope,local,water,width,crossings,channel,VERSION,PRESET)
+
+
+def complete_landscape(t,envelope,local,water,width,crossings,channel,version,preset,*,max_features=MAX_FEATURES):
+    """Shared landform/ground finish; old seeds and output ordering stay intact."""
+    scale=math.sqrt(area(envelope))
     features=list(water)
     # Candidate centres cover the entire initial domain, not the previous
     # fixed central belt. Rejected candidates do not consume another RNG stream.
@@ -120,9 +128,7 @@ def generate_varied_terrain(envelope, seed):
                     or any(overlap(feature["roadPolygon"],ribbon(c["path"][0],c["path"][-1],c["width"]+3)) for c in crossings)):
                 continue
             features.append(feature);placed+=1
-    t.update(version=VERSION,preset=PRESET,features=features,crossings=crossings,tunnels=[],
-             channel=dict(t["channel"],centerline=[ends[0],*line,ends[1]],tributaries=branches,
-                          extentPolicy="open-through-boundary/0.1"))
+    t.update(version=version,preset=preset,features=features,crossings=crossings,tunnels=[],channel=channel)
     t["elevation"]["flatRadius"]=q(max(32,width/2+32))
     # Independent lake basins are level world-space features, not sloping water
     # glued to the uplands. Surface construction flattens only their local basins.
@@ -135,7 +141,8 @@ def generate_varied_terrain(envelope, seed):
         for other in protected:
             union_work+=sum(len(p)*len(other) for p in parts)
             if union_work>MAX_WORK:raise ValueError('varied terrain union work limit')
-            parts=[p for s in parts for p in subtract(s,other)]
+            parts=[p for s in parts for p in
+                   ([s] if version=='terrain/0.6' and not overlap(s,other) else subtract(s,other))]
         protected.extend(parts)
         if len(protected)>4096:raise ValueError('varied terrain union face limit')
     t["protectedArea"]=sum(map(area,protected))
@@ -160,6 +167,6 @@ def generate_varied_terrain(envelope, seed):
         t['tunnels'].append(dict(id='world:tunnel:'+derive(local,mountain['id']),hillId=mountain['id'],
                                 path=path,heights=heights,width=3.5,maxGrade=.16,clearance=3.2,structural=True))
         if len(t['tunnels'])==3: break
-    if len(features)>MAX_FEATURES or len(crossings)>MAX_CROSSINGS:
+    if len(features)>max_features or len(crossings)>MAX_CROSSINGS:
         raise ValueError("varied terrain output limit")
     return t

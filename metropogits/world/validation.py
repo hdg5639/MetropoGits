@@ -16,6 +16,7 @@ from .rivers import GENERATOR_VERSION as RIVER_GENERATOR_VERSION, PRESET as RIVE
 from .elevation import GENERATOR_VERSION as VALLEY_GENERATOR_VERSION, PRESET as VALLEY_PRESET, build_surface, validate_profiles
 from .river_landscape import GENERATOR_VERSION as LANDSCAPE_GENERATOR_VERSION, PRESET as LANDSCAPE_PRESET, tunnel_piece, validate_landscape
 from .terrain_varied import GENERATOR_VERSION as VARIED_GENERATOR_VERSION, PRESET as VARIED_PRESET
+from .watershed import GENERATOR_VERSION as WATERSHED_GENERATOR_VERSION, PRESET as WATERSHED_PRESET
 
 
 def validate_world(world, scene, graph):
@@ -23,7 +24,8 @@ def validate_world(world, scene, graph):
         raise ValueError("unsupported world schema")
     if "campusPlan" in world and not isinstance(world["campusPlan"], dict):
         raise ValueError("invalid campus plan")
-    varied = world.get("generatorVersion") == VARIED_GENERATOR_VERSION
+    watershed = world.get("generatorVersion") == WATERSHED_GENERATOR_VERSION
+    varied = watershed or world.get("generatorVersion") == VARIED_GENERATOR_VERSION
     landscape = varied or world.get("generatorVersion") == LANDSCAPE_GENERATOR_VERSION
     valley = landscape or world.get("generatorVersion") == VALLEY_GENERATOR_VERSION
     river = valley or world.get("generatorVersion") == RIVER_GENERATOR_VERSION
@@ -33,7 +35,7 @@ def validate_world(world, scene, graph):
     ):
         raise ValueError("porous street policy/version mismatch")
     if natural:
-        if (world.get("terrainPreset") != (VARIED_PRESET if varied else LANDSCAPE_PRESET if landscape else VALLEY_PRESET if valley else RIVER_PRESET if river else NATURAL_PRESET)
+        if (world.get("terrainPreset") != (WATERSHED_PRESET if watershed else VARIED_PRESET if varied else LANDSCAPE_PRESET if landscape else VALLEY_PRESET if valley else RIVER_PRESET if river else NATURAL_PRESET)
                 or world.get("streetPolicy") not in ("original", "shared", "permeable", "porous")):
             raise ValueError("terrain preset/version mismatch")
         validate_terrain(world.get("terrain"), world["seed"])
@@ -54,7 +56,7 @@ def validate_world(world, scene, graph):
         or world.get("zoningPolicy") != "neighborhoods"
         or world.get("generatorVersion")
         not in (
-            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION, VALLEY_GENERATOR_VERSION, LANDSCAPE_GENERATOR_VERSION,VARIED_GENERATOR_VERSION)
+            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION, VALLEY_GENERATOR_VERSION, LANDSCAPE_GENERATOR_VERSION,VARIED_GENERATOR_VERSION,WATERSHED_GENERATOR_VERSION)
             if world["patternScale"] == "adaptive"
             else ("flat-neighborhood-patterns/0.1",)
         )
@@ -74,6 +76,7 @@ def validate_world(world, scene, graph):
             VALLEY_GENERATOR_VERSION,
             LANDSCAPE_GENERATOR_VERSION,
             VARIED_GENERATOR_VERSION,
+            WATERSHED_GENERATOR_VERSION,
         )
     ) != (world.get("patternScale") in ("district", "adaptive")):
         raise ValueError("world pattern scale version mismatch")
@@ -212,7 +215,7 @@ def validate_world(world, scene, graph):
         if p["sourceDistrictId"] != b["districtId"]:
             raise ValueError("world directory ownership mismatch")
         poly = p["footprint"]
-        if world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION, VALLEY_GENERATOR_VERSION, LANDSCAPE_GENERATOR_VERSION):
+        if world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION, VALLEY_GENERATOR_VERSION, LANDSCAPE_GENERATOR_VERSION, WATERSHED_GENERATOR_VERSION):
             # Reuse the independent validation index/budget. Optional optimizer
             # exhaustion must not make its untouched fallback invalid.
             connected = False

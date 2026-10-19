@@ -43,8 +43,8 @@ def validate_blocks(world, scene, graph, neighborhoods):
                 requested_profile(
                     world.get("planningPolicy", "grid"), parent["localSeed"]
                 ),
-                stitch=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", "terrain-adaptive/0.1", "terrain-adaptive/0.2", "terrain-adaptive/0.3", "terrain-adaptive/0.4", "terrain-adaptive/0.5"),
-                morphology=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", "terrain-adaptive/0.1", "terrain-adaptive/0.2", "terrain-adaptive/0.3", "terrain-adaptive/0.4", "terrain-adaptive/0.5"),
+                stitch=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", "terrain-adaptive/0.1", "terrain-adaptive/0.2", "terrain-adaptive/0.3", "terrain-adaptive/0.4", "terrain-adaptive/0.5", "terrain-adaptive/0.6"),
+                morphology=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", "terrain-adaptive/0.1", "terrain-adaptive/0.2", "terrain-adaptive/0.3", "terrain-adaptive/0.4", "terrain-adaptive/0.5", "terrain-adaptive/0.6"),
                 terrain=world.get("terrain"),
                 porous=world.get("streetPolicy") == "porous",
                 campus='campusPlan' in world,
