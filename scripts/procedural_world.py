@@ -49,6 +49,7 @@ def main():
     )
     parser.add_argument("--previous-world", type=Path)
     parser.add_argument('--campus',action='store_true',help='adaptive only: evidence-bounded shared-courtyard pockets with real walking access')
+    parser.add_argument('--campus-style',choices=('quad','varied'),default='quad',help='campus only: seeded garden-cluster and courtyard forms; quad preserves the original pilot')
     parser.add_argument("--street-hierarchy", action="store_true",
                         help="adaptive only: offline structural street classes and connected backbone")
     parser.add_argument(
@@ -95,6 +96,7 @@ def main():
             terrain=args.terrain,
             street_hierarchy=args.street_hierarchy,
             campus=args.campus,
+            campus_style=args.campus_style,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)

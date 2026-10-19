@@ -1331,7 +1331,7 @@
       factSection(inspector,'LOCAL BLOCK PLANS',blocks.map(b=>`${b.planningProfile} · ${b.memberEntityIds.length} files · ${b.id}`));
       for (const block of blocks.filter(b=>b.campusSite)) {
         const site=block.campusSite;
-        inspector.append(element('p',`MIXED CAMPUS · ${site.memberEntityIds.length} of ${block.memberEntityIds.length} source files around ${site.courts.length} reserved courts. Remaining files retain the local street grammar. Walking access is physical planning, not a research or runtime-communication claim.`, 'campus-summary'));
+        inspector.append(element('p',`MIXED CAMPUS · ${site.variant} · ${site.memberEntityIds.length} of ${block.memberEntityIds.length} source files around ${site.courts.length} reserved courts. Remaining files retain the local street grammar. Walking access is physical planning, not a research or runtime-communication claim.`, 'campus-summary'));
         factSection(inspector,'CAMPUS BASIS',[block.campusDecision.reason,`${block.campusDecision.supportingEntityIds.length} evidence-supported test files · ${block.campusDecision.internalPairCount} original internal file pairs`]);
         for (const id of site.memberEntityIds) {
           const button=element('button',entities.get(id)?.path || id,'focus-button campus-member');

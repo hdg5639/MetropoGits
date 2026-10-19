@@ -20,6 +20,8 @@ from .river_landscape import GENERATOR_VERSION as LANDSCAPE_GENERATOR_VERSION, P
 def validate_world(world, scene, graph):
     if world.get("schemaVersion") != VERSION:
         raise ValueError("unsupported world schema")
+    if "campusPlan" in world and not isinstance(world["campusPlan"], dict):
+        raise ValueError("invalid campus plan")
     landscape = world.get("generatorVersion") == LANDSCAPE_GENERATOR_VERSION
     valley = landscape or world.get("generatorVersion") == VALLEY_GENERATOR_VERSION
     river = valley or world.get("generatorVersion") == RIVER_GENERATOR_VERSION

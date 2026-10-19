@@ -155,7 +155,16 @@ def _quad(center, axis, a, b, exit_side, seed):
 
 
 def courtyard_layout(
-    zone, polygon, axis, seed, roads, terrain, pairs, diagnostics=None, max_courts=3
+    zone,
+    polygon,
+    axis,
+    seed,
+    roads,
+    terrain,
+    pairs,
+    diagnostics=None,
+    max_courts=3,
+    variant="ACADEMIC_QUAD",
 ):
     """Reserve courts, then plots/walks. Return None, never grow global land."""
     n = len(zone["memberEntityIds"])
@@ -224,8 +233,17 @@ def courtyard_layout(
 
     # A court is shared space surrounded by actual files, not a large vacant
     # landscape patch with every building on one side. Bound lawn per member.
-    for a, b in ((17, 13), (25, 17), (33, 21), (41, 25), (49, 29)):
-        required = max(9, math.ceil(4 * (a - 1.25) * (b - 1.25) / 120) + 1)
+    configs = (
+        ((17, 13),)
+        if variant == "TECH_PARK"
+        else ((17, 13), (25, 17), (33, 21), (41, 25), (49, 29))
+    )
+    for a, b in configs:
+        required = (
+            9
+            if variant == "TECH_PARK"
+            else max(9, math.ceil(4 * (a - 1.25) * (b - 1.25) / 120) + 1)
+        )
         if required > min(32, max(8, n // 3)) + 1:
             continue
         chosen, footprints, plots, walks, courts = [], [], [], [], []
@@ -237,7 +255,7 @@ def courtyard_layout(
                 stats["outside"] += 1
                 continue
             lawn = rectangle(center, axis, 2 * (a - 1.25), 2 * (b - 1.25))
-            if collides(lawn, boxes) or collides(
+            if (variant == "ACADEMIC_QUAD" and collides(lawn, boxes)) or collides(
                 shell, [(bounds(p), p) for p in natural]
             ):
                 stats["blockedCourt"] += 1
@@ -245,7 +263,20 @@ def courtyard_layout(
             for side in sorted(
                 ("N", "E", "S", "W"), key=lambda k: derive(seed, str(center), k)
             ):
-                candidates, ring, court, shell = _quad(center, axis, a, b, side, seed)
+                if variant == "TECH_PARK":
+                    from .campus_forms import tech_park
+
+                    candidates, ring, new_courts, shell = tech_park(
+                        center, axis, a, b, side, seed
+                    )
+                    if any(collides(c["polygon"], boxes) for c in new_courts):
+                        stats["blockedCourt"] += 1
+                        continue
+                else:
+                    candidates, ring, court, shell = _quad(
+                        center, axis, a, b, side, seed
+                    )
+                    new_courts = [court]
                 candidates = [
                     p
                     for p in candidates
@@ -277,7 +308,7 @@ def courtyard_layout(
                     (bounds(p["polygon"]), p["polygon"]) for p in plots + candidates
                 ]
                 obstacles += [
-                    (bounds(p["polygon"]), p["polygon"]) for p in courts + [court]
+                    (bounds(p["polygon"]), p["polygon"]) for p in courts + new_courts
                 ]
                 obstacles += [(bounds(p), p) for p in natural]
                 if not all(walk_clear(w, obstacles) for w in ring):
@@ -298,7 +329,7 @@ def courtyard_layout(
                     for path in options:
                         segments = [
                             dict(
-                                id=court["id"] + ":join:" + str(i),
+                                id=new_courts[0]["id"] + ":join:" + str(i),
                                 start=x,
                                 end=y,
                                 width=WALK_WIDTH,
@@ -320,7 +351,7 @@ def courtyard_layout(
                 footprints.append(shell)
                 plots.extend(candidates)
                 walks.extend(ring + connection)
-                courts.append(court)
+                courts.extend(new_courts)
                 stats["maxCapacity"] = max(stats["maxCapacity"], len(plots))
                 break
             if len(plots) >= min(32, max(8, n // 3)) + 1 or len(chosen) == max_courts:
@@ -343,7 +374,7 @@ def courtyard_layout(
                 dict(
                     zoneId=zone["id"],
                     parentId=zone["parentId"],
-                    variant="ACADEMIC_QUAD",
+                    variant=variant,
                     memberEntityIds=zone["memberEntityIds"],
                     anchorEntityIds=anchors,
                     courts=courts,
@@ -490,7 +521,9 @@ def _mixed_pocket(plan, layout, zone, pairs, roads, diagnostics=None):
     return choices, kept, plots, site
 
 
-def apply_campuses(plans, selections, zones, polygons, seed, roads, terrain, pairs):
+def apply_campuses(
+    plans, selections, zones, polygons, seed, roads, terrain, pairs, style="quad"
+):
     """At most one actual campus per parent; retained plans stay byte-identical."""
     decisions = {z["id"]: eligibility(z, pairs, seed) for z in zones}
     sites = {}
@@ -502,7 +535,19 @@ def apply_campuses(plans, selections, zones, polygons, seed, roads, terrain, pai
             decision["reason"] = "PARENT_DIVERSITY_LIMIT"
             continue
         mixed = None
-        for count in (1, 2, 3):
+        variants = ["ACADEMIC_QUAD"]
+        if style == "varied":
+            from .campus_forms import VERSION as FORM_VERSION
+
+            variants = ["TECH_PARK", "ACADEMIC_QUAD"]
+            if draw(derive(seed, z["id"], FORM_VERSION, "form")) >= 0.75:
+                variants.reverse()
+        attempts = [
+            (v, count)
+            for v in variants
+            for count in ((1,) if v == "TECH_PARK" else (1, 2, 3))
+        ]
+        for variant, count in attempts:
             try:
                 layout = courtyard_layout(
                     z,
@@ -513,6 +558,7 @@ def apply_campuses(plans, selections, zones, polygons, seed, roads, terrain, pai
                     terrain,
                     pairs,
                     max_courts=count,
+                    variant=variant,
                 )
                 if layout is None:
                     decision["reason"] = "CAPACITY_OR_ACCESS_FALLBACK"
@@ -545,8 +591,8 @@ def apply_campuses(plans, selections, zones, polygons, seed, roads, terrain, pai
     return decisions, sites
 
 
-def collect_plan(blocks):
-    return dict(
+def collect_plan(blocks, style="quad"):
+    result = dict(
         version=VERSION,
         structural=True,
         decisions={
@@ -559,11 +605,19 @@ def collect_plan(blocks):
             if "campusSite" in b
         ],
     )
+    if style == "varied":
+        from .campus_forms import VERSION as FORM_VERSION
+
+        result.update(version=FORM_VERSION, style=style)
+    return result
 
 
 def validate_campuses(world):
     """Reconstruction is checked upstream; independently check occupied courts."""
-    if world["campusPlan"] != collect_plan(world["zoning"]["blocks"]):
+    style = world["campusPlan"].get("style", "quad")
+    if style not in ("quad", "varied") or world["campusPlan"] != collect_plan(
+        world["zoning"]["blocks"], style
+    ):
         raise ValueError("campus plan differs from verified block records")
     sites = world["campusPlan"]["sites"]
     if len(sites) > 64 or len({s["parentId"] for s in sites}) != len(sites):

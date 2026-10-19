@@ -49,6 +49,7 @@ def validate_blocks(world, scene, graph, neighborhoods):
                 porous=world.get("streetPolicy") == "porous",
                 campus='campusPlan' in world,
                 campus_pairs=campus_pairs,
+                campus_style=world.get('campusPlan',{}).get('style','quad'),
             )
             expected_patterns.append(pattern)
         elif inherited:

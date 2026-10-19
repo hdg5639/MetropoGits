@@ -7586,3 +7586,90 @@
   commit on existing feat/semantic-zoning; verify human metadata, explicit paths,
   intended upstream and successful normal push at handoff. Generated images,
   helpers, worlds and input clones remain outside Git; pre-existing caches untouched.
+
+## Checkpoint 2026-10-19 — Connected garden-cluster campus form
+
+- Implemented: ADR-043/CP-02 first slice, explicit `--campus-style varied` with
+  `--campus`. Optional campus-plan/0.2/style varied selects ACADEMIC_QUAD or
+  TECH_PARK using a separate zone-local form seed; eligibility/evidence seed and
+  all original source roles remain unchanged. TECH_PARK reserves two7.5-unit
+  gardens, whole frontage parcels, two walking loops, an offset connecting
+  promenade and an actual exterior street link before placing real files.
+  Use existing clearance/grade/connectivity/capacity/work gates and alternate
+  safe form; no global land inflation or forced campus for unsupported input.
+  Preserve old quad0.1 and reject malformed style/hint metadata explicitly.
+- Fixtures/revisions: engine startinge7f8213 on feat/semantic-zoning; design
+  commitb5dcfda. Compare the preceding campus-r4 pinned five-repository worlds:
+  GJ local-sha256-06eb492d57141c16 /seed2e2dc9377dd074d4;
+  OJ local-sha256-c2e80f9d3908fec8 /90c6386e113ae6db;
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522 /0d93483144e329c0;
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b /f425482d641c843f;
+  Hanul7432c67e91f472e7e9c3be54c07dcb7cbe4837d8 /2fcc3180909d8112.
+  Maintained48-file TS test/helper source fixture/campus, seedcampus-fixture =>
+  27eedbd04e5af1ca. Input repositories are scanned, never built/run/installed.
+- Commands (cwd MetropoGits):
+  `python -X utf8 -m metropogits build --repo ../artifacts/visual/campus-e2e-r1/fixture --repo-id fixture/campus --out ../artifacts/visual/garden-campus-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/garden-campus-e2e-r1/build --seed campus-fixture --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --campus --campus-style varied --out ../artifacts/visual/garden-campus-e2e-r1/world`;
+  repeat with out garden-campus-e2e-r1/repeat; compare all17 package bytes;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/campus_forms_review.py',run_name='__main__')" campus-forms-r1 fixture gj oj pocketbase sqlitebrowser hanul`;
+  `node ../artifacts/visual/campus_focus.mjs campus-forms-r1 garden-campus-reviewed-r1 gj oj pocketbase sqlitebrowser hanul fixture`;
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/garden-campus-audit-r1 ../artifacts/visual/campus-forms-r1/gj/after ../artifacts/visual/campus-forms-r1/oj/after ../artifacts/visual/campus-forms-r1/pocketbase/after ../artifacts/visual/campus-forms-r1/sqlitebrowser/after ../artifacts/visual/campus-forms-r1/hanul/after ../artifacts/visual/garden-campus-e2e-r1/world`;
+  `$env:CAMPUS_CANVAS='1'; node ../artifacts/visual/campus_focus.mjs campus-forms-r1 garden-campus-canvas-r1 oj pocketbase fixture`;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/verify_inherited_compatibility.py',run_name='__main__')"`;
+  `python -X utf8 -m unittest discover -s tests -q`;
+  `$testFiles=rg --files tests -g '*.test.mjs'; node --test $testFiles`;
+  `python -m ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; `git diff --check`.
+- Result: OJ2/PB1 TECH_PARK pockets, each8 actual files; GJ retains its1 existing
+  ACADEMIC_QUAD because remaining regular capacity prevents the preferred form.
+  SQLite/Hanul retain0 campuses. Source City/UCG bytes, all3211 buildings,
+  5793 exact source/target trips and8603 edges preserved. Same terrain/surface,
+  parent/zone polygons and protected non-campus macro road records. Changed
+  complete frames: GJ0/OJ51/PB36/SQLite0/Hanul0, all within changed campus zones;
+  unrelated frames0. All occupied graphs connected, entrances/ports attached;
+  building/road overlaps and owner escapes0. PEDESTRIAN spans GJ12/OJ45/PB22.
+  Maintained fixture:48 accessible files,24 original import trips/edges,1 two-
+  garden pocket,17 local frames moved. No invented utility/research facility.
+- Artifacts inspected: campus-forms-r1 CPU previews/showcases and final worlds;
+  garden-campus-reviewed-r1 matched actual WebGL Overview/District/each garden;
+  garden-campus-audit-r1 six inputs x three LODs, actual route/evidence inspector,
+  source selection, filters/camera controls and CPU showcase/preview rasters;
+  garden-campus-canvas-r1 three forced Canvas cases with exact variant/member
+  disclosure and constituent source navigation. Existing docs/inspector source
+  labels are escaped; no per-frame planner or custom external service added.
+- Visual findings: OJ/PB replace a large single lawn with two smaller, connected
+  garden-facing file groups and diagonal/offset walking joins. Parents retain
+  their patterns, natural terrain and mixed-role identity. Actual source-mixed
+  membership survives, including PB's generic buildings without fictitious
+  framework roles. GJ intentionally looks unchanged. The new form is visibly
+  different locally, not an overview-scale redesign. Rectangular gardens/local
+  axes and simple original building materials remain; do not claim all campus
+  variants, waterfront integration or organic metropolitan planning are complete.
+- Tests/determinism/stability:676 Python tests run with1 Windows symlink skip;
+  63 Node tests pass, Ruff/compileall/schema checks pass. Kernel tests cover
+  four outside directions, non-overlapping whole parcels/gardens/walks, actual
+  source conservation, reproducible form, unavailable-preference fallback and
+  forged/null metadata.48 original complete frames survive a49-file same-style
+  hinted edit. Default quad's maintained World remains byte-identical to its
+  frozen0.1 output;12 old no-campus World goldens unchanged. All six new World/
+  package cases and the fresh CLI17 artifacts repeat byte-for-byte.
+- Browser/performance: all evidenced Synthetic runs move on stored original
+  paths with static builds0; SQLite correctly has no fabricated traffic. Local
+  concurrent SwiftShader Synthetic submission CPU p95 about0.4..1.7ms. GJ
+  overview orbit CPU p95 had17.0ms while geometry stayed exactly unchanged;
+  no controlled speedup/regression, GPU completion, FPS or peak-RSS claim.
+  Observed generation GJ55.26/OJ29.42/PB16.94s in this local run, not an SLA.
+  Keep future profiling separate from visual acceptance; no Rust rewrite here.
+- Spec alignment: PASS for this additive opt-in form. Re-read technical data/
+  evidence/7/8/limits, functional AC-002/003/006/008/009/011/014, product DEC-005/
+  006/007/008/009/011 and road/campus design5/8/9. No public UCG/City/ID break,
+  runtime AI/API, target execution, source deletion or tolerance relaxation.
+- Open risks/next actions: CP-02 riverside/cross-boundary transition, vehicle
+  service/emergency access, materials/lighting and landmark/LOD work remain.
+  Same-style hints are tested; cross-style switches deliberately reject hints
+  and cold-rebuild locally. Do not force every valid repository into TECH_PARK
+  or spend repeated micro-tuning cycles to make this one form fit GJ.
+- Commits/delivery: designb5dcfda plus the cohesive implementation/tests/contracts/
+  checkpoint commit on the existing feature branch. Verify human metadata,
+  explicit staged paths and successful normal upstream push at handoff. Worlds,
+  clones, helpers and Chrome captures stay outside Git; old fixture caches intact.
