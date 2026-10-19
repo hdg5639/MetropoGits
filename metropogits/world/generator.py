@@ -78,7 +78,7 @@ def generate_world(
     campus_style="quad",
     _route=True,
 ):
-    if campus_style not in ("quad", "varied", "neighborhood", "landscape", "organic") or (campus_style != "quad" and not campus):
+    if campus_style not in ("quad", "varied", "neighborhood", "landscape", "organic", "fabric") or (campus_style != "quad" and not campus):
         raise ValueError('non-default campus style requires --campus; unknown styles are invalid')
     if campus and (pattern_scale!='adaptive' or not _route):
         raise ValueError('campus requires routed adaptive neighborhoods')
@@ -644,7 +644,7 @@ def generate_world(
             used={s["physicalId"] for s in new_routing["segments"]}
             if any(s.get("tunnelId")==tunnel["id"] and s["id"] in used for s in candidate):
                 streets,routing,networks,coverage=candidate,new_routing,new_networks,new_coverage
-    if campus and campus_style in ("neighborhood","landscape","organic"):
+    if campus and campus_style in ("neighborhood","landscape","organic","fabric"):
         from .campus_circulation import prune_campus_tails
 
         streets, circulation_note = prune_campus_tails(

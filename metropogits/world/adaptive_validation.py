@@ -64,7 +64,7 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
         b = children[0]
         if campus and (b.get('campusDecision')!=decisions[z['id']] or b.get('campusSite')!=sites.get(z['id'])):
             raise ValueError('campus decision or reserved geometry mismatch')
-        if z['id'] in sites and b.get('urbanGrammar') != ('CAMPUS' if campus_style in ('neighborhood','landscape','organic') else 'MIXED_CAMPUS'):
+        if z['id'] in sites and b.get('urbanGrammar') != ('CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric') else 'MIXED_CAMPUS'):
             raise ValueError('campus block grammar does not match the selected planning scope')
         selection = selections[z["id"]]
         choices = plans[z["id"]][0]
