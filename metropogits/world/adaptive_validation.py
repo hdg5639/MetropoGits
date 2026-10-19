@@ -11,7 +11,7 @@ from .adaptive import (
 from .seed import derive
 
 
-def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False, terrain=None, porous=False, campus=False, campus_pairs=None):
+def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False, terrain=None, porous=False, campus=False, campus_pairs=None, campus_style="quad"):
     candidates, roads, main, pattern = adaptive_field(
         parent["polygon"], parent["localSeed"], base, parent["id"], stitch=stitch, morphology=morphology
     )
@@ -49,7 +49,7 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
         from .campus import apply_campuses
 
         decisions, sites = apply_campuses(plans,selections,zones,polygons,parent['localSeed'],main+boundary,terrain,
-                                         campus_pairs if campus_pairs is not None else pairs)
+                                         campus_pairs if campus_pairs is not None else pairs, campus_style)
     if sites:
         walks = [w for site in sites.values() for w in site['walkways']]
         for w in walks:

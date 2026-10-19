@@ -289,6 +289,7 @@ def plan_adaptive(
     porous=False,
     campus=False,
     campus_pairs=None,
+    campus_style="quad",
 ):
     parent = clusters[0]["parentId"]
     parent_candidates, parent_roads, main, pattern = adaptive_field(
@@ -419,7 +420,7 @@ def plan_adaptive(
 
         campus_decisions, campus_sites = apply_campuses(
             plans, selections, clusters, polygons, seed, actual_main + boundary, terrain,
-            campus_pairs if campus_pairs is not None else pairs)
+            campus_pairs if campus_pairs is not None else pairs, campus_style)
     main = actual_main + boundary
     pattern = actual_pattern
     if campus_sites:

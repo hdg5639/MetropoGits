@@ -1124,3 +1124,36 @@ pieces; independent final court validation checks whole parcels and pavement.
 Cross-policy hints are incompatible; same-policy growth preserves actual slots
 when feasible. Riverside/other campus variants, vehicle service/emergency access,
 materials, and campus-derived landmark redesign remain outside this pilot.
+
+### Opt-in garden-cluster campus forms (ADR-043)
+
+`scripts.procedural_world INPUT --campus --campus-style varied` (with the
+adaptive/neighborhood options above) selects source-neutral ACADEMIC_QUAD or
+TECH_PARK forms. `campusPlan` uses version `campus-plan/0.2` and explicit style
+`varied`. Omitting the style or using `quad` preserves campus-plan/0.1 exactly;
+existing Worlds stay valid. No UCG/City/semantic ID or original dimension changes.
+
+Evidence eligibility and its seed remain0.1. A separate zone-local form seed
+prefers TECH_PARK with probability0.75, then tries the alternate form if needed.
+The number is a physical design preference, not analytical confidence. This is
+not a promise that every repository or zone gains a garden-cluster campus.
+
+TECH_PARK reserves two7.5-unit square gardens and nine candidate frontage plots
+in the same bounded53x45 support used by the smallest courtyard option. Real
+source members occupy the chosen plots around garden-facing loops, a short
+offset promenade and an actual exterior walking link. Shared planting avoids
+whole parcels, entrances, gardens and paths. Source dimensions are never shrunk
+to force fit. The existing whole-parcel/access, slope, connectivity, graph and
+resource gates apply; infeasible candidates keep the original safe grammar.
+
+The form is prepared before actual file placement, not generated per browser
+frame. CPU/WebGL/Canvas share the same gardens, rotated file parts and physical
+pedestrian graph. Both inspectors show actual selected variant/member IDs and
+retain the physical-planning disclaimer. Source-pair paths/Synthetic may change
+their physical route, never their original source, destination or contributing
+edge identities. Same-style geography hints preserve feasible original slots;
+cross-style hints trigger an explicit deterministic cold rebuild.
+
+This is CP-02's first garden-cluster option. Riverside-specific geometry,
+cross-boundary campus transitions, emergency/service access and architectural
+materials/lighting are not implicitly completed by this flag.

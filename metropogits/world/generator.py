@@ -74,8 +74,11 @@ def generate_world(
     terrain="flat",
     street_hierarchy=False,
     campus=False,
+    campus_style="quad",
     _route=True,
 ):
+    if campus_style not in ("quad", "varied") or (campus_style != "quad" and not campus):
+        raise ValueError('varied campus style requires --campus')
     if campus and (pattern_scale!='adaptive' or not _route):
         raise ValueError('campus requires routed adaptive neighborhoods')
     if street_hierarchy and (pattern_scale != "adaptive" or not _route):
@@ -129,6 +132,8 @@ def generate_world(
             or not isinstance(previous.get("parcels"), list)
         ):
             raise ValueError("invalid previous world structure")
+        if "campusPlan" in previous and not isinstance(previous["campusPlan"], dict):
+            raise ValueError("invalid previous campus plan")
         if len(previous["districts"]) > 64 or len(previous["parcels"]) > 10000:
             raise ValueError("previous world resource limit")
         if any(
@@ -275,6 +280,7 @@ def generate_world(
         and previous.get("terrainPreset", "flat") == terrain
         and (previous.get("streetPolicy") == "porous") == (street_policy == "porous")
         and ('campusPlan' in previous)==campus
+        and previous.get('campusPlan',{}).get('style','quad')==campus_style
         and (
             pattern_scale == "block"
             or previous.get("generatorVersion") in (
@@ -426,7 +432,7 @@ def generate_world(
                             plan_adaptive
                             if pattern_scale == "adaptive"
                             else plan_district_pattern
-                        )(*args, **(dict(terrain=terrain_data, porous=street_policy == "porous",campus=campus,campus_pairs=campus_pairs)
+                        )(*args, **(dict(terrain=terrain_data, porous=street_policy == "porous",campus=campus,campus_pairs=campus_pairs,campus_style=campus_style)
                                     if pattern_scale == "adaptive" else {}))
                         district_patterns.append(pattern)
                     else:
@@ -743,7 +749,7 @@ def generate_world(
     if campus:
         from .campus import collect_plan
 
-        world['campusPlan'] = collect_plan(development_blocks)
+        world['campusPlan'] = collect_plan(development_blocks, campus_style)
     if street_hierarchy or campus:
         from .street_hierarchy import derive_street_plan
 
