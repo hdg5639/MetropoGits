@@ -81,15 +81,15 @@ codes documented in [the CLI result contract](docs/CLI_RESULTS.md).
 After creating a normal build, opt into the separate procedural World:
 
 ```powershell
-python -m scripts.procedural_world dist --zoning neighborhoods --pattern-scale district --planning varied --outline varied --out world-preview
+python -m scripts.procedural_world dist --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied --out world-preview
 ```
 
-This preserves large street patterns across physical evidence-backed internal
-neighborhoods, rather than restarting a pattern inside every small block.
-Open `world-preview/index.html` or its CPU `showcase.svg`. Original City/UCG
-remain intact; omitting `--pattern-scale district` retains the older block-local
-experiment. Unknown technologies remain neutral. See [the World contract and
-limits](docs/contracts/CURRENT_BASELINE.md#inherited-district-street-patterns--2026-10-19).
+This retains a shared arterial skeleton, adapts internal street patterns, and
+groups genuinely connected files across their original roles. It does not
+randomly mix colors or infer runtime services. Open `world-preview/index.html`
+or CPU `showcase.svg`. Original City/UCG remain intact; `district` retains the
+rigid full-pattern ablation and `block` the older local experiment. Unsupported
+frameworks stay neutral. See [the World contract and limits](docs/contracts/CURRENT_BASELINE.md#mixed-functional-neighborhoods-and-adaptive-patterns--2026-10-19).
 
 ## GitHub Action
 

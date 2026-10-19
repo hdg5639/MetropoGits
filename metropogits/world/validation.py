@@ -17,19 +17,24 @@ def validate_world(world, scene, graph):
     if world.get("schemaVersion") != VERSION:
         raise ValueError("unsupported world schema")
     if "patternScale" in world and (
-        world["patternScale"] != "district"
+        world["patternScale"] not in ("district", "adaptive")
         or world.get("zoningPolicy") != "neighborhoods"
-        or world.get("generatorVersion") != "flat-neighborhood-patterns/0.1"
+        or world.get("generatorVersion")
+        != (
+            "flat-adaptive-neighborhoods/0.1"
+            if world["patternScale"] == "adaptive"
+            else "flat-neighborhood-patterns/0.1"
+        )
     ):
         raise ValueError("invalid world pattern scale or generator")
-    if (world.get("generatorVersion") == "flat-neighborhood-patterns/0.1") != (
-        world.get("patternScale") == "district"
-    ):
-        raise ValueError("world pattern scale version mismatch")
     if (
-        "districtPatterns" in world.get("zoning", {})
-        and world.get("patternScale") != "district"
-    ):
+        world.get("generatorVersion")
+        in ("flat-neighborhood-patterns/0.1", "flat-adaptive-neighborhoods/0.1")
+    ) != (world.get("patternScale") in ("district", "adaptive")):
+        raise ValueError("world pattern scale version mismatch")
+    if "districtPatterns" in world.get("zoning", {}) and world.get(
+        "patternScale"
+    ) not in ("district", "adaptive"):
         raise ValueError("district patterns require an explicit pattern scale")
     if world["ucgDigest"] != sha256_digest(graph) or world[
         "sourceCityDigest"

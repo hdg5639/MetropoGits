@@ -7,22 +7,22 @@ from .geometry import bounds, centroid, inset, inside
 from .seed import derive, draw
 
 
-def industrial_slots(polygon, seed):
+def industrial_slots(polygon, seed, *, axis=None):
     # Court grids can miss narrow corners. Try four fixed local frames rather
     # than repeatedly enlarging unrelated districts or increasing repair caps.
     best = ([], [], 0)
     for turn, phase in ((0, 0), (0, 14), (math.pi / 2, 0), (math.pi / 2, 14)):
-        candidate = _court_plan(polygon, seed, turn, phase)
+        candidate = _court_plan(polygon, seed, turn, phase, axis)
         if len(candidate[0]) > len(best[0]):
             best = candidate
     return best
 
 
-def _court_plan(polygon, seed, turn, phase):
+def _court_plan(polygon, seed, turn, phase, axis=None):
     inner = inset(polygon, 5)
     if len(inner) < 3:
         return [], [], 0
-    angle, local, world = frame(polygon, turn)
+    angle, local, world = frame(polygon, turn, axis=axis)
     x0, z0, x1, z1 = bounds([local(p) for p in inner])
     if max(x1 - x0, z1 - z0) > 5000:
         raise ValueError("world industrial spatial extent limit")

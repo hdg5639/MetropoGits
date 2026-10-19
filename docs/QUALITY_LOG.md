@@ -6204,3 +6204,105 @@
   feat/semantic-zoning; normal configured-upstream push after staged diff/human
   identity review. No protected-main operation, force push, remote-setting
   change, agent attribution, or user-cache/generated-output inclusion.
+
+## Checkpoint 2026-10-19 — cross-role neighborhoods and adaptive pattern hierarchy
+
+- Implemented: ADR-032's two requirements together, opt-in `--pattern-scale
+  adaptive`. Replace exclusive role bins with bounded strongest-dependency
+  source groups inside original principal ownership. Preserve original typed
+  core claims, explicit helper links and separately disclosed structural files.
+  Retain a sparse parent collector/spoke/orbit skeleton, keep inherited frontage
+  in selected neighborhoods, adapt other local grammars/axes, and do not overlay
+  the full replaced parent stencil. Inspect original role counts/internal edge
+  IDs. Version metadata/planning0.5 separately; old modes remain unchanged.
+- Fixtures/revisions: same four pinned input builds world-flat-reviewed-r2/*/after
+  as the preceding checkpoint: GJ local-sha256-06eb492d57141c16 and OJ
+  local-sha256-c2e80f9d3908fec8 (revision=null), PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522, SQLiteBrowser
+  ae32df153a64d250de7c77a5057deeff4092a39b. Fresh maintained spring-positive
+  build plus generated48/252-file Spring role/reference fixtures and30unknowns.
+- Commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/spring-positive --repo-id
+  fixture/adaptive-neighborhoods-e2e --out
+  ../artifacts/visual/adaptive-neighborhoods-e2e-r1/build`; `python -m
+  scripts.procedural_world INPUT --namespace NAMESPACE --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --out NEW_OUTPUT`.
+  Fresh final world: adaptive-neighborhoods-e2e-r2/world. Corpus driver:
+  `python -c "import runpy,sys;sys.argv=['review','adaptive-neighborhoods-r3'];
+  runpy.run_path('../artifacts/visual/adaptive_neighborhoods_review.py',run_name='__main__')"`.
+  It validates schemas, compares both prior extremes, double-generates and
+  double-packages every new world, and asserts unchanged original City/UCG bytes.
+- Browser: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/adaptive-neighborhoods-reviewed-r1` with, in order,
+  adaptive-neighborhoods-r3/{gj/fragmented,gj/rigid,gj/adaptive,oj/adaptive,
+  pocketbase/adaptive,sqlitebrowser/adaptive}, then the fresh Spring world.
+  Exit0/7cases, three LODs, pointer/source/evidence, exact route drill-down,
+  filters, source-role/internal-relation counts, navigation and complete-path
+  Synthetic. All applicable Synthetic checks retain0static geometry rebuilds.
+  Submission CPU orbit p95=0.2–4.2ms in this software-browser run, not FPS/GPU.
+  Canvas driver semantic_zoning_canvas_review.mjs with
+  adaptive-neighborhoods-canvas-r1 and GJ/OJ/SQLite new worlds: exit0/3cases;
+  separate fresh Spring Canvas and full WebGL audit also exit0. New Spring
+  geometry passing is not a claim that the earlier ablation's tiny road-picking
+  limitation was fixed. No assertion skipped or weakened to accommodate it.
+- Artifacts inspected: actual final GJ WebGL/CPU overview, OJ WebGL, PocketBase
+  CPU, SQLite WebGL and OJ Canvas mixed-role inspector; both old baselines kept
+  beside them in adaptive-neighborhoods-r3/index.html. Browser gallery additionally
+  captures common world distance; fitted screenshots alone have different scale.
+  Real source examples: GJ SecurityAuditLogService→SecurityAuditLogRepository
+  co-located at distance29.57; OJ AccountArchiveRepository→AccountArchive at13.00.
+  Their original SERVICE/PERSISTENCE_ADAPTER claims remain, not role reassignment.
+- Visual findings: same principal contains retained and adapted morphology:
+  GJ Portal RADIAL/ORGANIC, VM INDUSTRIAL/HYBRID, Ops ORGANIC/HYBRID;
+  OJ backend/src RADIAL plus HYBRID/ORGANIC/INDUSTRIAL. Colored facility piles
+  are broken up by actual dependencies, not random filler or target color ratios.
+  Large vacant strips, coarse/repeated neighborhood names, oversized land and
+  extra road reservations remain. Do not declare the visual baseline accepted.
+- Relationship observations, same graph/seed: cross-role pairs require disjoint
+  nonempty DIRECT/RESOLVED evidenced roles at both endpoints and an original
+  local file/symbol relation. GJ within-neighborhood106/473→388/473, mean physical
+  distance168.51→75.11, median169.17→43.51. OJ2/310→196/310, mean164.38→113.78,
+  median144.12→52.96. Group count GJ13→14, OJ11→9. These are planning-locality
+  observations, not semantic precision or runtime-traffic measurements. PB/SQLite
+  have no qualified cross-role pairs; leave metrics N/A and roles unclassified.
+- Geometry/source/density: all3175corpus files/5782trips, represented edges
+  6157/2243/192/0 retained; zero parcel/building/full-width-road collisions or
+  source-owner escapes, every entrance reachable. Compared to rigid r3, area
+  GJ295390→407637(+38.0%), OJ165625→220042(+32.9%), PB170815→187911(+10.0%),
+  SQLite103726→155371(+49.8%). Generation samples12.51/4.71/2.75/1.41s under
+  concurrent local checks, not a controlled performance benchmark. Total physical
+  streets GJ3898→5024/OJ2188→2497. Local cross-collectors were removed where shared
+  collectors already serve the plan; this has not solved the overall land cost.
+- Tests/determinism/stability: Python581run/580pass/1existing Windows symlink
+  skip; Node56pass; Ruff/node syntax/diff checks pass. Six new tests verify real
+  Service–Repository co-location, retained/adapted patterns with mixed roles in
+  the same252-file principal, complete source/schema/package bytes,48→49-file
+  hinted edit with every previous full frame/main road unchanged, unknown fallback,
+  work limits and fabricated-role/edge/skeleton/frame rejection. The compatibility
+  helper reproduces canonical bytes for all12old worlds: four defaults, four
+  block-neighborhood and four rigid-district worlds. Cold batch-boundary/major
+  graph edits can still replan experimental groups; no universal stability claim.
+- Corrections applied/reverified: initial GJ detected a new access-corridor/building
+  collision. Reserve the complete neighboring road/port plan before capacity and
+  source assignment; require inherited doors' street points to remain in their
+  neighborhood. Initial GRID capacity0 was artificial producer padding against
+  its own valid frontage: use exact physical widths while keeping the independent
+  strict full-width validator unchanged. Reconstruct before accepting any parcel.
+  Fix functional-key neutral ground fallback, stabilize inherited-neighborhood
+  choice across allocation repairs and budget the actual selected grammar.
+  All corrected corpus runs and final renderer checks pass their stated gates.
+- Spec alignment: PASS within the separate opt-in ADR-024/030/031/032 World
+  boundary and source-preserving technical3/4/7/8/10/12, functional
+  AC-001/002/003/006/008/011/012/014. No default City/UCG schema, source ID,
+  confidence, code execution, external AI/API, native dependency or security change.
+- Open risks/next actions: W-03/05 now have joint working evidence, not full
+  design completion. Prioritize the material land/road density regression while
+  retaining real cross-role locality and macro/local transitions. Structural
+  packing may combine disconnected files; groups are not asserted runtime
+  services. Convex administrative sectors, coarse labels, batch-edge stability,
+  materials, LOD/landmarks and terrain remain open. Do not revert to pure-role
+  sorting or a full-pattern stencil to make a density number look better.
+- Commits/delivery: decision22ec01f and this feature/checkpoint on
+  feat/semantic-zoning, normal upstream push after staged diff/identity review.
+  No protection bypass, main mutation, force push, attribution, generated files
+  or unrelated user-cache inclusion.

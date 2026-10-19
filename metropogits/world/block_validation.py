@@ -23,12 +23,28 @@ def validate_blocks(world, scene, graph, neighborhoods):
     parcels = {p["entityId"]: p for p in world["parcels"]}
     expected_main = []
     inherited = world.get("patternScale") == "district"
+    adaptive = world.get("patternScale") == "adaptive"
     expected_patterns = []
     for parent in world["districts"]:
         zones = [z for z in neighborhoods.values() if z["parentId"] == parent["id"]]
         children = [b for b in blocks if b["zoneId"] in {z["id"] for z in zones}]
         polygons = {z["id"]: z["polygon"] for z in zones}
-        if inherited:
+        if adaptive:
+            from .adaptive_validation import validate_adaptive_parent
+            from .generator import requested_profile
+
+            expected_blocks, main, ports, pattern = validate_adaptive_parent(
+                parent,
+                zones,
+                children,
+                parcels,
+                pairs,
+                requested_profile(
+                    world.get("planningPolicy", "grid"), parent["localSeed"]
+                ),
+            )
+            expected_patterns.append(pattern)
+        elif inherited:
             from .district_patterns import street_field
             from .generator import requested_profile
 
@@ -83,7 +99,7 @@ def validate_blocks(world, scene, graph, neighborhoods):
         for b in children:
             if b["boundaryTypes"] != expected_by_id[b["id"]]["boundaryTypes"]:
                 raise ValueError("neighborhood block boundary type mismatch")
-    if inherited and stored.get("districtPatterns") != sorted(
+    if (inherited or adaptive) and stored.get("districtPatterns") != sorted(
         expected_patterns, key=lambda p: p["id"]
     ):
         raise ValueError("neighborhood district pattern metadata mismatch")

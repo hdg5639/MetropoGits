@@ -48,7 +48,7 @@ def main():
     parser.add_argument("--previous-world", type=Path)
     parser.add_argument(
         "--pattern-scale",
-        choices=("block", "district"),
+        choices=("block", "district", "adaptive"),
         default="block",
         help="inherit a shared district street field across physical neighborhoods",
     )

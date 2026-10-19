@@ -25,6 +25,8 @@ from .affinity import dependency_pairs
 from .neighborhoods import VERSION as NEIGHBORHOOD_VERSION, neighborhood_candidates
 from .neighborhood_layout import neighborhood_demand, plan_neighborhoods
 from .district_patterns import pattern_demand, plan_district_pattern
+from .functional import functional_candidates, VERSION as FUNCTIONAL_VERSION
+from .adaptive import plan_adaptive, adaptive_demand
 
 
 def requested_profile(planning, seed):
@@ -50,8 +52,8 @@ def generate_world(
     pattern_scale="block",
     _route=True,
 ):
-    if pattern_scale not in ("block", "district") or (
-        pattern_scale == "district" and zoning != "neighborhoods"
+    if pattern_scale not in ("block", "district", "adaptive") or (
+        pattern_scale != "block" and zoning != "neighborhoods"
     ):
         raise ValueError("district pattern scale requires neighborhoods zoning")
     if zoning not in ("none", "semantic", "soft", "neighborhoods"):
@@ -182,20 +184,29 @@ def generate_world(
     if zoned:
         entities = {e["id"]: e for e in graph["entities"]}
         clusters = {
-            k: neighborhood_candidates(v, entities, k, graph)
+            k: functional_candidates(v, entities, k, graph)
+            if pattern_scale == "adaptive"
+            else neighborhood_candidates(v, entities, k, graph)
             if zoning == "neighborhoods"
             else zone_candidates(v, entities, k)
             for k, v in grouped.items()
         }
         budgets = {
-            k: (neighborhood_demand if zoning == "neighborhoods" else zone_demand)(
-                clusters[k], members
-            )
+            k: (
+                neighborhood_demand
+                if zoning == "neighborhoods" and pattern_scale != "adaptive"
+                else zone_demand
+            )(clusters[k], members)
             for k, members in grouped.items()
         }
         if pattern_scale == "district":
             budgets = {
                 k: pattern_demand(clusters[k], members, requested[k])
+                for k, members in grouped.items()
+            }
+        elif pattern_scale == "adaptive":
+            budgets = {
+                k: adaptive_demand(clusters[k], members, requested[k])
                 for k, members in grouped.items()
             }
     owners = {b["entityId"]: key for key, members in grouped.items() for b in members}
@@ -217,8 +228,13 @@ def generate_world(
         and previous.get("zoningPolicy", "none") == zoning
         and previous.get("patternScale", "block") == pattern_scale
         and (
-            pattern_scale != "district"
-            or previous.get("generatorVersion") == "flat-neighborhood-patterns/0.1"
+            pattern_scale == "block"
+            or previous.get("generatorVersion")
+            == (
+                "flat-adaptive-neighborhoods/0.1"
+                if pattern_scale == "adaptive"
+                else "flat-neighborhood-patterns/0.1"
+            )
         )
         and set(d["id"] for d in previous.get("districts", [])) == set(grouped)
     )
@@ -334,12 +350,12 @@ def generate_world(
                         local_seed,
                         entity_paths,
                         {(a, b): w for (a, b), w in pairs.items() if owners[a] == key},
-                        requested[key] if pattern_scale == "district" else planning,
+                        requested[key] if pattern_scale != "block" else planning,
                         old_zones,
                         old_blocks,
                         old_parcels if compatible and attempt == 0 else None,
                     )
-                    if pattern_scale == "district":
+                    if pattern_scale != "block":
                         (
                             placed,
                             lanes,
@@ -349,7 +365,11 @@ def generate_world(
                             blocks,
                             backbone,
                             pattern,
-                        ) = plan_district_pattern(*args)
+                        ) = (
+                            plan_adaptive
+                            if pattern_scale == "adaptive"
+                            else plan_district_pattern
+                        )(*args)
                         district_patterns.append(pattern)
                     else:
                         placed, lanes, records, notes, zone_reuse, blocks, backbone = (
@@ -538,7 +558,9 @@ def generate_world(
             else "flat-zoning/0.1",
             zoningPolicy=zoning,
             zoning=dict(
-                version=NEIGHBORHOOD_VERSION
+                version=FUNCTIONAL_VERSION
+                if pattern_scale == "adaptive"
+                else NEIGHBORHOOD_VERSION
                 if zoning == "neighborhoods"
                 else ZONING_VERSION,
                 zones=sorted(semantic_zones, key=lambda z: z["id"]),
@@ -549,10 +571,12 @@ def generate_world(
                 blocks=sorted(development_blocks, key=lambda b: b["id"]),
                 mainRoads=sorted(main_roads, key=lambda r: r["id"]),
             )
-            if pattern_scale == "district":
+            if pattern_scale != "block":
                 world.update(
-                    patternScale="district",
-                    generatorVersion="flat-neighborhood-patterns/0.1",
+                    patternScale=pattern_scale,
+                    generatorVersion="flat-adaptive-neighborhoods/0.1"
+                    if pattern_scale == "adaptive"
+                    else "flat-neighborhood-patterns/0.1",
                 )
                 world["zoning"]["districtPatterns"] = sorted(
                     district_patterns, key=lambda p: p["id"]

@@ -13,9 +13,9 @@ MAX_INDEX = 1_000_000
 MAX_CHECKS = 1_000_000
 
 
-def frame(polygon, rotation=0):
+def frame(polygon, rotation=0, *, axis=None):
     a, b = max(zip(polygon, polygon[1:] + polygon[:1]), key=lambda e: math.dist(*e))
-    angle = math.atan2(b[1] - a[1], b[0] - a[0]) + rotation
+    angle = (math.atan2(b[1] - a[1], b[0] - a[0]) if axis is None else axis) + rotation
     c, s = math.cos(angle), math.sin(angle)
 
     def local(p):

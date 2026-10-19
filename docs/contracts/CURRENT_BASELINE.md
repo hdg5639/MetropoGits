@@ -1,5 +1,54 @@
 # Current implementation contract baseline
 
+## Mixed functional neighborhoods and adaptive patterns — 2026-10-19
+
+[ADR-032](../adr/ADR-032.md) adds `--pattern-scale adaptive` with neighborhoods,
+`flat-adaptive-neighborhoods/0.1`, `functional-neighborhoods/0.1`,
+`adaptive-patterns/0.1` and [planning0.5](../../schemas/planning-0.5.schema.json).
+The earlier block/district modes remain reproducible ablations, not accepted
+visual baselines. Original City/UCG and source IDs/roles/evidence stay intact.
+
+Within immutable source-owned principal districts, deterministic strongest-link
+region growth uses actual DIRECT/RESOLVED file/symbol dependency pairs, excludes
+CONTAINS/DECLARES, and caps the same import/reference weights at4. Target112
+files, at most7regions per principal, 500k queue pops; pack a final under24-file
+fragment structurally rather than create a tiny wedge. Disconnected files may
+share a structural administrative neighborhood: this does not claim a new edge,
+runtime service or fully connected community. `growthRestarts` records that
+planning work, not a measured count of runtime components.
+
+Original verified roles define the region's actual mixed `coreClaims` and
+`roleCounts`, never exclusive category bins. Unknown direct neighbors retain
+supporting edge IDs; other structural members are listed separately. All actual
+internal edge IDs remain inspectable. Source reconstruction rejects fabricated
+members/role counts/edges; relation locality is measured on real cross-role
+pairs rather than an invented target color mix.
+
+Reserve sparse collectors/spokes and selected orbital/row corridors from the
+parent grammar first. Keep the largest source-anchored neighborhood on that
+field; select other local grammars from actual roles and neutral base-pattern
+context, with local axes facing the nearest reserved corridor. Unused original
+full-stencil roads are not overlaid under replacements. Adapted local grids do
+not add redundant automatic cross-collectors beside the reserved shared network.
+Actual shared cuts/access ports favor cross-neighborhood source affinity; only
+the selected boundary subtree is paved, not every administrative boundary.
+
+Before placing files, filter vacant frontage against the complete reserved
+road plan, including neighboring approaches and port connectors. Validation
+independently checks source groups, profile/frame inheritance, full-width road
+coverage, source dimensions, parcel ownership, collisions and exact trips.
+Plans cap100k candidates/20k raw roads, 1M index entries/5M clearance checks per
+filter; existing5parent/4local capacity attempts remain explicit. Fail on limits
+or infeasible capacity rather than drop files or silently substitute a grammar.
+
+Compatible hints pin existing addresses while groups/capacity still fit. This
+is bounded graph-aware experimental planning, not unrestricted force layout or
+universal cold-edit stability: changes near batch boundaries/major graph edits
+may change derived groups and require replanning. Administrative development
+sectors are not yet extracted enclosed road faces. Terrain, materials, source
+metrics and detailed semantic landmarks remain separate work. Growing land and
+road count must be reported, not hidden by cross-role co-location improvements.
+
 ## Inherited district street patterns — 2026-10-19
 
 [ADR-031](../adr/ADR-031.md) adds `--pattern-scale district` when using

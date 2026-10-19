@@ -22,13 +22,16 @@ def hybrid_regions(polygon, seed):
     ]
 
 
-def hybrid_slots(polygon, seed):
+def hybrid_slots(polygon, seed, *, axis=None, collectors=True):
     candidates, lanes = [], []
     angle = 0
     for region in hybrid_regions(polygon, seed):
         planner = organic_slots if region["planningProfile"] == "ORGANIC" else slots
         local, roads, angle = planner(
-            region["polygon"], derive(seed, "region", region["id"])
+            region["polygon"],
+            derive(seed, "region", region["id"]),
+            axis=axis,
+            collectors=collectors,
         )
         for slot in local:
             slot.update(
