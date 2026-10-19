@@ -22,13 +22,59 @@ def validate_blocks(world, scene, graph, neighborhoods):
     pairs = dependency_pairs(graph, owners)
     parcels = {p["entityId"]: p for p in world["parcels"]}
     expected_main = []
+    inherited = world.get("patternScale") == "district"
+    expected_patterns = []
     for parent in world["districts"]:
         zones = [z for z in neighborhoods.values() if z["parentId"] == parent["id"]]
         children = [b for b in blocks if b["zoneId"] in {z["id"] for z in zones}]
         polygons = {z["id"]: z["polygon"] for z in zones}
-        expected_blocks, main, ports = road_block_plan(
-            zones, polygons, {}, pairs, parent["localSeed"], parent["polygon"], children
-        )
+        if inherited:
+            from .district_patterns import street_field
+            from .generator import requested_profile
+
+            profile = requested_profile(
+                world.get("planningPolicy", "grid"), parent["localSeed"]
+            )
+            slots, main, pattern = street_field(
+                parent["polygon"], parent["localSeed"], profile, parent["id"]
+            )
+            expected_patterns.append(pattern)
+            by_slot = {s["id"]: s for s in slots}
+            for b in children:
+                if (
+                    b.get("inheritedPatternId") != pattern["id"]
+                    or b["planningProfile"] != profile
+                ):
+                    raise ValueError("neighborhood inherited pattern mismatch")
+                for key in b["memberEntityIds"]:
+                    p = parcels[key]
+                    s = by_slot.get(p["slotId"])
+                    if (
+                        s is None
+                        or any(
+                            p.get(k) != s.get(k)
+                            for k in ("center", "angle", "entrance", "streetPoint")
+                        )
+                        or p["parcel"] != s["polygon"]
+                    ):
+                        raise ValueError(
+                            "neighborhood address did not inherit its parent pattern"
+                        )
+            expected_blocks = [
+                dict(b, boundaryTypes=["NEIGHBORHOOD_BOUNDARY"] * len(b["polygon"]))
+                for b in children
+            ]
+            ports = {z["id"]: [] for z in zones}
+        else:
+            expected_blocks, main, ports = road_block_plan(
+                zones,
+                polygons,
+                {},
+                pairs,
+                parent["localSeed"],
+                parent["polygon"],
+                children,
+            )
         expected_main.extend(main)
         for zone in zones:
             if zone["accessPorts"] != ports[zone["id"]]:
@@ -37,6 +83,10 @@ def validate_blocks(world, scene, graph, neighborhoods):
         for b in children:
             if b["boundaryTypes"] != expected_by_id[b["id"]]["boundaryTypes"]:
                 raise ValueError("neighborhood block boundary type mismatch")
+    if inherited and stored.get("districtPatterns") != sorted(
+        expected_patterns, key=lambda p: p["id"]
+    ):
+        raise ValueError("neighborhood district pattern metadata mismatch")
     if stored.get("mainRoads") != sorted(expected_main, key=lambda r: r["id"]):
         raise ValueError("neighborhood main-road reservation mismatch")
     for zone in neighborhoods.values():

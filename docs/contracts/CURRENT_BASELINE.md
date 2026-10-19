@@ -1,5 +1,38 @@
 # Current implementation contract baseline
 
+## Inherited district street patterns — 2026-10-19
+
+[ADR-031](../adr/ADR-031.md) adds `--pattern-scale district` when using
+`--zoning neighborhoods`. Existing default `block` output is unchanged. The
+new `flat-neighborhood-patterns/0.1` World explicitly records `patternScale`
+and `zoning.districtPatterns` (`district-patterns/0.1`); derived planning data
+uses [`planning/0.4-experimental`](../../schemas/planning-0.4.schema.json).
+Canonical City/UCG, role/evidence claims and source IDs are unchanged.
+
+Reserve a complete parent street field from the requested existing grammar
+before source-file assignment. Curves, orbital hub, axes, sampling phase and
+HYBRID regions are shared across physical semantic subdivisions. Entire lots
+inherit those addresses/tangents; neither the street planner nor GRID fallback
+restarts inside each neighborhood. Measured frontage supply guides up to six
+neighborhood allocation attempts and the existing five bounded parent repairs.
+Insufficient capacity fails explicitly. Subdivision work is capped at5M checks.
+
+Every core and actual dependency-linked helper remains in its real neighborhood,
+not merely a reference list. One inherited development sector per neighborhood
+is an administrative subdivision, **not** a claimed closed road block. Do not
+pave those borders automatically. Exact source-target pairs route on the same
+reserved field in CPU/Canvas/WebGL; selection and Synthetic retain original IDs.
+Validators reconstruct fields and exact parcel frames, independent of labels.
+Hint reuse requires the same pattern scale/version; a scale change cold-replans
+and reports the incompatibility. Matching hints pin old addresses when they fit.
+
+This is pattern preservation, not completion of local road-face extraction,
+mixed verified-role communities, material separation, density, LOD or terrain.
+The five-profile fixture atlas explicitly requests each grammar; a real seeded
+city is not forced to contain all five. The current four-repository comparison
+is `artifacts/visual/inherited-patterns-r3/index.html`. Whole-city fitted image
+scale differs as land requirements change; see the browser common-scale views.
+
 ## Procedural-world experimental addition — 2026-10-19
 
 [ADR-024](../adr/ADR-024.md) introduces a separate

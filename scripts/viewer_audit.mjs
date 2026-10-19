@@ -386,7 +386,12 @@ export async function auditZoning(cdp) {
       const edgeIds=new Set(METROPOGITS_DATA.ucg.edges.map(e=>e.id));
       if(!z.supportingMembers.every(m=>buildings.get(m.entityId)?.districtId===z.id && m.coreEdgeIds.length && m.coreEdgeIds.every(id=>edgeIds.has(id))))throw Error('Supporting member lacks original dependencies');
       const summary=document.querySelector('.neighborhood-core-summary')?.textContent;
-      if(!summary?.includes(z.coreEntityIds.length+' source-core files') || !summary.includes(blocks.length+' road-cut blocks'))throw Error('Missing physical core/block disclosure');
+      const inherited=plan.patternScale==='district';
+      if(!summary?.includes(z.coreEntityIds.length+' source-core files') || !summary.includes(blocks.length+(inherited?' development sectors':' road-cut blocks')))throw Error('Missing physical core/block disclosure');
+      if(inherited){
+        const pattern=plan.districtPatterns.find(p=>p.parentId===z.parentId);
+        if(!document.querySelector('.inherited-pattern-summary')?.textContent.includes(pattern.profile))throw Error('Missing inherited district pattern disclosure');
+      }
       if(!blocks.every(b=>document.getElementById('inspector-content').textContent.includes(b.id)))throw Error('Local block plans missing from inspector');
     }
     document.querySelector('.zoning-member').click();

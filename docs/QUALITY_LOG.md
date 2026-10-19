@@ -6112,3 +6112,95 @@
   on feat/semantic-zoning, normal configured upstream push after explicit staged
   review and human identity verification. No main/protection changes, force
   push, source-code attribution or unrelated user-cache inclusion.
+
+## Checkpoint 2026-10-19 — inherited large patterns with physical neighborhoods
+
+- Implemented: ADR-031, opt-in `--pattern-scale district` with neighborhoods.
+  Reserve one parent field from each requested existing grammar, then subdivide
+  physical evidence-backed neighborhoods and inherit whole vacant frontage
+  sites. No local hub/axis/phase restart, silent GRID substitution, or automatic
+  neighborhood-border pavement. Preserve block-scale mode and all source facts.
+  New explicit World generator/field metadata and planning0.4 projection;
+  both inspectors disclose inherited development sectors, not closed road blocks.
+- Fixtures/revisions: same pinned four inputs in world-flat-reviewed-r2/*/after:
+  GJ local-sha256-06eb492d57141c16, OJ local-sha256-c2e80f9d3908fec8
+  (both revision=null); PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b. Additional maintained
+  spring-positive fresh input and the48-file source-role/reference test fixture.
+- Commands run (from MetropoGits unless stated):
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive
+  --repo-id fixture/inherited-patterns-e2e --out
+  ../artifacts/visual/inherited-patterns-e2e-r1/build`.
+  CLI probes use `python -m scripts.procedural_world INPUT --namespace NAMESPACE
+  --zoning neighborhoods --pattern-scale district --planning varied --outline
+  varied --out NEW_OUTPUT`; initial four probes passed geometry/access/trips.
+  `python -c "import runpy,sys;sys.argv=['review','inherited-patterns-r2'];
+  runpy.run_path('../artifacts/visual/inherited_patterns_review.py',run_name='__main__')"`.
+  This generates all four before/after pairs, five explicit grammar variants and
+  fresh Spring; validates schemas, repeats every new complete artifact package,
+  and asserts original City/UCG bytes. Initial workspace-root invocation failed
+  its repo-relative schema lookup; corrected cwd, no product change required.
+  Repackage with `repackage_inherited_patterns.py inherited-patterns-r2
+  inherited-patterns-r3` after the inspector correction; validates and double
+  packages each unchanged world. All generated files stay outside source Git.
+- Browser commands: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/inherited-patterns-reviewed-r3` followed in order by
+  inherited-patterns-r3/{gj/before,gj/after,oj/after,pocketbase/after,
+  sqlitebrowser/after,atlas/grid,atlas/radial,atlas/organic,atlas/industrial,
+  atlas/hybrid}. Exit0,10cases, three LODs, pointer source/route drill-down,
+  evidence counts, filtering, navigation, complete-path highlights and Synthetic
+  provenance. All applicable animation checks have0static geometry rebuilds.
+  Orbit submission CPU p95=0.2–2.8ms under this software-browser run, not GPU/FPS.
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs
+  ../artifacts/visual/inherited-patterns-canvas-r1` with GJ/after,atlas/radial,
+  spring: exit0, source/core/helper provenance, paging, context restoration.
+- Artifacts inspected: inherited-patterns-r3/index.html and actual
+  inherited-patterns-reviewed-r3 captures for GJ before/after, OJ, PocketBase,
+  SQLiteBrowser, the five-profile CPU atlas, GJ CPU and Canvas core inspector.
+  Same physical geometry in both renderers; full-city fit is not a common world
+  scale. Audit gallery additionally captures a common-distance overview.
+  Representative real pointer drill-down: GJ Vm InternalOpsController.java:88
+  REFERENCES PortDeploymentTargetLinkRequest.java, RESOLVED java.type-reference,
+  exact contributing edge4b6de3d9… and its complete stored route highlighted.
+- Visual findings: large radial flows return in Portal/User (GJ) and src (OJ),
+  Organic Ops and Industrial VM remain recognizable; source neighborhoods do
+  not reset them. All five requested grammars actually survive the atlas.
+  Repetitive colored rows/factory-like pure-role cores remain; not a completed
+  soft/mixed city or material/LOD improvement. No decorative masking added.
+- Geometry/land: all3175corpus files and5782trips retained; represented edges
+  6157/2243/192/0. GJ13neighborhoods224cores102helpers, OJ11/267/45;
+  PB/SQLite stay neutral. Zero parcel/building/full-width-road collisions or
+  owner escapes; every entrance reachable. Area versus r4:
+  GJ330183→295390(-10.5%), OJ155006→165625(+6.9%), PB155724→170815(+9.7%),
+  SQLite132862→103726(-21.9%). Not a universal density improvement. Single-run
+  generation8.70/3.15/1.08/0.62s; no controlled performance-regression claim.
+- Tests/determinism/stability: Python575run/574pass/1existing Windows symlink
+  skip; Node56pass; Ruff/node syntax/diff checks pass. Seven new tests cover all
+  five grammars, source retention, field inheritance, labels, schema/full-package
+  bytes,49-file hinted edit (all48previous full frames and roads unchanged),
+  tampering, work limits and old-mode hint rejection. All four legacy default
+  AND r4block-mode worlds reproduce original canonical bytes via
+  `verify_inherited_compatibility.py`. Old modes and schema meanings preserved.
+- Fixes/reverification: first browser audit caught the new sector disclosure
+  missing from the separate WebGL inspector; fixed both renderers, repackaged,
+  reran the10-case audit and3-case Canvas check. No assertion weakened.
+- Explicit remaining failure: full audit including the fresh6-file Spring
+  stops at `No shared road hit target for drill-down audit`. Its tiny shared
+  segments have no selectable audit target under the attempted cameras. Default
+  3D was inspected, CPU/World/schema/access/trip and Canvas source navigation
+  pass; its full WebGL pointer workflow is **not verified**. Kept failed audit
+  outputs in inherited-patterns-reviewed-r2 and spring-reviewed-r1. Do not claim
+  those runs passed; the10-case passing report intentionally excludes Spring.
+- Spec alignment: PASS within ADR-024/030/031's explicit opt-in boundary,
+  technical3/4/7/8/10/12, functional AC-001/002/003/006/008/011/012/014 and
+  product source-evidence/static/deterministic invariants. No UCG/City migration,
+  target execution, runtime AI/API, new dependency, role guessing or ID rewrite.
+- Open risks/next actions: sparse WebGL road picking above; role-led rather than
+  broader mixed-role cores; convex administrative sectors rather than extracted
+  enclosed road faces; OJ/PB land growth. Ledger W-03/12/13/14/15/19 remain open.
+  Preserve the large field while refining its internal planning, not another
+  loop of tiny bends or repeated local pattern resets.
+- Commits/delivery: independent decision ec5071f and this feature/checkpoint on
+  feat/semantic-zoning; normal configured-upstream push after staged diff/human
+  identity review. No protected-main operation, force push, remote-setting
+  change, agent attribution, or user-cache/generated-output inclusion.

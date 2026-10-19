@@ -207,6 +207,11 @@ def view_data(world, scene, graph):
                 blocks={b["id"]: b for b in world["zoning"]["blocks"]},
                 mainRoadCount=len(world["zoning"]["mainRoads"]),
             )
+            if world.get("patternScale") == "district":
+                data["neighborhoodPlan"].update(
+                    patternScale="district",
+                    districtPatterns=world["zoning"]["districtPatterns"],
+                )
         if "softZoning" in world:
             data["softZoning"] = dict(
                 version=world["softZoning"]["version"], influenceOnly=True

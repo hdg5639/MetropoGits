@@ -285,8 +285,10 @@ def plan_zones(
 
 def planning_document(world):
     if world.get("zoningPolicy") == "neighborhoods":
-        return dict(
-            schemaVersion="planning/0.3-experimental",
+        doc = dict(
+            schemaVersion="planning/0.4-experimental"
+            if world.get("patternScale") == "district"
+            else "planning/0.3-experimental",
             zoningVersion=world["zoning"]["version"],
             worldSeed=world["seed"],
             ucgDigest=world["ucgDigest"],
@@ -296,6 +298,12 @@ def planning_document(world):
             blocks=world["zoning"]["blocks"],
             mainRoads=world["zoning"]["mainRoads"],
         )
+        if world.get("patternScale") == "district":
+            doc.update(
+                patternScale="district",
+                districtPatterns=world["zoning"]["districtPatterns"],
+            )
+        return doc
     if world.get("zoningPolicy") == "soft":
         return dict(
             schemaVersion="planning/0.2-experimental",
