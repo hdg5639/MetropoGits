@@ -1097,9 +1097,43 @@
 
   function accessHeight(segment, point, fallback=0) {
     if(!segment?.heights) return fallback;
+    if(segment.heightProfile) {
+      let best=null;
+      for(let i=1;i<segment.heightProfile.length;i++) {
+        const a=segment.heightProfile[i-1],b=segment.heightProfile[i],dx=b[0]-a[0],dz=b[1]-a[1];
+        const t=Math.max(0,Math.min(1,((point[0]-a[0])*dx+(point[1]-a[1])*dz)/(dx*dx+dz*dz)));
+        const d=Math.hypot(point[0]-a[0]-t*dx,point[1]-a[1]-t*dz);
+        if(!best||d<best.d) best={d,height:a[2]+t*(b[2]-a[2])};
+      }
+      return best.height;
+    }
     const a=segment.start,b=segment.end,dx=b[0]-a[0],dz=b[1]-a[1];
     const t=Math.max(0,Math.min(1,((point[0]-a[0])*dx+(point[1]-a[1])*dz)/(dx*dx+dz*dz)));
     return segment.heights[0]+t*(segment.heights[1]-segment.heights[0]);
+  }
+
+  function groundHeight(surface,x,z) {
+    if(!surface) return 0;
+    const a=(x-surface.origin[0])/surface.spacing,b=(z-surface.origin[1])/surface.spacing;
+    const i=Math.floor(a),j=Math.floor(b),u=a-i,v=b-j;
+    const row=surface.values[j],next=surface.values[j+1];
+    if(!row||!next||row[i]===undefined||row[i+1]===undefined) throw new RangeError('Outside certified ground grid');
+    return u+v<=1 ? row[i]+(row[i+1]-row[i])*u+(next[i]-row[i])*v
+      : next[i+1]+(next[i]-next[i+1])*(1-u)+(row[i+1]-next[i+1])*(1-v);
+  }
+
+  function aggregateElevation(surface,facility) {
+    if(!surface) return 0;
+    let highest=0,work=0;
+    for(const p of aggregateGroundPlots(facility,true)) {
+      const s=surface.spacing;
+      for(let x=Math.floor(p.x/s)*s;x<=Math.ceil((p.x+p.width)/s)*s;x+=s)
+        for(let z=Math.floor(p.z/s)*s;z<=Math.ceil((p.z+p.depth)/s)*s;z+=s) {
+          if(++work>4096) throw new RangeError('Aggregate ground extent limit');
+          highest=Math.max(highest,groundHeight(surface,x,z));
+        }
+    }
+    return highest+.04;
   }
 
   function accessRoadStyle(segment) {
@@ -1296,6 +1330,8 @@
   }
 
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    groundHeight,
+    aggregateElevation,
     accessHeight,
     accessJunctionGeometry,
     accessMarkingSegment,

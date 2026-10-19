@@ -180,7 +180,8 @@ def validate_crossings(streets, terrain):
     junction_heights = {}
     for s in streets:
         expected = crossing_piece(s,terrain)
-        if {k:s[k] for k in ("bridgeId","heights") if k in s} != expected:
+        fields = ("bridgeId",) if "elevation" in terrain and not expected else ("bridgeId","heights")
+        if {k:s[k] for k in fields if k in s} != expected:
             raise ValueError("physical crossing certificate/height mismatch")
         for p,y in zip((s["start"],s["end"]),s.get("heights",[.08,.08])):
             key=tuple(p)

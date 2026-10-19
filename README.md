@@ -108,6 +108,13 @@ or expand land, while retaining source facts. The river is an analytical,
 level-water prototype, not a drainage simulation; buildable plains remain flat.
 Flat remains the default. See [ADR-037](docs/adr/ADR-037.md).
 
+For gentle buildable relief, use `--terrain river-valley` instead. One global
+height lattice drives lot suitability, level building foundations, graded roads,
+trees, picking and Synthetic; source building dimensions remain unchanged.
+The valley floor and bridge abutments stay level. This remains experimental:
+land may expand/repartition, and drainage simulation/steep terrain/tunnels are
+not implemented. See [ADR-038](docs/adr/ADR-038.md).
+
 ## GitHub Action
 
 The repository includes a least-privilege composite Action and a pinned Pages
