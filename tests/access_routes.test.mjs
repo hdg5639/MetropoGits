@@ -16,6 +16,48 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 
+test('physical street hierarchy changes presentation, not exact route coverage or demand',()=>{
+  const f=globalThis.METROPOGITS_FILTERS;
+  const input=structuredClone(routing);
+  Object.assign(input.segments[4],{streetClass:'COLLECTOR',streetReasons:['COARSE_CONNECTOR']});
+  const before=structuredClone(input);
+  const p=f.createAccessPolicy(input,null,null,null,{version:'street-plan/0.1'});
+  const files=new Set(['A','B','C','D']),networks=new Set(['n']);
+  for(const level of ['overview','district','detail']) {
+    const frame=p.frame(level,files,networks,null);
+    assert.equal(frame.routes.length,2);
+    assert.equal(frame.segmentIds.size,5);
+    assert.deepEqual(frame.animated.map(r=>r.id),['ab','cd']);
+  }
+  const selected=p.frame('overview',files,networks,{kind:'network',id:'shared',routeId:'ab'});
+  assert.deepEqual([...selected.routeIds],['ab']);
+  assert.deepEqual([...selected.segmentIds].sort(),['a','b','shared']);
+  assert.deepEqual(p.network('shared',selected.routeIds).edgeIds,['edge-ab']);
+  assert.equal(p.network('shared').streetClass,'COLLECTOR');
+  assert.deepEqual(p.network('shared').streetReasons,['COARSE_CONNECTOR']);
+  for(const phase of [0,.3,.7,1])assert.deepEqual(p.position(input.routes[0],phase),policy.position(routing.routes[0],phase));
+  assert.deepEqual(input,before);
+});
+
+test('physical pavement paints once while explicit source inspection restores demand skins',()=>{
+  const f=globalThis.METROPOGITS_FILTERS;
+  const plan={colors:{COLLECTOR:{overview:'#445566',district:'#334455',detail:'#223344'}}};
+  const surface={streetClass:'COLLECTOR',color:'#123456'};
+  assert.equal(f.physicalStreetColor(surface,null,'overview'),'#123456');
+  assert.equal(f.physicalStreetColor(surface,plan,'overview'),'#445566');
+  assert.equal(f.physicalStreetColor(surface,plan,'detail'),'#223344');
+  assert.equal(f.physicalStreetColor(surface,plan,'detail',true),'#123456');
+  assert.equal(f.physicalMarkingVisible({streetClass:'COLLECTOR'},'overview'),false);
+  assert.equal(f.physicalMarkingVisible({streetClass:'ARTERIAL'},'overview'),true);
+  assert.equal(f.physicalMarkingVisible({streetClass:'COLLECTOR'},'detail'),true);
+  assert.equal(f.physicalMarkingVisible({streetClass:'ARTERIAL'},'detail',true),false);
+  const road={kind:'DEPENDENCY_ROAD'};
+  assert.equal(f.accessPresentation(road,null),true);
+  assert.equal(f.accessPresentation(road,plan),false);
+  assert.equal(f.accessPresentation(road,plan,true),true);
+  for(const kind of ['HTTP_HIGHWAY','MESSAGING_PATH'])assert.equal(f.accessPresentation({kind},plan),true);
+});
+
 test('mountain tunnel inspection retains its exact source routes and physical height',()=>{
   const input=structuredClone(routing),s=input.segments.find(s=>s.id==='shared');
   Object.assign(s,{tunnelId:'mountain-pass',heights:[2,3],heightProfile:[[0,7,2],[7,7,3]]});

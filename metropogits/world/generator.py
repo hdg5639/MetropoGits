@@ -72,8 +72,11 @@ def generate_world(
     pattern_scale="block",
     street_policy="original",
     terrain="flat",
+    street_hierarchy=False,
     _route=True,
 ):
+    if street_hierarchy and (pattern_scale != "adaptive" or not _route):
+        raise ValueError("street hierarchy requires routed adaptive neighborhoods")
     if terrain not in ("flat", NATURAL_PRESET, RIVER_PRESET, VALLEY_PRESET, LANDSCAPE_PRESET) or (
         terrain != "flat" and (pattern_scale != "adaptive" or not _route)
     ):
@@ -731,4 +734,8 @@ def generate_world(
                         s[field]=physical[s["physicalId"]][field]
         world.update(generatorVersion=LANDSCAPE_GENERATOR_VERSION if terrain == LANDSCAPE_PRESET else VALLEY_GENERATOR_VERSION if terrain == VALLEY_PRESET else RIVER_GENERATOR_VERSION if terrain == RIVER_PRESET else TERRAIN_GENERATOR_VERSION, terrainPreset=terrain,
                      terrain=terrain_data, streetPolicy=street_policy)
+    if street_hierarchy:
+        from .street_hierarchy import derive_street_plan
+
+        world["streetPlan"] = derive_street_plan(world)
     return world

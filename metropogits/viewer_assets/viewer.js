@@ -47,7 +47,7 @@
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
-  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand, data.streetCurves);
+  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand, data.streetCurves, data.physicalStreetPlan);
   let accessFrame = null;
   let accessPaint = new Map();
   function networkForId(id) {
@@ -306,7 +306,8 @@
       accessFrame = accessPolicy.frame(currentDetailLevel, visibleBuildingIds, visibleNetworkIds, state.selected,
         showAllNetworks, aggregateFacilities.get(state.selected?.id)?.memberEntityIds || []);
       const junctionGeometry=data.surface ? {trims:new Map()} : filterEngine.accessJunctionGeometry(accessFrame);
-      accessPaint=new Map(accessFrame.segments.map(segment=>
+      accessPaint=new Map(accessFrame.segments.filter(segment=>filterEngine.accessPresentation(segment,
+        data.physicalStreetPlan,structureOverlay || showAllNetworks || accessFrame.focused)).map(segment=>
         [segment.id,filterEngine.accessMarkingSegments(segment,junctionGeometry.trims)]));
       renderedNetworkIds = accessFrame.networkIds;
     }
@@ -663,7 +664,7 @@
       project(rectangle.x, rectangle.z + rectangle.depth, 0.09),
     ];
     polygonPath(points);
-    context.fillStyle = rectangle.color || colors[rectangle.tier] || colors.STREET;
+    context.fillStyle = filterEngine.physicalStreetColor(rectangle, data.physicalStreetPlan, currentDetailLevel, structureOverlay) || colors[rectangle.tier] || colors.STREET;
     context.fill();
   }
 
@@ -925,8 +926,16 @@
       for (const block of civicBlocks) drawCivicBlock(block);
     }
     for (const rectangle of accessPolicy && !data.streets?.structural ? [] : streetRectangles) drawStructuralStreet(rectangle);
+    for (const marking of data.physicalStreetPlan?.markings || []) {
+      if (!filterEngine.physicalMarkingVisible(marking, currentDetailLevel, structureOverlay)) continue;
+      polygonPath(marking.points.map(([x,z],i) => project(x,z,marking.pointHeights?.[i] ?? marking.elevation ?? .12)));
+      context.fillStyle=marking.color;context.fill();
+    }
     for (const segment of accessFrame?.segments || []) {
       const points = segment.path.map(p => project(...p, filterEngine.accessHeight(segment,p,.08)+.07));
+      if (!filterEngine.accessPresentation(segment, data.physicalStreetPlan, structureOverlay || showAllNetworks || accessFrame.focused)) {
+        hitRegions.push({kind:"network",id:segment.id,points});continue;
+      }
       const style = filterEngine.accessRoadStyle(segment), width = style.width;
       if (segment.pavement) {
         for (const piece of segment.pavement) {
@@ -947,6 +956,7 @@
       hitRegions.push({kind: "network", id: segment.id, points});
     }
     for (const segment of accessFrame?.segments || []) {
+      if (!filterEngine.accessPresentation(segment, data.physicalStreetPlan, structureOverlay || showAllNetworks || accessFrame.focused)) continue;
       const style=filterEngine.accessRoadStyle(segment);
       for (const paint of accessPaint.get(segment.id) || []) {
         const a=project(...paint.start,filterEngine.accessHeight(segment,paint.start,.12)+.06),
@@ -977,6 +987,8 @@
       drawLandscapeTree({...data.infrastructure,faces:data.infrastructure.faces.filter(f=>f.surface==='deck')});
       for(const segment of accessFrame?.segments || []) {
         if(!segment.bridgeId) continue;
+        if(!filterEngine.accessPresentation(segment,data.physicalStreetPlan,
+          structureOverlay || showAllNetworks || accessFrame.focused)) continue;
         const style=filterEngine.accessRoadStyle(segment);
         for(const piece of segment.pavement || []) {
           polygonPath(piece.points.map(([x,z],i)=>project(x,z,piece.pointHeights[i])));
@@ -1391,7 +1403,13 @@
       detailRow(details, "Shared relation paths", network.routeIds.length);
       inspector.append(element("p", "Shared geometry does not create new relationships. Highlighted paths retain their own source and destination.", "muted"));
     }
-    const demand = accessPolicy?.network(networkId)?.demand;
+    const physical = accessPolicy?.network(networkId);
+    if (physical?.streetClass) {
+      detailRow(details, "Physical street class", physical.streetClass === "SERVICE" ? "SERVICE / building access" : physical.streetClass);
+      detailRow(details, "Structural derivation", physical.streetReasons.join(", "));
+      inspector.append(element("p", "Street function comes from the physical plan. It is independent of source dependency demand and does not imply HTTP or measured traffic.", "muted"));
+    }
+    const demand = physical?.demand;
     if (demand) {
       detailRow(details, "Road grade", demand.label);
       detailRow(details, "Full-road unique edges", demand.edgeCount);
