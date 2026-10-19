@@ -72,10 +72,15 @@ export function instrument(source) {
   globalThis.__METRO_AUDIT__ = {
     roadTargets(identity = null) {
       if (!accessPolicy) return [];
+      const probedIds=new Set();
       return hitRegions.filter(region => region.kind === 'network')
-        .map(region => ({id:region.id, x:(region.minX+region.maxX)/2, y:(region.minY+region.maxY)/2}))
+        .flatMap(region => {
+          const [a,b]=region.points;
+          return [.5,.2,.8,.05,.95].map(t=>({id:region.id,x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}));
+        })
         .filter(point => point.x>8 && point.y>8 && point.x<viewportWidth-8 && point.y<viewportHeight-8
           && hitTest(point.x,point.y)?.id===point.id)
+        .filter(point => !probedIds.has(point.id) && probedIds.add(point.id))
         .map(point => ({...point, choices:accessPolicy.choices(point.id,visibleBuildingIds,visibleNetworkIds)}))
         .filter(point => point.choices.length>0)
         .sort((a,b)=>a.choices.length-b.choices.length || a.id.localeCompare(b.id))

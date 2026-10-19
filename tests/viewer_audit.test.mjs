@@ -90,6 +90,24 @@ test('instrumentation is isolated, parseable and fails closed on marker drift', 
   assert.throws(() => instrument(modified), /marker changed/);
 });
 
+test('road pointer audit samples visible pavement without accepting occluded targets', async () => {
+  const source=await readFile(new URL('../metropogits/viewer_assets/viewer-3d.js',import.meta.url),'utf8');
+  const body=instrument(source).split('    roadTargets(identity = null) {')[1].split('    accessTargets() {')[0];
+  let covered=false;
+  const api=new Script('({roadTargets(identity = null) {'+body+'})').runInNewContext({
+    hitRegions:[{kind:'network',id:'real-road',points:[{x:10,y:40},{x:110,y:40}]}],
+    viewportWidth:140,viewportHeight:100,visibleBuildingIds:new Set(),visibleNetworkIds:new Set(),
+    hitTest:x=>({id:!covered&&x>100?'real-road':'occluding-building'}),
+    accessPolicy:{choices:()=>[{id:'real-trip',source:'real-file',edgeIds:['edge'],segmentIds:['real-road']}]},
+  });
+  const [point]=api.roadTargets();
+  assert.equal(point.x,105);
+  assert.equal(point.choices[0].id,'real-trip');
+  assert.equal(api.roadTargets('another-road').length,0);
+  covered=true;
+  assert.equal(api.roadTargets().length,0);
+});
+
 test('timing percentiles retain sample count and reject invalid samples', () => {
   assert.deepEqual(summarize([3, 1, 2]), {count: 3, median: 2, p95: 3, max: 3});
   assert.equal(summarize(Array.from({length:20}, (_, i) => i + 1)).p95, 19);
