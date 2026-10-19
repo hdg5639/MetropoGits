@@ -51,3 +51,10 @@ class StreetMeshTests(unittest.TestCase):
         self.assertEqual(len(street_mesh(w)),4)
         with patch('metropogits.world.street_mesh.MAX_INDEX',0),self.assertRaisesRegex(ValueError,'limit'):
             street_mesh(w)
+
+    def test_curved_pedestrian_loop_has_join_faces_too_without_painting_the_carriageway(self):
+        roads=[dict(id='a',start=[0,0],end=[10,0],width=1.2),
+               dict(id='b',start=[0,0],end=[0,10],width=1.2)]
+        mesh=street_mesh(world(roads,['PEDESTRIAN','PEDESTRIAN']))
+        self.assertGreater(len(mesh),4)
+        self.assertTrue(any(overlap(m['points'],rectangle([-.15,-.15],0,.1,.1)) for m in mesh))

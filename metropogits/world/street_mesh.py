@@ -52,11 +52,12 @@ def street_mesh(world):
         paths.append((s,cls,poly,walking))
         if not walking:
             reserve(poly,'vehicle')
-            for p in (s['start'],s['end']):adj[tuple(p)].append(s)
+        if not s['access']:
+            for p in (s['start'],s['end']):adj[(tuple(p),walking)].append(s)
     joints=[]
     # Cross-section hulls give bevel joins with no unbounded miter spikes.
     # Do not sew a bridge ramp to ground-level pavement or invent a road link.
-    for at,incident in sorted(adj.items()):
+    for (at,walking),incident in sorted(adj.items()):
         if len(incident)<2 or any(s.get('bridgeId') or s.get('tunnelId') for s in incident):continue
         tips=[]
         for s in incident:
@@ -69,7 +70,8 @@ def street_mesh(world):
         if any(overlap(poly,p) for p in nearby(poly,'clearance')):continue
         s=max(incident,key=lambda s:(s['width'],s['id']))
         cls=profiles.get(s['id'],{}).get('streetClass','LOCAL')
-        joints.append((s,cls,poly,False));reserve(poly,'vehicle')
+        joints.append((s,cls,poly,walking))
+        if not walking:reserve(poly,'vehicle')
     result=[]
     def emit(base,poly,height=None):
         # Both browser renderers consume quads; encode convex faces as explicit
