@@ -6675,3 +6675,82 @@
   tests/docs unit on feat/semantic-zoning; normal upstream push after verified
   diff/identity/branch review. No generated artifacts, user caches, attribution,
   force push or protection bypass. Macro planning/materials/LOD/terrain remain open.
+
+## Checkpoint 2026-10-19 — sparse structural alleys through long rows
+- Implemented: ADR-035, explicit `--street-policy permeable`, experimental
+  generator flat-adaptive-neighborhoods/0.5. After shared junctions, add narrow
+  real cross-links only through whole-parcel gaps in long locally aligned rows.
+  Width1.6, length10–44; at least6 buildings spanning54 units and2 on each side;
+  separation58,1–2 per neighborhood,24 total. Existing nearby cross-streets,
+  driveways, junctions, blocked lots and short rows suppress additions. No lot
+  moves, role reassignment or parent stencil changes. Work/index/search bounded.
+- Fixture revisions: OJ local-sha256-c2e80f9d3908fec8;
+  GJ local-sha256-06eb492d57141c16;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b.
+  Same canonical inputs/namespaces as shared-junctions-r1; full generation, not
+  just asset repackaging. Fresh maintained Spring fixture scanned through CLI.
+- Commands from MetropoGits:
+  `python -X utf8 -c "import runpy,sys;sys.argv=['alleys','sparse-alleys-r1'];runpy.run_path('../artifacts/visual/alley_review.py',run_name='__main__')"`;
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/sparse-alleys-e2e --out ../artifacts/visual/sparse-alleys-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/sparse-alleys-e2e-r1/build --namespace fixture/sparse-alleys-e2e --zoning neighborhoods --pattern-scale adaptive --street-policy permeable --planning varied --outline varied --out ../artifacts/visual/sparse-alleys-e2e-r1/world`.
+  Full unittest discovery; focused test_world_alleys.py/test_world_adaptive.py;
+  Ruff/compileall; all9 Node test files; inherited compatibility helper; diff-check.
+- Observed: GJ2 alleys,53.63 total units; PocketBase2,50.84 units; OJ/SQLite0.
+  No repository-specific quota or forced cut. All3175 whole building frames,
+  parent land, zoning/mixed membership and City/UCG/planning bytes unchanged.
+  Every original physical street remains covered after real junction splitting.
+  All5782 trips/8592 represented edges remain; GJ31 trips shorten, none grows
+  beyond0.003 rounding allowance. GJ747 path arrays differ mostly because old
+  roads gain junction vertices; do not call all747 meaningful reroutes.
+- Independent full World checks: complete entrance access,0 building/full-width
+  road overlap and0 owner escape. Alleged alley rows must reference actual local
+  source members; recorded full-width pavement must really exist. Parcel safety
+  is checked independently of the optional selector's budgets. On invalid routing
+  or any increased source trip, retain certified shared streets/routes.
+- Determinism/stability: four full generations and packages repeated byte-for-byte;
+  final-source fresh comparison also passes. All12 legacy default/block/district
+  canonical snapshots unchanged; old0.3/0.4 defaults remain intact. Compatible
+  hints retain all48 complete old frames after49th file. Forced index/check/
+  candidate/search exhaustion retains certified input; injected route increase
+  rolls back to shared baseline. No target execution, dependency install or upload.
+- Actual render commands: `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/sparse-alleys-reviewed-r2` with GJ before/after,
+  PocketBase/OJ/SQLite after and fresh Spring (6 cases);
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/sparse-alleys-canvas-r1` with4 after worlds and fresh Spring;
+  `node ../artifacts/visual/alley_focus.mjs ../artifacts/visual/sparse-alleys-focus-r1`.
+  WebGL three LODs/source inspectors/real pointer selection, Canvas member paging
+  and Structure hide/restore pass. Synthetic causes0 static rebuilds where
+  applicable; SQLite0 networks and sparse Spring Overview honestly report N/A.
+  First audit r1 started before all packages existed and stopped on ENOENT;
+  completed r2 reruns all6 after generation. No product failure was suppressed.
+- Artifacts actually inspected: GJ matched Detail before/after alley images,
+  exact original dependency before/after, PocketBase Detail, GJ CPU showcase,
+  OJ WebGL Overview, Canvas source inspector. Focus entry:
+  `artifacts/visual/sparse-alleys-focus-r1/index.html`.
+  GJ navigation/index.ts→navigation/WorkspaceTopNavigation.tsx is selected by a
+  real road pointer and route-choice:192.12→70.48 units, same original edge IDs,
+  complete highlight and Synthetic own-path provenance. PocketBase's shown
+  alley has0 source trips; structural permeability does not fabricate traffic.
+- Visual finding: an occasional short cross-cut breaks a long strip into smaller
+  connected pieces without moving its buildings or introducing a dense grid.
+  Overall silhouettes/role mix remain; thumbnail change is intentionally small.
+  This does not solve all empty land, material hierarchy, LOD or terrain work.
+- Independent scenery checks: alley_final_validation.py via runpy, original
+  parcel/full-width-pavement comparisons GJ98815/PB50984/OJ69046/SQLite37912;
+  no planting invasion, all crown faces within real patches. Trees642/322/546/216.
+  Recomputed scenery avoids new actual cuts, not a road painted over trees.
+- Tests:611 Python run,610 pass/one existing Windows symlink skip;58 Node pass;
+  lint/compile/diff pass. Five selector tests cover positive connectivity, whole
+  lots, short/blocked rows, nearby cross-links, frequency and all work budgets;
+  adaptive tests cover repeated/schema-valid output, old modes/hints and rollback.
+- Performance: no viewer algorithm/draw-pass change. Optional selector checks
+  GJ150629/PB64684/OJ55644/SQLite69661, search states54/40/0/0; no exhausted cap.
+  Single concurrent full-generation samples17.22/3.46/10.00/1.44s, not isolated
+  regression benchmarks or GPU FPS. Do not infer speedup from software Chrome.
+- Spec alignment: PASS under ADR-024/032/034/035 and AC-001/002/003/006/008/011/014.
+  Structural alleys are disclosed infrastructure, not new source dependencies.
+  City/UCG/source identities unchanged; additive experimental generator only.
+- Delivery: docsfc7a569 then one coherent selector/CLI/schema/validator/tests/docs
+  work unit on feat/semantic-zoning; normal upstream push after checks and human
+  identity/metadata review. No generated artifacts or user build caches staged;
+  no attribution, force push or protection bypass. Other ledger work remains open.

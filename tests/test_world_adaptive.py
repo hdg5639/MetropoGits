@@ -270,6 +270,77 @@ class AdaptiveTests(unittest.TestCase):
                 if p["entityId"] in old_frames:
                     self.assertEqual(old_frames[p["entityId"]], p)
 
+    def test_permeable_policy_keeps_frames_source_trips_and_compatible_hints(self):
+        from metropogits.world.junctions import check_trip_budgets
+
+        shared = generate_world(self.scene, self.graph, street_policy="shared", **self.options)
+        world = generate_world(self.scene, self.graph, street_policy="permeable", **self.options)
+        self.assertEqual(world["generatorVersion"], "flat-adaptive-neighborhoods/0.5")
+        for key in ("parcels", "districts", "zoning"):
+            self.assertEqual(world[key], shared[key])
+        validate_world(world, self.scene, self.graph)
+        Draft202012Validator(json.loads((ROOT / "schemas/world-0.1.schema.json").read_text(encoding="utf8"))).validate(world)
+        check_trip_budgets(shared["routing"], world["routing"])
+        self.assertEqual(world, generate_world(self.scene, self.graph, street_policy="permeable", **self.options))
+        hinted = generate_world(self.scene, self.graph, street_policy="shared", previous=world, **self.options)
+        self.assertEqual(hinted["parcels"], shared["parcels"])
+        self.assertTrue(hinted["anchors"]["reusedDistrictIds"])
+        with patch("metropogits.world.alleys.MAX_CHECKS", 0):
+            fallback = generate_world(self.scene, self.graph, street_policy="permeable", **self.options)
+        validate_world(fallback, self.scene, self.graph)
+        self.assertEqual(fallback["streets"], shared["streets"])
+        self.assertEqual(fallback["routing"], shared["routing"])
+        self.assertTrue(fallback["diagnostics"][-1]["budgetExhausted"])
+        with self.assertRaises(ValueError):
+            generate_world(self.scene, self.graph, street_policy="permeable")
+        tampered = copy.deepcopy(world)
+        tampered["diagnostics"].pop()
+        with self.assertRaisesRegex(ValueError, "alley audit"):
+            validate_world(tampered, self.scene, self.graph)
+
+    def test_permeable_hints_preserve_old_frames_after_one_file_edit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            scene, graph = fixture(repo)
+            old = generate_world(scene, graph, street_policy="permeable", **self.options)
+            (repo / "zz_extra.rs").write_text("fn unknown() {}", encoding="utf8")
+            graph = analyze_repository(repo, repository_id="fixture/neighborhoods")
+            scene = generate_city(graph)
+            world = generate_world(scene, graph, previous=old, street_policy="permeable", **self.options)
+        validate_world(world, scene, graph)
+        old_frames = {p["entityId"]: p for p in old["parcels"]}
+        self.assertTrue(world["anchors"]["reusedDistrictIds"])
+        for p in world["parcels"]:
+            if p["entityId"] in old_frames:
+                self.assertEqual(p, old_frames[p["entityId"]])
+
+    def test_alley_trip_increase_rolls_back_to_certified_shared_roads(self):
+        from metropogits.world.infrastructure import route_world
+
+        shared = generate_world(self.scene, self.graph, street_policy="shared", **self.options)
+        adding = False
+
+        def proposed(streets, parcels, districts):
+            nonlocal adding
+            adding = True
+            return [streets[0]], dict(version="frontage-alleys/0.1", corridors=[])
+
+        def rerouted(*args):
+            routing, networks, coverage = route_world(*args)
+            if adding:
+                r = routing["routes"][0]
+                a = r["path"][0]
+                r["path"] = [a, [a[0]+.5, a[1]+.5], a] + r["path"][1:]
+            return routing, networks, coverage
+
+        with (patch("metropogits.world.generator.add_alleys", side_effect=proposed),
+              patch("metropogits.world.generator.route_world", side_effect=rerouted)):
+            world = generate_world(self.scene, self.graph, street_policy="permeable", **self.options)
+        self.assertEqual(world["streets"], shared["streets"])
+        self.assertEqual(world["routing"], shared["routing"])
+        self.assertIn("alley addition increased", world["diagnostics"][-1]["fallback"])
+        validate_world(world, self.scene, self.graph)
+
     def test_unknown_files_and_growth_limits(self):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)

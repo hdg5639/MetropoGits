@@ -21,7 +21,7 @@ def validate_world(world, scene, graph):
         or world.get("zoningPolicy") != "neighborhoods"
         or world.get("generatorVersion")
         not in (
-            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4")
+            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5")
             if world["patternScale"] == "adaptive"
             else ("flat-neighborhood-patterns/0.1",)
         )
@@ -35,6 +35,7 @@ def validate_world(world, scene, graph):
             "flat-adaptive-neighborhoods/0.2",
             "flat-adaptive-neighborhoods/0.3",
             "flat-adaptive-neighborhoods/0.4",
+            "flat-adaptive-neighborhoods/0.5",
         )
     ) != (world.get("patternScale") in ("district", "adaptive")):
         raise ValueError("world pattern scale version mismatch")
@@ -130,6 +131,15 @@ def validate_world(world, scene, graph):
 
     for s in world["streets"]:
         reserve(ribbon(s["start"], s["end"], s["width"]), ("road", s["id"]))
+    if world["generatorVersion"] == "flat-adaptive-neighborhoods/0.5":
+        for note in world["diagnostics"]:
+            if note.get("version") == "frontage-alleys/0.1":
+                for alley in note["corridors"]:
+                    owner = zones.get(alley["districtId"])
+                    poly = ribbon(alley["start"], alley["end"], alley["width"]+.39)
+                    if owner is None or not all(inside(v, owner["polygon"]) for v in poly):
+                        raise ValueError("alley escaped its principal district")
+                    reserve(poly, ("alley", alley["id"]))
     physical_geometry = {s["id"]: s for s in world["streets"]}
     for p in parcels:
         b = source[p["entityId"]]
@@ -148,7 +158,7 @@ def validate_world(world, scene, graph):
         if p["sourceDistrictId"] != b["districtId"]:
             raise ValueError("world directory ownership mismatch")
         poly = p["footprint"]
-        if world["generatorVersion"] == "flat-adaptive-neighborhoods/0.4":
+        if world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5"):
             # Reuse the independent validation index/budget. Optional optimizer
             # exhaustion must not make its untouched fallback invalid.
             connected = False
@@ -188,6 +198,12 @@ def validate_world(world, scene, graph):
         if not all(inside(v, p["parcel"]) for v in poly):
             raise ValueError("world building escaped its parcel")
         parcel_keys = buckets(p["parcel"])
+        for key in sorted({k for cell in parcel_keys for k in cells[cell] if k[0] == "alley"}):
+            checks += 1
+            if checks > 5_000_000:
+                raise ValueError("world validation work limit")
+            if overlap(p["parcel"], polygons[key]):
+                raise ValueError("alley intrudes into a source parcel")
         index_entries += len(parcel_keys)
         if index_entries > 2_000_000:
             raise ValueError("world validation index limit")

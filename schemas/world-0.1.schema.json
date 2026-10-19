@@ -7,7 +7,7 @@
   "required": ["schemaVersion","generatorVersion","seed","seedAlgorithm","repositoryNamespace","sourceCityDigest","ucgDigest","coordinateSystem","coordinateQuantum","terrainPreset","allocationAlgorithm","envelope","districts","logicalDistricts","topology","parcels","streets","routing","networks","coverage","diagnostics","anchors"],
   "properties": {
     "schemaVersion": {"const":"world/0.1-experimental"},
-    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4"]},
+    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4","flat-adaptive-neighborhoods/0.5"]},
     "patternScale": {"enum":["district","adaptive"]},
     "zoningPolicy": {"enum":["semantic","soft","neighborhoods"]},
     "softZoning": {"type":"object","additionalProperties":false,"required":["version","baseGeneratorVersion","zones","optimization","addressDigest"],"properties":{"version":{"const":"soft-zoning/0.1"},"baseGeneratorVersion":{"type":"string"},"addressDigest":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},"zones":{"type":"array","minItems":1,"maxItems":448},"optimization":{"type":"array","maxItems":64}}},
