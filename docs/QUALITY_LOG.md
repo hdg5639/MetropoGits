@@ -8195,3 +8195,107 @@
   checkpoint. Configured human author/committer metadata verified; ordinary
   upstream feat/semantic-zoning push follows this log commit. Generated outputs/helpers and pre-existing caches
   remain outside staging.
+
+## Checkpoint 2026-10-19 — main-river and tributary topology, not repeated Y shapes
+
+- User correction: the concern was main-river/tributary shape and count, not
+  missing water faces. All four campus-fabric outputs actually had1 main and1
+  three-point branch. The large terrain-only seed test was insufficient proof
+  of real-corpus diversity; this was not a new campus water-mesh mutation.
+- Implemented:139163e, ADR-053, explicit `--terrain watershed-landscape`,
+  terrain/0.6 / terrain-adaptive/0.6. Seeded one/two through rivers, zero/three
+  curved branches, variable confluences including tributary-to-tributary joins.
+  Broader meanders cover developable land. Keep lakes/uplands, terrain-first
+  reserves, fixed source dimensions/evidence, safe crossings and conditional
+  tunnels. Preserve all earlier presets; additive experimental enums/optional
+  waterways records, unchanged UCG/City and source IDs.
+- Fixtures/revisions: existing GJ local-sha256-06eb492d57141c16, OJ
+  local-sha256-c2e80f9d3908fec8, PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522, SQLiteBrowser
+  ae32df153a64d250de7c77a5057deeff4092a39b; fresh bat clone
+  f748c1a467ae161682849949a7d036ab8362f9ba and48-file campus fixture.
+  Bat scanner result is PARTIAL, exit1, with unsupported Rust relationships and
+  unresolved sample imports disclosed; zero fabricated networks, not full Rust
+  analysis. No target dependency installation/build/execution occurred.
+- Commands from repository root:
+  `python ../artifacts/visual/watershed_review.py watershed-r3 gj oj pocketbase sqlitebrowser`;
+  `python ../artifacts/visual/watershed_integrity.py --repack`;
+  `python ../artifacts/visual/watershed_atlas.py`;
+  `python ../artifacts/visual/verify_inherited_compatibility.py`;
+  `python -m unittest discover -s tests`;
+  `node --test tests/*.test.mjs`; `python -m compileall -q metropogits scripts tests`.
+  Fresh input: `python -m metropogits build --repo ../visual_test_proj/bat --repo-id benchmark/bat --out ../artifacts/visual/watershed-bat-r1/build --json`;
+  same build command for ../artifacts/visual/campus-e2e-r1/fixture, repo-id
+  fixture/campus, output ../artifacts/visual/watershed-e2e-r1/build.
+  World CLI: `python scripts/procedural_world.py <build> --out <new-output> --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied --street-policy porous --street-hierarchy --campus --campus-style fabric --terrain watershed-landscape`.
+  Bat outputs watershed-bat-r1/bat/after and repeat; fixture outputs
+  watershed-e2e-r2/world and repeat with additional `--seed campus-fixture`.
+  Bat before uses the same command with --terrain varied-landscape.
+- Actual rendering commands:
+  `node ../artifacts/visual/watershed_focus.mjs watershed-r3 watershed-reviewed-r4 gj oj pocketbase sqlitebrowser`;
+  `node ../artifacts/visual/watershed_focus.mjs watershed-bat-r1 watershed-bat-reviewed-r2 bat`;
+  same helper watershed-r3 / watershed-canvas-r1 / gj oj with WATER_CANVAS=1.
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/watershed-audit-r1 ../artifacts/visual/watershed-r3/gj/after ../artifacts/visual/watershed-e2e-r2/world ../artifacts/visual/watershed-bat-r1/bat/after`;
+  same audit with watershed-audit-r2 and watershed-r3/oj/after,
+  watershed-r3/pocketbase/after, watershed-r3/sqlitebrowser/after.
+- Artifacts inspected: final GJ/OJ overview, PB confluence/bridges, bat overview
+  and nested confluence, GJ Canvas and actual CPU SVG raster. Wait for complete
+  SVG parsing/polygon count before raster capture: an early diagnostic capture
+  was incomplete, not a CPU geometry regression. Full comparison/index is
+  ../artifacts/visual/watershed-r3/index.html;16-seed atlas explicitly labels
+  terrain-only generation and is not substituted for full-city proof.
+- Observed main/tributary counts on default source seeds: GJ2/0, OJ1/0,
+  PocketBase2/1, SQLiteBrowser2/1, bat1/3 with1 nested confluence. Zero tributaries
+  is a valid outcome, not a dropped source relationship. Main/branch paths have
+  15..17 /6..7 vertices here, rather than repeated3-point branches. All main ends
+  and outer branch ends lie outside final cities. Named medium-domain seeds0..15
+  give eight count/parent signatures including nested topology, not only yaw.
+- Integrity: all3317 real source buildings,5782 trips and8592 represented edges
+  conserved, plus the separate48-file/24-trip fixture. Building/road overlap,
+  owner escape and inaccessible source counts0. Four cold World repeats exact;
+  bat and fixture each17 packaged artifacts byte-exact in their repeat;80 final
+  manifest checksums plus World/planning/City/UCG schemas pass. Five legacy0.5
+  terrain reconstructions exact and12 earlier World goldens unchanged. Named
+  48->49 hinted growth retains terrain and every original complete parcel frame.
+  Profile switching deliberately changes geography: no cross-profile position
+  stability claim. Strengthen new-mode independent frontage validation too.
+- Corrections verified: sparse disjoint-cutter checks avoid artificial bank/union
+  fragmentation. New small-city curve exposed0.0006..0.0011-unit clipping seams;
+  new-mode-only0.002 snapping repairs them within existing reservation tolerance.
+  Original source entrances and bridge endpoints are fixed; old0.0005 preserved.
+  No collision, grade, evidence or source-capacity gate was weakened. Exhaustion
+  raises bounded errors rather than silently truncating water or source facts.
+- Existing feature regression checks: GJ still promotes one4-file page hall,
+  OJ one6-file test center under the new geography; former exact cluster counts
+  are not promised after terrain-driven reflow. Actual GJ hover/member/source,
+  focus, explicit expansion/collapse and all-route inspection pass. OJ's facility
+  was outside the audit's chosen interaction framing; do not claim its pointer
+  interaction was exercised. Node coverage preserves both exact membership and
+  orientation guards. Six-case3LOD audits preserve source/access/route inspection;
+  Synthetic rebuilds static geometry0 times. Bat/SQLite correctly mark traffic
+  unavailable rather than invent motion.
+- Tests:713 Python tests, one existing Windows symlink skip;68 Node tests pass.
+  Final strengthened-frontage/new-mode suite additionally passes all5 tests;
+  old varied-terrain suite also passes5. Targeted lint/compile/diff checks pass.
+  Full `python -m ruff check metropogits scripts tests` is NOT green:149 existing
+  findings remain. Per-file `git show HEAD:<path>` + Ruff stdin comparison against
+  pre-change217a724 confirms exactly149 existing findings and no new violations.
+  Do not call overall CI green or silently format unrelated modules to hide debt.
+- Performance: actual generation seconds GJ68.56/OJ28.20/PB22.22/SQLite10.32,
+  bat6.93. These are different natural layouts, not an isolated optimization
+  benchmark. SwiftShader first-draw submission90.9..1270.4ms across six cases,
+  not GPU completion or FPS. No universal speedup/performance-completion claim.
+- Spec audit: PASS under user-approved water correction/ADR-053 and terrain-first
+  plan, technical1/4/7/8/10, AC-002/003/006/008/009/011/014, DEC-005..009/011.
+  Nature is procedural/environmental, never an inferred code architecture fact.
+  No runtime AI/cloud/dependency, private publication or target execution added.
+- Open risks/next: bounded1..2 main stems, only up to3 tributaries, generally
+  separated main corridors, piecewise-linear low-poly banks; not arbitrary
+  watersheds, erosion/drainage simulation or fully organic confluence smoothing.
+  Conditional tunnel construction is not newly demonstrated on this corpus.
+  Old saved viewers retain their old terrain; open the new comparison/packages.
+  watershed-r1/r2 and reviewed-r1/r2 are interrupted/diagnostic, not final delivery.
+- Commits/delivery:139163e feature, followed by this checkpoint's docs commit on
+  feat/semantic-zoning. Human author/committer identity verified; normal configured
+  upstream push follows the log commit. No generated package/helper, clone or
+  pre-existing Gradle/Maven fixture cache is staged. Full lint debt remains explicit.
