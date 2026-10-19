@@ -6491,3 +6491,92 @@
 - Commits/delivery: one coherent correction/test/docs unit on feat/semantic-zoning,
   configured-upstream normal push after diff/identity review. No force/protection
   bypass, agent attribution, generated outputs or unrelated user caches included.
+
+## Checkpoint 2026-10-19 — continuous district fabric and disclosed flat planting
+- Implemented: ADR-033's first presentation slice. Adaptive World exports share
+  principal-district ground rather than solid child plates. A global seeded
+  field grows green pockets only in available land; low-poly trees fit inside.
+  Full parcels, full-width pavement/end caps, driveways and junction clearances
+  are excluded. Explicit `landscape/0.1` geometry feeds CPU/WebGL/Canvas, with
+  decorative disclosure and Structure overlay hiding/restoring the layer.
+  Exact polygon picking retains unpainted planning neighborhoods. No source
+  code, relationship, road, building, role, zoning membership or trip is changed.
+- Fixtures/revisions: cached, pinned physical inputs from
+  `morphology-restored-r1/{oj,gj,pocketbase,sqlitebrowser}/restored`, same seeds.
+  OJ local-sha256-c2e80f9d3908fec8; GJ local-sha256-06eb492d57141c16;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b. These large inputs were
+  repackaged, not reanalyzed or freshly replanned. A fresh maintained
+  spring-positive input was scanned through the full normal pipeline below.
+- Commands run from MetropoGits:
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/district-fabric-e2e --out ../artifacts/visual/district-fabric-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/district-fabric-e2e-r1/build --namespace fixture/district-fabric-e2e --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied --out ../artifacts/visual/district-fabric-e2e-r1/world`.
+  `python -X utf8 -c "import runpy,sys;sys.argv=['fabric','district-fabric-reviewed-r1'];runpy.run_path('../artifacts/visual/district_fabric_review.py',run_name='__main__')"`;
+  `python -m unittest discover -s tests`; `python -m ruff check metropogits tests`;
+  `python -m compileall -q metropogits scripts tests`; all nine Node
+  `tests/*.test.mjs` via `node --test`; inherited compatibility helper via
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/verify_inherited_compatibility.py',run_name='__main__')"`.
+- Actual browser commands: `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/district-fabric-oj-verified-r2 ../artifacts/visual/district-fabric-reviewed-r1/oj/before ../artifacts/visual/district-fabric-reviewed-r1/oj/after ../artifacts/visual/district-fabric-e2e-r1/world`;
+  same tool to `district-fabric-corpus-verified-r1` with GJ before/after,
+  PocketBase after, SQLite after. Final harness's deduplicated road probing was
+  also rerun to `district-fabric-small-verified-r1` on the fresh Spring world.
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/district-fabric-canvas-r1` with the four after worlds and fresh Spring;
+  `node ../artifacts/visual/district_fabric_context.mjs ../artifacts/visual/district-fabric-context-r1`.
+- Artifacts inspected: real OJ/GJ before/after same-distance/LOD WebGL and Detail,
+  OJ/GJ/PocketBase CPU showcase PNGs, SQLite WebGL Overview, OJ forced Canvas
+  source-role inspector, OJ WebGL Structure/fabric pair. User entry:
+  `artifacts/visual/district-fabric-focus-r1/index.html`. Four-world collision and
+  package report: `district-fabric-reviewed-r1/report.json`; actual browser,
+  Canvas and context reports in the named directories, not design mockups.
+- Visual findings: parent material remains continuous through functional cuts;
+  road-shaped green pockets/low trees give internal open space a landscape
+  reading without isolating each child in a new floor plate. Sparse clipped
+  patches initially looked fragmented: broader overlapping same-material patches
+  were retained instead. Parent tint/local grammar and original mixed roles
+  remain. Thumbnail source-role colors are still strong, density uneven, and
+  central OJ crisscross patterns are still visibly too busy. Do not count greenery
+  as a fix for that topology or as completion of natural internal planning.
+- Geometry/fidelity:3175 files,5782 source trips and8592 represented edges remain
+  in unchanged physical worlds. All original validators pass; all entrances
+  accessible, no parcel/building/full-width-road collision or ownership escape.
+  Independent256854 patch-versus-original-obstacle checks found no invasion;
+  every tree face stays in its green patch. No fake source decoration/network.
+  Output patches/trees: OJ2320/538, GJ2815/645, PB1468/319, SQLite1191/210.
+  No work budget exhausted. Fresh Spring:6files,67streets,2trips/4edges, access6/6.
+- Tests/determinism/stability:595 Python run,594 pass/one existing Windows symlink
+  skip;58 Node pass; lint/compile/diff checks pass. Four complete before/after
+  packages double-produced and byte-equal. Original World/City/UCG/planning
+  bytes exactly match their inputs; all12 legacy default/block/district World
+  snapshots unchanged. Layout generation/hint policy not modified; existing
+  near-edit hint tests remain green. Added tests cover convex subtraction,
+  parcel/road/door clearance, all tree vertices, input immutability/order,
+  administrative-cut independence, fail-safe index/search/candidate limits,
+  continuous-ground picking and explicit old-mode/off ablations.
+- Fixes applied/reverified: strict corpus assertions caught quantized overlap at
+  original parcel boundaries and pavement end caps. Added real outward buffers,
+  not a lower collision threshold. A broad AABB phase reduced GJ narrow checks
+  from an exhausted500k to190907, completing the same certified land. Initial
+  fresh-Spring pointer audit failed because segment centers were occluded. The
+  audit now probes five actual pavement points and accepts only true hit-tested
+  targets, once per segment; exact route/edge/selection assertions are unchanged.
+  Occluded-center/full-occlusion tests and the real fresh Spring audit pass.
+- Performance/cost: scenery is cached/batched with static geometry, no new draw
+  pass. Real Synthetic audits rebuild static geometry0 times in every applicable
+  LOD; SQLite still creates no traffic. Context toggle restores exact triangle
+  count and source visibility: OJ78860→42274→78860; GJ126340→82166→126340.
+  More geometry/asset size is real: OJ package27.6→33.5MB, GJ71.0→78.1MB;
+  one concurrent-run package sample2.42→5.39s and5.98→10.53s respectively.
+  These are not new world-generation timings or universal GPU/FPS claims.
+- Spec alignment: PASS under product5.1.7/DEC-005/006/008/009/011,
+  technical source/presentation separation and functional
+  AC-001/002/003/006/008/011/012/014. No public City/UCG schema or ID change,
+  new runtime dependency/service, target execution or unsupported semantic role.
+- Open risks/next actions: this is **flat planting**, not continuous terrain,
+  hydrology, rivers/bridges/tunnels. Inspect and adapt actual parent/local street
+  joins next without stripping orbital identity or mixed memberships again.
+  Materials-versus-role accents, aggregate landmarks and remaining density work
+  remain in the ledger. Do not scatter props to conceal a routing defect.
+- Commits/delivery: documentation636520b, separate browser-probe test correction,
+  then one coherent landscape/export/picking/test/docs feature unit. Normal
+  configured-upstream push on feat/semantic-zoning after staged diff/identity
+  review; no protection bypass, generated outputs, user caches or AI attribution.

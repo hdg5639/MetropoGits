@@ -514,6 +514,10 @@
 
   function drawDistrict(district) {
     const territory = districtTerritory(district);
+    if(data.occupiedGround && !territory.rectangles.length) {
+      for(const poly of filterEngine.territoryPickPolygons(territory))
+        hitRegions.push({kind:"district",id:district.id,points:poly.map(([x,z])=>project(x,z))});
+    }
     context.fillStyle = selected("district", district.id)
       ? "rgba(14, 165, 233, 0.24)"
       : urbanContext && !structureOverlay ? urbanContext.ground : "rgba(30, 41, 59, 0.72)";
@@ -797,6 +801,17 @@
     hitRegions.push({ kind: "building", id: building.entityId, points: outline });
   }
 
+  function drawLandscapeTree(tree) {
+    // Decorative faces share the source-building painter order but no hit IDs.
+    const faces=tree.faces.map(face=>({...face,depth:face.points.reduce((sum,[x,y,z])=>{
+      const r=rotatePoint(x,z);return sum+r.x+r.z+y;
+    },0)/face.points.length}));
+    for(const face of faces.sort((a,b)=>a.depth-b.depth)) {
+      polygonPath(face.points.map(([x,y,z])=>project(x,z,y)));
+      context.fillStyle=face.color;context.fill();
+    }
+  }
+
   function drawAggregateFacility(facility) {
     const selectedMember = state.selected?.kind === "building"
       && facility.memberEntityIds.includes(state.selected.id)
@@ -874,6 +889,12 @@
         }
       }
     }
+    if(data.landscape && !structureOverlay) {
+      for(const patch of data.landscape.patches) {
+        polygonPath(patch.polygon.map(([x,z])=>project(x,z,.01)));
+        context.fillStyle=patch.color;context.fill();
+      }
+    }
     for (const district of scene.districts) {
       if (renderedDistrictIds.has(district.id)) drawDistrict(district);
     }
@@ -929,10 +950,14 @@
     for (const network of accessPolicy ? [] : scene.networks) {
       if (renderedNetworkIds.has(network.id)) drawNetwork(network);
     }
-    const orderedBuildings = [...scene.buildings].sort(
+    const trees=data.landscape && !structureOverlay ? data.landscape.trees.map(tree=>({
+      landscapeTree:tree,x:tree.center[0],z:tree.center[1],width:0,depth:0,entityId:tree.id,
+    })) : [];
+    const orderedBuildings = [...scene.buildings, ...trees].sort(
       (left, right) => buildingDepth(left) - buildingDepth(right) || left.entityId.localeCompare(right.entityId),
     );
     for (const building of orderedBuildings) {
+      if(building.landscapeTree) {drawLandscapeTree(building.landscapeTree);continue;}
       if (renderedBuildingIds.has(building.entityId)) drawBuilding(building);
     }
     for (const aggregateId of [...renderedAggregateIds].sort()) {

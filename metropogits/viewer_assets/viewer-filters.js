@@ -1244,6 +1244,16 @@
     }));
   }
 
+  function territoryPickPolygons(territory) {
+    if(territory.rectangles.length)return territory.rectangles.map(r=>[
+      [r.x,r.z],[r.x+r.width,r.z],[r.x+r.width,r.z+r.depth],[r.x,r.z+r.depth],
+    ]);
+    const edges=territory.boundary;
+    if(edges.length<3 || !edges.every((e,i)=>e[1][0]===edges[(i+1)%edges.length][0][0]
+      && e[1][1]===edges[(i+1)%edges.length][0][1]))return [];
+    return [edges.map(e=>e[0])];
+  }
+
   function districtBuildings(scene, districtId) {
     const children = new Map(scene.districts.map(d => [d.id, []]));
     for (const district of scene.districts) children.get(district.parentId)?.push(district.id);
@@ -1281,6 +1291,7 @@
     accessRoadStyle,
     contextDetailVisible,
     districtBuildings,
+    territoryPickPolygons,
     groundPan,
     cameraKeyAction,
     createAccessPolicy,
