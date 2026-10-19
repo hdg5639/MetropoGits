@@ -77,8 +77,8 @@ def generate_world(
     campus_style="quad",
     _route=True,
 ):
-    if campus_style not in ("quad", "varied") or (campus_style != "quad" and not campus):
-        raise ValueError('varied campus style requires --campus')
+    if campus_style not in ("quad", "varied", "neighborhood") or (campus_style != "quad" and not campus):
+        raise ValueError('non-default campus style requires --campus; unknown styles are invalid')
     if campus and (pattern_scale!='adaptive' or not _route):
         raise ValueError('campus requires routed adaptive neighborhoods')
     if street_hierarchy and (pattern_scale != "adaptive" or not _route):
@@ -604,6 +604,8 @@ def generate_world(
             planning_diagnostics.append(junction_note)
         if street_policy in ("permeable", "porous"):
             campus_lawns = [c['polygon'] for b in development_blocks for c in b.get('campusSite',{}).get('courts',[])]
+            campus_lawns += [b['polygon'] for b in development_blocks
+                             if b.get('campusSite',{}).get('scope')=='NEIGHBORHOOD']
             additions, alley_note = add_alleys(streets, parcels, districts, **(
                 dict(reserves=([f["noBuildPolygon"] for f in terrain_data["features"]] if terrain_data else [])+campus_lawns) if terrain_data or campus_lawns else {}
             ))

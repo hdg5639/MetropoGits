@@ -50,8 +50,8 @@ def main():
         "--namespace", help="portable world identity; does not rewrite existing UCG IDs"
     )
     parser.add_argument("--previous-world", type=Path)
-    parser.add_argument('--campus',action='store_true',help='adaptive only: evidence-bounded shared-courtyard pockets with real walking access')
-    parser.add_argument('--campus-style',choices=('quad','varied'),default='quad',help='campus only: seeded garden-cluster and courtyard forms; quad preserves the original pilot')
+    parser.add_argument('--campus',action='store_true',help='adaptive only: evidence-bounded campus planning with real walking access; courtyard pockets by default')
+    parser.add_argument('--campus-style',choices=('quad','varied','neighborhood'),default='quad',help='campus only: whole-neighborhood pedestrian precincts, or the preserved quad/varied pocket pilots')
     parser.add_argument("--street-hierarchy", action="store_true",
                         help="adaptive only: offline structural street classes and connected backbone")
     parser.add_argument(
