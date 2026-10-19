@@ -16,6 +16,7 @@ from .seed import derive
 from .zoning import planning_document
 from .landscape import generate_landscape
 from .rivers import bridge_faces, height_at
+from .street_hierarchy import COLORS as STREET_COLORS, marking_surfaces
 from .elevation import surface as terrain_surface, pavement as graded_pavement, lifted_faces, foundation_faces
 
 GROUND = ["#33464b", "#4a4149", "#354b42", "#504835", "#3e4454", "#4e3c42", "#3b4c50"]
@@ -162,8 +163,18 @@ def view_data(world, scene, graph, *, landscape=None):
     for surface in surfaces:
         if "heights" in surface:
             surface["pointHeights"] = [height_at(surface,p) for p in surface["points"]]
-    if "surface" in world:
+    if "surface" in world and "streetPlan" not in world:
         surfaces=[p for s in world["streets"] for p in graded_pavement(s,world["terrain"],pavement_color)]
+    if "streetPlan" in world:
+        profiles = world["streetPlan"]["segments"]
+        if "surface" in world:
+            surfaces = [dict(p, physicalId=s["id"], streetClass=profiles[s["id"]]["streetClass"])
+                        for s in world["streets"] for p in graded_pavement(s,world["terrain"],pavement_color)]
+        else:
+            surfaces = [dict(p, physicalId=p["id"], streetClass=profiles[p["id"]]["streetClass"]) for p in surfaces]
+        for s in routing["segments"]:
+            s.update(streetClass=profiles[s["physicalId"]]["streetClass"],
+                     streetReasons=profiles[s["physicalId"]]["reasons"])
     incidence = {}
     for s in world["streets"]:
         for p in (s["start"], s["end"]):
@@ -237,6 +248,9 @@ def view_data(world, scene, graph, *, landscape=None):
         ),
         territories=dict(districts=territories),
     )
+    if "streetPlan" in world:
+        data["physicalStreetPlan"] = dict(version=world["streetPlan"]["version"], colors=STREET_COLORS,
+                                          summary=world["streetPlan"]["summary"], markings=marking_surfaces(world))
     if "terrain" in world:
         data["terrain"] = world["terrain"]
         if "surface" in world:
@@ -361,16 +375,23 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
             lines.append(polygon([project(p, .01) for p in patch["polygon"]],
                                  patch["color"], 'data-decorative="green-pocket"'))
     for s in world["streets"]:
+        road_color = (STREET_COLORS[world["streetPlan"]["segments"][s["id"]]["streetClass"]]["overview"]
+                      if "streetPlan" in world else "#26333e")
         if graded:
-            for p in graded_pavement(s,world["terrain"],"#26333e"):
+            for p in graded_pavement(s,world["terrain"],road_color):
                 lines.append(polygon([project(v,y) for v,y in zip(p["points"],p["pointHeights"])],p["color"]))
             continue
         lines.append(
             polygon(
                 [project(p) for p in ribbon(s["start"], s["end"], s["width"])],
-                "#26333e",
+                road_color,
             )
         )
+    for p in marking_surfaces(world):
+        if p["streetClass"] != "ARTERIAL":
+            continue
+        lines.append(polygon([project(v,p.get("pointHeights",[p.get("elevation",.12)]*len(p["points"]))[i])
+                              for i,v in enumerate(p["points"])],p["color"], 'data-structural="street-marking"'))
     faces = []
     open_river=world.get("terrain",{}).get("version")=="terrain/0.4"
     if open_river:
@@ -506,6 +527,13 @@ def package_world(world, scene, graph, validation, *, landscaping=True):
         page = page.replace(b"PROCEDURAL FLAT WORLD", b"TERRAIN-FIRST WORLD")
         page = page.replace(b'<span id="renderer-mode"',
                             b'<span title="Procedural terrain constrains building and street placement; not source architecture.">Natural terrain (procedural)</span><span id="renderer-mode"')
+    if "streetPlan" in world:
+        page = page.replace(b'<span><i class="block street"></i>Structural street (visual)</span>',
+                            b'<span title="Physical street hierarchy: arterial / collector / local / access. Structural functions, not source relations or runtime traffic."><i class="block street"></i>Street hierarchy (structural)</span>')
+        page = page.replace(b'Dependency road &#183; width / paint = static demand',
+                            b'Dependency demand (select / All routes)')
+        page = page.replace('Dependency road · width / paint = static demand'.encode('utf8'),
+                            b'Dependency demand (select / All routes)')
     svg = render_svg(world, landscape=landscape)
     artifacts.update(
         {

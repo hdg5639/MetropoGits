@@ -374,6 +374,11 @@ def validate_world(world, scene, graph):
     )
     if len(classified) != len(set(classified)) or set(classified) != expected:
         raise ValueError("world edge conservation failed")
+    if "streetPlan" in world:
+        from .street_hierarchy import derive_street_plan
+
+        if world.get("patternScale") != "adaptive" or world["streetPlan"] != derive_street_plan(world):
+            raise ValueError("physical street hierarchy differs from authoritative graph")
     return dict(
         buildings=len(parcels),
         districts=len(zones),

@@ -984,7 +984,7 @@
     return !enabled || overlay || major || identity === selectedIdentity;
   }
 
-  function createAccessPolicy(routing, hierarchy = null, pavement = null, curves = null) {
+  function createAccessPolicy(routing, hierarchy = null, pavement = null, curves = null, physicalPlan = null) {
     if (!routing) return null;
     const assigned = routing.streetGrid ? new Set(routing.streetGrid.assignment.assignedRouteIds) : null;
     const fallbackIds = new Set(routing.streetGrid?.assignment.fallbackRouteIds || []);
@@ -1052,7 +1052,7 @@
         const active = segment.routeIds.filter(id => routeIds.has(id));
         return {...segment, routeIds: active, highlighted: active.some(id => highlighted.has(id))};
       }).filter(segment => segment.routeIds.length &&
-        (assigned || level !== 'overview' || focused || showAll || (!segment.access && segment.routeIds.length >= 4)));
+        (physicalPlan || assigned || level !== 'overview' || focused || showAll || (!segment.access && segment.routeIds.length >= 4)));
       const segmentIds = new Set(visibleSegments.map(segment => segment.id));
       const representedRoutes = new Set(visibleSegments.flatMap(segment => segment.routeIds));
       const animated = eligible.filter(route => representedRoutes.has(route.id));
@@ -1067,6 +1067,7 @@
       if (!segment) return null;
       const contributing = segment.routeIds.filter(key => !activeRouteIds || activeRouteIds.has(key));
       return {id, kind: segment.kind, path: segment.path, routeIds: contributing, demand:segment.demand,
+        ...(segment.streetClass ? {streetClass:segment.streetClass,streetReasons:segment.streetReasons} : {}),
         ...(segment.bridgeId ? {bridgeId:segment.bridgeId,heights:segment.heights} : {}),
         ...(segment.tunnelId ? {tunnelId:segment.tunnelId,heights:segment.heights} : {}),
         pavementWidth:segment.pavement ? {min:Math.min(...segment.pavement.map(p=>p.width)),
@@ -1135,6 +1136,20 @@
         }
     }
     return highest+.04;
+  }
+
+  function physicalStreetColor(surface, plan, level, overlay = false) {
+    return (!overlay && plan?.colors?.[surface.streetClass]?.[level]) || surface.color;
+  }
+
+  function physicalMarkingVisible(marking, level, overlay = false) {
+    return !overlay && (level !== 'overview' || marking.streetClass === 'ARTERIAL');
+  }
+
+  function accessPresentation(segment, physicalPlan, full = false) {
+    // Physical streets exist once, regardless of which dependencies use them.
+    // Focus/All routes explicitly restores the full evidence-demand overlay.
+    return !physicalPlan || full || segment.kind !== 'DEPENDENCY_ROAD';
   }
 
   function accessRoadStyle(segment) {
@@ -1331,6 +1346,9 @@
   }
 
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    physicalStreetColor,
+    physicalMarkingVisible,
+    accessPresentation,
     groundHeight,
     aggregateElevation,
     accessHeight,

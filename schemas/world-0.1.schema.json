@@ -16,6 +16,31 @@
         "color":{"type":"string","pattern":"^#[0-9a-f]{6}$"},"points":{"type":"array","minItems":3,"maxItems":16,"items":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"number"}}}}}}
     }},
     "streetPolicy": {"enum":["original","shared","permeable","porous"]},
+    "streetPlan": {
+      "type":"object","additionalProperties":false,
+      "required":["version","structural","segments","backboneStreetIds","components","frontages","ports","summary","work"],
+      "properties":{
+        "version":{"const":"street-plan/0.1"},"structural":{"const":true},
+        "segments":{"type":"object","maxProperties":50000,"additionalProperties":{
+          "type":"object","additionalProperties":false,"required":["streetClass","reasons","componentId"],"properties":{
+            "streetClass":{"enum":["ARTERIAL","COLLECTOR","LOCAL","SERVICE","PEDESTRIAN"]},
+            "reasons":{"type":"array","uniqueItems":true,"items":{"enum":["BUILDING_ACCESS","LOCAL_FRONTAGE","RESERVED_BACKBONE","INTERDISTRICT_CORRIDOR","PROTECTED_CROSSING","LOCAL_CENTER","COARSE_CONNECTOR"]}},
+            "componentId":{"type":"string"}}}},
+        "backboneStreetIds":{"type":"array","maxItems":50000,"uniqueItems":true,"items":{"type":"string"}},
+        "components":{"type":"array","maxItems":50000,"items":{"type":"object","additionalProperties":false,"required":["id","streetCount","buildingCount","portCount"],"properties":{
+          "id":{"type":"string"},"streetCount":{"type":"integer","minimum":1},"buildingCount":{"type":"integer","minimum":0},"portCount":{"type":"integer","minimum":0}}}},
+        "frontages":{"type":"object","maxProperties":10000,"additionalProperties":{"type":"object","additionalProperties":false,"required":["streetIds","componentId"],"properties":{
+          "streetIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}},"componentId":{"type":["string","null"]}}}},
+        "ports":{"type":"array","maxItems":10000,"items":{"type":"object","additionalProperties":false,"required":["id","zoneId","point","streetIds","componentId"],"properties":{
+          "id":{"type":"string"},"zoneId":{"type":"string"},"point":{"$ref":"#/$defs/point"},"streetIds":{"type":"array","items":{"type":"string"}},"componentId":{"type":["string","null"]}}}},
+        "summary":{"type":"object","additionalProperties":false,"required":["classCounts","componentCount","occupiedComponentCount","unattachedEntityIds","unattachedPortIds"],"properties":{
+          "classCounts":{"type":"object","minProperties":5,"maxProperties":5,"propertyNames":{"enum":["ARTERIAL","COLLECTOR","LOCAL","SERVICE","PEDESTRIAN"]},"additionalProperties":{"type":"integer","minimum":0}},
+          "componentCount":{"type":"integer","minimum":0},"occupiedComponentCount":{"type":"integer","minimum":0},
+          "unattachedEntityIds":{"type":"array","items":{"type":"string"}},"unattachedPortIds":{"type":"array","items":{"type":"string"}}}},
+        "work":{"type":"object","additionalProperties":false,"required":["indexEntries","geometryChecks","searchStates"],"properties":{
+          "indexEntries":{"type":"integer","minimum":0},"geometryChecks":{"type":"integer","minimum":0},"searchStates":{"type":"integer","minimum":0}}}
+      }
+    },
     "terrain": {
       "type":"object", "additionalProperties":false,
       "required":["version","preset","seed","environmental","initialEnvelope","surfacePolicy","features","protectedArea"],

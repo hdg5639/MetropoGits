@@ -7318,3 +7318,97 @@
   explicit path staging, conventional message and normal configured-upstream
   push; actual commit/push outcome reported at handoff. Existing fixture caches
   remain untracked; no attribution, force push or protected-main bypass.
+
+## Checkpoint 2026-10-19 — RC-00/01 physical street hierarchy
+
+- Implemented: ADR-041 explicit `--street-hierarchy` experimental World metadata,
+  `street-plan/0.1`, offline existing-road classification and connected coarse
+  hierarchy, component/frontage/port audit, shared CPU/WebGL/Canvas presentation.
+  Do not repaint dependency-demand skins once per source relation in normal view.
+  Selection/All routes restores full source demand and exact paths; HTTP/messaging
+  semantics remain separate. SERVICE here means actual building access, not a
+  source-backed maintenance/loading role. PEDESTRIAN remains0; CAMPUS not built.
+- Frozen fixtures/revisions: GJ local-sha256-06eb492d57141c16 seed2e2dc9377dd074d4,
+  source permeability-r2/gj/after; OJ local-sha256-c2e80f9d3908fec8
+  seed90c6386e113ae6db, source permeability-current-r1/oj/after;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522 seed0d93483144e329c0;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b seedf425482d641c843f,
+  both source permeability-r2; Hanul7432c67e91f472e7e9c3be54c07dcb7cbe4837d8
+  seed2fcc3180909d8112, source hanul-hwpx-r1/world. Small fresh maintained
+  spring-positive: namespacefixture/street-hierarchy, seed61027fdf8a1dfbdc.
+- Commands (cwd MetropoGits):
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/street_hierarchy_review.py',run_name='__main__')" street-hierarchy-r1`;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/street_hierarchy_repackage.py',run_name='__main__')"`;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/street_hierarchy_verify.py',run_name='__main__')"`;
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/street-hierarchy --out ../artifacts/visual/street-hierarchy-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/street-hierarchy-e2e-r1/build --namespace fixture/street-hierarchy --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --terrain river-landscape --street-hierarchy --out ../artifacts/visual/street-hierarchy-e2e-r1/current-world`;
+  repeat last command with out repeat-world;
+  `node ../artifacts/visual/street_hierarchy_focus.mjs street-hierarchy-r2 street-hierarchy-reviewed-r1`;
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/street-hierarchy-audit-r2 ../artifacts/visual/street-hierarchy-r2/gj/after ../artifacts/visual/street-hierarchy-r2/oj/after ../artifacts/visual/street-hierarchy-r2/pocketbase/after ../artifacts/visual/street-hierarchy-r2/sqlitebrowser/after ../artifacts/visual/street-hierarchy-r2/hanul/after ../artifacts/visual/street-hierarchy-e2e-r1/current-world`;
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/street-hierarchy-canvas-r2 ../artifacts/visual/street-hierarchy-r2/gj/after ../artifacts/visual/street-hierarchy-r2/oj/after ../artifacts/visual/street-hierarchy-r2/sqlitebrowser/after ../artifacts/visual/street-hierarchy-r2/hanul/after`;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/verify_inherited_compatibility.py',run_name='__main__')"`;
+  `python -X utf8 -m unittest discover -s tests -q`;
+  `$testFiles=(rg --files tests -g '*.test.mjs'); node --test $testFiles`;
+  `python -m ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; `git diff --check`.
+- Artifacts inspected: street-hierarchy-reviewed-r1/index.html (five repositories,
+  matched Overview/District/two close views where two districts exist), original
+  viewer packages/CPU SVG at street-hierarchy-r2, Chrome CPU raster and source
+  route inspector captures in street-hierarchy-audit-r2. Actual WebGL six cases,
+  three LODs each, navigation/filters/route drill-down/Synthetic; forced Canvas
+  four cases, original evidence/member navigation and Structure restore. No
+  external target dependency installation/build/execution; fixtures are scanned.
+- Result: all3211 source buildings,5793 exact file-pair trips and8603 represented
+  edges retained across five frozen repositories. Physical streets, parcels,
+  parts/orientation, terrain, mixed neighborhood membership, original route IDs/
+  geometry and City/UCG bytes unchanged. Each occupied street graph is one actual
+  connected component with0 unmatched entrances/frontages/ports. Class counts
+  (arterial/collector/local/access): GJ309/1981/1604/1324;
+  OJ189/1219/980/681; PB201/1008/912/664; SQLite51/617/443/507;
+  Hanul24/206/48/36. Atomic access piece count need not equal building count.
+  No fake pedestrian or source traffic for SQLite's0 analyzed internal trips.
+- Visual findings: matched close-ups remove bright overlapping longitudinal
+  traces and widespread fine demand paint; upper-class physical corridors have
+  restrained sparse markings, local roads/access remain as actual pavement.
+  Overview retains distinct parent patterns/river and all source buildings.
+  CPU shows the same physical plan without dominant repeated paint. This is
+  clearer presentation, not a claim that all physical streets have been merged
+  or the entire design proposal has been implemented. Dense junctions, material/
+  role-color separation and capacity/land costs remain. Initial toolbar added a
+  row and confounded before/after viewport height: moved description to existing
+  legend, repackaged r2 and recaptured the full matched comparison.
+- Tests/determinism/stability: full660 Python tests run,1 Windows symlink skip;
+  63 Node tests pass; Ruff/compileall/schema checks pass. World/planning metadata
+  verified by reconstruction; forged class/frontage, disconnected frontage and
+  explicit work-limit fixtures covered. Fresh Spring's17 package artifacts
+  match exactly across two final runs; all five final packages also repeat
+  byte-for-byte.12 old flat/semantic/inherited World golden outputs unchanged.
+  Maintained porous hinted small edit preserves terrain and48 original complete
+  frames across opt-in boundary. The feature moves0 buildings/roads/trips.
+  All measured WebGL Synthetic runs: static builds0 and actual movement; bounded
+  original-path particles. Local SwiftShader JS synthetic submission CPU p95
+  about0.3..2.0ms, not measured GPU completion/FPS or a portable performance SLA.
+- Explicit existing limitation: extra seedhierarchy-test on the48-file Spring
+  synthetic fixture is rejected by `bridge junction has discontinuous elevation`
+  BEFORE any edit or hierarchy flag. Added generic Rust file also rejects with
+  flag off/on; stripping streetPlan proves geometry identical. Recorded at
+  street-hierarchy-r2/baseline-rejected-seed.json, no invalid output packaged.
+  Kept strict validator and all limits; did not claim all seeds are feasible.
+  Hinted acceptance uses the existing validated porous-test golden seed, not
+  this invalid baseline. Localized bridge/entrance feasibility needs follow-up.
+- Spec alignment: PASS for this additive, opt-in RC slice. Rechecked technical
+  data/network/rendering and functional AC-002/003/006/008/009/011/012 plus
+  product DEC-005/006/007/008/009/011 and new proposal principles/road classes.
+  Optional World/planning metadata approved in ADR-041; no public City/UCG/ID
+  break, no source relation fabricated, no runtime API/AI/unsafe execution.
+- Next actions: keep RC physical generation/refinement and source-independent
+  walkability distinct from presentation. Prioritize retained baseline feasibility
+  failure, then evidence-bounded weighted CAMPUS eligibility/shared-space/access
+  construction (CP-00/01); do not substitute green paint or test=>campus mapping.
+  W-03/05/12/15/19/22 cumulative requirements remain in execution ledger.
+- Commits/delivery: design150b803 already committed; cohesive implementation,
+  tests and this checkpoint form the next atomic feature commit. Verify human
+  identity, explicit staged paths, clean tracked state and configured feature
+  upstream before normal push; actual push outcome is checked at handoff.
+  Generated worlds/Chrome captures/helpers and input clones stay outside Git.
+  Three pre-existing fixture build caches remain untracked and untouched.

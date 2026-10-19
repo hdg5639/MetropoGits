@@ -305,6 +305,8 @@ def planning_document(world):
                 patternScale=world["patternScale"],
                 districtPatterns=world["zoning"]["districtPatterns"],
             )
+        if "streetPlan" in world:
+            doc["streetPlan"] = world["streetPlan"]
         return doc
     if world.get("zoningPolicy") == "soft":
         return dict(

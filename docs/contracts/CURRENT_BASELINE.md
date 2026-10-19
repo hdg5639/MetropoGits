@@ -1034,3 +1034,35 @@ consume the same mapped centerlines. CPU SVG maps pavement and paint as well.
 Planning caps500000 nodes/5M clearance checks; presentation caps500000 pieces.
 Limits raise an error rather than silently omitting paths. Legacy/default modes
 are unchanged. This version does not reroute a staircase chain or create rotaries.
+
+### Opt-in World physical street hierarchy (ADR-041)
+
+`python -m scripts.procedural_world INPUT --zoning neighborhoods
+--pattern-scale adaptive --street-hierarchy ...` adds experimental World
+`streetPlan`, version `street-plan/0.1`. Existing terrain/planning/street-policy
+options remain explicit; the flag neither replaces them nor changes geography.
+UCG, City, physical streets, parcels and exact source trips remain identical.
+Without the flag, prior canonical World output is unchanged.
+
+The plan classifies existing physical IDs as ARTERIAL, COLLECTOR, LOCAL or
+SERVICE/building access. PEDESTRIAN is reserved, not assigned to ordinary roads.
+This initial SERVICE interpretation records actual approach spurs; it does not
+assert a loading/maintenance role for every source file. Shared interdistrict
+corridors, reserved spines and real crossings establish the coarse hierarchy;
+existing shortest street paths connect it. Component/frontage/zone-port audits
+retain unattached cases explicitly. Geometry is never invented to pass an audit.
+
+`planning.json` carries the same plan. Derived browser `physicalStreetPlan`
+contains class palettes, summary and bounded offline marking surfaces; physical
+surfaces and routed segments retain class/physical identity. CPU/WebGL/Canvas
+use this classification. Normal view paints each physical street once and gives
+local/access pavement lower priority. Selection, All routes and Structure overlay
+restore the full source-demand layer, including exact complete paths and edge
+evidence. Synthetic retains bounded own-path animation and static cache reuse.
+HTTP/messaging semantics are independent of physical class and demand grade.
+
+Limits: 50000 streets, 500000 spatial entries, 2000000 geometry checks,
+500000 shortest-path states, 100000 marking surfaces; explicit failure rather
+than truncated infrastructure. Validation reconstructs metadata from actual
+world geometry. This RC-00/01 slice does not add CAMPUS, pedestrian networks,
+new highway semantics, or a claim of finished metropolitan road planning.

@@ -437,7 +437,7 @@
     (data.territories?.districts || []).map((territory) => [territory.id, territory]),
   );
   const streetRectangles = data.streets?.surfaces || data.streets?.rectangles || [];
-  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand, data.streetCurves);
+  const accessPolicy = filterEngine.createAccessPolicy(data.routing, data.roadHierarchy, data.streetDemand, data.streetCurves, data.physicalStreetPlan);
   let accessFrame = null;
   function networkForId(id) {
     return accessPolicy?.network(id, accessFrame?.routeIds) || scene.networks.find(network => network.id === id);
@@ -847,7 +847,7 @@
       if (!filterEngine.corridorVisible(rectangle, renderedNetworkIds)) continue;
       if (rectangle.points) {
         quad(triangles, rectangle.points.map(([x,z],i) => [x, rectangle.pointHeights?.[i] ?? rectangle.elevation ?? 0.08, z]),
-          [0,1,0], color(rectangle.color || streetColors.STREET));
+          [0,1,0], color(filterEngine.physicalStreetColor(rectangle, data.physicalStreetPlan, currentDetailLevel, structureOverlay) || streetColors.STREET));
         continue;
       }
       roadSegment(
@@ -858,6 +858,12 @@
         rectangle.elevation ?? 0.08,
         color(rectangle.color || streetColors[rectangle.tier] || streetColors.STREET),
       );
+    }
+
+    for (const marking of data.physicalStreetPlan?.markings || []) {
+      if (!filterEngine.physicalMarkingVisible(marking, currentDetailLevel, structureOverlay)) continue;
+      quad(triangles, marking.points.map(([x,z],i) => [x,marking.pointHeights?.[i] ?? marking.elevation ?? .12,z]),
+        [0,1,0], color(marking.color));
     }
 
     if (currentDetailLevel === "detail" && (!urbanContext || structureOverlay)) {
@@ -923,6 +929,7 @@
     const roadStyles = new Map((accessFrame?.segments || []).map(segment => [segment.id, filterEngine.accessRoadStyle(segment)]));
     const junctionGeometry = data.surface ? {surfaces:[],trims:new Map()} : filterEngine.accessJunctionGeometry(accessFrame);
     for (const segment of accessFrame?.segments || []) {
+      if (!filterEngine.accessPresentation(segment, data.physicalStreetPlan, structureOverlay || showAllNetworks || accessFrame.focused)) continue;
       if (segment.highlighted) {
         for(let i=1;i<segment.path.length;i++) {
           const a=segment.path[i-1],b=segment.path[i];

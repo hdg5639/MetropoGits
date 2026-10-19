@@ -48,6 +48,8 @@ def main():
         "--namespace", help="portable world identity; does not rewrite existing UCG IDs"
     )
     parser.add_argument("--previous-world", type=Path)
+    parser.add_argument("--street-hierarchy", action="store_true",
+                        help="adaptive only: offline structural street classes and connected backbone")
     parser.add_argument(
         "--street-policy", choices=("original", "shared", "permeable", "porous"), default="original",
         help="adaptive only: shared junctions, permeable long-row alleys, or porous pre-placement cross-streets",
@@ -90,6 +92,7 @@ def main():
             pattern_scale=args.pattern_scale,
             street_policy=args.street_policy,
             terrain=args.terrain,
+            street_hierarchy=args.street_hierarchy,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)
