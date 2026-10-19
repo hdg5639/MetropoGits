@@ -1345,7 +1345,26 @@
       q:'rotate-left', e:'rotate-right', '+':'zoom-in', '=':'zoom-in', '-':'zoom-out', r:'reset'}[event.key.toLowerCase()] || null;
   }
 
+  function materialPart(policy, building, part, top, fullTint = false) {
+    if (policy?.version !== "building-materials/0.1") return null;
+    let hash = 2166136261;
+    for (const character of String(building.entityId)) {
+      hash ^= character.codePointAt(0);
+      hash = Math.imul(hash, 16777619);
+    }
+    let [wall, roof] = policy.palettes[(hash >>> 0) % policy.palettes.length];
+    const role = policy.roleColors[building.archetype] || policy.roleColors.GENERIC_BUILDING;
+    const blend = (a, b, t) => "#" + [1, 3, 5].map(i =>
+      Math.round(parseInt(a.slice(i,i+2),16)*(1-t) + parseInt(b.slice(i,i+2),16)*t)
+        .toString(16).padStart(2,"0")).join("");
+    if (fullTint) wall = roof = role;
+    else if (building.archetype !== "GENERIC_BUILDING" && policy.roleColors[building.archetype]
+      && part.y + part.height >= top - 1e-6) roof = blend(roof, role, .78);
+    return {wall:blend(wall,"#ffffff",part.shade || 0), roof:blend(roof,"#ffffff",part.shade || 0)};
+  }
+
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    materialPart,
     physicalStreetColor,
     physicalMarkingVisible,
     accessPresentation,

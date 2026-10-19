@@ -648,11 +648,11 @@
     for (const index of [0, 1, 2, 0, 2, 3]) vertex(target, corners[index], normal, vertexColor);
   }
 
-  function box(target, x, y, z, width, height, depth, vertexColor) {
+  function box(target, x, y, z, width, height, depth, vertexColor, roofColor = vertexColor) {
     const x1 = x + width;
     const y1 = y + height;
     const z1 = z + depth;
-    quad(target, [[x, y1, z], [x, y1, z1], [x1, y1, z1], [x1, y1, z]], [0, 1, 0], vertexColor);
+    quad(target, [[x, y1, z], [x, y1, z1], [x1, y1, z1], [x1, y1, z]], [0, 1, 0], roofColor);
     quad(target, [[x, y, z1], [x, y1, z1], [x, y1, z], [x, y, z]], [-1, 0, 0], vertexColor);
     quad(target, [[x1, y, z], [x1, y1, z], [x1, y1, z1], [x1, y, z1]], [1, 0, 0], vertexColor);
     quad(target, [[x, y, z], [x, y1, z], [x1, y1, z], [x1, y, z]], [0, 0, -1], vertexColor);
@@ -665,9 +665,9 @@
     vertex(target, end, [0, 1, 0], vertexColor);
   }
 
-  function orientedBox(target, footprint, y, height, vertexColor) {
+  function orientedBox(target, footprint, y, height, vertexColor, roofColor = vertexColor) {
     const top=footprint.map(([x,z])=>[x,y+height,z]);
-    quad(target,[top[0],top[3],top[2],top[1]],[0,1,0],vertexColor);
+    quad(target,[top[0],top[3],top[2],top[1]],[0,1,0],roofColor);
     for(let i=0;i<4;i++) {
       const a=footprint[i],b=footprint[(i+1)%4],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
       quad(target,[[a[0],y,a[1]],top[i],top[(i+1)%4],[b[0],y,b[1]]],
@@ -740,7 +740,15 @@
     return state.selected?.kind === kind && state.selected.id === id;
   }
 
+  let showRoleColors = false;
   const geometryCache = createGeometryCache();
+
+  function materialColors(building, part, top, isSelected, fallback) {
+    const material = filterEngine.materialPart(data.buildingMaterials, building, part, top,
+      showRoleColors || activeFilterCount() > 0 || isSelected);
+    if (!material) return [fallback, fallback];
+    return [material.wall, material.roof].map(c => isSelected ? lighten(color(c), .62) : color(c));
+  }
   const uploadedGeometry = new WeakMap();
 
   function buildGeometry(timestamp) {
@@ -1011,9 +1019,13 @@
       const oriented=orientedBuildings[building.entityId];
       for(const face of oriented?.foundationFaces || [])
         quad(triangles,face.points,normalize(cross(subtract(face.points[1],face.points[0]),subtract(face.points[2],face.points[0]))),color(face.color));
-      for (const part of oriented?.parts || buildingParts(building, currentDetailLevel === "district")) {
+      const parts = oriented?.parts || buildingParts(building, currentDetailLevel === "district");
+      const top = Math.max(...parts.map(p => p.y + p.height));
+      for (const part of parts) {
+        const fallback = part.shade ? lighten(selectedColor, part.shade) : selectedColor;
+        const [wall, roof] = materialColors(building, part, top, selected("building", building.entityId), fallback);
         if (part.footprint) {
-          orientedBox(triangles,part.footprint,.2+part.y,part.height,part.shade ? lighten(selectedColor,part.shade) : selectedColor);
+          orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof);
           continue;
         }
         box(
@@ -1024,7 +1036,7 @@
           part.width,
           part.height,
           part.depth,
-          part.shade ? lighten(selectedColor, part.shade) : selectedColor,
+          wall, roof,
         );
       }
       if (selected("building", building.entityId)) {
@@ -1082,7 +1094,11 @@
           colors[aggregatePart.archetype] || colors.GENERIC_BUILDING,
         );
         const partColor = isSelected ? lighten(baseColor, 0.45) : baseColor;
-        for (const part of buildingParts(aggregatePart)) {
+        const parts = buildingParts(aggregatePart);
+        const top = Math.max(...parts.map(p => p.y + p.height));
+        for (const part of parts) {
+          const fallback = part.shade ? lighten(partColor, part.shade) : partColor;
+          const [wall, roof] = materialColors(aggregatePart, part, top, isSelected, fallback);
           box(
             triangles,
             part.x,
@@ -1091,7 +1107,7 @@
             part.width,
             part.height,
             part.depth,
-            part.shade ? lighten(partColor, part.shade) : partColor,
+            wall, roof,
           );
         }
       }
@@ -1478,7 +1494,7 @@
     const selectionKey = state.selected
       ? `${state.selected.kind}:${state.selected.id}:${state.selected.routeId || ""}`
       : "none";
-    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${structureOverlay}:${[...expandedAggregateIds].sort().join('|')}`;
+    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${structureOverlay}:${showRoleColors}:${[...expandedAggregateIds].sort().join('|')}`;
     if (nextCacheKey === lodCacheKey) return;
     currentDetailLevel = nextDetailLevel;
     lodCacheKey = nextCacheKey;
@@ -1736,6 +1752,7 @@
     inspector.append(element("h2", entity.path || entityId));
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Archetype", building.archetype);
+    if (data.buildingMaterials) detailRow(details, "Appearance", "Procedural wall tones; roof accents indicate the existing role. Not source material evidence.");
     detailRow(details, "Language", entity.language || "Unknown");
     detailRow(details, "Height", building.height);
     const parcel=orientedBuildings[entityId];
@@ -2019,6 +2036,10 @@
   }
 
   function runAction(action) {
+    if (action === "toggle-role-colors" && data.buildingMaterials) {
+      showRoleColors = !showRoleColors;
+      document.querySelector('[data-action="toggle-role-colors"]').setAttribute('aria-pressed', String(showRoleColors));
+    }
     if (action === "toggle-structure" && urbanContext) {
       structureOverlay = !structureOverlay;
       document.querySelector('[data-action="toggle-structure"]').setAttribute('aria-pressed',String(structureOverlay));
