@@ -7,7 +7,30 @@
   "required": ["schemaVersion","generatorVersion","seed","seedAlgorithm","repositoryNamespace","sourceCityDigest","ucgDigest","coordinateSystem","coordinateQuantum","terrainPreset","allocationAlgorithm","envelope","districts","logicalDistricts","topology","parcels","streets","routing","networks","coverage","diagnostics","anchors"],
   "properties": {
     "schemaVersion": {"const":"world/0.1-experimental"},
-    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4","flat-adaptive-neighborhoods/0.5"]},
+    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4","flat-adaptive-neighborhoods/0.5","terrain-adaptive/0.1"]},
+    "streetPolicy": {"enum":["original","shared","permeable"]},
+    "terrain": {
+      "type":"object", "additionalProperties":false,
+      "required":["version","preset","seed","environmental","initialEnvelope","surfacePolicy","features","protectedArea"],
+      "properties": {
+        "version":{"const":"terrain/0.1"}, "preset":{"const":"lake-district"},
+        "seed":{"type":"string","pattern":"^[0-9a-f]{16}$"}, "environmental":{"const":true},
+        "initialEnvelope":{"$ref":"#/$defs/polygon"}, "surfacePolicy":{"const":"flat-buildable-plains"},
+        "protectedArea":{"type":"number","exclusiveMinimum":0},
+        "features":{"type":"array","minItems":1,"maxItems":5,"items":{
+          "type":"object", "required":["id","kind","center","polygon","noBuildPolygon","roadPolygon","height","faces"],
+          "properties":{
+            "kind":{"enum":["LAKE","HILL"]}, "center":{"$ref":"#/$defs/point"},
+            "polygon":{"$ref":"#/$defs/polygon"}, "noBuildPolygon":{"$ref":"#/$defs/polygon"}, "roadPolygon":{"$ref":"#/$defs/polygon"},
+            "height":{"type":"number","minimum":0,"maximum":15},
+            "faces":{"type":"array","maxItems":64,"items":{"type":"object","required":["points","color"],"properties":{
+              "points":{"type":"array","minItems":3,"maxItems":16,"items":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"number"}}},
+              "color":{"type":"string","pattern":"^#[0-9a-f]{6}$"}
+            }}}
+          }
+        }}
+      }
+    },
     "patternScale": {"enum":["district","adaptive"]},
     "zoningPolicy": {"enum":["semantic","soft","neighborhoods"]},
     "softZoning": {"type":"object","additionalProperties":false,"required":["version","baseGeneratorVersion","zones","optimization","addressDigest"],"properties":{"version":{"const":"soft-zoning/0.1"},"baseGeneratorVersion":{"type":"string"},"addressDigest":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},"zones":{"type":"array","minItems":1,"maxItems":448},"optimization":{"type":"array","maxItems":64}}},
@@ -23,7 +46,7 @@
     "ucgDigest": {"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
     "coordinateSystem": {"const":"x-z-ground-y-up"},
     "coordinateQuantum": {"const":0.0001},
-    "terrainPreset": {"const":"flat"},
+    "terrainPreset": {"enum":["flat","lake-district"]},
     "allocationAlgorithm": {"const":"capacity-bisection/0.1"},
     "envelope": {"$ref":"#/$defs/polygon"},
     "districts": {"type":"array","minItems":1,"maxItems":64,"items":{"type":"object","required":["id","sourceDirectoryId","label","polygon","anchor","localSeed","planningProfile","primaryAxis","areaDemand","areaAllocated","capacity","buildingCount"],"properties":{"id":{"type":"string"},"polygon":{"$ref":"#/$defs/polygon"},"planningProfile":{"enum":["GRID","RADIAL","ORGANIC","INDUSTRIAL","HYBRID","ZONED"]},"planningRegions":{"type":"array","minItems":2,"maxItems":4,"items":{"type":"object","required":["id","polygon","planningProfile","areaAllocated"],"properties":{"polygon":{"$ref":"#/$defs/polygon"},"planningProfile":{"enum":["GRID","ORGANIC"]}}}},"areaAllocated":{"type":"number","exclusiveMinimum":0},"capacity":{"type":"integer","minimum":1},"buildingCount":{"type":"integer","minimum":1}}}},

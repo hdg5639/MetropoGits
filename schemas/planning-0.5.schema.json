@@ -12,7 +12,7 @@
     "worldSeed": {"type":"string","pattern":"^[0-9a-f]{16}$"},
     "ucgDigest": {"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
     "sourceCityDigest": {"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
-    "terrainPreset": {"const":"flat"},
+    "terrainPreset": {"enum":["flat","lake-district"]},
     "zones": {"type":"array","minItems":1,"maxItems":448,"items":{"type":"object","required":["id","parentId","clusterKey","classification","coreEntityIds","coreClaims","supportingMembers","structuralMemberEntityIds","internalEdgeIds","roleCounts","memberEntityIds","memberClaims","polygon","accessPorts","planningProfile"],"properties":{"planningProfile":{"const":"BLOCK_LOCAL"},"internalEdgeIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}},"memberEntityIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}}}}},
     "blocks": {"type":"array","minItems":1,"maxItems":448,"items":{"type":"object","required":["id","zoneId","memberEntityIds","polygon","boundaryTypes","planningProfile","capacity","affinity","inheritedPatternId","patternMode"],"properties":{"patternMode":{"enum":["INHERITED","ADAPTED"]},"boundaryTypes":{"type":"array","items":{"const":"NEIGHBORHOOD_BOUNDARY"}},"planningProfile":{"enum":["GRID","ORGANIC","RADIAL","INDUSTRIAL","HYBRID"]},"capacity":{"type":"integer","minimum":1}}}},
     "mainRoads": {"type":"array","maxItems":10000,"items":{"type":"object","required":["id","start","end","width","structural","patternId"],"properties":{"structural":{"const":true},"width":{"type":"number","exclusiveMinimum":0}}}}

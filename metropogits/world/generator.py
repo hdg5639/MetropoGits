@@ -16,6 +16,10 @@ from .junctions import (
     path_length,
 )
 from .alleys import GENERATOR_VERSION as ALLEY_GENERATOR_VERSION, add_alleys
+from .terrain import (
+    GENERATOR_VERSION as TERRAIN_GENERATOR_VERSION, PRESET as NATURAL_PRESET,
+    adapt_roads, generate_terrain, validate_terrain,
+)
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
 from .organic import organic_slots
@@ -63,8 +67,13 @@ def generate_world(
     zoning="none",
     pattern_scale="block",
     street_policy="original",
+    terrain="flat",
     _route=True,
 ):
+    if terrain not in ("flat", NATURAL_PRESET) or (
+        terrain != "flat" and (pattern_scale != "adaptive" or not _route)
+    ):
+        raise ValueError("natural terrain requires routed adaptive neighborhoods")
     if street_policy not in ("original", "shared", "permeable") or (
         street_policy != "original" and (pattern_scale != "adaptive" or not _route)
     ):
@@ -235,6 +244,14 @@ def generate_world(
             extra = max(0, 3000 - budget["total"])
             budget["boundaryReserve"] += extra
             budget["total"] += extra
+    if terrain != "flat":
+        # Even one source file needs room for a real protected feature and access.
+        total = sum(b["total"] for b in budgets.values())
+        if total < 4000:
+            for budget in budgets.values():
+                extra = (4000-total)*budget["total"]/total
+                budget["terrainEnvelopeReserve"] = extra
+                budget["total"] += extra
     compatible = bool(
         previous
         and previous.get("schemaVersion") == VERSION
@@ -244,9 +261,11 @@ def generate_world(
         and previous.get("outlinePolicy", "ellipse") == outline
         and previous.get("zoningPolicy", "none") == zoning
         and previous.get("patternScale", "block") == pattern_scale
+        and previous.get("terrainPreset", "flat") == terrain
         and (
             pattern_scale == "block"
             or previous.get("generatorVersion") in (
+                (TERRAIN_GENERATOR_VERSION,) if terrain != "flat" else
                 (ADAPTIVE_GENERATOR_VERSION, SHARED_GENERATOR_VERSION, ALLEY_GENERATOR_VERSION)
                 if pattern_scale == "adaptive"
                 else ("flat-neighborhood-patterns/0.1",)
@@ -271,6 +290,9 @@ def generate_world(
         {p["entityId"]: p["slotId"] for p in previous["parcels"]} if compatible else {}
     )
     repairs = []
+    terrain_data = previous.get("terrain") if compatible and terrain != "flat" else None
+    if terrain_data:
+        validate_terrain(terrain_data, resolved_seed)
     if previous and not compatible:
         repairs.append(
             dict(
@@ -302,6 +324,9 @@ def generate_world(
                 sum(b["total"] for b in budgets.values()) / area(envelope)
             )
             envelope = [point([v * radius for v in p]) for p in envelope]
+            if terrain != "flat" and terrain_data is None:
+                # Natural reserves precede district polygons, roads and source addresses.
+                terrain_data = generate_terrain(envelope, resolved_seed)
             polygons = partition(
                 envelope,
                 [(k, budgets[k]["total"]) for k in grouped],
@@ -385,7 +410,7 @@ def generate_world(
                             plan_adaptive
                             if pattern_scale == "adaptive"
                             else plan_district_pattern
-                        )(*args)
+                        )(*args, **(dict(terrain=terrain_data) if terrain_data else {}))
                         district_patterns.append(pattern)
                     else:
                         placed, lanes, records, notes, zone_reuse, blocks, backbone = (
@@ -473,8 +498,9 @@ def generate_world(
             )
             if profile == "HYBRID":
                 districts[-1]["planningRegions"] = hybrid_regions(poly, local_seed)
-            for a, b in zip(poly, poly[1:] + poly[:1]):
-                raw.append(dict(start=a, end=b, width=3.5, access=False))
+            perimeter = [dict(start=a, end=b, width=3.5, access=False)
+                         for a, b in zip(poly, poly[1:] + poly[:1])]
+            raw.extend(adapt_roads(perimeter, terrain_data) if terrain_data else perimeter)
             raw.extend(lanes)
             for p in placed:
                 raw.append(
@@ -543,7 +569,9 @@ def generate_world(
                     streets, routing, networks, coverage = candidate, new_routing, new_networks, new_coverage
             planning_diagnostics.append(junction_note)
         if street_policy == "permeable":
-            additions, alley_note = add_alleys(streets, parcels, districts)
+            additions, alley_note = add_alleys(streets, parcels, districts, **(
+                dict(reserves=[f["noBuildPolygon"] for f in terrain_data["features"]]) if terrain_data else {}
+            ))
             if additions:
                 try:
                     candidate = atomic_streets(streets + additions)
@@ -656,4 +684,7 @@ def generate_world(
         world["generatorVersion"] = SHARED_GENERATOR_VERSION
     elif street_policy == "permeable":
         world["generatorVersion"] = ALLEY_GENERATOR_VERSION
+    if terrain_data:
+        world.update(generatorVersion=TERRAIN_GENERATOR_VERSION, terrainPreset=terrain,
+                     terrain=terrain_data, streetPolicy=street_policy)
     return world

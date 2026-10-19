@@ -535,7 +535,7 @@
     if (!contextVisible(district.id)) return;
     context.strokeStyle = selected("district", district.id) ? "#38bdf8" : "#34445e";
     context.lineWidth = selected("district", district.id) ? 2.5 : 1;
-    for (const segment of territory.boundary) {
+    for (const segment of data.terrain && !structureOverlay && !selected("district",district.id) ? [] : territory.boundary) {
       const start = project(segment[0][0], segment[0][1]);
       const end = project(segment[1][0], segment[1][1]);
       context.beginPath();
@@ -953,7 +953,10 @@
     const trees=data.landscape && !structureOverlay ? data.landscape.trees.map(tree=>({
       landscapeTree:tree,x:tree.center[0],z:tree.center[1],width:0,depth:0,entityId:tree.id,
     })) : [];
-    const orderedBuildings = [...scene.buildings, ...trees].sort(
+    const terrain=(data.terrain?.features || []).map(feature=>({
+      landscapeTree:feature,x:feature.center[0],z:feature.center[1],width:0,depth:0,entityId:feature.id,
+    }));
+    const orderedBuildings = [...scene.buildings, ...trees, ...terrain].sort(
       (left, right) => buildingDepth(left) - buildingDepth(right) || left.entityId.localeCompare(right.entityId),
     );
     for (const building of orderedBuildings) {

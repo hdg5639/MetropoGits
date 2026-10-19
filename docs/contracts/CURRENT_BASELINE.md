@@ -1,5 +1,47 @@
 # Current implementation contract baseline
 
+## Terrain before urban placement — 2026-10-19
+
+[ADR-036](../adr/ADR-036.md) adds explicit `--terrain lake-district` to adaptive
+neighborhood generation. It records `terrain-adaptive/0.1` and a `terrain/0.1`
+payload in experimental World, not a replacement UCG/City contract. World and
+planning0.5 enums expand compatibly; flat defaults and old artifacts remain valid.
+
+Order is demand-sized envelope → shared natural reserves → district allocation
+→ terrain-adapted street/slot supply → source assignment → exact trip routing
+→ planting. Terrain generation receives only initial land and stable world seed,
+never buildings, streets, roles or leftover space. Up to2 closed lakes and3 hills
+are selected in28 bounded candidates; all footprints/height faces are shared
+across districts. Very sparse worlds reserve at least4000 area units for an
+actual feature/access before planning. This is not a minimum for old flat worlds.
+
+Natural protected polygons plus road setbacks exclude complete parcels. Affected
+roads are clipped and reconnected to common shoreline/contour infrastructure,
+not drawn across water. Adapted supply is cleared before population; insufficient
+capacity uses existing bounded repair/repartition/envelope growth. Terrain stays
+fixed throughout repair. Original semantic neighborhoods, core/support members,
+roles, edge IDs and endpoints remain unchanged, although positions can change.
+
+Flat→natural is an explicit geography migration, not a small edit: pinned OJ679/
+681 and GJ1324/1324 buildings move. Area increases about4.4%/13.4%; PocketBase
+retains its outer area, SQLite grows31.1%. Do not call all of that expansion
+efficient density improvement. Natural→natural compatible hints preserve the
+terrain and existing complete frames on the maintained one-file-addition test.
+Flat hints are explicitly rejected rather than forcing nature into leftover gaps.
+
+World/CPU/WebGL/Canvas use the same real terrain faces; nature has no source
+entity or inferred dependency. Administrative lines are hidden by default in
+natural mode so a cut through a lake is not mistaken for pavement; selection and
+Structure restore the original boundaries. Picking/member/source data stay intact.
+Planting is last and excludes protected water/slopes and actual roads/entrances.
+
+Caps:5 features,16 footprint vertices,64 faces/feature,24k adapted roads and2M
+clipping/portal work; inherited candidate/index/repair/routing limits still apply.
+Exhaustion is explicit, never an omitted building or invented relationship.
+The first mode uses **flat buildable plains** and protected low-poly relief/closed
+lakes. It does not implement continuous city-wide grading, drainage-derived
+rivers, bridges, tunnels or coastlines; those parts of W-19 remain open.
+
 ## Opt-in sparse frontage alleys — 2026-10-19
 
 [ADR-035](../adr/ADR-035.md) adds `--street-policy permeable` for adaptive

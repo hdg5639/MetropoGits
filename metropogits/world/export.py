@@ -178,7 +178,7 @@ def view_data(world, scene, graph, *, landscape=None):
         world=dict(
             schemaVersion=world["schemaVersion"],
             seed=world["seed"],
-            terrainPreset="flat",
+            terrainPreset=world["terrainPreset"],
         ),
         majorDistrictIds=[d["id"] for d in world["districts"]],
         streets=dict(
@@ -207,6 +207,8 @@ def view_data(world, scene, graph, *, landscape=None):
         ),
         territories=dict(districts=territories),
     )
+    if "terrain" in world:
+        data["terrain"] = world["terrain"]
     if neighborhoods:
         data["semanticZoning"] = {z["id"]: z for z in neighborhoods}
         if world.get("zoningPolicy") == "neighborhoods":
@@ -313,6 +315,12 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
             )
         )
     faces = []
+    for feature in world.get("terrain", {}).get("features", []):
+        for face in feature["faces"]:
+            p = face["points"]
+            faces.append((sum(v[0]+v[1]+v[2] for v in p)/len(p),
+                          [project([x,z], y) for x,y,z in p], face["color"], None, 1,
+                          'data-environmental="natural-terrain"'))
     if landscape:
         for tree in landscape["trees"]:
             for face in tree["faces"]:
@@ -353,7 +361,8 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
                         0.7,
                     )
                 )
-    for _, vertices, color, identity, shade in sorted(faces, key=lambda f: f[0]):
+    for face in sorted(faces, key=lambda f: f[0]):
+        _, vertices, color, identity, shade = face[:5]
         if shade < 1:
             color = "#" + "".join(
                 f"{int(int(color[i : i + 2], 16) * shade):02x}" for i in (1, 3, 5)
@@ -362,7 +371,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
             polygon(
                 vertices,
                 color,
-                (f'data-entity-id="{escape(identity)}" stroke="#10202a" stroke-width=".15"'
+                face[5] if len(face) > 5 else (f'data-entity-id="{escape(identity)}" stroke="#10202a" stroke-width=".15"'
                  if identity else 'data-decorative="tree"'),
             )
         )
@@ -379,6 +388,9 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
     ]
     if landscape:
         lines[-2] = lines[-2].replace("Flat capacity prototype", "Flat landscaping (decorative)")
+    if "terrain" in world:
+        lines[-2] = lines[-2].replace("Flat landscaping (decorative)", "Terrain-first lakes and hills (procedural)").replace(
+            "Flat capacity prototype", "Terrain-first lakes and hills (procedural)")
     return "\n".join(lines).encode("utf8")
 
 
@@ -417,6 +429,10 @@ def package_world(world, scene, graph, validation, *, landscaping=True):
             b'<span><i class="line messaging"></i>Messaging path</span>'
             b'<span title="Procedural flat greenery; not source architecture. Hidden by Structure overlay."><i class="swatch landscape"></i>Landscape (decorative)</span>',
         )
+    if "terrain" in world:
+        page = page.replace(b"PROCEDURAL FLAT WORLD", b"TERRAIN-FIRST WORLD")
+        page = page.replace(b'<span id="renderer-mode"',
+                            b'<span title="Procedural terrain constrains building and street placement; not source architecture.">Natural terrain (procedural)</span><span id="renderer-mode"')
     svg = render_svg(world, landscape=landscape)
     artifacts.update(
         {

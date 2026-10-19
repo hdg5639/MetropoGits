@@ -16,6 +16,8 @@ def main():
     parser.add_argument("build", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed")
+    parser.add_argument("--terrain", choices=("flat", "lake-district"), default="flat",
+                        help="adaptive only: generate protected natural terrain BEFORE urban placement")
     parser.add_argument(
         "--zoning",
         choices=("none", "semantic", "soft", "neighborhoods"),
@@ -87,6 +89,7 @@ def main():
             zoning=args.zoning,
             pattern_scale=args.pattern_scale,
             street_policy=args.street_policy,
+            terrain=args.terrain,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)

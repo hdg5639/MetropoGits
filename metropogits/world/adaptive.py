@@ -277,6 +277,7 @@ def plan_adaptive(
     previous_zones=(),
     previous_blocks=(),
     previous_slots=None,
+    terrain=None,
 ):
     parent = clusters[0]["parentId"]
     parent_candidates, parent_roads, main, pattern = adaptive_field(
@@ -341,6 +342,13 @@ def plan_adaptive(
         plans, boundary, ports = reserve_complete_plan(
             plans, polygons, main, polygon, pattern, clusters, pairs
         )
+        actual_main, actual_pattern = main, pattern
+        if terrain:
+            from .terrain import terrain_plan
+
+            plans, actual_main, boundary, ports, actual_pattern = terrain_plan(
+                plans, main, boundary, ports, pattern, polygon, terrain
+            )
         failed = [
             z["id"]
             for z in clusters
@@ -384,7 +392,8 @@ def plan_adaptive(
             ]
     else:
         return None, [], [], notes, False, [], [], pattern
-    main += boundary
+    main = actual_main + boundary
+    pattern = actual_pattern
     parcels, records, blocks = [], [], []
     total = sum(v for _, v in demands)
     targets = {key: area(polygon) * v / total for key, v in demands}

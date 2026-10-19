@@ -6754,3 +6754,101 @@
   work unit on feat/semantic-zoning; normal upstream push after checks and human
   identity/metadata review. No generated artifacts or user build caches staged;
   no attribution, force push or protection bypass. Other ledger work remains open.
+
+## Checkpoint 2026-10-19 — terrain first, urban placement responds
+- Implemented: ADR-036's opt-in `--terrain lake-district` for adaptive worlds,
+  generator terrain-adaptive/0.1. Demand establishes initial land; global seeded
+  lake/hill reserves are created BEFORE district allocation, streets or source
+  addresses. Reserves stay fixed during bounded capacity repair. Street fields
+  clip out protected terrain and join common shoreline/contour roads; complete
+  parcel/frontage supply is filtered before source assignment. Scarce capacity
+  repartitions/expands the world, never moves a lake into an existing empty lot.
+- Scope: closed lakes, protected low-poly hills and flat buildable plains.
+  Nature is environmental presentation, not code evidence. No drainage-derived
+  rivers, global graded foundations, coastlines, bridges or tunnels are claimed.
+  Up to5 features in28 attempts;24k adapted-road and2M clipping/portal-work caps;
+  inherited geometry, routing and repair caps remain. Sparse natural worlds get
+  a4000-unit minimum land reserve; old flat modes are unchanged.
+- Fixtures/revisions: OJ local-sha256-c2e80f9d3908fec8;
+  GJ local-sha256-06eb492d57141c16;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b. Same input City/UCG
+  snapshots/namespaces as sparse-alleys-r1. Fresh maintained spring-positive and
+  a temporary one-file unknown Rust fixture exercise sparse input.
+- Commands from MetropoGits:
+  `python -X utf8 -c "import runpy,sys;sys.argv=['terrain','terrain-first-r5'];runpy.run_path('../artifacts/visual/terrain_first_review.py',run_name='__main__')"`;
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/terrain-first-e2e --out ../artifacts/visual/terrain-first-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/terrain-first-e2e-r1/build --namespace fixture/terrain-first-e2e --zoning neighborhoods --pattern-scale adaptive --street-policy permeable --planning varied --outline varied --terrain lake-district --out ../artifacts/visual/terrain-first-e2e-r4/world`.
+  Full unittest discovery; focused test_world_terrain.py; Ruff/compileall;
+  all9 Node test files; inherited compatibility helper; diff-check.
+- Geometry/source results: all3175 buildings,5782 source-target trips and8592
+  represented edges retained, with exact source IDs/roles/core/support members,
+  source City/UCG bytes and relation evidence. World positions intentionally
+  change. OJ679/GJ1324/PB299/SQLite506 buildings move; outer area ratios
+  1.0440/1.1343/1.0000/1.3114. Initial mode migration can repartition entire
+  neighborhoods: not a small-edit stability claim, and SQLite's31% expansion is
+  a capacity cost, not a density win. Old flat lots now excluded by nature:
+  26/39/20/46. This verifies influence beyond a leftover-space decoration pass.
+- All four have2 lakes/3 hills in this pinned sample. Features crossing principal
+  boundaries:1/5/2/0; shared vertices/faces, not independently reset district
+  terrain. World checks report0 building/full-width-road/owner overlaps and
+  complete entrance access. Protected hills/water exclude entire parcels and
+  full-width roads, including driveways/alleys. No artificial traffic for SQLite.
+- Determinism/compatibility: four FULL generations and packages repeated equal;
+  experimental World and planning0.5 JSON schemas pass. Canonical City/UCG remain
+  unchanged; natural planning/World/preview intentionally differ. All12 legacy
+  snapshots and freshly regenerated four flat0.5 World dictionaries match their
+  prior canonical baselines. Compatible natural hints keep the terrain and all48
+  old complete frames after49th file. Flat hints are explicitly rejected.
+- Real browser commands: viewer_audit.mjs with Chrome to
+  terrain-first-final-main-r1 (OJ/GJ before+after,4 cases) and
+  terrain-first-final-unknown-r1 (PB/SQLite after + fresh Spring,3 cases);
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/terrain-first-canvas-r1` with4 after worlds and fresh Spring;
+  `node ../artifacts/visual/terrain_focus.mjs ../artifacts/visual/terrain-first-focus-r3`.
+  Actual three LODs, CPU preview/showcase, navigation, source inspectors,
+  actual pointer-selected complete trips and Canvas fallback pass. Synthetic
+  static rebuilds remain0 where applicable; unsupported/no-path cases say N/A.
+  Software Chrome CPU timings are not GPU FPS or a universal performance claim.
+- Artifacts actually inspected: OJ matched-coordinate Detail lake before/after,
+  OJ Overview and CPU showcase, GJ hill Detail and selected shoreline trip,
+  SQLite WebGL Overview and OJ Canvas source inspector. Entry:
+  `artifacts/visual/terrain-first-focus-r3/index.html`; full4-repository packages/
+  provenance/area report terrain-first-r5. Selected real contour routes:
+  OJ account/service/CodeDrafts.java→shared/exception/AccountException.java;
+  GJ portal/app/(auth)/forgot-password/page.tsx→components/ui/button.tsx.
+  Exact original edge IDs, complete highlighting and own-path Synthetic checked.
+- Visual findings: actual water/relief displaces urban fabric; rows now stop or
+  connect around protected land, while mixed role neighborhoods survive. The
+  initial contour roads are deliberately simple and some ends remain abrupt;
+  it is not finished natural hydrology or realistic civil engineering. Keep mode
+  opt-in. Unselected administrative lines are hidden in natural view so a line
+  through water is not mistaken for a bridge; selection/Structure retain data.
+- Independent planting audit: terrain_geometry_review.py via runpy. Original
+  whole-parcel/full-width-pavement/terrain comparisons70073/102675/47799/43832;
+  no planting invasion, all tree crown faces contained. Trees463/687/285/300.
+- Fixes found and reverified: first GPU review exposed downward-facing terrain
+  surfaces invisible under backface culling; correct shared face winding and
+  assert upward normals/height bounds. Empty eroded backbones had an invalid
+  min-of-empty portal projection; now return zero supply for capacity repair.
+  One-file natural input lacked land for a real feature; explicit minimum reserve
+  fixes it without changing flat defaults. Validate the emitted planning artifact,
+  not just World: contour roads now retain required parent pattern IDs and unique
+  metadata names rather than weakening that contract. All are in tests and r5
+  corpus regeneration; earlier r1/r2 partial outputs are not delivery baselines.
+- Tests:620 Python run,619 pass/one existing Windows symlink skip;58 Node pass;
+  lint/compile/diff pass. Nine terrain tests cover chronology, direct arterial
+  clipping, immutable reserves, actual displacement/source conservation, geometry,
+  repeated exports/World+planning schemas, limits, sparse unknown, erased supply,
+  compatible hints and flat-hint rejection. Final focused tests also check that
+  disabling decorative planting still retains true terrain and truthful caption.
+- Single concurrent full-generation samples OJ7.08s/GJ16.94s/PB4.68s/SQLite2.50s;
+  not controlled speedup/regression benchmarks. Explicit terrain face counts stay
+  bounded and use existing static batched buffers, no new runtime dependency.
+- Spec alignment: PASS under approved terrain-first extension ADR-024/032/036,
+  AC-001/002/003/006/008/011/014. City/UCG/source identity intact; compatible
+  experimental World/planning enums only. No source execution/install/upload,
+  AI runtime, external service or invented framework role. W-19 remains partial.
+- Commits/delivery: docsa6e92b0 then one coherent terrain/planning/routing/renderer/
+  schema/tests/docs unit on feat/semantic-zoning; normal upstream push after final
+  diff, identity and remote review. No user caches/generated outputs staged,
+  attribution, forced update or protection bypass.
