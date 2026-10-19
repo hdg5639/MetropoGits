@@ -6,16 +6,17 @@ from .adaptive import (
     profile_plan,
     local_sites,
     reserve_complete_plan,
+    skeleton,
 )
 from .seed import derive
 
 
-def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False):
+def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False):
     candidates, roads, main, pattern = adaptive_field(
-        parent["polygon"], parent["localSeed"], base, parent["id"], stitch=stitch
+        parent["polygon"], parent["localSeed"], base, parent["id"], stitch=stitch, morphology=morphology
     )
     polygons = {z["id"]: z["polygon"] for z in zones}
-    selections = profile_plan(zones, polygons, pattern, main)
+    selections = profile_plan(zones, polygons, pattern, skeleton(roads) if morphology else main)
     plans = {
         z["id"]: local_sites(
             z["polygon"],

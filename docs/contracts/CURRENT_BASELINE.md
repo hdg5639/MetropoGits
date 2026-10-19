@@ -3,8 +3,8 @@
 ## Mixed functional neighborhoods and adaptive patterns — 2026-10-19
 
 [ADR-032](../adr/ADR-032.md) adds `--pattern-scale adaptive` with neighborhoods,
-`flat-adaptive-neighborhoods/0.2`, `functional-neighborhoods/0.1`,
-`adaptive-patterns/0.2` and [planning0.5](../../schemas/planning-0.5.schema.json).
+`flat-adaptive-neighborhoods/0.3`, `functional-neighborhoods/0.1`,
+`adaptive-patterns/0.3` and [planning0.5](../../schemas/planning-0.5.schema.json).
 The earlier block/district modes remain reproducible ablations, not accepted
 visual baselines. Original City/UCG and source IDs/roles/evidence stay intact.
 
@@ -24,13 +24,17 @@ internal edge IDs remain inspectable. Source reconstruction rejects fabricated
 members/role counts/edges; relation locality is measured on real cross-role
 pairs rather than an invented target color mix.
 
-Reserve connecting collectors/spokes/spines from the parent grammar first.
-Do not overlay every third parent frontage row/court or fourth orbit across an
-adapted neighborhood when connecting arteries already exist. The bounded
+Reserve connecting collectors/spokes/spines AND selected shape-bearing orbital
+families from the parent grammar first. Uniform0.2 removal of all orbital families
+was rejected for OJ: fewer road meters did not justify a monotonous city and288
+relocated buildings. Avoid a second parent linear frontage lattice across an
+adapted neighborhood, but never mistake a characteristic ring for such waste. The bounded
 no-artery fallback retains the former sparse selection. Keep the largest
 source-anchored neighborhood on its full original local field; select other
 local grammars from actual roles and neutral base-pattern
-context, with local axes facing the nearest reserved corridor. Unused original
+context. Select local tangent axes from the original sparse reference field,
+separately from physical thinning, so removing a corridor cannot rotate an
+entire neighborhood. Unused original
 full-stencil roads are not overlaid under replacements. Adapted local grids do
 not add redundant automatic cross-collectors beside the reserved shared network.
 Actual shared cuts/access ports favor cross-neighborhood source affinity; only
@@ -55,12 +59,26 @@ road count must be reported, not hidden by cross-role co-location improvements.
 The seam correction is an explicit generator revision, not old geography
 stability: address seed namespaces/source IDs remain unchanged but smaller land
 and changed reservations can relocate buildings and physical trips. Old
-adaptive0.1 exports still validate against their original reservation policy;
-their hints are explicitly rejected for a cold0.2 rebuild. Experimental schema
+adaptive0.1/0.2 exports still validate against their original reservation policy;
+their hints are explicitly rejected for a cold0.3 rebuild. Experimental schema
 version enums expand compatibly; original fields and City/UCG remain unchanged.
 Invalid quantized child supporting edges trigger a tiny shared-cut demand repair
 within the existing four local attempts, then bounded parent repair as needed.
 Keep the same strict containment/clearance checks and retain repair diagnostics.
+If capacity AND quantization fail during one local attempt sequence, retain the
+normal capacity repair; only exclusively quantization failures use tiny parent
+adjustments. The former last-error classification could unnecessarily reshape
+all land even when the final valid baseline already fit.
+
+After placement and exact routing, stitch only UNUSED, nonreserved nearby
+parallel street pieces. Protect main patterns, principal boundaries, entrances,
+driveways and every physical segment used by a source trip. Require an existing
+alternate path through a corridor within8 units/15 degrees; cap its length at
+min(1.5 times the removed piece plus8, original length plus24). This changes no
+source trip/path, building or road coordinate and adds no pavement. Optional
+cleanup caps500k index entries,200k comparisons,256 attempts and100k search states;
+budget exhaustion retains remaining certified geometry and is disclosed. A small
+removal count is acceptable; do not increase it by flattening patterns again.
 
 ## Inherited district street patterns — 2026-10-19
 

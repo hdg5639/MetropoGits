@@ -8,6 +8,7 @@ from metropogits.street_diagonals import hull
 from . import VERSION
 from .geometry import area, centroid, inside, partition, point, shared_boundaries
 from .infrastructure import atomic_streets, route_world
+from .seams import stitch_unused_streets
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
 from .organic import organic_slots
@@ -435,7 +436,7 @@ def generate_world(
                 if (
                     pattern_scale == "adaptive"
                     and notes
-                    and notes[-1]["reason"] == "adaptive shared-cut quantization repair"
+                    and all(n["reason"] == "adaptive shared-cut quantization repair" for n in notes)
                 ):
                     quantization_failed.add(key)
                 continue
@@ -503,6 +504,16 @@ def generate_world(
     routing, networks, coverage = (
         route_world(graph, parcels, streets) if _route else ({}, [], {})
     )
+    if pattern_scale == "adaptive" and _route:
+        boundaries = [
+            dict(start=a, end=b)
+            for d in districts
+            for a, b in zip(d["polygon"], d["polygon"][1:] + d["polygon"][:1])
+        ]
+        streets, seam_note = stitch_unused_streets(
+            streets, main_roads + boundaries, routing, parcels
+        )
+        planning_diagnostics.append(seam_note)
     reused = sorted(grouped) if compatible and attempt == 0 else []
     if zoned:
         reused = sorted(reused_zoned) if compatible and attempt == 0 else []

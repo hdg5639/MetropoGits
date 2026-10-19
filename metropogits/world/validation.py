@@ -21,7 +21,7 @@ def validate_world(world, scene, graph):
         or world.get("zoningPolicy") != "neighborhoods"
         or world.get("generatorVersion")
         not in (
-            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2")
+            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3")
             if world["patternScale"] == "adaptive"
             else ("flat-neighborhood-patterns/0.1",)
         )
@@ -33,6 +33,7 @@ def validate_world(world, scene, graph):
             "flat-neighborhood-patterns/0.1",
             "flat-adaptive-neighborhoods/0.1",
             "flat-adaptive-neighborhoods/0.2",
+            "flat-adaptive-neighborhoods/0.3",
         )
     ) != (world.get("patternScale") in ("district", "adaptive")):
         raise ValueError("world pattern scale version mismatch")
@@ -234,6 +235,13 @@ def validate_world(world, scene, graph):
         raise ValueError("world building lacks structural access")
     routes = world["routing"]["routes"]
     streets = {s["id"]: s for s in world["routing"]["segments"]}
+    physical = {s["id"]: s for s in world["streets"]}
+    for s in streets.values():
+        if "physicalId" in s and (
+            s["physicalId"] not in physical
+            or any(s[k] != physical[s["physicalId"]][k] for k in ("start", "end", "width"))
+        ):
+            raise ValueError("world trip lost its physical pavement")
     by_entity = {p["entityId"]: p for p in parcels}
     represented = []
     edge_records = {e["id"]: e for e in graph["edges"]}
