@@ -9,7 +9,8 @@
 - 기본 계약: workspace `MetropoGits_Docs/02_TECHNICAL_SPEC.md`,
   `03_FUNCTIONAL_SPEC.md`, `01_PRODUCT_PLAN.md`, workspace `AGENTS.md`.
 - 확장 원안: 같은 폴더의 `MetropoGits_Procedural_World_Generation_Plan.md`,
-  `MetropoGits_Hierarchical_Voronoi_Semantic_Zoning_Design.md`.
+  `MetropoGits_Hierarchical_Voronoi_Semantic_Zoning_Design.md`,
+  `MetropoGits_Road_Network_and_Campus_Planning_Design.md`.
 - 구현 계약: [CURRENT_BASELINE](contracts/CURRENT_BASELINE.md), ADR-024~029.
 - 상세 맥락: [SEMANTIC_ZONING_PLAN](SEMANTIC_ZONING_PLAN.md),
   [URBAN_BLOCK_PLAN](URBAN_BLOCK_PLAN.md), [QUALITY_LOG](QUALITY_LOG.md).
@@ -95,6 +96,15 @@
 - 관련 레이아웃/렌더 변경 직후 실제 출력 검증, 매 세 작업 이내/종료 시 전체 체크포인트.
 
 ## 6. 진행 기록
+
+- 2026-10-19 새 도로망/캠퍼스 제안서를 읽고 현재 구조와 대조했다. 다음 구현은
+  RC-00/01의 실제 구조 가로 분류·연결성 지표·가시적 계층부터 검증하며, CAMPUS
+  CP-00/01은 근거가 있는 적격성·예약 공유 공간·실제 접근로를 함께 구현해야 한다.
+  아직 이 새 도로/캠퍼스 기능은 구현하지 않았다. 사용자가 먼저 요청한
+  `iamywl/hanul-hwpx` 단일 레포 실험을 우선 전달: revision7432c67, 36건물,
+  4주요 구역, 11내부 관계 경로; `artifacts/visual/hanul-hwpx-r1/index.html`.
+  엔진 수정 없이 기존 terrain-first/porous 기능으로 생성·실제 렌더·결정성을 검증.
+  이후 작업에서도 기존 지형·혼합 동네·패턴·접도·근거·Synthetic 요구를 유지한다.
 
 - 2026-10-19 ADR-040 구현/검증: `--street-policy porous`는 자연 지형과 동네
   경계를 고정한 뒤, 건물 배정 전에 실제 우회가 큰 구간에만 드문 통로를 예약한다.
