@@ -379,6 +379,12 @@ def validate_world(world, scene, graph):
 
         if world.get("patternScale") != "adaptive" or world["streetPlan"] != derive_street_plan(world):
             raise ValueError("physical street hierarchy differs from authoritative graph")
+    if 'campusPlan' in world:
+        from .campus import validate_campuses
+
+        if world.get('patternScale')!='adaptive' or 'streetPlan' not in world:
+            raise ValueError('campus requires its adaptive physical street plan')
+        validate_campuses(world)
     return dict(
         buildings=len(parcels),
         districts=len(zones),

@@ -45,6 +45,13 @@ COLORS = dict(
 def _landscape(world, value):
     if value is None:
         value = generate_landscape(world) if world.get("patternScale") == "adaptive" else False
+    if value and world.get('campusPlan',{}).get('sites') and not value.get('campusReserved'):
+        value=copy.deepcopy(value)
+        value['campusReserved']=True
+        for site in world['campusPlan']['sites']:
+            for court in site['courts']:
+                value['patches'].append(dict(id=court['id'],districtId=site['parentId'],polygon=court['polygon'],
+                                            color='#55755c',reservedCampus=True))
     if value and "surface" in world and not value.get("elevated"):
         value=copy.deepcopy(value)
         value.update(elevated=True,terrainPreset=world["terrainPreset"])
@@ -534,6 +541,8 @@ def package_world(world, scene, graph, validation, *, landscaping=True):
                             b'Dependency demand (select / All routes)')
         page = page.replace('Dependency road · width / paint = static demand'.encode('utf8'),
                             b'Dependency demand (select / All routes)')
+    if world.get('campusPlan',{}).get('sites'):
+        page = page.replace(b'Landscape (decorative)',b'Landscape / campus courts (visual)')
     svg = render_svg(world, landscape=landscape)
     artifacts.update(
         {

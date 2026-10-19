@@ -307,6 +307,8 @@ def planning_document(world):
             )
         if "streetPlan" in world:
             doc["streetPlan"] = world["streetPlan"]
+        if 'campusPlan' in world:
+            doc['campusPlan'] = world['campusPlan']
         return doc
     if world.get("zoningPolicy") == "soft":
         return dict(

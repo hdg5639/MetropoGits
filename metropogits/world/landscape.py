@@ -124,6 +124,10 @@ def generate_landscape(world):
     for f in world.get("terrain", {}).get("features", []):
         if not reserve(expanded(f["noBuildPolygon"], .3)):
             return result
+    for site in world.get('campusPlan',{}).get('sites',[]):
+        for court in site['courts']:
+            if not reserve(court['polygon']):
+                return result
 
     for district in sorted(world["districts"], key=lambda d: d["id"]):
         land = district["polygon"]

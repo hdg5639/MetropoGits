@@ -20,6 +20,7 @@ def validate_blocks(world, scene, graph, neighborhoods):
     grouped, _ = groups(scene)
     owners = {b["entityId"]: key for key, members in grouped.items() for b in members}
     pairs = dependency_pairs(graph, owners)
+    campus_pairs = dependency_pairs(graph, dict.fromkeys(owners, "campus")) if 'campusPlan' in world else None
     parcels = {p["entityId"]: p for p in world["parcels"]}
     expected_main = []
     inherited = world.get("patternScale") == "district"
@@ -46,6 +47,8 @@ def validate_blocks(world, scene, graph, neighborhoods):
                 morphology=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", "terrain-adaptive/0.1", "terrain-adaptive/0.2", "terrain-adaptive/0.3", "terrain-adaptive/0.4"),
                 terrain=world.get("terrain"),
                 porous=world.get("streetPolicy") == "porous",
+                campus='campusPlan' in world,
+                campus_pairs=campus_pairs,
             )
             expected_patterns.append(pattern)
         elif inherited:
@@ -162,7 +165,10 @@ def validate_blocks(world, scene, graph, neighborhoods):
                     )
                 ):
                     raise ValueError("neighborhood parcel escaped its physical block")
-                if regions:
+                if key in b.get('campusSite',{}).get('memberEntityIds',[]):
+                    if p.get('blockProfile')!='CAMPUS':
+                        raise ValueError('campus member lacks a campus frontage plot')
+                elif regions:
                     region = next(
                         (r for r in regions if r["id"] == p.get("planningRegionId")),
                         None,

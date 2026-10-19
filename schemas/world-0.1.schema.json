@@ -16,6 +16,15 @@
         "color":{"type":"string","pattern":"^#[0-9a-f]{6}$"},"points":{"type":"array","minItems":3,"maxItems":16,"items":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"number"}}}}}}
     }},
     "streetPolicy": {"enum":["original","shared","permeable","porous"]},
+    "campusPlan": {"type":"object","additionalProperties":false,"required":["version","structural","decisions","sites"],"properties":{
+      "version":{"const":"campus-plan/0.1"},"structural":{"const":true},
+      "decisions":{"type":"object","maxProperties":448,"additionalProperties":{"type":"object","required":["eligible","status","reason","probability","draw","internalPairCount","externalPairCount","supportingEntityIds","evidenceIds"],"properties":{
+        "eligible":{"type":"boolean"},"status":{"enum":["SELECTED","RETAINED"]},"reason":{"type":"string"},"probability":{"type":"number","minimum":0,"maximum":1},"draw":{"type":"number","minimum":0,"maximum":1},"supportingEntityIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}},"evidenceIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}}}}},
+      "sites":{"type":"array","maxItems":64,"items":{"type":"object","required":["zoneId","parentId","variant","memberEntityIds","retainedMemberEntityIds","anchorEntityIds","courts","walkways","axis","capacity","envelopes"],"properties":{
+        "zoneId":{"type":"string"},"parentId":{"type":"string"},"variant":{"const":"ACADEMIC_QUAD"},"memberEntityIds":{"type":"array","minItems":8,"maxItems":32,"uniqueItems":true,"items":{"type":"string"}},"retainedMemberEntityIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}},"anchorEntityIds":{"type":"array","minItems":1,"maxItems":3,"uniqueItems":true,"items":{"type":"string"}},
+        "courts":{"type":"array","minItems":1,"maxItems":3,"items":{"type":"object","required":["id","center","polygon"],"properties":{"polygon":{"$ref":"#/$defs/polygon"},"center":{"$ref":"#/$defs/point"}}}},
+        "walkways":{"type":"array","minItems":1,"maxItems":256,"items":{"type":"object","required":["id","start","end","width","access","structural","patternId"],"properties":{"start":{"$ref":"#/$defs/point"},"end":{"$ref":"#/$defs/point"},"width":{"const":1.2},"access":{"const":false},"structural":{"const":true}}}},"capacity":{"type":"integer","minimum":9}}}}
+    }},
     "streetPlan": {
       "type":"object","additionalProperties":false,
       "required":["version","structural","segments","backboneStreetIds","components","frontages","ports","summary","work"],
@@ -24,7 +33,7 @@
         "segments":{"type":"object","maxProperties":50000,"additionalProperties":{
           "type":"object","additionalProperties":false,"required":["streetClass","reasons","componentId"],"properties":{
             "streetClass":{"enum":["ARTERIAL","COLLECTOR","LOCAL","SERVICE","PEDESTRIAN"]},
-            "reasons":{"type":"array","uniqueItems":true,"items":{"enum":["BUILDING_ACCESS","LOCAL_FRONTAGE","RESERVED_BACKBONE","INTERDISTRICT_CORRIDOR","PROTECTED_CROSSING","LOCAL_CENTER","COARSE_CONNECTOR"]}},
+            "reasons":{"type":"array","uniqueItems":true,"items":{"enum":["BUILDING_ACCESS","LOCAL_FRONTAGE","RESERVED_BACKBONE","INTERDISTRICT_CORRIDOR","PROTECTED_CROSSING","LOCAL_CENTER","COARSE_CONNECTOR","CAMPUS_WALKWAY"]}},
             "componentId":{"type":"string"}}}},
         "backboneStreetIds":{"type":"array","maxItems":50000,"uniqueItems":true,"items":{"type":"string"}},
         "components":{"type":"array","maxItems":50000,"items":{"type":"object","additionalProperties":false,"required":["id","streetCount","buildingCount","portCount"],"properties":{

@@ -73,8 +73,11 @@ def generate_world(
     street_policy="original",
     terrain="flat",
     street_hierarchy=False,
+    campus=False,
     _route=True,
 ):
+    if campus and (pattern_scale!='adaptive' or not _route):
+        raise ValueError('campus requires routed adaptive neighborhoods')
     if street_hierarchy and (pattern_scale != "adaptive" or not _route):
         raise ValueError("street hierarchy requires routed adaptive neighborhoods")
     if terrain not in ("flat", NATURAL_PRESET, RIVER_PRESET, VALLEY_PRESET, LANDSCAPE_PRESET) or (
@@ -244,6 +247,7 @@ def generate_world(
             }
     owners = {b["entityId"]: key for key, members in grouped.items() for b in members}
     pairs = dependency_pairs(graph, owners) if zoning == "neighborhoods" else {}
+    campus_pairs = dependency_pairs(graph, dict.fromkeys(owners, "campus")) if campus else None
     # A tiny corner district still needs a complete frontage/circulation cell.
     # Budget it locally rather than inflating every large district to repair it.
     if len(grouped) > 1:
@@ -270,6 +274,7 @@ def generate_world(
         and previous.get("patternScale", "block") == pattern_scale
         and previous.get("terrainPreset", "flat") == terrain
         and (previous.get("streetPolicy") == "porous") == (street_policy == "porous")
+        and ('campusPlan' in previous)==campus
         and (
             pattern_scale == "block"
             or previous.get("generatorVersion") in (
@@ -421,7 +426,7 @@ def generate_world(
                             plan_adaptive
                             if pattern_scale == "adaptive"
                             else plan_district_pattern
-                        )(*args, **(dict(terrain=terrain_data, porous=street_policy == "porous")
+                        )(*args, **(dict(terrain=terrain_data, porous=street_policy == "porous",campus=campus,campus_pairs=campus_pairs)
                                     if pattern_scale == "adaptive" else {}))
                         district_patterns.append(pattern)
                     else:
@@ -592,8 +597,9 @@ def generate_world(
                     streets, routing, networks, coverage = candidate, new_routing, new_networks, new_coverage
             planning_diagnostics.append(junction_note)
         if street_policy in ("permeable", "porous"):
+            campus_lawns = [c['polygon'] for b in development_blocks for c in b.get('campusSite',{}).get('courts',[])]
             additions, alley_note = add_alleys(streets, parcels, districts, **(
-                dict(reserves=[f["noBuildPolygon"] for f in terrain_data["features"]]) if terrain_data else {}
+                dict(reserves=([f["noBuildPolygon"] for f in terrain_data["features"]] if terrain_data else [])+campus_lawns) if terrain_data or campus_lawns else {}
             ))
             if additions:
                 try:
@@ -734,7 +740,11 @@ def generate_world(
                         s[field]=physical[s["physicalId"]][field]
         world.update(generatorVersion=LANDSCAPE_GENERATOR_VERSION if terrain == LANDSCAPE_PRESET else VALLEY_GENERATOR_VERSION if terrain == VALLEY_PRESET else RIVER_GENERATOR_VERSION if terrain == RIVER_PRESET else TERRAIN_GENERATOR_VERSION, terrainPreset=terrain,
                      terrain=terrain_data, streetPolicy=street_policy)
-    if street_hierarchy:
+    if campus:
+        from .campus import collect_plan
+
+        world['campusPlan'] = collect_plan(development_blocks)
+    if street_hierarchy or campus:
         from .street_hierarchy import derive_street_plan
 
         world["streetPlan"] = derive_street_plan(world)

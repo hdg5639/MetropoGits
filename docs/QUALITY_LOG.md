@@ -7495,3 +7495,94 @@
   feature branch. Check human metadata/explicit staged paths and normal intended
   upstream push at handoff. No generated worlds/Chrome images/helpers in Git;
   existing fixture build caches untouched. Exact commit/push verified at delivery.
+
+## Checkpoint 2026-10-19 — Evidence-bounded shared courtyard pockets
+
+- Implemented: opt-in `--campus`, ADR-042/CP-00/01 bounded MIXED_CAMPUS pilot.
+  Preserve the five-pattern macro skeleton, natural terrain, parent/zone polygons,
+  original source sizes/roles and exact relationship identities. Verified TEST
+  claims or actual pair cohesion qualify a weighted seeded choice, not a tests
+  directory or an invented research role. External counts include cross-parent
+  pairs. At most one feasible pocket per parent; real8..32 members use court lots,
+  others retain local grammar. Reserved lawns precede local plots/walking access.
+  Whole parcel/entrance/road clearance, grade, capacity and work limits remain.
+  Additive campusPlan0.1 and PEDESTRIAN provenance; City/UCG/IDs unchanged.
+- Fixtures/revisions: startinga3865ff on feat/semantic-zoning; designb3b1323.
+  Frozen street-hierarchy-r2 corpus: GJ local-sha256-06eb492d57141c16 /
+  seed2e2dc9377dd074d4; OJ local-sha256-c2e80f9d3908fec8 /90c6386e113ae6db;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522 /0d93483144e329c0;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b /f425482d641c843f;
+  Hanul7432c67e91f472e7e9c3be54c07dcb7cbe4837d8 /2fcc3180909d8112.
+  Maintained fixture/campus scans48 real TS test/helper files with24 actual imports;
+  user seedcampus-fixture resolves27eedbd04e5af1ca. No target code is executed.
+- Commands (cwd MetropoGits):
+  `python -X utf8 -m metropogits build --repo ../artifacts/visual/campus-e2e-r1/fixture --repo-id fixture/campus --out ../artifacts/visual/campus-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/campus-e2e-r1/build --seed campus-fixture --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --campus --out ../artifacts/visual/campus-e2e-r3/world`;
+  repeat with out campus-e2e-r3/repeat;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/campus_review.py',run_name='__main__')" campus-r4 gj oj pocketbase sqlitebrowser hanul`;
+  after clearance correction, run that helper with campus-validation-r5 pocketbase
+  sqlitebrowser hanul, revalidate final GJ/OJ/fixture and combine unchanged inputs
+  into campus-r4; campus_finalize.py refreshes final assets without canonical edits;
+  `node ../artifacts/visual/campus_focus.mjs campus-r4 campus-reviewed-r4 gj oj pocketbase sqlitebrowser hanul fixture`;
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/campus-final-audit-r1 ../artifacts/visual/campus-r4/gj/after ../artifacts/visual/campus-r4/oj/after ../artifacts/visual/campus-r4/pocketbase/after ../artifacts/visual/campus-r4/sqlitebrowser/after ../artifacts/visual/campus-r4/hanul/after ../artifacts/visual/campus-r4/fixture/after`;
+  `$env:CAMPUS_CANVAS='1'; node ../artifacts/visual/campus_focus.mjs campus-r4 campus-canvas-final-r1 gj oj pocketbase fixture`;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/verify_inherited_compatibility.py',run_name='__main__')"`;
+  `python -X utf8 -m unittest discover -s tests -q`;
+  `$testFiles=rg --files tests -g '*.test.mjs'; node --test $testFiles`;
+  `python -m ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; `git diff --check`.
+- Result: GJ1/OJ2/PB1 pockets,32 actual campus members total; SQLite/Hanul0.
+  All3211 source buildings/5793 exact trips/8603 represented edges retained.
+  Same City/UCG bytes, terrain, parent/zone polygons, route source/target/edge IDs.
+  Complete frames moved only inside selected zones:26/36/19; unrelated frames0.
+  Every occupied physical graph has1 connected component, no unmatched entrances
+  or ports; building/road overlaps and ownership escapes0. Pedestrian atomic spans
+  GJ12/OJ27/PB14; ordinary access remains SERVICE. Maintained fixture:48 accessible
+  files,24 trips/edges,10 selected members,1 court; no fabricated source entities.
+- Corrections: whole-neighborhood replacement was infeasible without land growth,
+  so explicitly narrowed the pilot to source-mixed pockets. Move campus planning
+  after baseline capacity repair to prevent unrelated relocations. Reject one-sided
+  or oversized empty lawns. PB's intermediate input failed strict access grade:
+  a new walkway split an original ramp-like entrance. Protect the WHOLE retained
+  access ribbon as well as its parcel; final PB passes without relaxing tolerance.
+  PB's rejected geography was not packaged. Add WebGL inspector parity and exact
+  zone-ID navigation for repeated neighborhood labels; both renderers enumerate
+  the actual pocket members and retain original path/evidence inspection.
+- Visual findings: actual matched WebGL Overview/District/court-close comparisons
+  and CPU previews retain original city silhouette/river/pattern mixture. Local
+  road rows become a shared lawn with rotated/corner access and real walking
+  connections. This is a visible local morphology option, NOT a whole-city visual
+  redesign. Default role colors, simple rectangular lawns, large-scale density,
+  materials/landmarks and other campus variants still need separate work.
+- Tests/determinism/stability:671 Python tests run,1 Windows symlink skip;
+  63 Node tests pass; Ruff/compileall/schema checks pass. Positive/negative claims,
+  seeded non-selection, actual internal/external coupling, full/thin capacity,
+  corner parcel clearance, work fallback, court/tree exclusion and forged members
+  covered. All48 original complete frames retained in a49-file same-policy hinted
+  edit. Twelve old World goldens remain byte-identical. Final CLI17 artifacts
+  repeat byte-for-byte; five corpus runs repeat source/World/package data, with
+  GJ/OJ independently revalidated after the final unchanged-geometry access guard.
+- Browser evidence: final Chrome WebGL six inputs x three LODs passed actual
+  source/edge-route drill-down, filters and camera navigation. Four forced Canvas
+  cases passed exact campus-member source navigation. Every measured Synthetic
+  run retained static builds0 and real movement; SQLite explicitly has no traffic.
+  Concurrent software-GPU audit had a PB District CPU p95 spike35.1ms; the bounded
+  before/after40-sample isolated control measured1.2ms/1.2ms there (all three LODs
+  about1.2..1.3ms), still static builds0. No claimed GPU/FPS or universal SLA.
+  Artifacts inspected: campus-reviewed-r4 actual matched Overview/District/courts,
+  campus-final-audit-r1 CPU showcase/preview rasters and original route inspector,
+  campus-canvas-final-r1 constituent/source captures; control campus-pb-control-r1.
+- Spec alignment: PASS for this additive opt-in pilot. Re-read technical7/8 and
+  evidence/limits, functional AC-002/003/006/008/009/011/014, product hierarchy/
+  evidence/local-first principles and road/campus design5/8/9. No runtime AI/API,
+  source execution, relation fabrication, public City/UCG break or ID rewrite.
+- Open risks/next actions: not full CP-02, emergency/service vehicle modeling or a
+  general organic-campus solver. Court selection/generation cost remains noticeable:
+  observed GJ52.35s/OJ29.04s/PB18.41s generation in this local concurrent session,
+  not controlled speedups or portable SLA. Peak RSS/GPU completion/FPS not measured.
+  Keep future optimization profile-led and bounded; no runtime Rust rewrite here.
+  W-03/05/12/13/14/15/19/22 remain in the ledger.
+- Commits/delivery: designb3b1323 plus cohesive feature/tests/contracts/checkpoint
+  commit on existing feat/semantic-zoning; verify human metadata, explicit paths,
+  intended upstream and successful normal push at handoff. Generated images,
+  helpers, worlds and input clones remain outside Git; pre-existing caches untouched.
