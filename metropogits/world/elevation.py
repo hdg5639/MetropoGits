@@ -46,13 +46,29 @@ def generate_valley(envelope, seed):
 
 
 class Surface:
-    def __init__(self, parameters, line, tributaries=()):
+    def __init__(self, parameters, line, tributaries=(), lakes=()):
         self.parameters = parameters
         self.line = line
         self.segments = [s for path in (line,*tributaries) for s in zip(path,path[1:])]
+        self.lakes = lakes
+        self.lake_levels = [0.0 for poly in lakes]
 
     @lru_cache(maxsize=65_536)
     def vertex(self, i, j):
+        height = self._base_vertex(i,j)
+        at = [i*STEP,j*STEP]
+        from .geometry import inside
+        basins=[]
+        for index,(poly,level) in enumerate(zip(self.lakes,self.lake_levels)):
+            distance = 0 if inside(at,poly) else min(math.dist(at,nearest(at,a,b)) for a,b in zip(poly,poly[1:]+poly[:1]))
+            basins.append((distance,index,level))
+        if basins:
+            distance,_,level=min(basins)
+            weight=max(0,min(1,(384-distance)/352))
+            height=height*(1-weight)+level*weight
+        return q(height)
+
+    def _base_vertex(self, i, j):
         x,z = i*STEP,j*STEP
         d = min(math.dist([x,z],nearest([x,z],a,b)) for a,b in self.segments)
         r = max(0,d-self.parameters["flatRadius"])
@@ -113,12 +129,14 @@ class Surface:
 def surface(terrain):
     e = terrain["elevation"]
     return _surface(tuple(sorted(e.items())),tuple(tuple(p) for p in terrain["channel"]["centerline"]),
-                    tuple(tuple(tuple(p) for p in path) for path in terrain["channel"].get("tributaries",[])))
+                    tuple(tuple(tuple(p) for p in path) for path in terrain["channel"].get("tributaries",[])),
+                    tuple(tuple(tuple(p) for p in f['polygon']) for f in terrain['features'] if f['kind']=='LAKE')
+                    if terrain.get('version')=='terrain/0.5' else ())
 
 
 @lru_cache(maxsize=8)
-def _surface(parameters, line, tributaries=()):
-    return Surface(dict(parameters),line,tributaries)
+def _surface(parameters, line, tributaries=(), lakes=()):
+    return Surface(dict(parameters),line,tributaries,lakes)
 
 
 def suitable(slot, terrain):
