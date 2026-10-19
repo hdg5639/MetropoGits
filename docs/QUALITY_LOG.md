@@ -8299,3 +8299,91 @@
   feat/semantic-zoning. Human author/committer identity verified; normal configured
   upstream push follows the log commit. No generated package/helper, clone or
   pre-existing Gradle/Maven fixture cache is staged. Full lint debt remains explicit.
+
+## Checkpoint 2026-10-19 — coplanar road cleanup, ADR-054
+
+- Implemented:235cfa3. Reproduce the reported GJ preview-runtime neighborhood
+  and three junction close-ups. Partition existing same-level pavement into
+  deterministic single-owner faces, including ordinary walking surfaces. Use
+  actual street-class precedence for junction colour. Clip center paint at
+  overlapping crossing/acute-merge mouths; retain collinear dash phase and
+  separate bridge/tunnel levels. Individual door ramps keep independent slopes.
+  This repairs visible pavement corruption, not a new source/physical road graph.
+- Fixtures/revisions: GJ local-sha256-06eb492d57141c16; OJ
+  local-sha256-c2e80f9d3908fec8; PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522; SQLiteBrowser
+  ae32df153a64d250de7c77a5057deeff4092a39b; bat
+  f748c1a467ae161682849949a7d036ab8362f9ba. Repackage frozen watershed-r3
+  inputs and watershed-bat-r1/bat/after; no target code/dependencies/builds run.
+  Bat remains explicitly partial/low-semantic coverage, with no invented network.
+- Commands from repository root:
+  `python ../artifacts/visual/road_cleanup_review.py road-cleanup-r1 gj oj pocketbase sqlitebrowser bat`;
+  `python ../artifacts/visual/road_cleanup_integrity.py`;
+  `python -m unittest discover -s tests`;
+  `python -m compileall -q metropogits scripts tests`;
+  `node --test tests/*.test.mjs`;
+  `python -m ruff check metropogits/world/street_mesh.py metropogits/world/street_markings.py metropogits/world/street_hierarchy.py tests/test_world_street_cleanup.py`;
+  `git diff --check`.
+- Fresh end-to-end input:
+  `python -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/pavement --out ../artifacts/visual/road-cleanup-e2e-r1/build --json`;
+  `python scripts/procedural_world.py ../artifacts/visual/road-cleanup-e2e-r1/build --out ../artifacts/visual/road-cleanup-e2e-r1/world --seed street-mesh-check --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied --street-policy porous --street-hierarchy --campus --campus-style fabric --terrain watershed-landscape`.
+  Repeat the second command with --out ../artifacts/visual/road-cleanup-e2e-r1/repeat.
+  Six actual buildings, two trips/four represented edges, zero overlaps/escapes,
+  all six accessible; all17 package artifacts byte-exact on the repeat.
+- Actual rendering commands:
+  `node ../artifacts/visual/watershed_focus.mjs road-cleanup-r1 road-cleanup-reviewed-r2 gj oj pocketbase sqlitebrowser bat`
+  with ROAD_FOCUS=1; same helper with output road-cleanup-canvas-r1, cases gj oj
+  bat, ROAD_FOCUS=1 and WATER_CANVAS=1. Full browser audit:
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/road-cleanup-audit-r1 ../artifacts/visual/road-cleanup-r1/gj/after ../artifacts/visual/road-cleanup-r1/oj/after ../artifacts/visual/road-cleanup-r1/pocketbase/after ../artifacts/visual/road-cleanup-r1/sqlitebrowser/after ../artifacts/visual/road-cleanup-r1/bat/after ../artifacts/visual/road-cleanup-e2e-r1/world`.
+- Artifacts inspected: road-cleanup-reviewed-r2 GJ reported-neighborhood and
+  reported-junction-1/2/3 before/after, bat overview, GJ actual CPU SVG raster,
+  GJ Canvas overview. Gallery road-cleanup-reviewed-r2/index.html links the actual
+  exported viewers, not mockups. Full integrity/index road-cleanup-r1/index.html;
+  browser evidence road-cleanup-audit-r1/index.html. Earlier baseline/union/
+  reviewed-r1 outputs are diagnostic, not the final comparison.
+- Visual findings: black shredded triangles at reproduced GJ bends/forks vanish;
+  acute shared mouths no longer retain crossing/parallel center dashes. Existing
+  river banks, buildings, readable main streets and terrain composition remain.
+  Independently intersecting same-level faces in the reported80x80 region
+  [306,18,386,98], area>.001:691 overlapping pairs/391.2293 summed area before,
+  zero pairs/area after. This is neither a whole-city count nor691 deleted roads.
+  No claim that every unusual physical fork has been redesigned.
+- Integrity/stability: all five World/City/UCG/planning/landscape/validation files
+  byte-identical before/after, all80 manifest hashes and four schemas per case
+  pass. Therefore all3317 buildings,5782 trips and8592 represented source edges,
+  complete positions/orientations, campuses/role compounds and natural geography
+  are retained exactly. Existing zero-overlap/escape/inaccessibility results are
+  unchanged; this fix cannot silently relocate unrelated districts.
+- Browser regression: six cases across three LODs, available source/access/route
+  inspection, filters/camera and Synthetic audits complete. Static geometry is
+  rebuilt zero times during Synthetic. Bat/SQLite traffic remains unavailable
+  rather than fabricated. No new claim of OJ facility pointer coverage beyond
+  the audit's actual chosen framing.
+- Tests:719 Python tests, one existing Windows symlink skip;68 Node tests pass.
+  Six new pavement/paint regressions cover union area/disjointness, ordering,
+  hierarchy, acute mouths, collinear spans, overpass levels and explicit bounds.
+  Targeted lint, compile and diff checks pass. Overall Ruff is NOT green:
+  126 existing findings remain (64 E701,56 E702,3 F401,3 E731), down from149
+  because the edited street_mesh module itself was formatted/cleaned. Do not
+  describe this milestone as overall CI green or weaken unrelated lint checks.
+- Performance/bounds: all clipping is offline with explicit index/work/output
+  caps; no new browser draw pass or per-frame geometry work. Tessellation raises
+  static package bytes GJ58021519->58748906, OJ28275149->29050625,
+  PB14048666->14449180, SQLite8620726->9186006, bat3937513->4351597.
+  Extra static triangles are the cost of nonoverlapping coverage, not a speedup.
+  SwiftShader first-draw submissions76.0..1675.7ms across six cases are not FPS,
+  GPU-completion times or an isolated performance comparison.
+- Specification audit: PASS. Technical architecture/data/determinism/rendering
+  contracts, functional static/evidence/selection/degradation behavior and product
+  local-first principles remain intact. ADR-054 is a localized presentation fix;
+  UCG/City schemas, source IDs, terrain-first reserves, entrance and crossing
+  heights, obstruction gates and exact Synthetic routes are not rewritten.
+  No AI/runtime service, target execution or inferred code fact is introduced.
+- Open risks/next: awkward physical near-parallel forks and road planning are
+  separate work, not hidden by deleting evidenced routes. Old saved packages keep
+  old meshes; open the newly exported viewer. Static payload growth and126 lint
+  findings remain explicit. No further micro-optimization added to this fix.
+- Commits/delivery:235cfa3 feature and this checkpoint's separate docs commit on
+  feat/semantic-zoning; normal configured upstream push follows. Configured human
+  author/committer checked, no generated files/helpers or pre-existing fixture
+  caches staged, no attribution trailers or protected-branch bypass.
