@@ -1693,7 +1693,7 @@
       detailRow(details,"Street-facing rotation",`${(parcel.angle*180/Math.PI).toFixed(1)}° · visual, not geographic north`);
       detailRow(details,"Local displacement",`${parcel.displacement.toFixed(2)} world units`);
       detailRow(details,"Frontage street",parcel.streetId);
-      if(data.neighborhoodPlan) detailRow(details,"Road-cut block",parcel.blockId);
+      if(data.neighborhoodPlan) detailRow(details,data.neighborhoodPlan.patternScale==="district"?"Inherited development sector":"Road-cut block",parcel.blockId);
     }
     detailRow(details, "District", districtLabel(districts.get(building.districtId)));
     inspector.append(details);
@@ -1776,7 +1776,12 @@
     inspector.append(element('p', data.softZoning ? 'Functional influence region, not a source module or runtime service. Occupants can have different roles; center evidence does not classify every member.' : 'Derived planning neighborhood, not a source module or runtime service. Unknown members remain unclassified.', 'muted'));
     if (data.neighborhoodPlan) {
       const blocks=Object.values(data.neighborhoodPlan.blocks).filter(b=>b.zoneId===districtId);
-      inspector.append(element('p',`${zone.coreEntityIds.length} source-core files · ${zone.supportingMembers.length} dependency-linked supporting files · ${blocks.length} road-cut blocks. Core files stay here; supporting files keep their original roles. Boundary blocks may touch administrative land edges, not closed roads.`, 'neighborhood-core-summary'));
+      const inherited=data.neighborhoodPlan.patternScale==="district";
+      inspector.append(element('p',`${zone.coreEntityIds.length} source-core files · ${zone.supportingMembers.length} dependency-linked supporting files · ${blocks.length} ${inherited?'development sectors inheriting the district street pattern':'road-cut blocks'}. Core files stay here; supporting files keep their original roles. ${inherited?'Neighborhood borders are administrative, not additional roads or closed road blocks.':'Boundary blocks may touch administrative land edges, not closed roads.'}`, 'neighborhood-core-summary'));
+      if(inherited){
+        const pattern=data.neighborhoodPlan.districtPatterns.find(p=>p.parentId===zone.parentId);
+        if(pattern) inspector.append(element('p',`Shared ${pattern.profile} street field · ${pattern.roadCount} reserved segments · one parent origin and phase across neighborhoods.`, 'inherited-pattern-summary'));
+      }
       factSection(inspector,'LOCAL BLOCK PLANS',blocks.map(b=>`${b.planningProfile} · ${b.memberEntityIds.length} files · ${b.id}`));
       factSection(inspector,'SUPPORTING DEPENDENCY EDGES',zone.supportingMembers.slice(0,5).flatMap(m=>m.coreEdgeIds));
     }

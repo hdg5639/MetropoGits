@@ -24,6 +24,7 @@ from .zoning import (
 from .affinity import dependency_pairs
 from .neighborhoods import VERSION as NEIGHBORHOOD_VERSION, neighborhood_candidates
 from .neighborhood_layout import neighborhood_demand, plan_neighborhoods
+from .district_patterns import pattern_demand, plan_district_pattern
 
 
 def requested_profile(planning, seed):
@@ -46,8 +47,13 @@ def generate_world(
     planning="grid",
     outline="ellipse",
     zoning="none",
+    pattern_scale="block",
     _route=True,
 ):
+    if pattern_scale not in ("block", "district") or (
+        pattern_scale == "district" and zoning != "neighborhoods"
+    ):
+        raise ValueError("district pattern scale requires neighborhoods zoning")
     if zoning not in ("none", "semantic", "soft", "neighborhoods"):
         raise ValueError("unsupported world zoning policy")
     if zoning == "soft":
@@ -187,6 +193,11 @@ def generate_world(
             )
             for k, members in grouped.items()
         }
+        if pattern_scale == "district":
+            budgets = {
+                k: pattern_demand(clusters[k], members, requested[k])
+                for k, members in grouped.items()
+            }
     owners = {b["entityId"]: key for key, members in grouped.items() for b in members}
     pairs = dependency_pairs(graph, owners) if zoning == "neighborhoods" else {}
     # A tiny corner district still needs a complete frontage/circulation cell.
@@ -204,6 +215,11 @@ def generate_world(
         and previous.get("planningPolicy", "grid") == planning
         and previous.get("outlinePolicy", "ellipse") == outline
         and previous.get("zoningPolicy", "none") == zoning
+        and previous.get("patternScale", "block") == pattern_scale
+        and (
+            pattern_scale != "district"
+            or previous.get("generatorVersion") == "flat-neighborhood-patterns/0.1"
+        )
         and set(d["id"] for d in previous.get("districts", [])) == set(grouped)
     )
     old_districts = {d["id"]: d for d in previous["districts"]} if compatible else {}
@@ -271,6 +287,7 @@ def generate_world(
         planning_diagnostics = []
         semantic_zones = []
         development_blocks, main_roads = [], []
+        district_patterns = []
         reused_zoned = []
         for key, members in grouped.items():
             if zoning == "neighborhoods" and not all(
@@ -310,24 +327,34 @@ def generate_world(
                         if compatible and attempt == 0
                         else []
                     )
-                    placed, lanes, records, notes, zone_reuse, blocks, backbone = (
-                        plan_neighborhoods(
-                            polygons[key],
-                            clusters[key],
-                            members,
-                            local_seed,
-                            entity_paths,
-                            {
-                                (a, b): w
-                                for (a, b), w in pairs.items()
-                                if owners[a] == key
-                            },
-                            planning,
-                            old_zones,
-                            old_blocks,
-                            old_parcels if compatible and attempt == 0 else None,
-                        )
+                    args = (
+                        polygons[key],
+                        clusters[key],
+                        members,
+                        local_seed,
+                        entity_paths,
+                        {(a, b): w for (a, b), w in pairs.items() if owners[a] == key},
+                        requested[key] if pattern_scale == "district" else planning,
+                        old_zones,
+                        old_blocks,
+                        old_parcels if compatible and attempt == 0 else None,
                     )
+                    if pattern_scale == "district":
+                        (
+                            placed,
+                            lanes,
+                            records,
+                            notes,
+                            zone_reuse,
+                            blocks,
+                            backbone,
+                            pattern,
+                        ) = plan_district_pattern(*args)
+                        district_patterns.append(pattern)
+                    else:
+                        placed, lanes, records, notes, zone_reuse, blocks, backbone = (
+                            plan_neighborhoods(*args)
+                        )
                     development_blocks.extend(blocks)
                     main_roads.extend(backbone)
                 else:
@@ -522,4 +549,12 @@ def generate_world(
                 blocks=sorted(development_blocks, key=lambda b: b["id"]),
                 mainRoads=sorted(main_roads, key=lambda r: r["id"]),
             )
+            if pattern_scale == "district":
+                world.update(
+                    patternScale="district",
+                    generatorVersion="flat-neighborhood-patterns/0.1",
+                )
+                world["zoning"]["districtPatterns"] = sorted(
+                    district_patterns, key=lambda p: p["id"]
+                )
     return world

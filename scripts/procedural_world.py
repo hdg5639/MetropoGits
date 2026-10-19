@@ -46,6 +46,12 @@ def main():
         "--namespace", help="portable world identity; does not rewrite existing UCG IDs"
     )
     parser.add_argument("--previous-world", type=Path)
+    parser.add_argument(
+        "--pattern-scale",
+        choices=("block", "district"),
+        default="block",
+        help="inherit a shared district street field across physical neighborhoods",
+    )
     args = parser.parse_args()
 
     def read(path):
@@ -75,6 +81,7 @@ def main():
             planning=args.planning,
             outline=args.outline,
             zoning=args.zoning,
+            pattern_scale=args.pattern_scale,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)
