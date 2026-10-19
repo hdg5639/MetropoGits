@@ -115,6 +115,14 @@ The valley floor and bridge abutments stay level. This remains experimental:
 land may expand/repartition, and drainage simulation/steep terrain/tunnels are
 not implemented. See [ADR-038](docs/adr/ADR-038.md).
 
+Use `--terrain river-landscape` for an open main river, a connected smaller
+stream and feasible mountain ridges. Water enters and leaves the urban boundary;
+it is reserved before buildings and remains fixed when land expands. A mountain
+tunnel is constructed only when an evidenced file-pair trip uses the candidate
+crossing. Its portals, road profile and Synthetic share actual geometry. This
+is an analytical landscape, not a drainage simulator; existing bounded river
+presets remain available for compatibility. See [ADR-039](docs/adr/ADR-039.md).
+
 ## GitHub Action
 
 The repository includes a least-privilege composite Action and a pinned Pages

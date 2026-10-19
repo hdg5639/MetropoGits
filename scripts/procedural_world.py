@@ -16,7 +16,7 @@ def main():
     parser.add_argument("build", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed")
-    parser.add_argument("--terrain", choices=("flat", "lake-district", "river-corridor", "river-valley"), default="flat",
+    parser.add_argument("--terrain", choices=("flat", "lake-district", "river-corridor", "river-valley", "river-landscape"), default="flat",
                         help="adaptive only: generate protected natural terrain BEFORE urban placement")
     parser.add_argument(
         "--zoning",

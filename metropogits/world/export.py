@@ -245,6 +245,9 @@ def view_data(world, scene, graph, *, landscape=None):
                 f["faces"]=lifted_faces(f["faces"],world["terrain"])
         if world["terrain"].get("crossings"):
             data["infrastructure"] = dict(structural=True, faces=bridge_faces(world["terrain"]))
+        if world["terrain"].get("version")=="terrain/0.4":
+            from .river_landscape import natural_faces
+            data["terrain"]["features"]=natural_faces(world)
     if "surface" in world:
         data["surface"]=world["surface"]
         data["streetDemand"]["segments"]={s["id"]:graded_pavement(s,world["terrain"],pavement_color,.11) for s in routing["segments"]}
@@ -369,8 +372,11 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
             )
         )
     faces = []
-    for feature in world.get("terrain", {}).get("features", []):
-        for face in (lifted_faces(feature["faces"],world["terrain"]) if graded else feature["faces"]):
+    open_river=world.get("terrain",{}).get("version")=="terrain/0.4"
+    if open_river:
+        from .river_landscape import natural_faces
+    for feature in (natural_faces(world) if open_river else world.get("terrain", {}).get("features", [])):
+        for face in (lifted_faces(feature["faces"],world["terrain"]) if graded and not open_river else feature["faces"]):
             p = face["points"]
             faces.append((sum(v[0]+v[1]+v[2] for v in p)/len(p),
                           [project([x,z], y) for x,y,z in p], face["color"], None, 1,

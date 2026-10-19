@@ -46,14 +46,15 @@ def generate_valley(envelope, seed):
 
 
 class Surface:
-    def __init__(self, parameters, line):
+    def __init__(self, parameters, line, tributaries=()):
         self.parameters = parameters
         self.line = line
+        self.segments = [s for path in (line,*tributaries) for s in zip(path,path[1:])]
 
     @lru_cache(maxsize=65_536)
     def vertex(self, i, j):
         x,z = i*STEP,j*STEP
-        d = min(math.dist([x,z],nearest([x,z],a,b)) for a,b in zip(self.line,self.line[1:]))
+        d = min(math.dist([x,z],nearest([x,z],a,b)) for a,b in self.segments)
         r = max(0,d-self.parameters["flatRadius"])
         h = self.parameters["amplitude"] * r*r/(r*r+self.parameters["riseLength"]**2)
         return q(h*(.75+.25*field(self.parameters["seed"],x*.6,z*.6)))
@@ -111,12 +112,13 @@ class Surface:
 
 def surface(terrain):
     e = terrain["elevation"]
-    return _surface(tuple(sorted(e.items())),tuple(tuple(p) for p in terrain["channel"]["centerline"]))
+    return _surface(tuple(sorted(e.items())),tuple(tuple(p) for p in terrain["channel"]["centerline"]),
+                    tuple(tuple(tuple(p) for p in path) for path in terrain["channel"].get("tributaries",[])))
 
 
 @lru_cache(maxsize=8)
-def _surface(parameters, line):
-    return Surface(dict(parameters),line)
+def _surface(parameters, line, tributaries=()):
+    return Surface(dict(parameters),line,tributaries)
 
 
 def suitable(slot, terrain):
@@ -134,6 +136,7 @@ def foundation(parcel, terrain):
 
 def annotate(streets, parcels, terrain):
     from .rivers import crossing_piece
+    from .river_landscape import tunnel_piece
 
     s = surface(terrain)
     entrances = {}
@@ -142,6 +145,9 @@ def annotate(streets, parcels, terrain):
         entrances[tuple(p["entrance"])] = p["baseElevation"]+.08
     count = 0
     for road in streets:
+        tunnel=tunnel_piece(road,terrain)
+        if tunnel:
+            road.update(tunnel)
         bridge = crossing_piece(road,terrain)
         if bridge:
             road.update(bridge)
@@ -164,7 +170,7 @@ def validate_profiles(streets, parcels, terrain):
     copies = [dict(p) for p in parcels]
     annotate(expected,copies,terrain)
     for a,b in zip(expected,streets):
-        if any(a.get(k)!=b.get(k) for k in ("bridgeId","heights","heightProfile")):
+        if any(a.get(k)!=b.get(k) for k in ("bridgeId","tunnelId","heights","heightProfile")):
             raise ValueError("street elevation differs from certified field/profile")
         limit = MAX_ACCESS_GRADE if a["access"] else MAX_ROAD_GRADE
         for p,r in zip(a["heightProfile"],a["heightProfile"][1:]):

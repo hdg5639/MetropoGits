@@ -7039,3 +7039,107 @@
   configured-upstream push after final identity/staged-diff/remote review;
   actual push result reported at handoff. No generated outputs/user caches,
   agent attribution, force update or protection bypass.
+
+## Checkpoint 2026-10-19 — Open main river, stream, ridge and conditional tunnel (ADR-039)
+- Implemented: opt-in `river-landscape`, terrain/0.4 and terrain-adaptive/0.4.
+  Reserve an open main river with11 stations, one narrower3-station tributary,
+  12 convex reaches and a feasible elongated ridge BEFORE urban planning.
+  Both main ends and the tributary end extend beyond the bounded growth domain;
+  no terminal pools. Clip shared render meshes/bank streets to final city land,
+  without regenerating natural geography to fit source buildings.
+- Mountain crossing: at most one preplanned candidate joins existing contour
+  streets. Construct only if actual evidenced routing uses it. Independently
+  verify full span, full-width core mountain cover, certified width/grade,
+  water exclusion and exact physical/source paths. Genuine cut portal openings,
+  lining and lintels are shared by CPU/WebGL/Canvas; selection and Synthetic
+  retain the same graded base-road profile beneath the ridge.
+- Fixtures/revisions: OJ local-sha256-c2e80f9d3908fec8/seed90c6386e113ae6db;
+  GJ local-sha256-06eb492d57141c16/seed2e2dc9377dd074d4;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522/seed0d93483144e329c0;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b/seedf425482d641c843f.
+  Replay canonical City/UCG from valley-r4; source bytes unchanged. Fresh
+  maintained spring-positive input additionally runs scanner→UCG→City→World→viewer.
+  New one-file Rust and actual-source-pair synthetic geography tests also pass.
+- Commands from MetropoGits:
+  `python -X utf8 -c "import runpy,sys;sys.argv=['review','river-landscape-r2'];runpy.run_path('../artifacts/visual/river_landscape_review.py',run_name='__main__')"`;
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/landscape-e2e --out ../artifacts/visual/river-landscape-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/river-landscape-e2e-r1/build --namespace fixture/landscape-e2e --zoning neighborhoods --pattern-scale adaptive --street-policy permeable --planning varied --outline varied --terrain river-landscape --out ../artifacts/visual/river-landscape-e2e-r1/world`.
+- Geometry/source results: all3175 buildings,5782 exact file-pair trips and8592
+  represented edges retained. Original roles, neighborhood core claims/support
+  membership and all logical IDs/endpoints conserved. Every source entrance
+  remains accessible; full-width road/building/ownership checks0 overlaps/escapes.
+  All four cities have12 water reaches and1 ridge, with both main ends outside.
+  Actual constructed tunnels/trips OJ1/1, GJ0/0, PB0/0, SQLite0/0. SQLite still
+  has no evidenced networks, rather than manufactured tunnel traffic.
+- Determinism/contracts/stability: all four repeated FULL generations and package
+  bytes match, World/planning schemas pass. Existing valley worlds still validate
+  and re-export;12 old flat/block/district snapshots remain exact. Same-mode
+  49th-file hinted growth preserves terrain and48 complete existing source frames.
+  New-preset migration relocates680/1324/654/491 frames; area ratios versus valley
+  1.34185/1.03116/1.01763/1.00000. OJ's34.2% extra land is a real capacity cost,
+  not density improvement or stable small-change geography.
+- Browser commands: `node scripts/viewer_audit.mjs` with installed Chrome at
+  `C:/Program Files/Google/Chrome/Application/chrome.exe`. Output
+  river-landscape-first-review-r1: OJ + fresh Spring;
+  river-landscape-main-review-r1: GJ + PocketBase;
+  river-landscape-unknown-review-r1: SQLiteBrowser. Each uses the corresponding
+  river-landscape-r2 after package (Spring uses river-landscape-e2e-r1/world).
+  Three LODs, navigation, source/route inspection and CPU preview/showcase pass.
+  Forced Canvas with `node ../artifacts/visual/semantic_zoning_canvas_review.mjs`
+  outputs river-landscape-canvas-r1 (OJ/GJ/Spring) and
+  river-landscape-unknown-canvas-r1 (PB/SQLite); all5 source/member/Structure
+  restore cases pass. No-network/no-complete-path animation is truthfully N/A.
+- Actual tunnel proof:
+  `node ../artifacts/visual/river_landscape_focus.mjs river-landscape-r2 river-landscape-focus-r1 oj gj`.
+  Matched Overview/close-ups use real renderer. A visible approach OUTSIDE the
+  mountain footprint is pointer-selected, then one original trip is isolated:
+  backend/src/test/java/dev/gamjaoj/ai/OpenAiResponsesTest.java →
+  backend/src/main/java/dev/gamjaoj/ai/infrastructure/OpenAiResponses.java.
+  Both original edge IDs are shown, including20a6c88112c2bfbe8735fb4fcbacb50d85376af1e8c4decbf53aba9936655d2b.
+  Actual buildActivityGeometry probes follow the selected tunnel segment:
+  road heights3.14665/3.93411/4.60671, vehicle bases3.31665/4.10411/4.77671.
+  Complete own-path highlight is retained; Synthetic static rebuilds0.
+  Software Chrome timing is not GPU FPS or a hardware-performance claim.
+- Artifacts inspected: actual OJ Overview, CPU showcase, mountain approach and
+  selected tunnel trace; GJ Overview; final forced-Canvas restore and unknown
+  framework outputs. Entry `artifacts/visual/river-landscape-focus-r1/index.html`;
+  full four-repository CPU comparison/normal product viewers and metrics in
+  river-landscape-r2/index.html. Open river mouths now reach the city boundary;
+  the tributary visibly merges with the main river. Ridge is a simple low-poly
+  landform, not a complete natural mountain-chain simulation. Role material and
+  some sparse/road-density defects remain; not declared an aesthetic final.
+- Fixes and rechecks: initial small-case main crossing was lost at the tributary
+  junction; reserve crossings on both main reaches and the branch instead.
+  The48-file fixture then exposed0.0001–0.0004 clipped junction cracks. New-mode
+  bounded deterministic joining fixes them while pinning all source doors/
+  frontages/certified crossings, without relaxing overlap/access validation.
+  Exactly full cold districts now retain one genuine vacant address, preventing
+  immediate49th-file reallocation. Tests were fixed through implementation,
+  not changed to accept missing access/movement. Earlier r1 corpus is diagnostic;
+  r2 is the frozen repeated generation/current-viewer delivery.
+- Bounds/performance: prior mesh/profile/routing/repair limits retained;
+  <=24 features,4 crossings,1 tunnel candidate,2M shore/junction work,
+  50k raw junction roads; explicit exhaustion tests pass. Generation-only samples
+  OJ12.59s/GJ27.79s/PB6.64s/SQLite4.62s, concurrent/not controlled end-to-end
+  comparisons. Fresh Spring generate0.393s/validate0.187s/package0.450s in one run.
+- Tests:642 Python run,641 pass/one existing Windows symlink skip;61 Node pass.
+  `python -X utf8 -m unittest discover -s tests -q`;
+  `python -X utf8 -m unittest discover -s tests -p test_world_river_landscape.py -v`;
+  `$testFiles=(rg --files tests -g '*.test.mjs'); node --test $testFiles`;
+  `python -m ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; `git diff --check` pass.
+  Seven new Python cases cover open topology/growth bounds, shared clipped
+  geometry/source/schema/determinism, real source-backed tunnel/actual cut
+  portals, forged permits/unused traffic, exact hinted growth and explicit
+  resource exhaustion. Node preserves tunnel identity and filtered source pairs.
+- Spec alignment: PASS under user-authorized ADR-039/procedural terrain extension
+  and AC-001/002/003/006/008/011/014. No source ID/schema break, runtime AI,
+  external service or target repository execution/install. Remaining W-19 work:
+  drainage-derived hydrology, arbitrary mountain chains/curved or steep tunnels,
+  coasts and major civil engineering; W-12 density/W-15 materials/W-13/14 salience
+  remain open. New terrain is opt-in, not a silent replacement for old artifacts.
+- Commits/delivery: designe6d2961 followed by coherent through-river/stream/ridge/
+  conditional-tunnel work unit, tests and records on feat/semantic-zoning.
+  Normal configured-upstream push after final identity/staged-diff/remote review;
+  actual result reported at handoff. No generated outputs/user caches, agent
+  credits, force push or protection bypass.
