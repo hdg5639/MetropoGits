@@ -21,6 +21,17 @@ edge traceability, but do not mistake a global pure-role bucket for a required
 core invariant. Test cross-role pair co-location AND inherited/adapted patterns
 in the same real principal district. Earlier results below remain ablations.
 
+Next visual pass (maintainer feedback, 2026-10-19): inspect the apparent overlap
+of two ground/terrain regions in `adaptive-neighborhoods-r3`. This is a reported
+appearance, not yet a diagnosed polygon collision. Identify actual land overlap
+versus duplicated ground, boundary paving, macro/local road surfaces or junction
+layers before choosing a fix. Keep cross-role locality and adaptive transitions;
+do not restore pure-role buckets or the whole-district stencil. Compare matched
+overview and close-up views in WebGL, Canvas and CPU previews. Existing
+building/parcel/full-width-road clearance checks do not prove ground-to-ground
+seams are visually clean; rerun geometry, access, exact trips and determinism
+when implementing a correction. No terrain engine or schema change is implied.
+
 2026-10-19 follow-up: [ADR-031](adr/ADR-031.md) adds an inherited **district
 street field** experiment. The maintainer finds r4's block-local restart/GRID
 fallback erases the large patterns. Reserve the shared macro hub/axes/phase
