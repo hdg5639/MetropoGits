@@ -1157,3 +1157,37 @@ cross-style hints trigger an explicit deterministic cold rebuild.
 This is CP-02's first garden-cluster option. Riverside-specific geometry,
 cross-boundary campus transitions, emergency/service access and architectural
 materials/lighting are not implicitly completed by this flag.
+
+### Opt-in architectural building colours (ADR-044)
+
+`python -m scripts.procedural_world INPUT --building-style architectural ...`
+changes packaging/rendering only. `semantic` is the unchanged default. There is
+no World generation option or geography version change: World, City, UCG,
+planning, validation, terrain, physical parts and all exact source trips remain
+byte-identical between the two presentation styles.
+
+Private viewer data optionally carries `buildingMaterials` with pinned version
+`building-materials/0.1`, six wall/neutral-roof palettes and the existing archetype
+colour table. FNV-1a over Unicode code points selects the neutral palette using
+only stable entity ID, independently of role, graph degree or source size.
+Materials are procedural colours, not factual construction/technology claims.
+Known archetype accents are blended onto existing highest roof faces; generic
+or unrecognized archetypes receive no invented semantic accent. Existing part
+shading is retained. CPU SVG and both interactive renderers share the rule.
+
+Role colours (accessible pressed-state button), active filters and source
+selection restore strong category tint. Inspectors still report exact roles,
+confidence, paths, evidence, original aggregate members and contributing edges.
+The policy also handles existing aggregate/role-compound masses without adding
+geometry or changing their membership/expansion behavior. Ordinary World parcels
+remain explicit at the existing LODs; this does not redesign Semantic LOD.
+
+The manifest's optional `buildingStyle`/`buildingMaterialsVersion` options record
+the presentation. Only page, viewer-data, SVGs and manifest differ; shared viewer
+assets are the same in paired packages. Cache keys include colour mode, so a
+toggle rebuilds once, while Synthetic uses the existing static cache. No new
+textures, WebGL programs/draw passes, surfaces, runtime dependencies or target
+repository execution. Reduced role salience at thumbnail size is intentional;
+use the explicit semantic view for high-contrast analysis. This is not new
+archetype geometry, physical material inference, lighting/AO or a complete city
+aesthetic milestone.

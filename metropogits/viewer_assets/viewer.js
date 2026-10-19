@@ -769,16 +769,27 @@
     return outline;
   }
 
+  let showRoleColors = false;
+  function materialPalette(building, part, top, isSelected = false) {
+    const material = filterEngine.materialPart(data.buildingMaterials, building, part, top,
+      showRoleColors || activeFilterCount() > 0 || isSelected);
+    if (!material) return colors[building.archetype] || colors.GENERIC_BUILDING;
+    const shade = (hex, amount) => "#" + [1,3,5].map(i =>
+      Math.floor(parseInt(hex.slice(i,i+2),16)*amount).toString(16).padStart(2,"0")).join("");
+    return [material.roof, shade(material.wall,.8), shade(material.wall,.65)];
+  }
+
   function drawBuilding(building) {
     const oriented=orientedBuildings[building.entityId];
     if(oriented) {
-      const palette=colors[building.archetype] || colors.GENERIC_BUILDING;
+      const topHeight = Math.max(...oriented.parts.map(p => p.y + p.height));
       const faces=[];
       for(const face of oriented.foundationFaces || []) {
         const depth=face.points.reduce((sum,[x,y,z])=>{const r=rotatePoint(x,z);return sum+r.x+r.z+y;},0)/face.points.length;
         faces.push({points:face.points.map(([x,y,z])=>project(x,z,y)),depth,color:face.color});
       }
       for(const part of oriented.parts) {
+        const palette=materialPalette(building, part, topHeight, selected("building",building.entityId));
         const lift=data.surface ? .2 : 0;
         const bottom=part.footprint.map(([x,z])=>project(x,z,part.y+lift));
         const top=part.footprint.map(([x,z])=>project(x,z,part.y+part.height+lift));
@@ -799,7 +810,7 @@
     }
     const outline = drawVolume(
       building,
-      colors[building.archetype] || colors.GENERIC_BUILDING,
+      materialPalette(building, {y:0,height:building.height}, building.height, selected("building",building.entityId)),
       selected("building", building.entityId)
         ? "#f8fafc"
         : "rgba(203, 213, 225, 0.62)",
@@ -831,13 +842,17 @@
       isSelected ? "#f8fafc" : "#fbbf24",
       isSelected ? 3.2 : 2.2,
     ));
-    for (const part of filterEngine.aggregateParts(facility)
-      .flatMap(part => part.aggregateRole ? filterEngine.roleVolumes(part) : [part]).sort(
+    const masses = filterEngine.aggregateParts(facility).flatMap(b => {
+      const parts = b.aggregateRole ? filterEngine.roleVolumes(b) : [b];
+      const top = Math.max(...parts.map(p => (p.y || 0)+p.height));
+      return parts.map(p => ({...p, material:materialPalette(b,{...p,y:p.y || 0},top,isSelected)}));
+    });
+    for (const part of masses.sort(
       (left, right) => buildingDepth(left) - buildingDepth(right),
     )) {
       const outline = drawVolume(
         {...part,y:(part.y || 0)+base},
-        colors[part.archetype] || colors.GENERIC_BUILDING,
+        part.material,
         isSelected ? "#f8fafc" : "rgba(226, 232, 240, 0.8)",
         isSelected ? 2.8 : 1.4,
       );
@@ -1212,6 +1227,7 @@
     inspector.append(element("h2", entity.path || entityId));
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Archetype", building.archetype);
+    if (data.buildingMaterials) detailRow(details, "Appearance", "Procedural wall tones; roof accents indicate the existing role. Not source material evidence.");
     detailRow(details, "Language", entity.language || "Unknown");
     detailRow(details, "Height", building.height);
     const parcel=orientedBuildings[entityId];
@@ -1573,6 +1589,10 @@
   );
 
   function runAction(action) {
+    if (action === "toggle-role-colors" && data.buildingMaterials) {
+      showRoleColors = !showRoleColors;
+      document.querySelector('[data-action="toggle-role-colors"]').setAttribute('aria-pressed', String(showRoleColors));
+    }
     if (action === "toggle-structure" && urbanContext) {
       structureOverlay = !structureOverlay;
       document.querySelector('[data-action="toggle-structure"]').setAttribute('aria-pressed',String(structureOverlay));

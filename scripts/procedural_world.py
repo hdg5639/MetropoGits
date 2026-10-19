@@ -16,6 +16,8 @@ def main():
     parser.add_argument("build", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed")
+    parser.add_argument('--building-style', choices=('semantic', 'architectural'), default='semantic',
+                        help='presentation only: procedural wall tones with role roof accents; never changes world geometry')
     parser.add_argument("--terrain", choices=("flat", "lake-district", "river-corridor", "river-valley", "river-landscape"), default="flat",
                         help="adaptive only: generate protected natural terrain BEFORE urban placement")
     parser.add_argument(
@@ -101,7 +103,7 @@ def main():
         generated = perf_counter()
         validation = validate_world(world, scene, graph)
         validated = perf_counter()
-        artifacts = package_world(world, scene, graph, validation)
+        artifacts = package_world(world, scene, graph, validation, building_style=args.building_style)
         packaged = perf_counter()
         args.out.mkdir(parents=True, exist_ok=False)
         for name, content in artifacts.items():

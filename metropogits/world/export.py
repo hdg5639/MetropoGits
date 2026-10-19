@@ -14,6 +14,7 @@ from scripts.canonical_json import canonical_json_bytes
 from .geometry import bounds, centroid, point, ribbon
 from .seed import derive
 from .zoning import planning_document
+from .materials import ROLE_COLORS as COLORS, part_material, policy as material_policy
 from .landscape import generate_landscape
 from .rivers import bridge_faces, height_at
 from .street_hierarchy import COLORS as STREET_COLORS, marking_surfaces
@@ -28,18 +29,6 @@ ZONE_COLORS = {
     "GATEWAY_CIVIC": "#5d4555",
     "COMMERCIAL_FRONTEND": "#474b60",
 }
-COLORS = dict(
-    GENERIC_BUILDING="#a2adbb",
-    SERVICE_OFFICE="#60a5fa",
-    GATE="#f472b6",
-    STRUCTURED_WAREHOUSE="#34d399",
-    DOCUMENT_DEPOT="#6ee7b7",
-    CACHE_TOWER="#fbbf24",
-    LIBRARY="#facc15",
-    CONTROL_CENTER="#a78bfa",
-    PORT="#38bdf8",
-    EXCHANGE="#fb923c",
-)
 
 
 def _landscape(world, value):
@@ -64,7 +53,9 @@ def _landscape(world, value):
     return value
 
 
-def view_data(world, scene, graph, *, landscape=None):
+def view_data(world, scene, graph, *, landscape=None, building_style="semantic"):
+    if building_style not in ("semantic", "architectural"):
+        raise ValueError("unknown building presentation style")
     landscape = _landscape(world, landscape)
     root = "visual:world-root:" + derive(world["repositoryNamespace"])
 
@@ -311,10 +302,14 @@ def view_data(world, scene, graph, *, landscape=None):
             for i, d in enumerate(world["districts"])
         ]
         data["landscape"] = landscape
+    if building_style == "architectural":
+        data["buildingMaterials"] = material_policy()
     return data
 
 
-def render_svg(world, width=1200, height=750, *, landscape=None):
+def render_svg(world, width=1200, height=750, *, landscape=None, building_style="semantic"):
+    if building_style not in ("semantic", "architectural"):
+        raise ValueError("unknown building presentation style")
     landscape = _landscape(world, landscape)
     graded="surface" in world
     field=terrain_surface(world["terrain"]) if graded else None
@@ -422,11 +417,13 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
                               face["color"], None, 1))
     for b in world["parcels"]:
         color = COLORS.get(b["archetype"], COLORS["GENERIC_BUILDING"])
+        top = max(p["y"] + p["height"] for p in b["parts"])
         if graded:
             for face in foundation_faces(b,world["terrain"]):
                 p=face["points"]
                 faces.append((sum(x+y+z for x,y,z in p)/len(p),[project([x,z],y) for x,y,z in p],face["color"],b["entityId"],1))
         for part in b["parts"]:
+            material = part_material(b, part, top) if building_style == "architectural" else None
             poly = part["footprint"]
             low = part["y"] + 0.2+b.get("baseElevation",0)
             high = low + part["height"]
@@ -434,7 +431,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
                 (
                     sum(sum(p) for p in poly) / 4 + high,
                     [project(p, high) for p in poly],
-                    color,
+                    material["roof"] if material else color,
                     b["entityId"],
                     1,
                 )
@@ -452,7 +449,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
                     (
                         (sum(a) + sum(c)) / 2 + (high + low) / 2,
                         vertices,
-                        color,
+                        material["wall"] if material else color,
                         b["entityId"],
                         0.7,
                     )
@@ -492,10 +489,14 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
                                          "Connected waterway and shared bridges (procedural)")
         if graded:
             lines[-2]=lines[-2].replace("Connected waterway and shared bridges (procedural)","Graded valley and level foundations (procedural)")
+    if building_style == "architectural":
+        lines[-3] = lines[-3].replace("Structural streets (visual)", "Procedural walls / role roof accents · Structural streets (visual)")
     return "\n".join(lines).encode("utf8")
 
 
-def package_world(world, scene, graph, validation, *, landscaping=True):
+def package_world(world, scene, graph, validation, *, landscaping=True, building_style="semantic"):
+    if building_style not in ("semantic", "architectural"):
+        raise ValueError("unknown building presentation style")
     landscape = _landscape(world, None if landscaping else False)
     resources = files("metropogits.viewer_assets")
     artifacts = {
@@ -543,12 +544,17 @@ def package_world(world, scene, graph, validation, *, landscaping=True):
                             b'Dependency demand (select / All routes)')
     if world.get('campusPlan',{}).get('sites'):
         page = page.replace(b'Landscape (decorative)',b'Landscape / campus courts (visual)')
-    svg = render_svg(world, landscape=landscape)
+    if building_style == "architectural":
+        page = page.replace(b'<span id="renderer-mode"',
+                            b'<button type="button" data-action="toggle-role-colors" aria-pressed="false" title="Restore full role tint; wall materials are procedural styling, not source facts">Role colours</button><span id="renderer-mode"')
+        page = page.replace(b'<span><i class="swatch generic"></i>Generic</span>',
+                            b'<span title="Walls are procedural tones; role colours appear on upper roofs. Filters or Role colours restore full tint.">Walls: procedural / Roof accents: roles</span><span><i class="swatch generic"></i>Generic</span>')
+    svg = render_svg(world, landscape=landscape, building_style=building_style)
     artifacts.update(
         {
             "index.html": page,
             "assets/viewer-data.js": _javascript_assignment(
-                "METROPOGITS_DATA", view_data(world, scene, graph, landscape=landscape)
+                "METROPOGITS_DATA", view_data(world, scene, graph, landscape=landscape, building_style=building_style)
             ),
             "world.json": canonical_json_bytes(world),
             "city.json": canonical_json_bytes(scene),
@@ -572,6 +578,7 @@ def package_world(world, scene, graph, validation, *, landscaping=True):
         ".md": "text/markdown",
     }
     diagnostic_summary = _diagnostic_summary(graph["diagnostics"])
+    presentation = dict(buildingStyle=building_style, buildingMaterialsVersion=material_policy()["version"]) if building_style == "architectural" else {}
     artifacts["manifest.json"] = canonical_json_bytes(
         dict(
             schemaVersion="manifest/0.1",
@@ -590,6 +597,7 @@ def package_world(world, scene, graph, validation, *, landscaping=True):
                 worldVersion=world["schemaVersion"],
                 worldSeed=world["seed"],
                 sourceLayout=scene["layoutAlgorithm"],
+                **presentation,
             ),
             privacyWarnings=[
                 "Source paths and architecture may be sensitive; publication is not automatic."

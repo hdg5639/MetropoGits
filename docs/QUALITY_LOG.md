@@ -7673,3 +7673,83 @@
   checkpoint commit on the existing feature branch. Verify human metadata,
   explicit staged paths and successful normal upstream push at handoff. Worlds,
   clones, helpers and Chrome captures stay outside Git; old fixture caches intact.
+
+## Checkpoint 2026-10-19 — Architectural wall tones and role roof accents
+
+- Implemented: ADR-044 / W-15's opt-in `--building-style architectural` packaging
+  mode. Six source-ID-stable neutral wall/roof palettes; existing known-archetype
+  colours on highest roof faces. Generic/unknown remains unclassified. CPU SVG,
+  WebGL and Canvas share the pinned rule, including compound rendering helpers.
+  Accessible Role colours toggle, filters and selection restore full tint.
+  This is a bounded presentation slice after the spatial gates, not a wholesale
+  material/lighting engine or a claim that the remaining campus plan is done.
+- Fixtures / revisions: frozen `campus-forms-r1/{name}/after` World/City/UCG;
+  GJ local-sha256-06eb492d57141c16, OJ local-sha256-c2e80f9d3908fec8,
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b,
+  Hanul7432c67e91f472e7e9c3be54c07dcb7cbe4837d8. Same prior seeds/geography.
+  Five repositories3211 files /5793 exact trips /8603 edges, plus maintained
+ 48-file/24-import source fixture (seed campus-fixture). Target code never run.
+- Commands run from `workspace/MetropoGits` (helpers/output under `../artifacts/visual`):
+  - `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/building_materials_review.py',run_name='__main__')" building-materials-r2 fixture gj oj pocketbase sqlitebrowser hanul`
+  - `node ../artifacts/visual/campus_focus.mjs building-materials-r2 building-materials-reviewed-r1 gj oj pocketbase sqlitebrowser hanul fixture`
+  - `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/building-materials-audit-r1 ../artifacts/visual/building-materials-r2/{gj,oj,pocketbase,sqlitebrowser,hanul,fixture}/after`
+    (brace list here denotes six explicit path arguments, not PowerShell syntax).
+  - `node ../artifacts/visual/material_controls.mjs building-materials-r2 building-material-controls-r1 fixture gj oj pocketbase`;
+    `MATERIAL_CANVAS=1` equivalent PowerShell environment setting with output
+    `building-material-canvas-controls-r1` / fixture, OJ, SQLite, then unset.
+  - `python -X utf8 -m metropogits build --repo ../artifacts/visual/campus-e2e-r1/fixture --repo-id fixture/campus --out ../artifacts/visual/building-materials-e2e-r1/build`;
+    `python -X utf8 -m scripts.procedural_world ../artifacts/visual/building-materials-e2e-r1/build --seed campus-fixture --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --campus --campus-style varied --building-style architectural --out ../artifacts/visual/building-materials-e2e-r1/world`
+    then identical command with output `repeat`:17 artifacts byte-identical.
+  - `python -m unittest discover -s tests`; Node's `--test` on all `rg --files
+    tests -g '*.test.mjs'` paths; compileall; Ruff on changed Python; diff check.
+    `python -X utf8 ../artifacts/visual/verify_inherited_compatibility.py`.
+- Artifacts inspected: actual Chrome matched six-case gallery above (Overview,
+  District and each existing court close-up); GJ/fixture close-up before/after,
+  OJ/SQLite overview, PB close-up, GJ CPU showcase raster, OJ Canvas raster.
+  Audit captures six cases x3 LOD, CPU preview/showcase, camera/filters and
+  original file/edge route inspection. Campus source navigation passes in all
+  eligible sites. Legacy role-compound colour policy is unit-tested; these
+  World cases retain explicit oriented parcels rather than newly forced masses.
+- Visual findings: large solid yellow/pink/blue groups become restrained mixed
+  wall tones with small role accents. The unsupported generic city gains neutral
+  tonal variation without fake semantics. City composition, frontage direction,
+  terrain and open-space balance are unchanged. Roof accents are less salient
+  at thumbnail scale; semantic default / full-tint button deliberately remain.
+  This does not repair existing sparse grounds, dark lighting, coarse mountain
+  form, archetype repetition or incomplete landmark/LOD design.
+- Tests / determinism / stability:679 Python checks, one Windows symlink skip;
+ 66 Node checks. Python/JS exact colour parity across396 Unicode/role/shade/
+  top/full-tint combinations. All six worlds independently validate complete
+  access with overlap/ownership failures0. World/City/UCG/planning bytes and
+  every original building frame unchanged across presentation; no new streets,
+  relationships, parts or source metrics. World/planning/City/UCG schemas pass;
+ 192 recorded manifest hashes checked. No standalone manifest schema is claimed.
+  Default semantic preview bytes match frozen corpus; paired packages differ
+  only in page, data, two SVGs and manifest. All12 older World golden cases exact.
+  Existing same-style48->49 hint-stability tests remain in the full suite.
+- Interaction / performance: actual WebGL fixture/GJ/OJ/PB and forced Canvas
+  fixture/OJ/SQLite mode toggles change rendered pixels and restore them exactly;
+  filters clear back to exact pixels too. WebGL camera/counts/triangles/lines are
+  unchanged, and a colour toggle rebuilds exactly once. Six-case3LOD audit has
+  Synthetic static builds0; five evidenced cases move on original complete paths,
+  SQLite explicitly unavailable (no fake traffic). Concurrent SwiftShader JS
+  Synthetic submission CPU p95 about0.4..2.0ms, first submission60.8..1462.7ms.
+  These are not GPU completion, FPS, peak RSS or a controlled speedup claim.
+- Fixes applied/reverified: the first local helper incorrectly assumed a separate
+  manifest schema file; corrected to existing schemas plus explicit hash checks
+  and reran into r2. A test lint lambda was replaced and checks rerun. No product
+  validators/tolerances weakened and no failing tests suppressed.
+- Spec alignment: PASS for existing W-15 / optional presentation. Re-read three
+  base specs, technical data/evidence/rendering/limits, functional AC-002/003/
+  006/008/009/011/014, product DEC-005..009/011 and road/campus design8/9/11.
+  No public schema/ID/architecture break, runtime AI/API or untrusted execution.
+- Open risks / next actions: keep architectural mode opt-in pending user visual
+  preference. Remaining high-impact candidates are source-evidenced archetype
+  silhouettes/landmarks and street/campus transitions, not more palette micro-
+  tuning. Lighting/textures, W-13/14 LOD, density and remaining CP-02/vehicle
+  access requirements are still open; no final-city/completed-plan claim.
+- Commits/delivery: design74281a8 plus this cohesive renderer/tests/contracts/
+  checkpoint work unit on `feat/semantic-zoning`; inspect staged paths/human
+  metadata and normal upstream push at handoff. Generated worlds, helpers and
+  captures remain outside Git; pre-existing fixture caches are untouched.
