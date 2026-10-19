@@ -1,5 +1,43 @@
 # Current implementation contract baseline
 
+## Opt-in shared junctions — 2026-10-19
+
+[ADR-034](../adr/ADR-034.md) adds `scripts.procedural_world --street-policy shared`
+only with `--zoning neighborhoods --pattern-scale adaptive`. The default remains
+`original`/adaptive0.3. The shared variant records
+`flat-adaptive-neighborhoods/0.4`; it retains adaptive-patterns/0.3,
+functional-neighborhoods/0.1 and planning0.5. Only the experimental World's
+generator enum expands; City/UCG/source IDs are unchanged.
+
+After unchanged lot planning and original seam cleanup, preserve every parent
+main/orbital piece, principal boundary, driveway and actual tangent frontage.
+Consider complete nonprotected chains between existing junctions, up to120 units.
+Delete only when a bounded existing alternate traverses reserved or busy shared
+infrastructure. Require real reuse after loop erasure, not a ceremonial loop to
+an artery. No pavement/node/building is added or moved. Rebuild exact routes on
+the retained graph; source/target/kind/edge/network identities remain exact.
+
+Each affected full trip is charged against its ORIGINAL length: at most
+max(1.5*original, original+12 units), not repeated increases from its last detour.
+Local replacement is capped by min(1.5*chain+8, chain+32), inside a16-unit search
+padding. If any trip fails, reject the chain. If final source identity/budget
+checks or routing fail, retain the certified original streets/routes and record
+fallback. No route-free traffic/semantics are invented for unsupported input.
+
+Caps:500k index entries/reservation checks,768 candidate attempts,500k search
+states and2M cumulative trip-index/update work. Budget exhaustion retains already
+certified changes only and is explicit. Old original/adaptive0.3 and shared0.4
+may exchange geographic hints; older0.1/0.2 geography remains incompatible.
+All12 legacy default/block/district snapshots stay unchanged.
+
+Controlled `shared-junctions-r1` comparisons retain all3175 complete building
+frames, parent/district land and planning bytes. Removed physical pieces:
+OJ32/GJ62/PocketBase21/SQLite3. Actual rerouted trips:OJ89/GJ211/PB0/SQLite0;
+maximum changed-trip increases8.76%/10.15% for OJ/GJ. Overall pavement reduction
+is only1.61%/1.25%: this is functional consolidation and local cleanup, not a
+claim of a transformed city. Real same-camera changed-region and exact-trip
+pointer captures: `shared-junctions-focus-r1/index.html`.
+
 ## Continuous district fabric and flat landscaping — 2026-10-19
 
 [ADR-033](../adr/ADR-033.md) adds a presentation-only `landscape/0.1` artifact

@@ -9,6 +9,11 @@ from . import VERSION
 from .geometry import area, centroid, inside, partition, point, shared_boundaries
 from .infrastructure import atomic_streets, route_world
 from .seams import stitch_unused_streets
+from .junctions import (
+    GENERATOR_VERSION as SHARED_GENERATOR_VERSION,
+    check_trip_budgets,
+    consolidate_junctions,
+)
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
 from .organic import organic_slots
@@ -55,8 +60,13 @@ def generate_world(
     outline="ellipse",
     zoning="none",
     pattern_scale="block",
+    street_policy="original",
     _route=True,
 ):
+    if street_policy not in ("original", "shared") or (
+        street_policy == "shared" and (pattern_scale != "adaptive" or not _route)
+    ):
+        raise ValueError("shared street policy requires routed adaptive neighborhoods")
     if pattern_scale not in ("block", "district", "adaptive") or (
         pattern_scale != "block" and zoning != "neighborhoods"
     ):
@@ -234,11 +244,10 @@ def generate_world(
         and previous.get("patternScale", "block") == pattern_scale
         and (
             pattern_scale == "block"
-            or previous.get("generatorVersion")
-            == (
-                ADAPTIVE_GENERATOR_VERSION
+            or previous.get("generatorVersion") in (
+                (ADAPTIVE_GENERATOR_VERSION, SHARED_GENERATOR_VERSION)
                 if pattern_scale == "adaptive"
-                else "flat-neighborhood-patterns/0.1"
+                else ("flat-neighborhood-patterns/0.1",)
             )
         )
         and set(d["id"] for d in previous.get("districts", [])) == set(grouped)
@@ -514,6 +523,23 @@ def generate_world(
             streets, main_roads + boundaries, routing, parcels
         )
         planning_diagnostics.append(seam_note)
+        if street_policy == "shared":
+            candidate, junction_note = consolidate_junctions(
+                streets, main_roads + boundaries, parcels, routing
+            )
+            if junction_note["removedStreetIds"]:
+                try:
+                    new_routing, new_networks, new_coverage = route_world(graph, parcels, candidate)
+                    check_trip_budgets(routing, new_routing)
+                except ValueError as error:
+                    junction_note.update(
+                        reason="shared junction fallback; original certified routes retained",
+                        rejectedStreetIds=junction_note["removedStreetIds"],
+                        removedStreetIds=[], affectedTripIds=[], fallback=str(error),
+                    )
+                else:
+                    streets, routing, networks, coverage = candidate, new_routing, new_networks, new_coverage
+            planning_diagnostics.append(junction_note)
     reused = sorted(grouped) if compatible and attempt == 0 else []
     if zoned:
         reused = sorted(reused_zoned) if compatible and attempt == 0 else []
@@ -608,4 +634,6 @@ def generate_world(
                 world["zoning"]["districtPatterns"] = sorted(
                     district_patterns, key=lambda p: p["id"]
                 )
+    if street_policy == "shared":
+        world["generatorVersion"] = SHARED_GENERATOR_VERSION
     return world

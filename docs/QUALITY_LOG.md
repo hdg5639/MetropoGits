@@ -6580,3 +6580,98 @@
   then one coherent landscape/export/picking/test/docs feature unit. Normal
   configured-upstream push on feat/semantic-zoning after staged diff/identity
   review; no protection bypass, generated outputs, user caches or AI attribution.
+
+## Checkpoint 2026-10-19 — opt-in actual shared junction consolidation
+- Implemented: ADR-034's explicit `--street-policy shared` for adaptive worlds,
+  generator flat-adaptive-neighborhoods/0.4. Original0.3 remains the default.
+  Delete redundant nonprotected junction chains only through existing shared
+  infrastructure. Parent main/orbital corridors, principal boundaries, tangent
+  frontages and driveways remain; no node/pavement/building is added or moved.
+  Cumulative source-trip witnesses and independently rebuilt final shortest
+  routes must fit max(original*1.5, original+12 units); a failure retains certified
+  originals. Relation IDs/endpoints/kinds/edge/network membership remain exact.
+- Source fixtures: same City/UCG snapshots as district-fabric-reviewed-r1.
+  OJ local-sha256-c2e80f9d3908fec8, GJ local-sha256-06eb492d57141c16;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b. All four worlds were
+  actually regenerated twice, not just repackaged, with same namespaces and
+  varied planning/outline. Fresh maintained spring-positive scanned through CLI.
+- Commands from MetropoGits:
+  `python -X utf8 -c "import runpy,sys;sys.argv=['junctions','shared-junctions-r1'];runpy.run_path('../artifacts/visual/junction_shared_review.py',run_name='__main__')"`;
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/shared-junctions-e2e --out ../artifacts/visual/shared-junctions-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/shared-junctions-e2e-r1/build --namespace fixture/shared-junctions-e2e --zoning neighborhoods --pattern-scale adaptive --street-policy shared --planning varied --outline varied --out ../artifacts/visual/shared-junctions-e2e-r1/world`.
+  `python -m unittest discover -s tests`; focused test_world_adaptive.py and
+  test_world_junctions.py rerun after extra invalid-dry-run assertion;
+  `python -m ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; all nine Node test files
+  via `node --test`; inherited compatibility helper via runpy; `git diff --check`.
+- Browser commands: `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/shared-junctions-oj-reviewed-r1 ../artifacts/visual/shared-junctions-r1/oj/before ../artifacts/visual/shared-junctions-r1/oj/after`;
+  same tool to shared-junctions-corpus-reviewed-r1 with GJ before/after,
+  PocketBase/SQLite after and fresh Spring; forced Canvas helper to
+  shared-junctions-canvas-r1 with all four after worlds and fresh Spring.
+  `node ../artifacts/visual/shared_junction_focus.mjs ../artifacts/visual/shared-junctions-closeups-r2`.
+- Observed source/geometry results: all3175 whole frames, principal land,
+  zoning/core/mixed members and planning bytes equal the original0.3 input.
+  City/UCG bytes unchanged; World intentionally differs in generator, physical
+  street list, physical source paths and diagnostics. All5782 original trips and
+  8592 represented edges preserved, complete entrance access, no parcel/building/
+  full-width-road collision or ownership escape. Protect original main pieces
+  OJ716/GJ1224/PB672/SQLite265 and frontage/access1524/2982/1536/950.
+- Actual consolidation: OJ2492→2460 physical pieces;89 changed trips;
+  pavement18422.1→18124.8 (-1.61%); changed-trip mean+0.63%, max+8.76%.
+  GJ4706→4644 pieces;211 changed trips;30412.2→30030.9 (-1.25%);
+  changed-trip mean+1.49%, max+10.15%. PB2456→2435, no changed source trip;
+  SQLite1316→1313, still no source trip/traffic. All results retain parent
+  morphology; no budget exhausted. Candidate attempts233/389/211/79,
+  search states1644/2719/1311/352; trip work50174/119811/2270/0.
+- Artifacts inspected: real OJ same-scale Overview, OJ/GJ changed-region Detail
+  before/after and exact selected-trip screenshots, GJ CPU showcase, SQLite
+  WebGL Overview, OJ Canvas mixed-neighborhood inspector. Entry:
+  `artifacts/visual/shared-junctions-focus-r1/index.html`; canonical/geometry/
+  detour report shared-junctions-r1/report.json; actual pointer/source report
+  shared-junctions-closeups-r2/report.json; full renderer reports in named dirs.
+  OJ observed81.76-unit connected removed region loses the redundant central
+  diagonal; GJ25.00-unit region loses duplicate exits onto the same perimeter.
+  These are unaltered renderer captures, not mockups or hand-painted paths.
+- Source trace check: selected the SAME original route before/after through an
+  actual visible road pointer and route-choice control. OJ
+  learning/api/TrainingCourseController.java→learning/service/TrainingCourses.java;
+  GJ preview/blueprint/BlueprintCompilerTest.java→BlueprintCompiler.java.
+  Exact original edge IDs, one complete source-target path, highlighting and
+  Synthetic own-path provenance verified in both variants. A shared junction
+  does not create cross-pair relationships or observed runtime flow.
+- Visual findings: local central forks/exits are simpler while original curved
+  morphology, parent ground, greenery, orientations and role mix remain. At
+  README/whole-city scale the difference is small. **Not a major aesthetic
+  breakthrough**, no claim that all crossed stencils or natural internal block
+  planning are solved. Keep the mode opt-in; next structural progress belongs
+  before frontage placement, not repeated increases of deletion/detour limits.
+- Tests/determinism/stability:603 Python run,602 pass/one existing Windows
+  symlink skip;58 Node pass; lint/compile/diff pass. New6 chain/protection/detour/
+  cumulative-original-budget/identity/exhaustion tests and2 full adaptive
+  integration/hint tests pass. All12 legacy default/block/district canonical
+  snapshots unchanged; old adaptive readers still pass. Four full generations/
+  packages repeat byte-for-byte. Original0.3→shared0.4→original hints retain
+  all48 old complete frames after49th file, no reserved main relocation.
+  Forced optimizer reservation-budget exhaustion also produces a fully valid
+  untouched fallback. Physical frontage validation uses its own existing spatial
+  index/5M budget, not the optional optimizer's exhausted budget. All four stored
+  after Worlds were separately revalidated with this final independent check;
+  geometry checks11828/27115/12528/10086, no lost frontage or collisions.
+- Extra landscape checks on new retained streets: original-parcel/pavement
+  comparisons69046/97952/50580/37912 found no green invasion; all tree faces
+  contained in their actual patches. Trees546/646/322/216, no landscape budget
+  exhausted. Recomputed decoration responds to deleted roads; source geography
+  is unchanged. Fresh Spring6files/62streets/2trips/4edges, all entrances reached.
+- Performance: no new browser algorithm or draw pass. Actual WebGL audits at
+  three LODs retain0 Synthetic static rebuilds for every applicable case; SQLite
+  remains honestly unavailable. One concurrent full-generation sample OJ4.99s,
+  GJ15.50s, PB2.92s, SQLite1.26s includes planning and rerouting. No isolated
+  baseline performance comparison or universal FPS/speedup claim is made.
+- Spec alignment: PASS under ADR-024/032/034, AC-001/002/003/006/008/011/012/014.
+  Public City/UCG/source IDs intact; compatible experimental generator enum only.
+  No target execution/install, AI/service/runtime dependency or invented semantics.
+- Commits/delivery: docs194ef9f then one coherent optimizer/CLI/validator/schema/
+  tests/docs unit on feat/semantic-zoning; normal upstream push after verified
+  diff/identity/branch review. No generated artifacts, user caches, attribution,
+  force push or protection bypass. Macro planning/materials/LOD/terrain remain open.
