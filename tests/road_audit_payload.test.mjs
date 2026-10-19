@@ -8,7 +8,8 @@ test('shared-road audit returns one complete target without duplicating every ph
   const code=instrument(await readFile(new URL('../metropogits/viewer_assets/viewer-3d.js',import.meta.url),'utf8'));
   const start=code.indexOf('roadTargets(identity = null)');
   const method=code.slice(start,code.indexOf('    accessTargets()',start)).trim().replace(/,$/,'');
-  const regions=['a','b','c'].map((id,i)=>({id,kind:'network',minX:20+i*30,maxX:30+i*30,minY:20,maxY:30}));
+  const regions=['a','b','c'].map((id,i)=>({id,kind:'network',minX:20+i*30,maxX:30+i*30,minY:20,maxY:30,
+    points:[{x:20+i*30,y:20},{x:30+i*30,y:30}]}));
   const choices=Object.fromEntries(regions.map((r,i)=>[r.id,Array.from({length:i+2},(_,j)=>({id:`${r.id}-${j}`,
     source:'source',edgeIds:['edge'],segmentIds:['segment'],path:Array(10000).fill([1,2])}))]));
   const api=new Script(`({${method}})`).runInNewContext({hitRegions:regions,viewportWidth:1000,viewportHeight:1000,
