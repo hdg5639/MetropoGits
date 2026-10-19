@@ -295,7 +295,7 @@ def planning_document(world):
             worldSeed=world["seed"],
             ucgDigest=world["ucgDigest"],
             sourceCityDigest=world["sourceCityDigest"],
-            terrainPreset="flat",
+            terrainPreset=world.get("terrainPreset", "flat"),
             zones=world["zoning"]["zones"],
             blocks=world["zoning"]["blocks"],
             mainRoads=world["zoning"]["mainRoads"],

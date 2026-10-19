@@ -20,7 +20,7 @@ MAX_CHECKS = 500_000
 MAX_STATES = 100_000
 
 
-def add_alleys(streets, parcels, districts):
+def add_alleys(streets, parcels, districts, *, reserves=()):
     """Return extra raw streets and an audit note; never move or mutate inputs."""
     note = dict(reason="sparse long-row alleys", version="frontage-alleys/0.1",
                 corridors=[], candidates=0, geometryChecks=0, searchStates=0,
@@ -102,6 +102,8 @@ def add_alleys(streets, parcels, districts):
                 junctions[b] += 1
         for p in sorted(parcels, key=lambda p: p["entityId"]):
             reserve("lot", p["entityId"], p["parcel"])
+        for i, poly in enumerate(reserves):
+            reserve("terrain", i, poly)
 
         candidates = []
         for p in sorted(parcels, key=lambda p: p["entityId"]):
@@ -178,6 +180,8 @@ def add_alleys(streets, parcels, districts):
             if not all(inside(v, owners[p["districtId"]], margin=.2) for v in clearance):
                 continue
             if any(overlap(clearance, objects["lot", key]) for key in query(clearance, "lot")):
+                continue
+            if reserves and any(overlap(clearance, objects["terrain", key]) for key in query(clearance, "terrain")):
                 continue
             if any(roads[key]["access"] and overlap(clearance, objects["road", key])
                    for key in query(clearance, "road")):

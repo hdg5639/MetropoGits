@@ -11,17 +11,26 @@ from .geometry import area, bounds, inside, ribbon, nearest
 from .zoning import validate_zoning
 from .soft import validate_soft
 from .block_validation import validate_blocks
+from .terrain import GENERATOR_VERSION as TERRAIN_GENERATOR_VERSION, PRESET as NATURAL_PRESET, validate_terrain
 
 
 def validate_world(world, scene, graph):
     if world.get("schemaVersion") != VERSION:
         raise ValueError("unsupported world schema")
+    natural = world.get("generatorVersion") == TERRAIN_GENERATOR_VERSION
+    if natural:
+        if (world.get("terrainPreset") != NATURAL_PRESET
+                or world.get("streetPolicy") not in ("original", "shared", "permeable")):
+            raise ValueError("terrain preset/version mismatch")
+        validate_terrain(world.get("terrain"), world["seed"])
+    elif "terrain" in world or world.get("terrainPreset") != "flat":
+        raise ValueError("terrain requires its explicit generator version")
     if "patternScale" in world and (
         world["patternScale"] not in ("district", "adaptive")
         or world.get("zoningPolicy") != "neighborhoods"
         or world.get("generatorVersion")
         not in (
-            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5")
+            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", TERRAIN_GENERATOR_VERSION)
             if world["patternScale"] == "adaptive"
             else ("flat-neighborhood-patterns/0.1",)
         )
@@ -36,6 +45,7 @@ def validate_world(world, scene, graph):
             "flat-adaptive-neighborhoods/0.3",
             "flat-adaptive-neighborhoods/0.4",
             "flat-adaptive-neighborhoods/0.5",
+            TERRAIN_GENERATOR_VERSION,
         )
     ) != (world.get("patternScale") in ("district", "adaptive")):
         raise ValueError("world pattern scale version mismatch")
@@ -131,7 +141,18 @@ def validate_world(world, scene, graph):
 
     for s in world["streets"]:
         reserve(ribbon(s["start"], s["end"], s["width"]), ("road", s["id"]))
-    if world["generatorVersion"] == "flat-adaptive-neighborhoods/0.5":
+    if natural:
+        for f in world["terrain"]["features"]:
+            if not all(inside(v, world["envelope"]) for v in f["roadPolygon"]):
+                raise ValueError("terrain escaped world land")
+            for key in sorted({k for cell in buckets(f["noBuildPolygon"]) for k in cells[cell]}):
+                checks += 1
+                if checks > 5_000_000:
+                    raise ValueError("world validation work limit")
+                if overlap(f["noBuildPolygon"], polygons[key]):
+                    raise ValueError("physical road crosses protected water/slope")
+            reserve(f["noBuildPolygon"], ("terrain", f["id"]))
+    if world["generatorVersion"] == "flat-adaptive-neighborhoods/0.5" or world.get("streetPolicy") == "permeable":
         for note in world["diagnostics"]:
             if note.get("version") == "frontage-alleys/0.1":
                 for alley in note["corridors"]:
@@ -158,7 +179,7 @@ def validate_world(world, scene, graph):
         if p["sourceDistrictId"] != b["districtId"]:
             raise ValueError("world directory ownership mismatch")
         poly = p["footprint"]
-        if world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5"):
+        if world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", TERRAIN_GENERATOR_VERSION):
             # Reuse the independent validation index/budget. Optional optimizer
             # exhaustion must not make its untouched fallback invalid.
             connected = False
@@ -198,12 +219,12 @@ def validate_world(world, scene, graph):
         if not all(inside(v, p["parcel"]) for v in poly):
             raise ValueError("world building escaped its parcel")
         parcel_keys = buckets(p["parcel"])
-        for key in sorted({k for cell in parcel_keys for k in cells[cell] if k[0] == "alley"}):
+        for key in sorted({k for cell in parcel_keys for k in cells[cell] if k[0] in ("alley", "terrain")}):
             checks += 1
             if checks > 5_000_000:
                 raise ValueError("world validation work limit")
             if overlap(p["parcel"], polygons[key]):
-                raise ValueError("alley intrudes into a source parcel")
+                raise ValueError("protected infrastructure/terrain intrudes into a source parcel")
         index_entries += len(parcel_keys)
         if index_entries > 2_000_000:
             raise ValueError("world validation index limit")

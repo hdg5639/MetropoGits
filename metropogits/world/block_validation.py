@@ -42,8 +42,9 @@ def validate_blocks(world, scene, graph, neighborhoods):
                 requested_profile(
                     world.get("planningPolicy", "grid"), parent["localSeed"]
                 ),
-                stitch=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5"),
-                morphology=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5"),
+                stitch=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "terrain-adaptive/0.1"),
+                morphology=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "terrain-adaptive/0.1"),
+                terrain=world.get("terrain"),
             )
             expected_patterns.append(pattern)
         elif inherited:
@@ -176,7 +177,7 @@ def validate_blocks(world, scene, graph, neighborhoods):
                         raise ValueError("neighborhood parcel escaped hybrid region")
                 elif p["blockProfile"] != b["planningProfile"]:
                     raise ValueError("neighborhood local grammar mismatch")
-    if world["generatorVersion"] == "flat-adaptive-neighborhoods/0.5":
+    if world["generatorVersion"] == "flat-adaptive-neighborhoods/0.5" or world.get("streetPolicy") == "permeable":
         notes = [d for d in world["diagnostics"] if d.get("version") == "frontage-alleys/0.1"]
         if len(notes) != 1 or len(notes[0].get("corridors", [])) > 24:
             raise ValueError("invalid alley audit record")

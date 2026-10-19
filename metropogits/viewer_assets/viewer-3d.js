@@ -771,6 +771,12 @@
           quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color));
       }
     }
+    for(const feature of data.terrain?.features || [])for(const face of feature.faces) {
+      const p=face.points;
+      const normal=normalize(cross(subtract(p[1],p[0]),subtract(p[2],p[0])));
+      for(let i=1;i<p.length-1;i++)
+        quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color));
+    }
     for (const district of framingDistricts) {
       if(data.occupiedGround && !structureOverlay) continue;
       for (const rectangle of districtTerritory(district).rectangles) {
@@ -871,6 +877,8 @@
     for (const district of scene.districts) {
       if (!renderedDistrictIds.has(district.id)) continue;
       if (!contextVisible(district.id)) continue;
+      // An administrative cut through a lake is not a road across its water.
+      if(data.terrain && !structureOverlay && !selected("district",district.id)) continue;
       const depth = districtDepths.get(district.id) || 0;
       const y = 0.06 + depth * 0.025;
       const districtColor = selected("district", district.id)
