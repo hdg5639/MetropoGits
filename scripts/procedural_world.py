@@ -47,6 +47,10 @@ def main():
     )
     parser.add_argument("--previous-world", type=Path)
     parser.add_argument(
+        "--street-policy", choices=("original", "shared"), default="original",
+        help="adaptive only: merge redundant junction chains onto existing shared roads",
+    )
+    parser.add_argument(
         "--pattern-scale",
         choices=("block", "district", "adaptive"),
         default="block",
@@ -82,6 +86,7 @@ def main():
             outline=args.outline,
             zoning=args.zoning,
             pattern_scale=args.pattern_scale,
+            street_policy=args.street_policy,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)

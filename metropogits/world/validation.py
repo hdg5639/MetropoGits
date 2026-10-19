@@ -21,7 +21,7 @@ def validate_world(world, scene, graph):
         or world.get("zoningPolicy") != "neighborhoods"
         or world.get("generatorVersion")
         not in (
-            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3")
+            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4")
             if world["patternScale"] == "adaptive"
             else ("flat-neighborhood-patterns/0.1",)
         )
@@ -34,6 +34,7 @@ def validate_world(world, scene, graph):
             "flat-adaptive-neighborhoods/0.1",
             "flat-adaptive-neighborhoods/0.2",
             "flat-adaptive-neighborhoods/0.3",
+            "flat-adaptive-neighborhoods/0.4",
         )
     ) != (world.get("patternScale") in ("district", "adaptive")):
         raise ValueError("world pattern scale version mismatch")
@@ -129,6 +130,7 @@ def validate_world(world, scene, graph):
 
     for s in world["streets"]:
         reserve(ribbon(s["start"], s["end"], s["width"]), ("road", s["id"]))
+    physical_geometry = {s["id"]: s for s in world["streets"]}
     for p in parcels:
         b = source[p["entityId"]]
         if any(
@@ -146,6 +148,22 @@ def validate_world(world, scene, graph):
         if p["sourceDistrictId"] != b["districtId"]:
             raise ValueError("world directory ownership mismatch")
         poly = p["footprint"]
+        if world["generatorVersion"] == "flat-adaptive-neighborhoods/0.4":
+            # Reuse the independent validation index/budget. Optional optimizer
+            # exhaustion must not make its untouched fallback invalid.
+            connected = False
+            for key in sorted({key for c in buckets([p["streetPoint"]]) for key in cells[c]}):
+                if key[0] != "road":
+                    continue
+                checks += 1
+                if checks > 5_000_000:
+                    raise ValueError("world validation work limit")
+                s = physical_geometry[key[1]]
+                if not s["access"] and math.dist(p["streetPoint"], nearest(p["streetPoint"], s["start"], s["end"])) < .002:
+                    connected = True
+                    break
+            if not connected:
+                raise ValueError("world source building lost physical frontage")
         if neighborhoods:
             owner = neighborhoods.get(p.get("zoneId"))
             if (

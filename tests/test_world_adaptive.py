@@ -222,6 +222,54 @@ class AdaptiveTests(unittest.TestCase):
             if p["entityId"] in frames:
                 self.assertEqual(frames[p["entityId"]], p)
 
+    def test_shared_junction_policy_preserves_frames_and_original_trip_budgets(self):
+        from metropogits.world.junctions import check_trip_budgets
+
+        shared = generate_world(self.scene, self.graph, street_policy="shared", **self.options)
+        self.assertEqual(shared["generatorVersion"], "flat-adaptive-neighborhoods/0.4")
+        self.assertEqual(shared["parcels"], self.world["parcels"])
+        self.assertEqual(shared["districts"], self.world["districts"])
+        self.assertEqual(shared["zoning"], self.world["zoning"])
+        self.assertEqual(shared, generate_world(self.scene, self.graph, street_policy="shared", **self.options))
+        check_trip_budgets(self.world["routing"], shared["routing"])
+        validate_world(shared, self.scene, self.graph)
+        schema = json.loads((ROOT / "schemas/world-0.1.schema.json").read_text(encoding="utf8"))
+        Draft202012Validator(schema).validate(shared)
+        self.assertEqual(shared["diagnostics"][-1]["version"], "shared-junctions/0.1")
+        for policy in ("not-a-policy",):
+            with self.assertRaises(ValueError):
+                generate_world(self.scene, self.graph, street_policy=policy, **self.options)
+        with self.assertRaises(ValueError):
+            generate_world(self.scene, self.graph, street_policy="shared")
+        with self.assertRaises(ValueError):
+            generate_world(self.scene, self.graph, street_policy="shared", _route=False, **self.options)
+        with patch("metropogits.world.junctions.MAX_CHECKS", 0):
+            fallback = generate_world(self.scene, self.graph, street_policy="shared", **self.options)
+            validate_world(fallback, self.scene, self.graph)
+        self.assertEqual(fallback["streets"], self.world["streets"])
+        self.assertEqual(fallback["routing"], self.world["routing"])
+        self.assertTrue(fallback["diagnostics"][-1]["budgetExhausted"])
+
+    def test_shared_and_original_geography_hints_remain_compatible_after_small_edit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            scene, graph = fixture(repo)
+            old = generate_world(scene, graph, **self.options)
+            (repo / "zz_extra.rs").write_text("fn unknown() {}", encoding="utf8")
+            graph = analyze_repository(repo, repository_id="fixture/neighborhoods")
+            scene = generate_city(graph)
+            shared = generate_world(scene, graph, previous=old, street_policy="shared", **self.options)
+            original = generate_world(scene, graph, previous=shared, **self.options)
+        validate_world(shared, scene, graph)
+        validate_world(original, scene, graph)
+        old_frames = {p["entityId"]: p for p in old["parcels"]}
+        for world in (shared, original):
+            self.assertTrue(world["anchors"]["reusedDistrictIds"])
+            self.assertEqual(old["zoning"]["mainRoads"], world["zoning"]["mainRoads"])
+            for p in world["parcels"]:
+                if p["entityId"] in old_frames:
+                    self.assertEqual(old_frames[p["entityId"]], p)
+
     def test_unknown_files_and_growth_limits(self):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
