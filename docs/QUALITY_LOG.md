@@ -6306,3 +6306,20 @@
   feat/semantic-zoning, normal upstream push after staged diff/identity review.
   No protection bypass, main mutation, force push, attribution, generated files
   or unrelated user-cache inclusion.
+
+## Documentation follow-up 2026-10-19 — apparent adaptive ground overlap
+
+- Scope: record the maintainer's reported overlapping-terrain appearance in
+  adaptive-neighborhoods-r3 as a next-task seam inspection/correction gate.
+  WORLD_EXECUTION_LEDGER and SEMANTIC_ZONING_PLAN preserve relationship-based
+  role mixing and macro/local transitions alongside this additional feedback.
+- Verification: documentation diff and whitespace checks only. No generation,
+  tests or renderer rerun in this follow-up; no new visual validation or overlap
+  diagnosis is claimed. The preceding implementation checkpoint remains the
+  evidence for current output, not proof that its ground seams are clean.
+- Next: locate the reported seam, distinguish real overlap from layered visual
+  surfaces, compare matching overview/close-up renders and rerun affected
+  geometry/access/provenance/determinism gates when making the actual correction.
+- Delivery: separate docs-only commit on feat/semantic-zoning; normal upstream
+  push after staged-diff and identity review. No source or generated artifacts
+  changed, and no public contract or architecture decision changed.
