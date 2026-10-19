@@ -1291,3 +1291,27 @@ checks. The roomy positive fixture really rotates; dense GJ/OJ groups retain
 zero rotations and some GJ courts retain their original form after safe fallback.
 Do not claim the original row-monotony problem is completely solved. Existing
 quad/varied/neighborhood modes and canonical UCG/City contracts remain intact.
+
+### Pre-assignment organic campus frontage — ADR-050
+
+Optional `--campus-style organic` adds `campus-plan/0.5`. Reserve elliptical
+commons and real connected fanning walking paths before laying out parcels.
+Generate full-size tangent-facing frontage along the actual polyline, with
+distinct local group bearings; do not rotate already interlocked source rows.
+Preserve whole original neighborhoods, evidenced eligibility/anchors and mixed
+source membership, protected vehicle corridors and terrain. Source assignment
+still uses real graph affinity. No role, file or dependency is invented.
+
+Six bounded fan proposals per center, at most three centers and three fits;
+the existing300000 clearance-work bound applies. A fixed64-unit maximum branch
+reserve avoids changing every tangent under one-file growth. The planner can
+retain the complete0.4/0.3 precinct with explicit `organicFallback` when the new
+grammar cannot fit; it never claims a small pocket as whole-neighborhood success.
+Old styles keep their original IDs and output semantics. New experimental
+style/version enums are additive; UCG/City and runtime dependencies are unchanged.
+
+Terrain and macro geography remain unchanged when switching campus style;
+affected campus interior frames and source-trip geometry deliberately change.
+Exact original source/target/edge identities must be conserved. No per-frame
+planning is added. This does not complete riverside-specific design, emergency
+vehicle semantics, or all natural campus variants.

@@ -123,6 +123,17 @@ crossing. Its portals, road profile and Synthetic share actual geometry. This
 is an analytical landscape, not a drainage simulator; existing bounded river
 presets remain available for compatibility. See [ADR-039](docs/adr/ADR-039.md).
 
+`--terrain varied-landscape` adds area/seed-dependent lakes, ridges and variable
+water branches while retaining terrain-first placement. For whole-neighborhood
+campus planning, also pass `--campus --campus-style organic --street-hierarchy`
+with adaptive neighborhoods and `--street-policy porous`. This explicit
+experiment reserves commons and connected fanning walks before assigning real
+source buildings, with tangent-facing full-size parcels. Terrain and protected
+macro roads stay fixed; campus interiors may change. Infeasible precincts retain
+a complete safe plan, not a truncated set of files. Previous campus styles remain
+available. See [ADR-050](docs/adr/ADR-050.md); this is not a finished simulation
+of a university, service vehicles or real runtime traffic.
+
 ## GitHub Action
 
 The repository includes a least-privilege composite Action and a pinned Pages

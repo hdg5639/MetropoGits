@@ -534,10 +534,12 @@ def apply_campuses(
         if sites:
             decision["reason"] = "PARENT_DIVERSITY_LIMIT"
             continue
-        if style in ("neighborhood","landscape"):
+        if style in ("neighborhood","landscape","organic"):
             from .campus_neighborhood import neighborhood_layout
             if style=='landscape':
                 from .campus_landscape import landscape_layout as neighborhood_layout
+            if style=='organic':
+                from .campus_organic import organic_layout as neighborhood_layout
 
             fit = {}
             try:
@@ -639,13 +641,16 @@ def collect_plan(blocks, style="quad"):
     if style == 'landscape':
         from .campus_landscape import VERSION as LANDSCAPE_VERSION
         result.update(version=LANDSCAPE_VERSION,style=style)
+    if style == 'organic':
+        from .campus_organic import VERSION as ORGANIC_VERSION
+        result.update(version=ORGANIC_VERSION,style=style)
     return result
 
 
 def validate_campuses(world):
     """Reconstruction is checked upstream; independently check occupied courts."""
     style = world["campusPlan"].get("style", "quad")
-    if style not in ("quad", "varied", "neighborhood", "landscape") or world["campusPlan"] != collect_plan(
+    if style not in ("quad", "varied", "neighborhood", "landscape", "organic") or world["campusPlan"] != collect_plan(
         world["zoning"]["blocks"], style
     ):
         raise ValueError("campus plan differs from verified block records")
@@ -669,7 +674,7 @@ def validate_campuses(world):
     for site in sites:
         if not set(site["anchorEntityIds"]).issubset(site["memberEntityIds"]):
             raise ValueError("campus anchor is not an original member")
-        if style in ('neighborhood','landscape'):
+        if style in ('neighborhood','landscape','organic'):
             zone=next(z for z in world['zoning']['zones'] if z['id']==site['zoneId'])
             if site['memberEntityIds']!=sorted(zone['memberEntityIds']) or site['retainedMemberEntityIds']:
                 raise ValueError('campus precinct must include the entire source neighborhood')
