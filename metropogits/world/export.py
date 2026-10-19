@@ -11,7 +11,7 @@ from metropogits.road_hierarchy import derive_road_hierarchy
 from metropogits.viewer import _javascript_assignment
 from metropogits.cli import _artifact_record, _diagnostic_summary
 from scripts.canonical_json import canonical_json_bytes
-from .geometry import bounds, centroid, point, ribbon
+from .geometry import bounds, centroid, point, q, ribbon
 from .seed import derive
 from .zoning import planning_document
 from .materials import ROLE_COLORS as COLORS, part_material, policy as material_policy
@@ -20,6 +20,7 @@ from .rivers import bridge_faces, height_at
 from .street_hierarchy import COLORS as STREET_COLORS, marking_surfaces
 from .elevation import surface as terrain_surface, pavement as graded_pavement, lifted_faces, foundation_faces
 from .street_mesh import street_mesh, VERSION as STREET_MESH_VERSION
+from .compounds import derive_compounds
 
 GROUND = ["#33464b", "#4a4149", "#354b42", "#504835", "#3e4454", "#4e3c42", "#3b4c50"]
 ZONE_COLORS = {
@@ -54,10 +55,12 @@ def _landscape(world, value):
     return value
 
 
-def view_data(world, scene, graph, *, landscape=None, building_style="semantic"):
+def view_data(world, scene, graph, *, landscape=None, building_style="semantic", role_compounds=True):
     if building_style not in ("semantic", "architectural"):
         raise ValueError("unknown building presentation style")
     landscape = _landscape(world, landscape)
+    compounds, compound_policy = (derive_compounds(world, graph) if role_compounds else
+                                  ([],dict(disabled=True,structural=False)))
     root = "visual:world-root:" + derive(world["repositoryNamespace"])
 
     def envelope(poly):
@@ -228,6 +231,8 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic")
             surfaces=surfaces,
             **(dict(meshVersion=STREET_MESH_VERSION) if 'streetPlan' in world else {}),
             orientedEntityIds=sorted(models),
+            roleCompounds=compounds,
+            roleCompoundPolicy=compound_policy,
             rectangles=[],
         ),
         streetDemand=pavement,
@@ -311,19 +316,27 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic")
     return data
 
 
-def render_svg(world, width=1200, height=750, *, landscape=None, building_style="semantic"):
+def render_svg(world, width=1200, height=750, *, landscape=None, building_style="semantic", compounds=None):
     if building_style not in ("semantic", "architectural"):
         raise ValueError("unknown building presentation style")
     landscape = _landscape(world, landscape)
     graded="surface" in world
     field=terrain_surface(world["terrain"]) if graded else None
+    compound_by_id={f['id']:f for f in compounds or []}
+    grouped={k for f in compounds or [] for k in f['memberEntityIds']}
+    display_buildings=[b for b in world['parcels'] if b['entityId'] not in grouped]
+    for f in compounds or []:
+        model=f['physicalModel']
+        display_buildings.append(dict(model,entityId=f['id'],height=f['height'],
+            archetype=f['archetypeCounts'][0]['archetype'],
+            parts=[dict(p,y=q(p['y']-model['baseElevation'])) for p in model['parts']]))
     def iso(p, y=0):
         return [(p[0] - p[1]) * 0.866, (p[0] + p[1]) * 0.5 - y]
 
     points = [iso(p) for p in world["envelope"]]
     points += [
         iso(p, part["y"] + part["height"]+b.get("baseElevation",0))
-        for b in world["parcels"]
+        for b in display_buildings
         for part in b["parts"]
         for p in part["footprint"]
     ]
@@ -425,7 +438,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
                 depth = sum(x + z + y for x, y, z in vertices) / len(vertices)
                 faces.append((depth, [project([x, z], y) for x, y, z in vertices],
                               face["color"], None, 1))
-    for b in world["parcels"]:
+    for b in display_buildings:
         color = COLORS.get(b["archetype"], COLORS["GENERIC_BUILDING"])
         top = max(p["y"] + p["height"] for p in b["parts"])
         if graded:
@@ -474,7 +487,8 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
             polygon(
                 vertices,
                 color,
-                face[5] if len(face) > 5 else (f'data-entity-id="{escape(identity)}" stroke="#10202a" stroke-width=".15"'
+                face[5] if len(face) > 5 else (f'data-aggregate-id="{escape(identity)}" data-member-entity-ids="{escape(" ".join(compound_by_id[identity]["memberEntityIds"]))}" stroke="#10202a" stroke-width=".15"'
+                 if identity in compound_by_id else f'data-entity-id="{escape(identity)}" stroke="#10202a" stroke-width=".15"'
                  if identity else 'data-decorative="tree"'),
             )
         )
@@ -504,7 +518,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
     return "\n".join(lines).encode("utf8")
 
 
-def package_world(world, scene, graph, validation, *, landscaping=True, building_style="semantic"):
+def package_world(world, scene, graph, validation, *, landscaping=True, building_style="semantic", role_compounds=True):
     if building_style not in ("semantic", "architectural"):
         raise ValueError("unknown building presentation style")
     landscape = _landscape(world, None if landscaping else False)
@@ -559,12 +573,13 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
                             b'<button type="button" data-action="toggle-role-colors" aria-pressed="false" title="Restore full role tint; wall materials are procedural styling, not source facts">Role colours</button><span id="renderer-mode"')
         page = page.replace(b'<span><i class="swatch generic"></i>Generic</span>',
                             b'<span title="Walls are procedural tones; role colours appear on upper roofs. Filters or Role colours restore full tint.">Walls: procedural / Roof accents: roles</span><span><i class="swatch generic"></i>Generic</span>')
-    svg = render_svg(world, landscape=landscape, building_style=building_style)
+    svg = render_svg(world, landscape=landscape, building_style=building_style,
+                     compounds=derive_compounds(world,graph)[0] if role_compounds else [])
     artifacts.update(
         {
             "index.html": page,
             "assets/viewer-data.js": _javascript_assignment(
-                "METROPOGITS_DATA", view_data(world, scene, graph, landscape=landscape, building_style=building_style)
+                "METROPOGITS_DATA", view_data(world, scene, graph, landscape=landscape, building_style=building_style,role_compounds=role_compounds)
             ),
             "world.json": canonical_json_bytes(world),
             "city.json": canonical_json_bytes(scene),

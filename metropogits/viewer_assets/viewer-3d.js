@@ -1077,6 +1077,27 @@
         && facility.memberEntityIds.includes(state.selected.id)
         ? scene.buildings.find(b => b.entityId === state.selected.id) : null;
       const isSelected = selected("aggregate", facility.id) || Boolean(selectedMember);
+      if(facility.physicalModel) {
+        const model=facility.physicalModel;
+        const proxy={...facility,entityId:facility.id,archetype:facility.archetypeCounts[0].archetype};
+        for(const face of model.foundationFaces || [])
+          quad(triangles,face.points,normalize(cross(subtract(face.points[1],face.points[0]),subtract(face.points[2],face.points[0]))),color(face.color));
+        const top=Math.max(...model.parts.map(p=>p.y+p.height));
+        for(const part of model.parts) {
+          const [wall,roof]=materialColors(proxy,part,top,isSelected,color(colors[proxy.archetype]));
+          orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof);
+        }
+        for(let i=0;i<4;i++) {
+          const a=model.footprint[i],b=model.footprint[(i+1)%4];
+          line(lines,[a[0],base+.25,a[1]],[b[0],base+.25,b[1]],color(isSelected?'#f8fafc':'#fbbf24'));
+        }
+        if(selectedMember) {
+          const original=orientedBuildings[selectedMember.entityId]?.footprint;
+          if(original)for(let i=0;i<4;i++)line(lines,[original[i][0],top+.7,original[i][1]],
+            [original[(i+1)%4][0],top+.7,original[(i+1)%4][1]],color('#22d3ee'));
+        }
+        continue;
+      }
       for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         box(
           triangles,
@@ -1254,6 +1275,12 @@
     }
     for (const aggregateId of renderedAggregateIds) {
       const facility = aggregateFacilities.get(aggregateId);
+      if(facility.physicalModel) {
+        const points=facility.physicalModel.footprint.flatMap(([x,z])=>
+          [[x,facility.baseElevation+.2,z],[x,facility.baseElevation+facility.height+.4,z]]);
+        regions.push({id:facility.id,kind:'aggregate',points,priority:250});
+        continue;
+      }
       for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         const corners = [];
         for (const x of [plot.x, plot.x + plot.width]) {
