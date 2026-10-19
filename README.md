@@ -125,14 +125,21 @@ presets remain available for compatibility. See [ADR-039](docs/adr/ADR-039.md).
 
 `--terrain varied-landscape` adds area/seed-dependent lakes, ridges and variable
 water branches while retaining terrain-first placement. For whole-neighborhood
-campus planning, also pass `--campus --campus-style organic --street-hierarchy`
+campus planning, also pass `--campus --campus-style fabric --street-hierarchy`
 with adaptive neighborhoods and `--street-policy porous`. This explicit
-experiment reserves commons and connected fanning walks before assigning real
-source buildings, with tangent-facing full-size parcels. Terrain and protected
+experiment fits meandering malls, open arcades and staggered garden lanes before
+assigning real source buildings, with tangent-facing full-size parcels. Terrain and protected
 macro roads stay fixed; campus interiors may change. Infeasible precincts retain
 a complete safe plan, not a truncated set of files. Previous campus styles remain
-available. See [ADR-050](docs/adr/ADR-050.md); this is not a finished simulation
+available for reproduction; the older organic fan was rejected as visually
+repetitive. See [ADR-051](docs/adr/ADR-051.md); this is not a finished simulation
 of a university, service vehicles or real runtime traffic.
+
+Rotated World exports also restore evidence-backed page/API/gate/test compounds
+when full clearance permits. They retain their exact source members at every
+zoom; use **Expand constituent files** to reveal individual buildings. This is
+presentation, not a new service or changed dependency. See
+[ADR-052](docs/adr/ADR-052.md).
 
 ## GitHub Action
 
