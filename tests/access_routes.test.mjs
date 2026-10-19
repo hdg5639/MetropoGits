@@ -16,6 +16,19 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 
+test('graded paths use interior elevation breakpoints and one shared ground lattice',()=>{
+  const f=globalThis.METROPOGITS_FILTERS;
+  const segment={start:[0,0],end:[20,0],heights:[0,0],heightProfile:[[0,0,0],[10,0,4],[20,0,0]]};
+  assert.equal(f.accessHeight(segment,[10,0]),4);
+  assert.equal(f.accessHeight(segment,[5,0]),2);
+  assert.equal(f.accessHeight(segment,[15,0]),2);
+  const mesh={origin:[0,0],spacing:16,values:[[0,4,8],[4,8,12],[8,12,16]]};
+  assert.equal(f.groundHeight(mesh,8,8),4);
+  assert.equal(f.groundHeight(mesh,16,16),8);
+  assert.ok(Math.abs(f.groundHeight(mesh,16-1e-7,12)-f.groundHeight(mesh,16+1e-7,12))<1e-6);
+  assert.throws(()=>f.groundHeight(mesh,-100,0),RangeError);
+});
+
 test('bridge pavement, reversed trajectories and animation share the certified elevation',()=>{
   const route={id:'cross',source:'A',target:'B',kind:'DEPENDENCY_ROAD',edgeIds:['real-edge'],networkIds:['n'],
     path:[[0,0],[10,0],[20,0],[30,0]],segmentIds:['up','deck','down']};

@@ -6940,3 +6940,102 @@
   tests/docs work unit on feat/semantic-zoning. Normal configured upstream push
   after final staged diff/identity/remote review; actual result reported at handoff.
   No generated outputs/user caches, attribution, force update or protection bypass.
+
+## Checkpoint 2026-10-19 — Graded valley and shared elevation consumers (ADR-038)
+- Implemented: opt-in `--terrain river-valley`, terrain/0.3 and
+  terrain-adaptive/0.3. One immutable seeded world-space triangulated field
+  precedes candidate lots/source allocation. Reject complete lots with relief>1
+  or excessive access grade; preserve source dimensions and place level pads.
+  Street profiles, certified bridges, driveways, full source meshes/foundations,
+  planting, LOD, labels, picking, camera focus and Synthetic share exact heights.
+  Experimental World/planning additions only; old modes/defaults/City/UCG intact.
+- Fixtures/revisions: OJ local-sha256-c2e80f9d3908fec8 / seed90c6386e113ae6db;
+  GJ local-sha256-06eb492d57141c16 / seed2e2dc9377dd074d4;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522 / seed0d93483144e329c0;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b / seedf425482d641c843f.
+  Four corpora replay preserved canonical City/UCG from river-corridor-r4;
+  fresh maintained spring-positive runs the real repository-input pipeline.
+  A one-file unknown Rust fixture stays generic with no fabricated traffic.
+- Commands from MetropoGits:
+  `python -X utf8 ../artifacts/visual/valley_review.py valley-r2`;
+  `python -X utf8 -c "import runpy,sys;sys.argv=['refresh','valley-r2','valley-r4'];runpy.run_path('../artifacts/visual/repackage_inherited_patterns.py',run_name='__main__')"`;
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/valley-e2e --out ../artifacts/visual/valley-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/valley-e2e-r1/build --namespace fixture/valley-e2e --zoning neighborhoods --pattern-scale adaptive --street-policy permeable --planning varied --outline varied --terrain river-valley --out ../artifacts/visual/valley-e2e-r3/world`.
+- Source/geometry: all3175 buildings,5782 exact file-pair trips and8592 represented
+  edges retained, with source roles/neighborhood core/support members unchanged.
+  Full-width road/building/owner overlap checks0; every entrance accessible.
+  Candidate lots rejected by elevation OJ117/GJ466/PB161/SQLite113; pad maxima
+  10.3415/16.2568/9.2809/7.4041. Pad height is procedural, not a source-size metric.
+  All four World/emitted planning schemas pass. Repeated full generations and
+  package bytes match; final valley-r4 validates and double-exports current assets.
+  All12 canonical legacy flat/block/district compatibility snapshots remain exact.
+- Stability/tradeoff: new preset moves680/1324/664/503 source frames, and land
+  area grows4.0/7.7/14.0/10.5 percent against river-corridor-r4. This is intentional
+  terrain-driven reallocation, not density or small-edit stability improvement.
+  Compatible hinted49th-file addition preserves terrain and48 complete old frames.
+- Real browser commands: `node scripts/viewer_audit.mjs` with installed Chrome
+  at `C:/Program Files/Google/Chrome/Application/chrome.exe`, output
+  `../artifacts/visual/valley-final-main-r1`, inputs valley-r4/oj/after,
+  valley-r4/gj/after and valley-e2e-r3/world; same command with output
+  valley-final-unknown-r1 and valley-r4/pocketbase/after,sqlitebrowser/after.
+  All three LODs, source evidence, navigation and CPU preview/showcase pass.
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/valley-canvas-r1`
+  with the four valley-r4 after folders plus valley-e2e-r3/world passes all5
+  forced-Canvas source/member paging and Structure restore checks.
+  `node ../artifacts/visual/valley_focus.mjs valley-r4 valley-focus-r3`
+  passes matched-camera before/after, actual pointer selection, exact trip
+  dropdown/highlight, uphill animation geometry and raised-source focus.
+- Actual source traces: OJ ai/api/AiController.java→ai/config/AiSettings.java;
+  GJ Backend/Vm/.../api/controller/SseController.java→global/sse/SseTicketResponse.java.
+  Original edge IDs remain visible; shared roads do not add endpoints. Three
+  actual buildActivityGeometry probes on selected slopes have vehicle bases
+  equal to sampled road height+.17. Source camera targets include the exact pad
+  plus half source height. Measured Synthetic static rebuilds0 in both cases;
+  zero-network/no-complete-path cases report N/A, not invented traffic.
+  Software Chrome CPU timings are not GPU FPS/hardware performance claims.
+- Artifacts inspected: valley-focus-r3 OJ upland/foundation and GJ selected-trip
+  close-ups, earlier valley-look-reviewed-r1 Overview/Detail, final OJ Canvas
+  restored view and valley-final-main-r1 CPU showcase. User entry
+  `artifacts/visual/valley-focus-r3/index.html`; complete four-repository packages
+  and metrics in valley-r4/index.html. Rendered streets/source bases meet ground
+  in inspected views. Relief is gentle/subtle at Overview, more legible close up;
+  mixed neighborhoods and large pattern identities remain. No claim that slope
+  alone completes urban aesthetics, materials or density work.
+- Tests:635 Python run,634 pass/one existing Windows symlink skip;60 Node pass.
+  `python -X utf8 -m unittest discover -s tests -v`;
+  final focused rerun `python -X utf8 -m unittest discover -s tests -p test_world_elevation.py -v`;
+  `$testFiles = (rg --files tests -g '*.test.mjs'); node --test $testFiles`;
+  `python -m ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; `git diff --check` pass.
+  Eight new Python tests cover shared field and
+  exact breakpoints, unsuitable lots, independent profile/pad/surface validation,
+  renderer contact, source/schema/determinism, forged geometry, hinted growth,
+  sparse feasibility and explicit caps. Node verifies interior rise/fall even
+  with equal endpoints and matching lattice interpolation.
+- Fixes/reverification: initial export name collision corrected; foundation wall
+  winding and mid-edge terrain contact repaired at exact lattice breakpoints.
+  Fresh Spring first exposed a river shore-face cap; retain caps and try up to3
+  extra deterministic water templates BEFORE source allocation, recording
+  waterAttempt. Work-budget exhaustion is not retried. Sparse regression passes.
+  Early comparison byte mismatch during asset edits and stale-viewer audit refusal
+  were resolved by frozen repeated generation/current-asset exports, not weakened
+  assertions. Focus helper initially timed out on eager repeated target search;
+  cached visible hit regions, exact hit-testing and first-valid exit preserve the
+  proof requirements. Final r3 actual-pointer/height proof passes; earlier r1/r2
+  helper runs are failed diagnostics, not accepted artifacts.
+- Resource/performance: <=16384 surface cells,65536 faces,256 profile points per
+  road,150000 total profiles,100000 candidate lots; prior geometry/routing caps
+  retained. Concurrent generation-only samples OJ9.72s/GJ22.46s/PB6.44s/SQLite3.40s,
+  not controlled end-to-end performance comparisons. Fresh Spring one sample
+  generate0.259s/validate0.170s/package0.176s. No target code execution/install.
+- Spec alignment: PASS under approved procedural terrain plan/ADR-038 and
+  AC-001/002/003/006/008/011/014. No runtime AI/service, invented roles/edges,
+  stable source-ID change or canonical City/UCG break. Remaining risks: level
+  analytical river rather than watershed hydrology, no steep engineering,
+  coastlines or tunnels; W-12 excess ground/dead ends, W-15 role/material
+  separation and W-13/14 salience remain open.
+- Commits/delivery: design71ce70e followed by coherent valley implementation,
+  consumers, validators, tests and records on feat/semantic-zoning. Normal
+  configured-upstream push after final identity/staged-diff/remote review;
+  actual push result reported at handoff. No generated outputs/user caches,
+  agent attribution, force update or protection bypass.

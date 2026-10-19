@@ -139,7 +139,9 @@ def route_world(graph, parcels, streets):
     pairs = {}
     for s in streets:
         a, b = tuple(s["start"]), tuple(s["end"])
-        length = math.dist(a, b)
+        length = (sum(math.sqrt(math.dist(p[:2],r[:2])**2+(p[2]-r[2])**2)
+                      for p,r in zip(s["heightProfile"],s["heightProfile"][1:]))
+                  if "heightProfile" in s else math.dist(a, b))
         adjacency[a].append((b, length))
         adjacency[b].append((a, length))
         pairs[tuple(sorted((a, b)))] = s

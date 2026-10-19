@@ -37,6 +37,7 @@
   if (rendererMode) rendererMode.textContent = "2D fallback";
 
   const scene = data.scene;
+  const groundY=(x,z)=>filterEngine.groundHeight(data.surface,x,z);
   const ucg = data.ucg;
   const entities = new Map(ucg.entities.map((entity) => [entity.id, entity]));
   const edges = new Map(ucg.edges.map((edge) => [edge.id, edge]));
@@ -142,7 +143,7 @@
       majorDistrictIds.has(id),id,state.selected?.kind==='district' ? state.selected.id : null);
   }
   const aggregateFacilities = new Map(
-    lodPolicy.aggregates.map((aggregate) => [aggregate.id, aggregate]),
+    lodPolicy.aggregates.map((aggregate) => [aggregate.id, {...aggregate,baseElevation:filterEngine.aggregateElevation(data.surface,aggregate)}]),
   );
   const majorDistrictColors = [
     [24, 50, 74],
@@ -304,7 +305,7 @@
     if (accessPolicy) {
       accessFrame = accessPolicy.frame(currentDetailLevel, visibleBuildingIds, visibleNetworkIds, state.selected,
         showAllNetworks, aggregateFacilities.get(state.selected?.id)?.memberEntityIds || []);
-      const junctionGeometry=filterEngine.accessJunctionGeometry(accessFrame);
+      const junctionGeometry=data.surface ? {trims:new Map()} : filterEngine.accessJunctionGeometry(accessFrame);
       accessPaint=new Map(accessFrame.segments.map(segment=>
         [segment.id,filterEngine.accessMarkingSegments(segment,junctionGeometry.trims)]));
       renderedNetworkIds = accessFrame.networkIds;
@@ -429,7 +430,7 @@
     };
   }
 
-  function project(x, z, height = 0) {
+  function project(x, z, height = groundY(x,z)) {
     const rotated = rotatePoint(x, z);
     const scale = baseScale() * state.zoom;
     return {
@@ -772,9 +773,14 @@
     if(oriented) {
       const palette=colors[building.archetype] || colors.GENERIC_BUILDING;
       const faces=[];
+      for(const face of oriented.foundationFaces || []) {
+        const depth=face.points.reduce((sum,[x,y,z])=>{const r=rotatePoint(x,z);return sum+r.x+r.z+y;},0)/face.points.length;
+        faces.push({points:face.points.map(([x,y,z])=>project(x,z,y)),depth,color:face.color});
+      }
       for(const part of oriented.parts) {
-        const bottom=part.footprint.map(([x,z])=>project(x,z,part.y));
-        const top=part.footprint.map(([x,z])=>project(x,z,part.y+part.height));
+        const lift=data.surface ? .2 : 0;
+        const bottom=part.footprint.map(([x,z])=>project(x,z,part.y+lift));
+        const top=part.footprint.map(([x,z])=>project(x,z,part.y+part.height+lift));
         const depth=part.footprint.map(([x,z])=>{const r=rotatePoint(x,z);return r.x+r.z;});
         for(let i=0;i<4;i++)faces.push({points:[bottom[i],bottom[(i+1)%4],top[(i+1)%4],top[i]],
           depth:(depth[i]+depth[(i+1)%4])/2+part.y+part.height/2,color:palette[1+i%2]});
@@ -813,12 +819,13 @@
   }
 
   function drawAggregateFacility(facility) {
+    const base=facility.baseElevation || 0;
     const selectedMember = state.selected?.kind === "building"
       && facility.memberEntityIds.includes(state.selected.id)
       ? scene.buildings.find(b => b.entityId === state.selected.id) : null;
     const isSelected = selected("aggregate", facility.id) || Boolean(selectedMember);
     const outlines = filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay)).map((plot) => drawVolume(
-      { ...plot, height: 2.2 },
+      { ...plot, height: 2.2+base },
       ["#475569", "#263449", "#172033"],
       isSelected ? "#f8fafc" : "#fbbf24",
       isSelected ? 3.2 : 2.2,
@@ -828,7 +835,7 @@
       (left, right) => buildingDepth(left) - buildingDepth(right),
     )) {
       const outline = drawVolume(
-        part,
+        {...part,y:(part.y || 0)+base},
         colors[part.archetype] || colors.GENERIC_BUILDING,
         isSelected ? "#f8fafc" : "rgba(226, 232, 240, 0.8)",
         isSelected ? 2.8 : 1.4,
@@ -836,7 +843,7 @@
       outlines.push(outline);
     }
     if (selectedMember) {
-      const b = selectedMember, y = facility.height + 3;
+      const b = selectedMember, y = facility.height + 3+base;
       polygonPath([project(b.x, b.z, y), project(b.x + b.width, b.z, y),
         project(b.x + b.width, b.z + b.depth, y), project(b.x, b.z + b.depth, y)]);
       context.strokeStyle = "#22d3ee";
@@ -848,7 +855,7 @@
       const labelPoint = project(
         facility.labelX ?? facility.x + facility.width / 2,
         facility.labelZ ?? facility.z + facility.depth / 2,
-        facility.height + 4,
+        facility.height + 4+base,
       );
       context.font = "800 12px ui-sans-serif, system-ui, sans-serif";
       const labelWidth = Math.min(240, Math.ceil(context.measureText(label).width) + 16);
@@ -877,7 +884,7 @@
     districtLabelCandidates = [];
     context.clearRect(0, 0, viewportWidth, viewportHeight);
     drawGrid();
-    if(data.occupiedGround && !structureOverlay) {
+    if(data.occupiedGround && !structureOverlay && !data.surface) {
       const majorOrder=[...majorDistrictIds].sort();
       for(const pad of data.occupiedGround.pads) {
         let owner=districts.get(pad.districtId);
@@ -889,8 +896,10 @@
         }
       }
     }
+    if(data.surface) drawLandscapeTree(data.surface);
     if(data.landscape && !structureOverlay) {
       for(const patch of data.landscape.patches) {
+        if(patch.faces){drawLandscapeTree(patch);continue;}
         polygonPath(patch.polygon.map(([x,z])=>project(x,z,.01)));
         context.fillStyle=patch.color;context.fill();
       }
@@ -907,7 +916,7 @@
       if (district && renderedDistrictIds.has(district.id)) {
         context.strokeStyle='#38bdf8';context.lineWidth=2.5;
         for (const [a,b] of districtTerritory(district).boundary) {
-          const start=project(...a,.1),end=project(...b,.1);
+          const start=project(...a,groundY(...a)+.1),end=project(...b,groundY(...b)+.1);
           context.beginPath();context.moveTo(start.x,start.y);context.lineTo(end.x,end.y);context.stroke();
         }
       }
@@ -1195,6 +1204,7 @@
     detailRow(details, "Height", building.height);
     const parcel=orientedBuildings[entityId];
     if(parcel) {
+      if(parcel.baseElevation!==undefined) detailRow(details,"Terrain / level foundation",`${parcel.foundationLow.toFixed(2)} → ${parcel.baseElevation.toFixed(2)} · procedural world units`);
       detailRow(details,"Street-facing rotation",`${(parcel.angle*180/Math.PI).toFixed(1)}° · visual, not geographic north`);
       detailRow(details,"Local displacement",`${parcel.displacement.toFixed(2)} world units`);
       detailRow(details,"Frontage street",parcel.streetId);

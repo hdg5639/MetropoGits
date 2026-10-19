@@ -1,5 +1,48 @@
 # Current implementation contract baseline
 
+## Graded valley, shared street profiles and foundations — 2026-10-19
+
+[ADR-038](../adr/ADR-038.md) adds opt-in `river-valley`, terrain/0.3 and
+terrain-adaptive/0.3. Existing flat/lake/river versions and source City/UCG
+contracts/IDs remain unchanged. World/planning enums expand compatibly.
+
+Before urban supply, persist one global surface-field/0.1 (seed,16-unit lattice,
+bounded amplitude/rise length and flat valley radius). Lattice vertex samples
+are deterministic world-space values; a fixed triangular interpolation defines
+all intervening heights. This is coherent gentle upland relief, not simulated
+watershed drainage. Initial water/crossings remain fixed during urban repairs.
+If the original river template is geometrically infeasible, at most3 additional
+seeded templates are tried BEFORE allocation; `elevation.waterAttempt` discloses
+this. Work-budget exhaustion is not retried. Old river0.2 behavior stays intact.
+
+Complete candidate lots with relief>1 or excessive predicted driveway grades
+are rejected before source assignment. Every source still gets a real lot,
+level `baseElevation` and `foundationLow`; original dimensions/roles/evidence
+remain intact. Exact lattice-clipped footprint extrema determine the pad, and
+foundation walls split at lattice breakpoints to contact actual ground.
+
+Each physical street carries `heights` and an exact `heightProfile` of X/Z/Y
+breakpoints. Ground roads follow the same field; certified bridges retain their
+own fixed profiles. Doorways meet pad height and street connections meet ground
+height. Grades are limited to0.16 on roads and0.20 on short accesses. Physical
+3D lengths inform routing without changing exact logical endpoints/edge IDs.
+Validators independently recompute full profiles, foundations, joint heights
+and the derived surface mesh; labels alone never authorize a different height.
+
+World `surface/0.1` records the final envelope's shared explicit ground mesh and
+height grid. This mesh is derived after land repair from the original field,
+not terrain rerolling. CPU/WebGL/Canvas share tessellated pavement, foundations,
+raised full source meshes, planting and natural-feature geometry. Picking,
+camera framing/focus, labels, LOD masses and Synthetic use the same heights.
+The source inspector separates procedural ground/pad height from source height.
+Aggregate plinths extend down into terrain instead of floating above it.
+
+Caps:16,384 surface cells,65,536 faces,256 points per road profile,150,000 total
+profile points and100,000 candidate lots; prior planning/routing/terrain limits
+remain. Hinted edits reuse immutable field/terrain and compatible complete frames.
+Switching preset intentionally changes geography and is not a small-edit claim.
+Steep engineering, tunnels, drainage and remaining density/material work stay open.
+
 ## Connected water and physical crossings — 2026-10-19
 
 [ADR-037](../adr/ADR-037.md) adds opt-in `--terrain river-corridor`, generator

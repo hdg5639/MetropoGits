@@ -17,6 +17,9 @@ MAX_WORK = 2_000_000
 def generate_terrain(envelope, seed, preset=PRESET):
     """Only demand-sized land and seed are inputs. No buildings/streets exist yet."""
     if preset != PRESET:
+        from .elevation import PRESET as VALLEY_PRESET, generate_valley
+        if preset == VALLEY_PRESET:
+            return generate_valley(envelope, seed)
         from .rivers import PRESET as RIVER_PRESET, generate_river
         if preset != RIVER_PRESET:
             raise ValueError("unsupported natural terrain preset")
@@ -152,6 +155,13 @@ def terrain_plan(plans, main, boundary, ports, pattern, polygon, terrain):
     candidates = [s for p in adapted.values() for s in p[0] if not any(
         overlap(s["polygon"], f["noBuildPolygon"]) or inside(s["streetPoint"], f["roadPolygon"])
         for f in terrain["features"])]
+    if "elevation" in terrain:
+        from .elevation import suitable
+        if len(candidates)>100_000:
+            raise ValueError("elevation candidate limit")
+        before=len(candidates)
+        candidates=[s for s in candidates if suitable(s,terrain)]
+        pattern=dict(pattern,elevationRejectedSlots=before-len(candidates))
     valid = {s["id"] for s in clear_frontage(candidates, physical)}
     adapted = {key: ([s for s in p[0] if s["id"] in valid], *p[1:]) for key, p in adapted.items()}
     if sum(map(len, ports.values()))*len(adapted_main) > MAX_WORK:
@@ -166,11 +176,12 @@ def terrain_plan(plans, main, boundary, ports, pattern, polygon, terrain):
 
 def validate_terrain(terrain, seed):
     from .rivers import VERSION as RIVER_VERSION, MAX_FEATURES
+    from .elevation import VERSION as VALLEY_VERSION
 
     if (not isinstance(terrain, dict) or terrain.get("version") != VERSION
             or not 3 <= len(terrain.get("initialEnvelope", [])) <= 512
             or not 1 <= len(terrain.get("features", [])) <= 5):
-        if (not isinstance(terrain, dict) or terrain.get("version") != RIVER_VERSION
+        if (not isinstance(terrain, dict) or terrain.get("version") not in (RIVER_VERSION, VALLEY_VERSION)
                 or not 3 <= len(terrain.get("initialEnvelope", [])) <= 512
                 or not 1 <= len(terrain.get("features", [])) <= MAX_FEATURES
                 or not 1 <= len(terrain.get("crossings", [])) <= 3):

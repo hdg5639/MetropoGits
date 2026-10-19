@@ -16,6 +16,7 @@ from .seed import derive
 from .zoning import planning_document
 from .landscape import generate_landscape
 from .rivers import bridge_faces, height_at
+from .elevation import surface as terrain_surface, pavement as graded_pavement, lifted_faces, foundation_faces
 
 GROUND = ["#33464b", "#4a4149", "#354b42", "#504835", "#3e4454", "#4e3c42", "#3b4c50"]
 ZONE_COLORS = {
@@ -42,7 +43,16 @@ COLORS = dict(
 
 def _landscape(world, value):
     if value is None:
-        return generate_landscape(world) if world.get("patternScale") == "adaptive" else False
+        value = generate_landscape(world) if world.get("patternScale") == "adaptive" else False
+    if value and "surface" in world and not value.get("elevated"):
+        value=copy.deepcopy(value)
+        value.update(elevated=True,terrainPreset=world["terrainPreset"])
+        s=terrain_surface(world["terrain"])
+        for p in value["patches"]:
+            p["faces"]=[dict(points=[[q[0],s.height(q)+.02,q[1]] for q in reversed(poly)],color=p["color"])
+                        for poly in s.pieces(p["polygon"])]
+        for tree in value["trees"]:
+            tree["faces"]=lifted_faces(tree["faces"],world["terrain"],rigid=True)
     return value
 
 
@@ -84,6 +94,11 @@ def view_data(world, scene, graph, *, landscape=None):
                 bounds=dict(minX=x, minZ=z, maxX=right, maxZ=bottom),
             )
         )
+    if "surface" in world:
+        s=terrain_surface(world["terrain"])
+        for territory in territories:
+            territory["boundary"]=[[a[:2],b[:2]] for start,end in territory["boundary"]
+                                   for path in [s.profile(start,end)] for a,b in zip(path,path[1:])]
     buildings = []
     models = {}
     for p in world["parcels"]:
@@ -101,6 +116,8 @@ def view_data(world, scene, graph, *, landscape=None):
             )
         }
         b.update(x=p["center"][0] - p["width"] / 2, z=p["center"][1] - p["depth"] / 2)
+        if "baseElevation" in p:
+            b["baseElevation"]=p["baseElevation"]
         if "zoneId" in p:
             b["districtId"] = p["zoneId"]
         buildings.append(b)
@@ -115,6 +132,9 @@ def view_data(world, scene, graph, *, landscape=None):
             displacement=0,
             pinnedDoors=[p["entrance"]],
         )
+        if "surface" in world:
+            models[p["entityId"]]["parts"]=[dict(part,y=part["y"]+p["baseElevation"]) for part in p["parts"]]
+            models[p["entityId"]]["foundationFaces"]=foundation_faces(p,world["terrain"])
     physical_scene = dict(
         schemaVersion="world-view/0.1",
         layoutAlgorithm=world["generatorVersion"],
@@ -142,11 +162,15 @@ def view_data(world, scene, graph, *, landscape=None):
     for surface in surfaces:
         if "heights" in surface:
             surface["pointHeights"] = [height_at(surface,p) for p in surface["points"]]
+    if "surface" in world:
+        surfaces=[p for s in world["streets"] for p in graded_pavement(s,world["terrain"],pavement_color)]
     incidence = {}
     for s in world["streets"]:
         for p in (s["start"], s["end"]):
             incidence.setdefault(tuple(p), []).append(s)
     for p, streets in incidence.items():
+        if "surface" in world:
+            continue
         if len(streets) < 3:
             continue
         radius = max(s["width"] for s in streets) / 2
@@ -215,8 +239,17 @@ def view_data(world, scene, graph, *, landscape=None):
     )
     if "terrain" in world:
         data["terrain"] = world["terrain"]
+        if "surface" in world:
+            data["terrain"]=copy.deepcopy(world["terrain"])
+            for f in data["terrain"]["features"]:
+                f["faces"]=lifted_faces(f["faces"],world["terrain"])
         if world["terrain"].get("crossings"):
             data["infrastructure"] = dict(structural=True, faces=bridge_faces(world["terrain"]))
+    if "surface" in world:
+        data["surface"]=world["surface"]
+        data["streetDemand"]["segments"]={s["id"]:graded_pavement(s,world["terrain"],pavement_color,.11) for s in routing["segments"]}
+        data["streetCurves"]["segments"]={s["id"]:[p[:2] for p in s["heightProfile"]] for s in routing["segments"]}
+        data["streetCurves"]["paintSegments"]={s["id"]:[dict(start=a[:2],end=b[:2]) for a,b in zip(s["heightProfile"],s["heightProfile"][1:])] for s in routing["segments"]}
     if neighborhoods:
         data["semanticZoning"] = {z["id"]: z for z in neighborhoods}
         if world.get("zoningPolicy") == "neighborhoods":
@@ -259,12 +292,14 @@ def view_data(world, scene, graph, *, landscape=None):
 
 def render_svg(world, width=1200, height=750, *, landscape=None):
     landscape = _landscape(world, landscape)
+    graded="surface" in world
+    field=terrain_surface(world["terrain"]) if graded else None
     def iso(p, y=0):
         return [(p[0] - p[1]) * 0.866, (p[0] + p[1]) * 0.5 - y]
 
     points = [iso(p) for p in world["envelope"]]
     points += [
-        iso(p, part["y"] + part["height"])
+        iso(p, part["y"] + part["height"]+b.get("baseElevation",0))
         for b in world["parcels"]
         for part in b["parts"]
         for p in part["footprint"]
@@ -295,7 +330,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
         f'<text x="28" y="30" fill="#e2edf5" font-family="sans-serif" font-size="20">{escape(world["repositoryNamespace"])}</text>',
         f'<text x="28" y="51" fill="#8da9b8" font-family="sans-serif" font-size="11">{len(world["parcels"])} files · {len(world["districts"])} districts · seed {world["seed"]}</text>',
     ]
-    for i, d in enumerate(world["districts"]):
+    for i, d in enumerate([] if graded else world["districts"]):
         lines.append(
             polygon(
                 [project(p) for p in d["polygon"]],
@@ -303,7 +338,10 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
                 f'data-directory-id="{escape(d["id"])}" stroke="#62727c" stroke-width=".6"',
             )
         )
-    for z in ([] if landscape else world.get("zoning", {}).get("zones", [])):
+    if graded:
+        for face in world["surface"]["faces"]:
+            lines.append(polygon([project([x,z],y) for x,y,z in face["points"]],face["color"]))
+    for z in ([] if landscape or graded else world.get("zoning", {}).get("zones", [])):
         lines.append(
             polygon(
                 [project(p) for p in z["polygon"]],
@@ -313,9 +351,17 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
         )
     if landscape:
         for patch in landscape["patches"]:
+            if graded:
+                for face in patch["faces"]:
+                    lines.append(polygon([project([x,z],y) for x,y,z in face["points"]],face["color"]))
+                continue
             lines.append(polygon([project(p, .01) for p in patch["polygon"]],
                                  patch["color"], 'data-decorative="green-pocket"'))
     for s in world["streets"]:
+        if graded:
+            for p in graded_pavement(s,world["terrain"],"#26333e"):
+                lines.append(polygon([project(v,y) for v,y in zip(p["points"],p["pointHeights"])],p["color"]))
+            continue
         lines.append(
             polygon(
                 [project(p) for p in ribbon(s["start"], s["end"], s["width"])],
@@ -324,7 +370,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
         )
     faces = []
     for feature in world.get("terrain", {}).get("features", []):
-        for face in feature["faces"]:
+        for face in (lifted_faces(feature["faces"],world["terrain"]) if graded else feature["faces"]):
             p = face["points"]
             faces.append((sum(v[0]+v[1]+v[2] for v in p)/len(p),
                           [project([x,z], y) for x,y,z in p], face["color"], None, 1,
@@ -342,9 +388,13 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
                               face["color"], None, 1))
     for b in world["parcels"]:
         color = COLORS.get(b["archetype"], COLORS["GENERIC_BUILDING"])
+        if graded:
+            for face in foundation_faces(b,world["terrain"]):
+                p=face["points"]
+                faces.append((sum(x+y+z for x,y,z in p)/len(p),[project([x,z],y) for x,y,z in p],face["color"],b["entityId"],1))
         for part in b["parts"]:
             poly = part["footprint"]
-            low = part["y"] + 0.2
+            low = part["y"] + 0.2+b.get("baseElevation",0)
             high = low + part["height"]
             faces.append(
                 (
@@ -388,7 +438,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
             )
         )
     for d in world["districts"]:
-        x, y = project(d["anchor"])
+        x, y = project(d["anchor"],field.height(d["anchor"]) if graded else 0)
         label = d["label"].rsplit("/", 1)[-1] or "."
         lines.append(
             f'<text x="{x:.3f}" y="{y:.3f}" fill="#e2edf5" stroke="#10202a" stroke-width="3" paint-order="stroke" font-family="sans-serif" font-size="13" text-anchor="middle">{escape(label)}</text>'
@@ -406,6 +456,8 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
         if world["terrain"].get("crossings"):
             lines[-2] = lines[-2].replace("Terrain-first lakes and hills (procedural)",
                                          "Connected waterway and shared bridges (procedural)")
+        if graded:
+            lines[-2]=lines[-2].replace("Connected waterway and shared bridges (procedural)","Graded valley and level foundations (procedural)")
     return "\n".join(lines).encode("utf8")
 
 

@@ -4,18 +4,28 @@
   "title": "Experimental flat physical world; does not replace City v0.2",
   "type": "object",
   "additionalProperties": false,
+  "allOf":[{"if":{"properties":{"generatorVersion":{"const":"terrain-adaptive/0.3"}}},"then":{"required":["surface"]}}],
   "required": ["schemaVersion","generatorVersion","seed","seedAlgorithm","repositoryNamespace","sourceCityDigest","ucgDigest","coordinateSystem","coordinateQuantum","terrainPreset","allocationAlgorithm","envelope","districts","logicalDistricts","topology","parcels","streets","routing","networks","coverage","diagnostics","anchors"],
   "properties": {
     "schemaVersion": {"const":"world/0.1-experimental"},
-    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4","flat-adaptive-neighborhoods/0.5","terrain-adaptive/0.1","terrain-adaptive/0.2"]},
+    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4","flat-adaptive-neighborhoods/0.5","terrain-adaptive/0.1","terrain-adaptive/0.2","terrain-adaptive/0.3"]},
+    "surface":{"type":"object","additionalProperties":false,"required":["version","spacing","origin","values","faces"],"properties":{
+      "version":{"const":"surface/0.1"},"spacing":{"const":16},"origin":{"$ref":"#/$defs/point"},
+      "values":{"type":"array","minItems":2,"maxItems":512,"items":{"type":"array","minItems":2,"maxItems":512,"items":{"type":"number","minimum":0,"maximum":18}}},
+      "faces":{"type":"array","maxItems":65536,"items":{"type":"object","required":["points","color"],"properties":{
+        "color":{"type":"string","pattern":"^#[0-9a-f]{6}$"},"points":{"type":"array","minItems":3,"maxItems":16,"items":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"number"}}}}}}
+    }},
     "streetPolicy": {"enum":["original","shared","permeable"]},
     "terrain": {
       "type":"object", "additionalProperties":false,
       "required":["version","preset","seed","environmental","initialEnvelope","surfacePolicy","features","protectedArea"],
       "properties": {
-        "version":{"enum":["terrain/0.1","terrain/0.2"]}, "preset":{"enum":["lake-district","river-corridor"]},
+        "version":{"enum":["terrain/0.1","terrain/0.2","terrain/0.3"]}, "preset":{"enum":["lake-district","river-corridor","river-valley"]},
         "seed":{"type":"string","pattern":"^[0-9a-f]{16}$"}, "environmental":{"const":true},
-        "initialEnvelope":{"$ref":"#/$defs/polygon"}, "surfacePolicy":{"const":"flat-buildable-plains"},
+        "initialEnvelope":{"$ref":"#/$defs/polygon"}, "surfacePolicy":{"enum":["flat-buildable-plains","graded-ground-level-foundations"]},
+        "elevation":{"type":"object","additionalProperties":false,"required":["version","seed","spacing","amplitude","riseLength","flatRadius"],"properties":{
+          "version":{"const":"surface-field/0.1"},"seed":{"type":"string","pattern":"^[0-9a-f]{16}$"},"spacing":{"const":16},"waterAttempt":{"type":"integer","minimum":1,"maximum":3},
+          "amplitude":{"type":"number","minimum":6,"maximum":18},"riseLength":{"type":"number","minimum":90,"maximum":10000},"flatRadius":{"type":"number","minimum":32,"maximum":1000}}},
         "protectedArea":{"type":"number","exclusiveMinimum":0},
         "channel":{"type":"object","additionalProperties":false,"required":["centerline","waterLevel","policy"],"properties":{
           "centerline":{"type":"array","minItems":9,"maxItems":9,"items":{"$ref":"#/$defs/point"}},
@@ -40,7 +50,9 @@
       },
       "allOf":[{"if":{"properties":{"version":{"const":"terrain/0.1"}}},
         "then":{"properties":{"preset":{"const":"lake-district"},"features":{"maxItems":5}},"not":{"anyOf":[{"required":["channel"]},{"required":["crossings"]}]}},
-        "else":{"required":["channel","crossings"],"properties":{"preset":{"const":"river-corridor"}}}}]
+        "else":{"required":["channel","crossings"],"if":{"properties":{"version":{"const":"terrain/0.2"}}},
+          "then":{"properties":{"preset":{"const":"river-corridor"}},"not":{"required":["elevation"]}},
+          "else":{"required":["elevation"],"properties":{"preset":{"const":"river-valley"},"surfacePolicy":{"const":"graded-ground-level-foundations"}}}}}]
     },
     "patternScale": {"enum":["district","adaptive"]},
     "zoningPolicy": {"enum":["semantic","soft","neighborhoods"]},
@@ -57,14 +69,18 @@
     "ucgDigest": {"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
     "coordinateSystem": {"const":"x-z-ground-y-up"},
     "coordinateQuantum": {"const":0.0001},
-    "terrainPreset": {"enum":["flat","lake-district","river-corridor"]},
+    "terrainPreset": {"enum":["flat","lake-district","river-corridor","river-valley"]},
     "allocationAlgorithm": {"const":"capacity-bisection/0.1"},
     "envelope": {"$ref":"#/$defs/polygon"},
     "districts": {"type":"array","minItems":1,"maxItems":64,"items":{"type":"object","required":["id","sourceDirectoryId","label","polygon","anchor","localSeed","planningProfile","primaryAxis","areaDemand","areaAllocated","capacity","buildingCount"],"properties":{"id":{"type":"string"},"polygon":{"$ref":"#/$defs/polygon"},"planningProfile":{"enum":["GRID","RADIAL","ORGANIC","INDUSTRIAL","HYBRID","ZONED"]},"planningRegions":{"type":"array","minItems":2,"maxItems":4,"items":{"type":"object","required":["id","polygon","planningProfile","areaAllocated"],"properties":{"polygon":{"$ref":"#/$defs/polygon"},"planningProfile":{"enum":["GRID","ORGANIC"]}}}},"areaAllocated":{"type":"number","exclusiveMinimum":0},"capacity":{"type":"integer","minimum":1},"buildingCount":{"type":"integer","minimum":1}}}},
     "logicalDistricts": {"type":"array","items":{"type":"object","required":["id","parentId"]}},
     "topology": {"type":"object","required":["edges"],"properties":{"edges":{"type":"array","items":{"type":"object","required":["id","start","end","districtIds"],"properties":{"start":{"$ref":"#/$defs/point"},"end":{"$ref":"#/$defs/point"},"districtIds":{"type":"array","minItems":1,"maxItems":2,"uniqueItems":true,"items":{"type":"string"}}}}}}},
     "parcels": {"type":"array","minItems":1,"maxItems":10000,"items":{"type":"object","required":["entityId","sourceDistrictId","districtId","slotId","blockId","center","angle","footprint","parts","parcel","entrance","streetPoint","archetype","width","depth","height","evidenceIds","styleVariant"],"properties":{"entityId":{"type":"string"},"footprint":{"$ref":"#/$defs/polygon"},"parcel":{"$ref":"#/$defs/polygon"},"center":{"$ref":"#/$defs/point"},"entrance":{"$ref":"#/$defs/point"},"angle":{"type":"number"},"parts":{"type":"array","minItems":1,"items":{"type":"object","required":["footprint","height","y"],"properties":{"footprint":{"$ref":"#/$defs/polygon"}}}}}}},
-    "streets": {"type":"array","maxItems":50000,"items":{"type":"object","required":["id","kind","start","end","width","access"],"properties":{"kind":{"const":"STRUCTURAL"},"start":{"$ref":"#/$defs/point"},"end":{"$ref":"#/$defs/point"},"width":{"type":"number","exclusiveMinimum":0},"access":{"type":"boolean"}}}},
+    "streets": {"type":"array","maxItems":50000,"items":{"type":"object","required":["id","kind","start","end","width","access"],"properties":{
+      "kind":{"const":"STRUCTURAL"},"start":{"$ref":"#/$defs/point"},"end":{"$ref":"#/$defs/point"},"width":{"type":"number","exclusiveMinimum":0},"access":{"type":"boolean"},
+      "heights":{"type":"array","minItems":2,"maxItems":2,"items":{"type":"number","minimum":0,"maximum":20}},
+      "heightProfile":{"type":"array","minItems":2,"maxItems":256,"items":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"number"}}}
+    }}},
     "routing": {"type":"object","required":["version","status","routes","segments","junctions","unresolvedEdgeIds","diagnostics"],"properties":{"status":{"const":"COMPLETE"},"routes":{"type":"array","maxItems":25000}}},
     "networks": {"type":"array"},
     "coverage": {"type":"object","required":["internalEdgeIds","nonLocalEdgeIds","searchExpansions"]},
