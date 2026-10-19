@@ -25,6 +25,7 @@ from .rivers import GENERATOR_VERSION as RIVER_GENERATOR_VERSION, PRESET as RIVE
 from .elevation import GENERATOR_VERSION as VALLEY_GENERATOR_VERSION, PRESET as VALLEY_PRESET, annotate, build_surface
 from .river_landscape import GENERATOR_VERSION as LANDSCAPE_GENERATOR_VERSION, PRESET as LANDSCAPE_PRESET
 from .terrain_varied import GENERATOR_VERSION as VARIED_GENERATOR_VERSION, PRESET as VARIED_PRESET
+from .watershed import GENERATOR_VERSION as WATERSHED_GENERATOR_VERSION, PRESET as WATERSHED_PRESET
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
 from .organic import organic_slots
@@ -84,7 +85,7 @@ def generate_world(
         raise ValueError('campus requires routed adaptive neighborhoods')
     if street_hierarchy and (pattern_scale != "adaptive" or not _route):
         raise ValueError("street hierarchy requires routed adaptive neighborhoods")
-    landscape_presets = (LANDSCAPE_PRESET, VARIED_PRESET)
+    landscape_presets = (LANDSCAPE_PRESET, VARIED_PRESET, WATERSHED_PRESET)
     if terrain not in ("flat", NATURAL_PRESET, RIVER_PRESET, VALLEY_PRESET, *landscape_presets) or (
         terrain != "flat" and (pattern_scale != "adaptive" or not _route)
     ):
@@ -255,7 +256,7 @@ def generate_world(
     owners = {b["entityId"]: key for key, members in grouped.items() for b in members}
     pairs = dependency_pairs(graph, owners) if zoning == "neighborhoods" else {}
     campus_pairs = dependency_pairs(graph, dict.fromkeys(owners, "campus")) if campus else None
-    if terrain == VARIED_PRESET:
+    if terrain in (VARIED_PRESET,WATERSHED_PRESET):
         # Multiple independent basins/ridges need developable room in addition
         # to the old single-corridor budget, before the fixed terrain is seeded.
         for budget in budgets.values():
@@ -293,7 +294,7 @@ def generate_world(
         and (
             pattern_scale == "block"
             or previous.get("generatorVersion") in (
-                ((VARIED_GENERATOR_VERSION,) if terrain == VARIED_PRESET else (LANDSCAPE_GENERATOR_VERSION,) if terrain == LANDSCAPE_PRESET else
+                ((WATERSHED_GENERATOR_VERSION,) if terrain == WATERSHED_PRESET else (VARIED_GENERATOR_VERSION,) if terrain == VARIED_PRESET else (LANDSCAPE_GENERATOR_VERSION,) if terrain == LANDSCAPE_PRESET else
                  (VALLEY_GENERATOR_VERSION,) if terrain == VALLEY_PRESET else
                  (RIVER_GENERATOR_VERSION,) if terrain == RIVER_PRESET else (TERRAIN_GENERATOR_VERSION,)) if terrain != "flat" else
                 (ADAPTIVE_GENERATOR_VERSION, SHARED_GENERATOR_VERSION, ALLEY_GENERATOR_VERSION, POROUS_GENERATOR_VERSION)
@@ -576,7 +577,7 @@ def generate_world(
         )
     if terrain in landscape_presets:
         from .river_landscape import joined_streets
-        raw=joined_streets(raw,parcels,terrain_data)
+        raw=joined_streets(raw,parcels,terrain_data,tolerance=.002 if terrain==WATERSHED_PRESET else .0005)
     streets = atomic_streets(raw)
     if terrain in (VALLEY_PRESET,*landscape_presets):
         annotate(streets,parcels,terrain_data)
@@ -763,7 +764,7 @@ def generate_world(
                 for field in ("heights","heightProfile","tunnelId"):
                     if field in physical[s["physicalId"]]:
                         s[field]=physical[s["physicalId"]][field]
-        world.update(generatorVersion=VARIED_GENERATOR_VERSION if terrain == VARIED_PRESET else LANDSCAPE_GENERATOR_VERSION if terrain == LANDSCAPE_PRESET else VALLEY_GENERATOR_VERSION if terrain == VALLEY_PRESET else RIVER_GENERATOR_VERSION if terrain == RIVER_PRESET else TERRAIN_GENERATOR_VERSION, terrainPreset=terrain,
+        world.update(generatorVersion=WATERSHED_GENERATOR_VERSION if terrain == WATERSHED_PRESET else VARIED_GENERATOR_VERSION if terrain == VARIED_PRESET else LANDSCAPE_GENERATOR_VERSION if terrain == LANDSCAPE_PRESET else VALLEY_GENERATOR_VERSION if terrain == VALLEY_PRESET else RIVER_GENERATOR_VERSION if terrain == RIVER_PRESET else TERRAIN_GENERATOR_VERSION, terrainPreset=terrain,
                      terrain=terrain_data, streetPolicy=street_policy)
     if campus:
         from .campus import collect_plan

@@ -1342,3 +1342,32 @@ City, UCG, planning, source entrances and paths are unchanged by aggregation.
 The export-only `role_compounds=False` option is available for controlled
 same-World comparisons. Generic overview plates remain excluded on rotated
 World geometry. This restores eligible role landmarks, not arbitrary mass merging.
+
+### Main-river/tributary topology diversity — ADR-053
+
+Explicit `--terrain watershed-landscape` adds terrain/0.6 and terrain-adaptive/0.6.
+Older terrain presets retain their bytes and stricter payload bounds. UCG/City,
+source IDs and evidence contracts are unchanged. Before urban assignment, use
+local seeds and available scale for one/two through rivers and zero/three curved
+tributaries, including nested confluences. Counts are actual channel records,
+not the number of convex RIVER mesh pieces. Broad meanders cover the developable
+domain, rather than a tiny central bend with long straight urban extensions.
+
+The additive experimental channel `waterways` array carries environmental IDs,
+MAIN/TRIBUTARY kind, parentId, centerline and width. Existing centerline and
+tributaries project all these paths into the same shared height field; that
+projection's tributaries array can include an additional main path. Consumers
+must use waterways kinds when counting rivers. Waterway parents and shapes are
+reconstructed independently during terrain validation. These are procedural
+environmental relationships, not source dependency claims or simulated drainage.
+
+Bounds: five waterways,17 vertices/line,64 natural convex pieces,eight certified
+crossings,three conditional tunnels. Branch fitting is bounded and may reject
+infeasible proposals. Overlapping water is removed from shared shore faces;
+disjoint cutters are skipped to prevent artificial fragmentation. Lakes retain
+level basins; mountains and terrain-first access/grade/collision gates remain.
+New-mode clipping seams alone use a0.002-unit snap bound (old0.0005 preserved),
+within the existing reserved-street validation tolerance; source entrances and
+bridge endpoints are fixed. Budget exhaustion never silently drops waterways.
+Changing profiles deliberately changes geography; compatible same-mode hints
+retain terrain and existing frames in the named growth fixture.

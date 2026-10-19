@@ -26,7 +26,7 @@ def _strip(line, width, identity):
             for i,(a,b) in enumerate(zip(sections,sections[1:]))]
 
 
-def _banks(features):
+def _banks(features, *, sparse=False):
     water=[f for f in features if f["kind"]=="RIVER"]
     work=0
     for f in water:
@@ -35,7 +35,8 @@ def _banks(features):
             work+=len(banks)*len(other["polygon"])
             if work>MAX_WORK:
                 raise ValueError("open river shore work limit")
-            banks=[p for bank in banks for p in subtract(bank,other["polygon"])]
+            banks=[p for bank in banks for p in
+                   ([bank] if sparse and not overlap(bank,other["polygon"]) else subtract(bank,other["polygon"]))]
             if len(banks)>63:
                 raise ValueError("open river shore face limit")
         f["faces"]=[dict(points=[[q(x),.06,q(z)] for x,z in reversed(p)],color="#83927a") for p in banks]
@@ -190,7 +191,7 @@ def clip_line(a,b,polygon):
     return [point([a[j]+v*(b[j]-a[j]) for j in (0,1)]) for v in (lo,hi)] if hi-lo>.000001 else None
 
 
-def joined_streets(roads, parcels, terrain):
+def joined_streets(roads, parcels, terrain, *, tolerance=.0005):
     """Join quantized clipping seams, not separate nearby urban roads."""
     from collections import defaultdict
 
@@ -199,9 +200,11 @@ def joined_streets(roads, parcels, terrain):
     fixed={tuple(p[k]) for p in parcels for k in ("entrance","streetPoint")}
     fixed.update(tuple(p) for c in terrain["crossings"] for p in c["path"])
     fixed.update(tuple(p) for c in terrain["tunnels"] for p in c["path"])
+    if tolerance not in (.0005,.002):
+        raise ValueError("unsupported clipping seam tolerance")
     cells=defaultdict(list)
     def bucket(p):
-        return tuple(math.floor(v/.001) for v in p)
+        return tuple(math.floor(v/(tolerance*2)) for v in p)
     for p in sorted(fixed):
         cells[bucket(p)].append(p)
     canonical={p:p for p in fixed}
@@ -215,7 +218,7 @@ def joined_streets(roads, parcels, terrain):
                     work+=1
                     if work>MAX_WORK:
                         raise ValueError("open river junction work limit")
-                    if math.dist(p,other)<.0005:
+                    if math.dist(p,other)<tolerance:
                         choices.append(other)
         canonical[p]=min(choices,key=lambda v:(v not in fixed,math.dist(p,v),v)) if choices else p
         if not choices:

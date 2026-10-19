@@ -124,7 +124,15 @@ is an analytical landscape, not a drainage simulator; existing bounded river
 presets remain available for compatibility. See [ADR-039](docs/adr/ADR-039.md).
 
 `--terrain varied-landscape` adds area/seed-dependent lakes, ridges and variable
-water branches while retaining terrain-first placement. For whole-neighborhood
+water branches while retaining terrain-first placement. Its older branch stencil
+is preserved for reproducibility. Prefer `--terrain watershed-landscape` for
+one or two through rivers, curved tributaries and tributary-to-tributary joins.
+Counts and geometry are seeded and scale-bounded; not every city must have a
+tributary. Water, banks and certified crossings precede urban placement, with
+lakes and uplands retained. Switching terrain profiles intentionally relocates
+buildings/streets, never source identities or evidence. See
+[ADR-053](docs/adr/ADR-053.md); this remains analytical, not a drainage simulation.
+For whole-neighborhood
 campus planning, also pass `--campus --campus-style fabric --street-hierarchy`
 with adaptive neighborhoods and `--street-policy porous`. This explicit
 experiment fits meandering malls, open arcades and staggered garden lanes before
