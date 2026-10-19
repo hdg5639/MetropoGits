@@ -7252,3 +7252,69 @@
   origin/feat/semantic-zoning; remote head matches c7ea3c8bb7fe6dd75618294c0268711bb4bd37b7.
   Tracked worktree is clean; the three pre-existing fixture build caches remain
   untracked and untouched. This delivery record follows as a documentation unit.
+
+## Checkpoint 2026-10-19 — Hanul HWPX single-repository output
+
+- Implemented: no engine/renderer change. At the user's priority interruption,
+  clone iamywl/hanul-hwpx and produce real static analysis, normal City, existing
+  porous terrain-first World, CPU showcase and static interactive viewer. Road
+  refinement/CAMPUS proposal read and indexed; RC-00/01 and CP-00/01 remain
+  pending, not represented as completed features.
+- Fixture/revision: https://github.com/iamywl/hanul-hwpx.git;
+  revision7432c67e91f472e7e9c3be54c07dcb7cbe4837d8, shallow main clone at
+  workspace visual_test_proj/hanul-hwpx. Clone remains clean. Tool baseline3166a0c,
+  repository namespacebenchmark/hanul-hwpx, world seed2fcc3180909d8112.
+- Commands (cwd MetropoGits unless clone):
+  `git clone --depth 1 --no-tags https://github.com/iamywl/hanul-hwpx.git D:/Code/MetroPoGits/visual_test_proj/hanul-hwpx`;
+  `python -X utf8 -m metropogits build --repo ../visual_test_proj/hanul-hwpx --repo-id benchmark/hanul-hwpx --revision 7432c67e91f472e7e9c3be54c07dcb7cbe4837d8 --source-url https://github.com/iamywl/hanul-hwpx --out ../artifacts/visual/hanul-hwpx-r1/build`;
+  repeat same command with output hanul-hwpx-r1/repeat-build;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/hanul-hwpx-r1/build --namespace benchmark/hanul-hwpx --zoning neighborhoods --pattern-scale adaptive --street-policy porous --planning varied --outline varied --terrain river-landscape --out ../artifacts/visual/hanul-hwpx-r1/world`;
+  `python -X utf8 -c "import runpy;runpy.run_path('../artifacts/visual/hanul-hwpx-r1/verify.py',run_name='__main__')"`;
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/hanul-hwpx-review-r1 ../artifacts/visual/hanul-hwpx-r1/world`;
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/hanul-hwpx-canvas-r1 ../artifacts/visual/hanul-hwpx-r1/world`;
+  `python -X utf8 -m unittest discover -s tests -p test_world_permeability.py -q`;
+  `$testFiles=(rg --files tests -g '*.test.mjs'); node --test $testFiles`;
+  `git diff --check`.
+- Artifacts inspected: entry artifacts/visual/hanul-hwpx-r1/index.html;
+  original normal City at build/index.html, physical World at world/index.html,
+  CPU world/showcase.svg; actual Chrome-rendered showcase.png, Overview, Detail
+  and route-inspector.png in hanul-hwpx-review-r1/case-1. Forced Canvas source/
+  member navigation and Structure overlay/restore pass. Source selection traces
+  scripts/build.mjs→scripts/patch-studio.mjs with exactly one original import
+  edge, complete path and own-path Synthetic; no target script was executed.
+- Result:36 eligible file buildings (12TS/23JS/1Python),4 major districts,
+  4 planning neighborhoods,314 atomic structural street pieces,11 exact internal
+  file-pair trips/11 represented edges in2 aggregate networks. All36 accessible;
+  building/road overlaps and owner escapes0. Source graph has114 import edges
+  and18 declared dependency edges;121 graph edges are non-local to the displayed
+  file-pair transport (external/unresolved/declaration records remain in UCG).
+  No invented local destination. Diagnostics disclose32 unresolved JS/TS imports.
+ 33 generic buildings/3 PATH-evidenced test facilities; this is NOT full HWPX,
+  VS Code or MCP architecture-role recognition. Python remains structural-only.
+  Default exclusions:3 ignored directories,48 non-source files.
+- Visual findings: a small, visibly sparse four-part city,3 yellow test facilities,
+  a through main river/tributary, bridges and protected hill. Nature and growth
+  reserves occupy substantial space; not evidence of a denser city or campus
+  grammar. File colors/forms are existing generic fallback. Three LOD views,
+  camera movement, road inspection and static CPU preview work without overlap.
+  Inspector still shows unrounded district dimensions in some contexts; retain
+  as a minor pre-existing presentation issue, not scope for this output-only run.
+- Tests/determinism/stability: all13 normal build artifacts match byte-for-byte
+  across fresh analysis; regenerate World and all17 package artifacts match
+  exactly. World/planning schemas pass, original City/UCG bytes unchanged.
+  10 relevant Python tests and61 Node tests pass. Full652-test Python suite was
+  not rerun for this unchanged-engine artifact-only task (previous checkpoint
+  records it). Actual browser Synthetic static builds0 at all three LODs;
+  CPU p95 approx0.3..0.5ms in local SwiftShader instrumentation, not GPU FPS.
+- Spec alignment: PASS. Static scan only, no target npm install/build/test/script
+  execution and no application startup/API/model use. Rechecked base technical
+  contracts/layout/rendering, functional evidence/fallback/stability acceptance
+  and product local-first principles. No City/UCG/schema/ID change.
+- Open risks/next actions: do not confuse a successful render with broad semantic
+  support. Resume planned road classification/connected hierarchy before the
+  evidence-bounded CAMPUS grammar; no implementation started during the detour.
+- Commits/delivery: documentation-only benchmark record on feat/semantic-zoning;
+  generated assets and target clone remain outside source Git. Human identity,
+  explicit path staging, conventional message and normal configured-upstream
+  push; actual commit/push outcome reported at handoff. Existing fixture caches
+  remain untracked; no attribution, force push or protected-main bypass.
