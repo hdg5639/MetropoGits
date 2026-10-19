@@ -47,8 +47,8 @@ def main():
     )
     parser.add_argument("--previous-world", type=Path)
     parser.add_argument(
-        "--street-policy", choices=("original", "shared"), default="original",
-        help="adaptive only: merge redundant junction chains onto existing shared roads",
+        "--street-policy", choices=("original", "shared", "permeable"), default="original",
+        help="adaptive only: shared junctions, optionally with sparse long-row alleys",
     )
     parser.add_argument(
         "--pattern-scale",

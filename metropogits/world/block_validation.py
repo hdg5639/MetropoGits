@@ -42,8 +42,8 @@ def validate_blocks(world, scene, graph, neighborhoods):
                 requested_profile(
                     world.get("planningPolicy", "grid"), parent["localSeed"]
                 ),
-                stitch=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4"),
-                morphology=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4"),
+                stitch=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5"),
+                morphology=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5"),
             )
             expected_patterns.append(pattern)
         elif inherited:
@@ -176,6 +176,17 @@ def validate_blocks(world, scene, graph, neighborhoods):
                         raise ValueError("neighborhood parcel escaped hybrid region")
                 elif p["blockProfile"] != b["planningProfile"]:
                     raise ValueError("neighborhood local grammar mismatch")
+    if world["generatorVersion"] == "flat-adaptive-neighborhoods/0.5":
+        notes = [d for d in world["diagnostics"] if d.get("version") == "frontage-alleys/0.1"]
+        if len(notes) != 1 or len(notes[0].get("corridors", [])) > 24:
+            raise ValueError("invalid alley audit record")
+        for r in notes[0]["corridors"]:
+            if (not 9.999 <= math.dist(r["start"], r["end"]) <= 44.001
+                    or r["width"] != 1.6 or len(set(r["rowEntityIds"])) < 6
+                    or any(k not in parcels or parcels[k].get("zoneId") != r["zoneId"]
+                           or parcels[k]["districtId"] != r["districtId"] for k in r["rowEntityIds"])):
+                raise ValueError("invalid alley frontage provenance")
+            expected_main.append(r)
     # Verify complete reserved centerline coverage by actual full-width streets.
     index = defaultdict(list)
     entries = 0

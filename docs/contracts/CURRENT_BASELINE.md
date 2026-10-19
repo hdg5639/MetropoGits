@@ -1,5 +1,39 @@
 # Current implementation contract baseline
 
+## Opt-in sparse frontage alleys — 2026-10-19
+
+[ADR-035](../adr/ADR-035.md) adds `--street-policy permeable` for adaptive
+neighborhoods, generator `flat-adaptive-neighborhoods/0.5`. It first applies
+shared0.4, then adds rare narrow physical cross-links through existing lot gaps.
+Original0.3/shared0.4 bytes and defaults remain unchanged; all three share
+compatible geography hints. City/UCG/planning and all source IDs remain intact.
+
+A candidate needs at least6 locally aligned buildings spanning54 units, with
+at least2 on either side. Alignment tolerance10 degrees/1.2 lateral units;
+gap spacing9–30. Corridors are1.6 wide,10–44 long, stay in their principal
+district, clear whole parcels/driveways with0.2 side allowance, and join
+existing non-driveway roads at both ends. Avoid existing nearby junctions and
+short cross-street alternatives (at most max(1.65*length,length+16)).
+At least58 units separate accepted centers; at most1 per neighborhood below
+160 files,2 for larger ones,24 globally. These are visual planning rules, not
+evidence or runtime volume. Stable source IDs order candidate gaps.
+
+Caps:6000 candidates,200k spatial entries,500k geometry checks,100k shortest-path
+states. Exhaustion retains certified cuts only. Atomize the actual junctions
+and rebuild original source trips; identity loss, routing errors or a trip
+increase above0.003 units rolls back additions. Structural alleys without source
+trips carry no invented animation. Landscaping is regenerated around real cuts.
+Validation independently checks full-width pavement, source row membership,
+principal containment, whole-parcel clearance and existing entrance access.
+
+Pinned GJ/PocketBase each gain2 alleys (53.63/50.84 total units). OJ/SQLite
+gain none: no eligible safe candidate, not a forced quota. All3175 whole frames,
+parent patterns and mixed neighborhoods are unchanged. GJ31 original trips
+shorten; an actually inspected path goes192.12→70.48. Extra atomic road pieces
+also split existing segments at junctions; they are not extra independent roads.
+Same-camera real close-ups: `artifacts/visual/sparse-alleys-focus-r1/index.html`.
+This is restrained local permeability, not a global density or terrain redesign.
+
 ## Opt-in shared junctions — 2026-10-19
 
 [ADR-034](../adr/ADR-034.md) adds `scripts.procedural_world --street-policy shared`

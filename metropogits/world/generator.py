@@ -13,7 +13,9 @@ from .junctions import (
     GENERATOR_VERSION as SHARED_GENERATOR_VERSION,
     check_trip_budgets,
     consolidate_junctions,
+    path_length,
 )
+from .alleys import GENERATOR_VERSION as ALLEY_GENERATOR_VERSION, add_alleys
 from .planning import demand, groups, populate, slots
 from .radial import radial_slots
 from .organic import organic_slots
@@ -63,8 +65,8 @@ def generate_world(
     street_policy="original",
     _route=True,
 ):
-    if street_policy not in ("original", "shared") or (
-        street_policy == "shared" and (pattern_scale != "adaptive" or not _route)
+    if street_policy not in ("original", "shared", "permeable") or (
+        street_policy != "original" and (pattern_scale != "adaptive" or not _route)
     ):
         raise ValueError("shared street policy requires routed adaptive neighborhoods")
     if pattern_scale not in ("block", "district", "adaptive") or (
@@ -245,7 +247,7 @@ def generate_world(
         and (
             pattern_scale == "block"
             or previous.get("generatorVersion") in (
-                (ADAPTIVE_GENERATOR_VERSION, SHARED_GENERATOR_VERSION)
+                (ADAPTIVE_GENERATOR_VERSION, SHARED_GENERATOR_VERSION, ALLEY_GENERATOR_VERSION)
                 if pattern_scale == "adaptive"
                 else ("flat-neighborhood-patterns/0.1",)
             )
@@ -523,7 +525,7 @@ def generate_world(
             streets, main_roads + boundaries, routing, parcels
         )
         planning_diagnostics.append(seam_note)
-        if street_policy == "shared":
+        if street_policy in ("shared", "permeable"):
             candidate, junction_note = consolidate_junctions(
                 streets, main_roads + boundaries, parcels, routing
             )
@@ -540,6 +542,22 @@ def generate_world(
                 else:
                     streets, routing, networks, coverage = candidate, new_routing, new_networks, new_coverage
             planning_diagnostics.append(junction_note)
+        if street_policy == "permeable":
+            additions, alley_note = add_alleys(streets, parcels, districts)
+            if additions:
+                try:
+                    candidate = atomic_streets(streets + additions)
+                    new_routing, new_networks, new_coverage = route_world(graph, parcels, candidate)
+                    check_trip_budgets(routing, new_routing)
+                    prior_lengths = {r["id"]: path_length(r["path"]) for r in routing["routes"]}
+                    if any(path_length(r["path"]) > prior_lengths[r["id"]]+.003 for r in new_routing["routes"]):
+                        raise ValueError("alley addition increased an existing trip")
+                except ValueError as error:
+                    alley_note.update(rejectedCorridors=alley_note["corridors"],
+                                      corridors=[], fallback=str(error))
+                else:
+                    streets, routing, networks, coverage = candidate, new_routing, new_networks, new_coverage
+            planning_diagnostics.append(alley_note)
     reused = sorted(grouped) if compatible and attempt == 0 else []
     if zoned:
         reused = sorted(reused_zoned) if compatible and attempt == 0 else []
@@ -636,4 +654,6 @@ def generate_world(
                 )
     if street_policy == "shared":
         world["generatorVersion"] = SHARED_GENERATOR_VERSION
+    elif street_policy == "permeable":
+        world["generatorVersion"] = ALLEY_GENERATOR_VERSION
     return world
