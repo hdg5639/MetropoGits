@@ -457,7 +457,7 @@ def plan_adaptive(
             )
         if key in campus_sites:
             campus_ids = set(campus_sites[key]['memberEntityIds'])
-            if campus_style in ('neighborhood','landscape'):
+            if campus_style in ('neighborhood','landscape','organic'):
                 preferred = dict(preferred or {})
                 preferred.update(campus_sites[key]['anchorSlots'])
             placed = []
@@ -504,7 +504,7 @@ def plan_adaptive(
         if campus:
             block['campusDecision'] = campus_decisions[key]
         if key in campus_sites:
-            block.update(urbanGrammar='CAMPUS' if campus_style in ('neighborhood','landscape') else 'MIXED_CAMPUS',campusSite=campus_sites[key])
+            block.update(urbanGrammar='CAMPUS' if campus_style in ('neighborhood','landscape','organic') else 'MIXED_CAMPUS',campusSite=campus_sites[key])
         if regions:
             block["planningRegions"] = regions
         elif selections[key]["mode"] == "INHERITED" and base == "HYBRID":

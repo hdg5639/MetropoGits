@@ -12,7 +12,7 @@ VERSION = "campus-plan/0.3"
 MAX_WORK = 300_000
 
 
-def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats):
+def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats, *, _form=None):
     """Replace local circulation in full, or return an explicit safe fallback."""
     n = len(zone["memberEntityIds"])
     if not 12 <= n <= 256:
@@ -73,7 +73,7 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats)
         for i in range(12)
         for j in range(12)
     ]
-    identity = "world:campus-court:" + derive(seed, zone["id"], VERSION)
+    identity = "world:campus-court:" + derive(seed, zone["id"], _form.VERSION if _form else VERSION)
     # A feasible lawn alone is not a feasible campus center. Prefer sites with
     # room for actual surrounding building groups, not a park wedged into a
     # road/terrain gap whose frontage wings will all be clipped away.
@@ -139,7 +139,8 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats)
                     derive(seed, str(p)),
                 ),
             ):
-                lawn = rectangle(center, axis, 22, 16)
+                lawn = (_form.lawn(center, axis, index) if _form
+                        else rectangle(center, axis, 22, 16))
                 if not all(inside(p, polygon, 7) for p in lawn) or collision(
                     lawn,
                     natural
@@ -147,7 +148,8 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats)
                     + [rectangle(p, axis, 54, 46) for p in centers],
                 ):
                     continue
-                corners = rectangle(center, axis, 25, 19)
+                corners = (_form.loop(center, axis, index) if _form
+                           else rectangle(center, axis, 25, 19))
                 ring = [
                     segment(a, b, f"core:{index}:loop:{i}")
                     for i, (a, b) in enumerate(zip(corners, corners[1:] + corners[:1]))
@@ -197,8 +199,8 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats)
             )
             for i, j in options:
                 link = connect(
-                    rectangle(centers[i], axis, 25, 19),
-                    rectangle(centers[j], axis, 25, 19),
+                    _form.loop(centers[i], axis, i) if _form else rectangle(centers[i], axis, 25, 19),
+                    _form.loop(centers[j], axis, j) if _form else rectangle(centers[j], axis, 25, 19),
                     f"promenade:{i}:{j}",
                 )
                 if link:
@@ -215,7 +217,8 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats)
             for r in roads
             if (p := _clipped(r["start"], r["end"], polygon)) and math.dist(*p) > 0.01
         ]
-        corners = [p for center in centers for p in rectangle(center, axis, 25, 19)]
+        corners = [p for i, center in enumerate(centers)
+                   for p in (_form.loop(center, axis, i) if _form else rectangle(center, axis, 25, 19))]
         targets = sorted(
             {
                 tuple(point(nearest(p, r["start"], r["end"])))
@@ -231,8 +234,13 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats)
         walks.extend(gate)
 
         # Short frontage wings feed the promenade; no inherited vehicle rows survive.
-        arm_length = max(28, min(72, math.sqrt(n / count) * 10))
-        for index, center in enumerate(centers):
+        # A one-file edit must not bend every occupied curved frontage again.
+        # Organic capacity is fitted against a fixed local reserve, not a
+        # population-dependent curve whose tangent changes under small growth.
+        arm_length = 64 if _form else max(28, min(72, math.sqrt(n / count) * 10))
+        if _form:
+            walks.extend(_form.branches(centers, axis, arm_length, segment, path_clear, lawns))
+        for index, center in enumerate([] if _form else centers):
             cx, cz = local(center)
             for side, (dx, dz) in enumerate(((1, 0), (0, 1), (-1, 0), (0, -1))):
                 start = world([cx + dx * 12.5, cz + dz * 9.5])
@@ -274,6 +282,8 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats)
                 + lawns
                 + [ribbon(r["start"], r["end"], r["width"] + 0.25) for r in paths]
             )
+            if _form:
+                return _form.frontage(paths, polygon, shapes, collision, terrain)
             lots = []
             for r in paths:
                 if ":exterior-gate" in r["id"]:
@@ -321,7 +331,7 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats)
         plots = frontage(walks)
         # Grow only useful secondary wings. Each proposal must increase actual
         # safe frontage capacity; a crossing that destroys more plots is rejected.
-        for index, center in enumerate(centers):
+        for index, center in enumerate([] if _form else centers):
             if len(plots) >= n:
                 break
             cx, cz = local(center)
