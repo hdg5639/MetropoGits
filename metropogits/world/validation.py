@@ -20,16 +20,20 @@ def validate_world(world, scene, graph):
         world["patternScale"] not in ("district", "adaptive")
         or world.get("zoningPolicy") != "neighborhoods"
         or world.get("generatorVersion")
-        != (
-            "flat-adaptive-neighborhoods/0.1"
+        not in (
+            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2")
             if world["patternScale"] == "adaptive"
-            else "flat-neighborhood-patterns/0.1"
+            else ("flat-neighborhood-patterns/0.1",)
         )
     ):
         raise ValueError("invalid world pattern scale or generator")
     if (
         world.get("generatorVersion")
-        in ("flat-neighborhood-patterns/0.1", "flat-adaptive-neighborhoods/0.1")
+        in (
+            "flat-neighborhood-patterns/0.1",
+            "flat-adaptive-neighborhoods/0.1",
+            "flat-adaptive-neighborhoods/0.2",
+        )
     ) != (world.get("patternScale") in ("district", "adaptive")):
         raise ValueError("world pattern scale version mismatch")
     if "districtPatterns" in world.get("zoning", {}) and world.get(

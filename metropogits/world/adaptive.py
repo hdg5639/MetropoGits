@@ -17,21 +17,24 @@ from .radial import _clipped, radial_slots
 from .seed import derive
 from .zone_access import access_corridors
 
+# Retain the address/identity seed namespace when revising arterial selection.
 VERSION = "adaptive-patterns/0.1"
+SEAM_VERSION = "adaptive-patterns/0.2"
+GENERATOR_VERSION = "flat-adaptive-neighborhoods/0.2"
 
 
-def adaptive_field(polygon, seed, base, parent):
+def adaptive_field(polygon, seed, base, parent, *, stitch=False):
     candidates, roads, pattern = street_field(
         polygon, seed, base, parent, lane_identity=True
     )
-    main = skeleton(roads)
+    main = skeleton(roads, stitch=stitch)
     return (
         candidates,
         roads,
         main,
         dict(
             pattern,
-            version=VERSION,
+            version=SEAM_VERSION if stitch else VERSION,
             protectedStreetIds=sorted(r["id"] for r in main),
             fullFieldRoadCount=len(roads),
             roadCount=len(main),
@@ -39,7 +42,18 @@ def adaptive_field(polygon, seed, base, parent):
     )
 
 
-def skeleton(roads):
+def skeleton(roads, *, stitch=False):
+    if stitch:
+        # Frontage rows/courts/orbits belong to their own local grammar, not to
+        # a second stencil spanning adapted neighborhoods. Keep real connecting
+        # arteries; inherited sectors still retain their complete local field.
+        arteries = [
+            r
+            for r in roads
+            if any(k in r["sourceLaneId"] for k in ("collector:", "spoke:", "spine:"))
+        ]
+        if arteries:
+            return arteries
     retained = []
     for r in roads:
         key = r["sourceLaneId"]
@@ -264,7 +278,7 @@ def plan_adaptive(
 ):
     parent = clusters[0]["parentId"]
     parent_candidates, parent_roads, main, pattern = adaptive_field(
-        polygon, seed, base, parent
+        polygon, seed, base, parent, stitch=True
     )
     by_id = {b["entityId"]: b for b in members}
     profiles = pattern_profiles(clusters, base)
@@ -288,6 +302,28 @@ def plan_adaptive(
             polygons, allocation = power_partition(
                 polygon, demands, derive(seed, "functional-land")
             )
+        invalid = [
+            key
+            for key, poly in polygons.items()
+            if not all(inside(p, poly, -0.001) and inside(p, polygon, -0.001) for p in poly)
+        ]
+        if invalid:
+            notes.append(
+                dict(
+                    reason="adaptive shared-cut quantization repair",
+                    zoneIds=invalid,
+                    attempt=attempt,
+                )
+            )
+            # A quantized T vertex can make a supporting edge slightly concave.
+            # Move the shared cut, not its tolerance; spend the existing local
+            # attempts before asking the parent for more land.
+            reuse = False
+            demands = [
+                (key, value * (1.002 if key in invalid else 1))
+                for key, value in demands
+            ]
+            continue
         selections = profile_plan(clusters, polygons, pattern, main)
         plans = {
             z["id"]: local_sites(

@@ -10,6 +10,7 @@ from test_world_neighborhoods import fixture
 from metropogits.cli import analyze_repository
 from metropogits.layout import generate_city
 from metropogits.world.affinity import dependency_pairs
+from metropogits.world.adaptive import skeleton
 from metropogits.world.export import package_world
 from metropogits.world.functional import functional_candidates
 from metropogits.world.generator import generate_world
@@ -122,6 +123,69 @@ class AdaptiveTests(unittest.TestCase):
             package_world(other, self.scene, self.graph, report),
         )
         self.assertEqual(before, (self.scene, self.graph))
+
+    def test_shared_skeleton_does_not_overlay_parent_frontage_rows(self):
+        roads = [
+            dict(id=str(i), sourceLaneId=key, start=[0, 0], end=[10, 0])
+            for i, key in enumerate(
+                ("row:0", "organic:row:3", "orbit:4:0", "court:0:3",
+                 "collector:0", "organic:collector:1", "spoke:2", "spine:0")
+            )
+        ]
+        self.assertEqual(skeleton(roads, stitch=True), roads[4:])
+        self.assertEqual(skeleton(roads), roads)
+        self.assertTrue(skeleton(roads[:4], stitch=True))
+        self.assertEqual(skeleton([], stitch=True), [])
+        self.assertEqual(self.world["generatorVersion"], "flat-adaptive-neighborhoods/0.2")
+        self.assertTrue(all(
+            p["version"] == "adaptive-patterns/0.2"
+            for p in self.world["zoning"]["districtPatterns"]
+        ))
+
+    def test_legacy_adaptive_validation_and_hint_rejection(self):
+        # Reconstruct the former reservation policy without external artifacts.
+        with patch(
+            "metropogits.world.adaptive.skeleton",
+            side_effect=lambda roads, **kwargs: skeleton(roads),
+        ):
+            old = generate_world(self.scene, self.graph, **self.options)
+        old["generatorVersion"] = "flat-adaptive-neighborhoods/0.1"
+        for p in old["zoning"]["districtPatterns"]:
+            p["version"] = "adaptive-patterns/0.1"
+        validate_world(old, self.scene, self.graph)
+        new = generate_world(self.scene, self.graph, previous=old, **self.options)
+        validate_world(new, self.scene, self.graph)
+        self.assertFalse(new["anchors"]["reusedDistrictIds"])
+        self.assertTrue(any(
+            d["reason"] == "incompatible previous world; deterministic cold rebuild"
+            for d in new["diagnostics"]
+        ))
+        wrong = copy.deepcopy(old)
+        wrong["generatorVersion"] = new["generatorVersion"]
+        with self.assertRaisesRegex(ValueError, "pattern metadata mismatch"):
+            validate_world(wrong, self.scene, self.graph)
+
+    def test_invalid_quantized_child_is_repaired_not_accepted(self):
+        from metropogits.world.power import power_partition
+
+        calls = 0
+        def broken_first(*args):
+            nonlocal calls
+            cells, allocation = power_partition(*args)
+            calls += 1
+            if calls == 1:
+                key = next(iter(cells))
+                cells[key] = list(reversed(cells[key]))
+            return cells, allocation
+
+        with patch("metropogits.world.adaptive.power_partition", side_effect=broken_first):
+            world = generate_world(self.scene, self.graph, **self.options)
+        validate_world(world, self.scene, self.graph)
+        self.assertGreater(calls, 1)
+        self.assertTrue(any(
+            d["reason"] == "adaptive shared-cut quantization repair"
+            for d in world["diagnostics"]
+        ))
 
     def test_hinted_small_edit_preserves_complete_old_frames(self):
         with tempfile.TemporaryDirectory() as directory:

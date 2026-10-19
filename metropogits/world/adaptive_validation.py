@@ -10,9 +10,9 @@ from .adaptive import (
 from .seed import derive
 
 
-def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base):
+def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False):
     candidates, roads, main, pattern = adaptive_field(
-        parent["polygon"], parent["localSeed"], base, parent["id"]
+        parent["polygon"], parent["localSeed"], base, parent["id"], stitch=stitch
     )
     polygons = {z["id"]: z["polygon"] for z in zones}
     selections = profile_plan(zones, polygons, pattern, main)
