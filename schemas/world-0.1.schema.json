@@ -8,14 +8,14 @@
   "required": ["schemaVersion","generatorVersion","seed","seedAlgorithm","repositoryNamespace","sourceCityDigest","ucgDigest","coordinateSystem","coordinateQuantum","terrainPreset","allocationAlgorithm","envelope","districts","logicalDistricts","topology","parcels","streets","routing","networks","coverage","diagnostics","anchors"],
   "properties": {
     "schemaVersion": {"const":"world/0.1-experimental"},
-    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4","flat-adaptive-neighborhoods/0.5","terrain-adaptive/0.1","terrain-adaptive/0.2","terrain-adaptive/0.3","terrain-adaptive/0.4"]},
+    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4","flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6","terrain-adaptive/0.1","terrain-adaptive/0.2","terrain-adaptive/0.3","terrain-adaptive/0.4"]},
     "surface":{"type":"object","additionalProperties":false,"required":["version","spacing","origin","values","faces"],"properties":{
       "version":{"const":"surface/0.1"},"spacing":{"const":16},"origin":{"$ref":"#/$defs/point"},
       "values":{"type":"array","minItems":2,"maxItems":512,"items":{"type":"array","minItems":2,"maxItems":512,"items":{"type":"number","minimum":0,"maximum":18}}},
       "faces":{"type":"array","maxItems":65536,"items":{"type":"object","required":["points","color"],"properties":{
         "color":{"type":"string","pattern":"^#[0-9a-f]{6}$"},"points":{"type":"array","minItems":3,"maxItems":16,"items":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"number"}}}}}}
     }},
-    "streetPolicy": {"enum":["original","shared","permeable"]},
+    "streetPolicy": {"enum":["original","shared","permeable","porous"]},
     "terrain": {
       "type":"object", "additionalProperties":false,
       "required":["version","preset","seed","environmental","initialEnvelope","surfacePolicy","features","protectedArea"],

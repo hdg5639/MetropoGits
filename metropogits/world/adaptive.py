@@ -266,6 +266,14 @@ def reserve_complete_plan(plans, polygons, main, parent_polygon, pattern, zones,
     )
 
 
+def retained_addresses(population, original, choices, parent, paths, seed, pairs):
+    """Keep surviving reference addresses when a few vacant lots become streets."""
+    reference = populate(population, original, parent, paths, seed)
+    baseline, _ = optimize_addresses(reference, pairs, {}, seed)
+    available = {s["id"] for s in choices}
+    return {entity: slot for entity, slot in baseline.items() if slot in available}
+
+
 def plan_adaptive(
     polygon,
     clusters,
@@ -278,6 +286,7 @@ def plan_adaptive(
     previous_blocks=(),
     previous_slots=None,
     terrain=None,
+    porous=False,
 ):
     parent = clusters[0]["parentId"]
     parent_candidates, parent_roads, main, pattern = adaptive_field(
@@ -349,6 +358,14 @@ def plan_adaptive(
             plans, actual_main, boundary, ports, actual_pattern = terrain_plan(
                 plans, main, boundary, ports, pattern, polygon, terrain
             )
+        unreserved_plans = plans
+        if porous:
+            from .permeability import reserve_links
+
+            plans, actual_main, actual_pattern = reserve_links(
+                plans, actual_main, boundary, polygon, actual_pattern,
+                {z["id"]: len(z["memberEntityIds"]) for z in clusters}, terrain,
+            )
         failed = [
             z["id"]
             for z in clusters
@@ -409,20 +426,30 @@ def plan_adaptive(
         ids = set(z["memberEntityIds"])
         population = [by_id[k] for k in sorted(ids)]
         local_seed = derive(seed, key, VERSION)
+        local_pairs = {(a, b): w for (a, b), w in pairs.items() if a in ids and b in ids}
+        preferred = previous_slots if reuse else None
+        if porous and not reuse and len(choices) < len(unreserved_plans[key][0]):
+            # Removing a few vacant candidates changes the modulo-based address
+            # order. Retain surviving baseline addresses instead of rerolling an
+            # entire neighborhood. This reference assignment happens only after
+            # the final physical corridors have been reserved.
+            preferred = retained_addresses(
+                population, unreserved_plans[key][0], choices, parent, paths, local_seed, local_pairs
+            )
         placed = populate(
             population,
             choices,
             parent,
             paths,
             local_seed,
-            previous_slots if reuse else None,
+            preferred,
         )
         assignment, affinity = optimize_addresses(
             placed,
-            {(a, b): w for (a, b), w in pairs.items() if a in ids and b in ids},
+            local_pairs,
             {},
             local_seed,
-            (previous_slots or {}) if reuse else (),
+            preferred or (),
         )
         placed = populate(population, choices, parent, paths, local_seed, assignment)
         block_id = "world:block:" + derive(key, VERSION)
