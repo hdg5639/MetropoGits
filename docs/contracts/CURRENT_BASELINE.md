@@ -1066,3 +1066,21 @@ Limits: 50000 streets, 500000 spatial entries, 2000000 geometry checks,
 than truncated infrastructure. Validation reconstructs metadata from actual
 world geometry. This RC-00/01 slice does not add CAMPUS, pedestrian networks,
 new highway semantics, or a claim of finished metropolitan road planning.
+
+### Local bridge-approach feasibility repair
+
+Terrain-first `river-landscape` keeps its initial candidate whenever its full
+bridge/approach pavement is disjoint from previously reserved crossings. Only a
+conflicting otherwise feasible crossing tries four fixed nearby fractions of
+the SAME river reach. Water, terrain seed, earlier crossings and bridge identity
+stay fixed. If those five total candidates cannot separate the approaches,
+generation fails explicitly; no mandatory crossing is silently discarded and
+no certificate height/grade tolerance is relaxed. An originally infeasible
+candidate remains absent, preserving prior no-crossing outcomes.
+
+Porous local connections also check intersections against the at-most-four
+certified three-span bridge profiles. A ground-height alley can join a ground
+bank endpoint, but cannot attach to or cross an elevated approach/deck at a
+different height. No flat ramp join is fabricated after source routing. The
+existing independent bridge/profile validators remain unchanged. This repairs
+formerly rejected geography; valid frozen corpus fields/geography stay exact.

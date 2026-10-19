@@ -208,6 +208,34 @@ def height_at(street, p):
     return q(heights[0]+(heights[1]-heights[0])*math.dist(a,nearest(p,a,b))/math.dist(a,b))
 
 
+def blocks_ground_connection(start, end, terrain):
+    """A ground alley may not join/cross an elevated bridge approach."""
+    crossings=terrain.get("crossings",[])
+    if len(crossings)>4 or any(len(c["path"])!=4 for c in crossings):
+        raise ValueError("ground crossing certificate limit")
+    from .elevation import surface
+
+    field=surface(terrain)
+    u=[end[j]-start[j] for j in (0,1)]
+    for c in crossings:
+        for i,(a,b) in enumerate(zip(c["path"],c["path"][1:])):
+            v=[b[j]-a[j] for j in (0,1)]
+            d=[a[j]-start[j] for j in (0,1)]
+            den=u[0]*v[1]-u[1]*v[0]
+            hits=[]
+            if abs(den)>1e-8:
+                t=(d[0]*v[1]-d[1]*v[0])/den
+                r=(d[0]*u[1]-d[1]*u[0])/den
+                if -.0003/math.dist(start,end)<=t<=1+.0003/math.dist(start,end) and -.0003/math.dist(a,b)<=r<=1+.0003/math.dist(a,b):
+                    hits=[point([start[j]+max(0,min(1,t))*u[j] for j in (0,1)])]
+            else:
+                hits=[p for p in (start,end,a,b) if math.dist(p,nearest(p,start,end))<.0003 and math.dist(p,nearest(p,a,b))<.0003]
+            certificate=dict(start=a,end=b,heights=c["heights"][i:i+2])
+            if any(abs(height_at(certificate,p)-field.height(p)-.08)>.001 for p in hits):
+                return True
+    return False
+
+
 def bridge_faces(terrain):
     """Shared thin deck fascia and parapets; no fake source entity/hit ID."""
     faces = []
