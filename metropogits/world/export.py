@@ -15,6 +15,7 @@ from .geometry import bounds, centroid, point, ribbon
 from .seed import derive
 from .zoning import planning_document
 from .landscape import generate_landscape
+from .rivers import bridge_faces, height_at
 
 GROUND = ["#33464b", "#4a4149", "#354b42", "#504835", "#3e4454", "#4e3c42", "#3b4c50"]
 ZONE_COLORS = {
@@ -138,6 +139,9 @@ def view_data(world, scene, graph, *, landscape=None):
         )
         for s in world["streets"]
     ]
+    for surface in surfaces:
+        if "heights" in surface:
+            surface["pointHeights"] = [height_at(surface,p) for p in surface["points"]]
     incidence = {}
     for s in world["streets"]:
         for p in (s["start"], s["end"]):
@@ -164,6 +168,8 @@ def view_data(world, scene, graph, *, landscape=None):
                 dict(
                     points=list(reversed(ribbon(s["start"], s["end"], s["width"]))),
                     width=s["width"],
+                    **(dict(pointHeights=[height_at(s,p)+.03 for p in reversed(ribbon(s["start"],s["end"],s["width"]))])
+                       if "heights" in s else {}),
                 )
             ]
             for s in routing["segments"]
@@ -209,6 +215,8 @@ def view_data(world, scene, graph, *, landscape=None):
     )
     if "terrain" in world:
         data["terrain"] = world["terrain"]
+        if world["terrain"].get("crossings"):
+            data["infrastructure"] = dict(structural=True, faces=bridge_faces(world["terrain"]))
     if neighborhoods:
         data["semanticZoning"] = {z["id"]: z for z in neighborhoods}
         if world.get("zoningPolicy") == "neighborhoods":
@@ -321,6 +329,10 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
             faces.append((sum(v[0]+v[1]+v[2] for v in p)/len(p),
                           [project([x,z], y) for x,y,z in p], face["color"], None, 1,
                           'data-environmental="natural-terrain"'))
+    for face in bridge_faces(world.get("terrain",{})):
+        p = face["points"]
+        faces.append((sum(x+y+z for x,y,z in p)/len(p),[project([x,z],y) for x,y,z in p],
+                      face["color"],None,1,'data-structural="shared-bridge"'))
     if landscape:
         for tree in landscape["trees"]:
             for face in tree["faces"]:
@@ -391,6 +403,9 @@ def render_svg(world, width=1200, height=750, *, landscape=None):
     if "terrain" in world:
         lines[-2] = lines[-2].replace("Flat landscaping (decorative)", "Terrain-first lakes and hills (procedural)").replace(
             "Flat capacity prototype", "Terrain-first lakes and hills (procedural)")
+        if world["terrain"].get("crossings"):
+            lines[-2] = lines[-2].replace("Terrain-first lakes and hills (procedural)",
+                                         "Connected waterway and shared bridges (procedural)")
     return "\n".join(lines).encode("utf8")
 
 

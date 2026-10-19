@@ -14,8 +14,13 @@ MAX_ROADS = 24_000
 MAX_WORK = 2_000_000
 
 
-def generate_terrain(envelope, seed):
+def generate_terrain(envelope, seed, preset=PRESET):
     """Only demand-sized land and seed are inputs. No buildings/streets exist yet."""
+    if preset != PRESET:
+        from .rivers import PRESET as RIVER_PRESET, generate_river
+        if preset != RIVER_PRESET:
+            raise ValueError("unsupported natural terrain preset")
+        return generate_river(envelope, seed)
     seed = derive(seed, "global-terrain", VERSION)
     center = centroid(envelope)
     scale = math.sqrt(area(envelope))
@@ -127,8 +132,17 @@ def terrain_plan(plans, main, boundary, ports, pattern, polygon, terrain):
     from .geometry import nearest
 
     adapted_main = adapt_roads(main+boundary, terrain)
-    for f in terrain["features"]:
-        if overlap(f["roadPolygon"], polygon):
+    if terrain.get("crossings"):
+        from .rivers import river_roads
+        for i, r in enumerate(river_roads(terrain)):
+            from .geometry import ribbon
+            if overlap(ribbon(r["start"], r["end"], r["width"]), polygon):
+                adapted_main.append(dict(r, id="world:river-road:"+derive(pattern["id"],str(i)),
+                                         structural=True,patternId=pattern["id"]))
+    else:
+        for f in terrain["features"]:
+            if not overlap(f["roadPolygon"], polygon):
+                continue
             adapted_main.extend(dict(id=f["id"]+":contour:"+derive(pattern["id"], str(i)), start=a, end=b,
                                      width=3.5, access=False, structural=True, patternId=pattern["id"])
                                 for i, (a, b) in enumerate(zip(f["roadPolygon"],
@@ -145,16 +159,22 @@ def terrain_plan(plans, main, boundary, ports, pattern, polygon, terrain):
     actual_ports = {key: {tuple(point(min((nearest(at, r["start"], r["end"]) for r in adapted_main),
                                          key=lambda v: math.dist(at, v)))) for at in values}
                     for key, values in ports.items()} if adapted_main else {key:set() for key in ports}
-    pattern = dict(pattern, terrainVersion=VERSION, protectedStreetIds=sorted(r["id"] for r in adapted_main),
+    pattern = dict(pattern, terrainVersion=terrain.get("version", VERSION), protectedStreetIds=sorted(r["id"] for r in adapted_main),
                    roadCount=len(adapted_main))
     return adapted, adapted_main, [], actual_ports, pattern
 
 
 def validate_terrain(terrain, seed):
+    from .rivers import VERSION as RIVER_VERSION, MAX_FEATURES
+
     if (not isinstance(terrain, dict) or terrain.get("version") != VERSION
             or not 3 <= len(terrain.get("initialEnvelope", [])) <= 512
             or not 1 <= len(terrain.get("features", [])) <= 5):
-        raise ValueError("invalid terrain payload or resource limit")
-    expected = generate_terrain(terrain["initialEnvelope"], seed)
+        if (not isinstance(terrain, dict) or terrain.get("version") != RIVER_VERSION
+                or not 3 <= len(terrain.get("initialEnvelope", [])) <= 512
+                or not 1 <= len(terrain.get("features", [])) <= MAX_FEATURES
+                or not 1 <= len(terrain.get("crossings", [])) <= 3):
+            raise ValueError("invalid terrain payload or resource limit")
+    expected = generate_terrain(terrain["initialEnvelope"], seed, terrain.get("preset"))
     if expected != terrain:
         raise ValueError("terrain differs from its original global field/reserves")

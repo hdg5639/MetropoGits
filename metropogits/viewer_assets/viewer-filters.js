@@ -1067,6 +1067,7 @@
       if (!segment) return null;
       const contributing = segment.routeIds.filter(key => !activeRouteIds || activeRouteIds.has(key));
       return {id, kind: segment.kind, path: segment.path, routeIds: contributing, demand:segment.demand,
+        ...(segment.bridgeId ? {bridgeId:segment.bridgeId,heights:segment.heights} : {}),
         pavementWidth:segment.pavement ? {min:Math.min(...segment.pavement.map(p=>p.width)),
           max:Math.max(...segment.pavement.map(p=>p.maxWidth ?? p.width))} : null,
         edgeIds: [...new Set(contributing.flatMap(key => routes.get(key).edgeIds))].sort()};
@@ -1083,12 +1084,22 @@
       const step = trajectory.steps.find(item => distance <= item.distance + item.length) || trajectory.steps.at(-1);
       if (!step) return null;
       const fraction = step.length ? (distance - step.distance) / step.length : 0;
-      return {segmentId: step.segmentId, point: [step.start[0] + (step.end[0]-step.start[0])*fraction,
-        step.start[1] + (step.end[1]-step.start[1])*fraction]};
+      const point = [step.start[0] + (step.end[0]-step.start[0])*fraction,
+        step.start[1] + (step.end[1]-step.start[1])*fraction];
+      const segment=segments.get(step.segmentId);
+      return {segmentId: step.segmentId, point,
+        ...(segment?.heights ? {height:accessHeight(segment,point)} : {})};
     }
     return Object.freeze({frame, network, choices, position, segments, routes, assignmentReason, failurePage, status: routing.status,
       streetStatus: assigned ? ` · Street assignment ${assigned.size}/${routing.routes.length} · ${routing.streetGrid.assignment.fallbackRouteIds.length} legacy paths: select a building or All routes` : '',
       unresolved: routing.unresolvedEdgeIds.length});
+  }
+
+  function accessHeight(segment, point, fallback=0) {
+    if(!segment?.heights) return fallback;
+    const a=segment.start,b=segment.end,dx=b[0]-a[0],dz=b[1]-a[1];
+    const t=Math.max(0,Math.min(1,((point[0]-a[0])*dx+(point[1]-a[1])*dz)/(dx*dx+dz*dz)));
+    return segment.heights[0]+t*(segment.heights[1]-segment.heights[0]);
   }
 
   function accessRoadStyle(segment) {
@@ -1285,6 +1296,7 @@
   }
 
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    accessHeight,
     accessJunctionGeometry,
     accessMarkingSegment,
     accessMarkingSegments,

@@ -16,6 +16,27 @@ const routing = {status:'COMPLETE',unresolvedEdgeIds:[],junctions:[], routes:[
 ]};
 const policy=globalThis.METROPOGITS_FILTERS.createAccessPolicy(routing);
 
+test('bridge pavement, reversed trajectories and animation share the certified elevation',()=>{
+  const route={id:'cross',source:'A',target:'B',kind:'DEPENDENCY_ROAD',edgeIds:['real-edge'],networkIds:['n'],
+    path:[[0,0],[10,0],[20,0],[30,0]],segmentIds:['up','deck','down']};
+  const segments=[
+    {id:'up',start:[0,0],end:[10,0],heights:[.08,.95]},
+    {id:'deck',start:[10,0],end:[20,0],heights:[.95,.95]},
+    {id:'down',start:[20,0],end:[30,0],heights:[.95,.08]},
+  ].map(s=>({...s,bridgeId:'bridge',kind:'DEPENDENCY_ROAD',routeIds:['cross','reverse'],width:4.5}));
+  const reverse={...route,id:'reverse',source:'B',target:'A',path:[...route.path].reverse(),segmentIds:[...route.segmentIds].reverse()};
+  const p=globalThis.METROPOGITS_FILTERS.createAccessPolicy({status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],routes:[route,reverse],segments});
+  for(const phase of [0,.1,.3,.5,.7,.9,1]) {
+    const a=p.position(route,phase),b=p.position(reverse,1-phase);
+    assert.ok(Math.abs(a.point[0]-b.point[0])<1e-8);
+    assert.ok(Math.abs(a.height-b.height)<1e-8);
+    assert.ok(a.height>=.08-1e-8&&a.height<=.95+1e-8);
+  }
+  assert.equal(p.position(route,.5).height,.95);
+  assert.deepEqual(p.network('deck').edgeIds,['real-edge']);
+  assert.equal(p.network('deck').bridgeId,'bridge');
+});
+
 test('moved three-way junction preserves each trip destination without inventing turns',()=>{
   const r={status:'COMPLETE',unresolvedEdgeIds:[],junctions:[],segments:[
     {id:'a',kind:'DEPENDENCY_ROAD',start:[-10,0],end:[0,0],width:2,routeIds:['ab','ac']},

@@ -7,20 +7,28 @@
   "required": ["schemaVersion","generatorVersion","seed","seedAlgorithm","repositoryNamespace","sourceCityDigest","ucgDigest","coordinateSystem","coordinateQuantum","terrainPreset","allocationAlgorithm","envelope","districts","logicalDistricts","topology","parcels","streets","routing","networks","coverage","diagnostics","anchors"],
   "properties": {
     "schemaVersion": {"const":"world/0.1-experimental"},
-    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4","flat-adaptive-neighborhoods/0.5","terrain-adaptive/0.1"]},
+    "generatorVersion": {"enum":["flat-capacity/0.1","flat-planning/0.2","flat-planning/0.3","flat-world/0.4","flat-zoning/0.1","flat-soft-zoning/0.1","flat-neighborhoods/0.1","flat-neighborhood-patterns/0.1","flat-adaptive-neighborhoods/0.1","flat-adaptive-neighborhoods/0.2","flat-adaptive-neighborhoods/0.3","flat-adaptive-neighborhoods/0.4","flat-adaptive-neighborhoods/0.5","terrain-adaptive/0.1","terrain-adaptive/0.2"]},
     "streetPolicy": {"enum":["original","shared","permeable"]},
     "terrain": {
       "type":"object", "additionalProperties":false,
       "required":["version","preset","seed","environmental","initialEnvelope","surfacePolicy","features","protectedArea"],
       "properties": {
-        "version":{"const":"terrain/0.1"}, "preset":{"const":"lake-district"},
+        "version":{"enum":["terrain/0.1","terrain/0.2"]}, "preset":{"enum":["lake-district","river-corridor"]},
         "seed":{"type":"string","pattern":"^[0-9a-f]{16}$"}, "environmental":{"const":true},
         "initialEnvelope":{"$ref":"#/$defs/polygon"}, "surfacePolicy":{"const":"flat-buildable-plains"},
         "protectedArea":{"type":"number","exclusiveMinimum":0},
-        "features":{"type":"array","minItems":1,"maxItems":5,"items":{
+        "channel":{"type":"object","additionalProperties":false,"required":["centerline","waterLevel","policy"],"properties":{
+          "centerline":{"type":"array","minItems":9,"maxItems":9,"items":{"$ref":"#/$defs/point"}},
+          "waterLevel":{"const":0.09},"policy":{"const":"analytical-connected-channel-not-drainage-simulation"}}},
+        "crossings":{"type":"array","minItems":1,"maxItems":3,"items":{"type":"object","additionalProperties":false,
+          "required":["id","path","heights","width","maxGrade","clearance","structural"],"properties":{
+          "id":{"type":"string"},"path":{"type":"array","minItems":4,"maxItems":4,"items":{"$ref":"#/$defs/point"}},
+          "heights":{"type":"array","minItems":4,"maxItems":4,"items":{"type":"number","minimum":0.08,"maximum":0.95}},
+          "width":{"const":4.5},"maxGrade":{"const":0.16},"clearance":{"type":"number","minimum":0.6,"maximum":0.86},"structural":{"const":true}}}},
+        "features":{"type":"array","minItems":1,"maxItems":24,"items":{
           "type":"object", "required":["id","kind","center","polygon","noBuildPolygon","roadPolygon","height","faces"],
           "properties":{
-            "kind":{"enum":["LAKE","HILL"]}, "center":{"$ref":"#/$defs/point"},
+            "kind":{"enum":["LAKE","HILL","RIVER"]}, "center":{"$ref":"#/$defs/point"},
             "polygon":{"$ref":"#/$defs/polygon"}, "noBuildPolygon":{"$ref":"#/$defs/polygon"}, "roadPolygon":{"$ref":"#/$defs/polygon"},
             "height":{"type":"number","minimum":0,"maximum":15},
             "faces":{"type":"array","maxItems":64,"items":{"type":"object","required":["points","color"],"properties":{
@@ -29,7 +37,10 @@
             }}}
           }
         }}
-      }
+      },
+      "allOf":[{"if":{"properties":{"version":{"const":"terrain/0.1"}}},
+        "then":{"properties":{"preset":{"const":"lake-district"},"features":{"maxItems":5}},"not":{"anyOf":[{"required":["channel"]},{"required":["crossings"]}]}},
+        "else":{"required":["channel","crossings"],"properties":{"preset":{"const":"river-corridor"}}}}]
     },
     "patternScale": {"enum":["district","adaptive"]},
     "zoningPolicy": {"enum":["semantic","soft","neighborhoods"]},
@@ -46,7 +57,7 @@
     "ucgDigest": {"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
     "coordinateSystem": {"const":"x-z-ground-y-up"},
     "coordinateQuantum": {"const":0.0001},
-    "terrainPreset": {"enum":["flat","lake-district"]},
+    "terrainPreset": {"enum":["flat","lake-district","river-corridor"]},
     "allocationAlgorithm": {"const":"capacity-bisection/0.1"},
     "envelope": {"$ref":"#/$defs/polygon"},
     "districts": {"type":"array","minItems":1,"maxItems":64,"items":{"type":"object","required":["id","sourceDirectoryId","label","polygon","anchor","localSeed","planningProfile","primaryAxis","areaDemand","areaAllocated","capacity","buildingCount"],"properties":{"id":{"type":"string"},"polygon":{"$ref":"#/$defs/polygon"},"planningProfile":{"enum":["GRID","RADIAL","ORGANIC","INDUSTRIAL","HYBRID","ZONED"]},"planningRegions":{"type":"array","minItems":2,"maxItems":4,"items":{"type":"object","required":["id","polygon","planningProfile","areaAllocated"],"properties":{"polygon":{"$ref":"#/$defs/polygon"},"planningProfile":{"enum":["GRID","ORGANIC"]}}}},"areaAllocated":{"type":"number","exclusiveMinimum":0},"capacity":{"type":"integer","minimum":1},"buildingCount":{"type":"integer","minimum":1}}}},

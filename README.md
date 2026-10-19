@@ -95,6 +95,19 @@ a short existing parallel path is available. The uniform0.2 thinning was rejecte
 for OJ's loss of variety. Older
 adaptive hints trigger a disclosed cold rebuild. See [the World contract and limits](docs/contracts/CURRENT_BASELINE.md#mixed-functional-neighborhoods-and-adaptive-patterns--2026-10-19).
 
+Terrain-first experiments reserve nature before streets and whole parcels:
+
+```powershell
+python -m scripts.procedural_world dist --zoning neighborhoods --pattern-scale adaptive --street-policy permeable --planning varied --outline varied --terrain river-corridor --out river-preview
+```
+
+`lake-district` provides closed lakes/hills and land detours. `river-corridor`
+adds a connected waterway, exposed bank roads and sparse shared bridges whose
+deck heights are followed by selection and Synthetic. Both may relocate buildings
+or expand land, while retaining source facts. The river is an analytical,
+level-water prototype, not a drainage simulation; buildable plains remain flat.
+Flat remains the default. See [ADR-037](docs/adr/ADR-037.md).
+
 ## GitHub Action
 
 The repository includes a least-privilege composite Action and a pinned Pages

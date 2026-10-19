@@ -6852,3 +6852,91 @@
   schema/tests/docs unit on feat/semantic-zoning; normal upstream push after final
   diff, identity and remote review. No user caches/generated outputs staged,
   attribution, forced update or protection bypass.
+
+## Checkpoint 2026-10-19 — connected river and real shared bridge paths
+- Implemented: ADR-037 opt-in `--terrain river-corridor`, terrain/0.2 and
+  terrain-adaptive/0.2. Initial demand/seed establishes one continuous channel
+  with shared cross-sections and terminal pools BEFORE urban roads/parcels.
+  Exposed union banks become common streets; one to three predetermined bridge
+  profiles connect them, rather than adding a bridge for each dependency.
+  Whole parcels avoid protected water/slopes. Capacity repairs cannot move water.
+- Bridge correctness: certified atomic physical pieces retain bridge identity,
+  endpoint heights,4.5 width,ground-level abutments and grade<=0.16. Independent
+  terrain reconstruction/validation rejects forged permits, flattened/missing
+  spans, height discontinuity, ordinary roads through water and lost route
+  profiles. CPU/WebGL/Canvas, demand markings, picking, selection and Synthetic
+  consume the same elevation profile. Crossings never create semantic edges.
+- Fixtures/revisions: OJ local-sha256-c2e80f9d3908fec8;
+  GJ local-sha256-06eb492d57141c16;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b.
+  Fresh maintained spring-positive (6 files/2 trips/4 represented edges) and
+  temporary one-file unknown Rust fixture also pass. No target build/install.
+- Commands from MetropoGits:
+  `python -X utf8 -c "import runpy,sys;sys.argv=['river','river-corridor-r3'];runpy.run_path('../artifacts/visual/river_review.py',run_name='__main__')"`;
+  `python -X utf8 -c "import runpy,sys;sys.argv=['refresh','river-corridor-r3','river-corridor-r4'];runpy.run_path('../artifacts/visual/repackage_inherited_patterns.py',run_name='__main__')"`;
+  `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/river-e2e --out ../artifacts/visual/river-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/river-e2e-r1/build --namespace fixture/river-e2e --zoning neighborhoods --pattern-scale adaptive --street-policy permeable --planning varied --outline varied --terrain river-corridor --out ../artifacts/visual/river-e2e-r3/world`.
+- Geometry/source results: all3175 source buildings/5782 exact file-pair trips/
+  8592 represented edges remain; canonical source City/UCG bytes and all source
+  roles, neighborhood core/support memberships/IDs/endpoints match lake baseline.
+  Full-width road/building/parcel/owner checks pass and every entrance remains
+  accessible. Bridges OJ3/GJ3/PB3/SQLite2; actually used by125/28/0/0 trips,
+  representing234/55/0/0 edges. PB's192 trips remain on other physical roads;
+  SQLite has0 routes, not artificial bridge traffic.
+- Geometry migration: compared with accepted terrain-first-r5 lake worlds,
+  buildings moved438/1322/664/340. Outer area ratios1.0000/1.0411/1.0691/1.0000.
+  Global reallocation on a new preset is intentional, not small-edit stability.
+  Compatible river hints keep the terrain and all48 old complete frames when a
+  49th file is added. Repeated four FULL generations and all package bytes match;
+  World and emitted planning0.5 schemas pass. All12 older canonical flat/block/
+  district compatibility snapshots remain exact. Existing lake terrain tests pass.
+- Real browser commands: viewer_audit.mjs with Chrome to river-final-main-r1
+  (OJ/GJ/fresh Spring) and river-final-unknown-r1 (PB/SQLite), all three LODs,
+  source inspection, navigation and CPU preview/showcase. Forced Canvas command:
+  `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/river-canvas-r2`
+  with four river-corridor-r4 after folders plus river-e2e-r3/world.
+  All5 Canvas source/evidence/member-paging and Structure restore cases pass.
+  `node ../artifacts/visual/river_focus.mjs river-corridor-r4 river-focus-r2`
+  checks matched-coordinate views and real pointer-selected bridge trips.
+- Actual bridge evidence: OJ account/api/AuthController.java→shared/exception/
+  AccountException.java; GJ Backend/User/.../api/controller/AdminDocsController.java
+  →global/response/ApiResponse.java. Original edge IDs shown, exact complete paths
+  highlighted. Instrumented real buildActivityGeometry at a bridge phase places
+  vehicle base at1.12 above a0.95 deck; reverse traversal shares the same profile.
+  Measured Synthetic static rebuilds0; no-path/no-network cases disclose N/A.
+  Software Chrome CPU timings are not GPU FPS or a hardware performance claim.
+- Artifacts actually inspected: OJ/GJ WebGL Overview, matched OJ river/bridge
+  close-up, GJ source-selected crossing, SQLite unknown-framework Overview,
+  OJ CPU showcase and Canvas restored/source inspector. Entry
+  `artifacts/visual/river-focus-r2/index.html`; full four-repository packages,
+  provenance/area reports and CPU comparison in river-corridor-r4/index.html.
+- Visual findings/corrections: the waterway now forms a coherent shared urban
+  feature with actual crossings and mixed source neighborhoods on its banks.
+  First CPU/Canvas review exposed false beige transverse dams: overlapping shore
+  faces were hidden by WebGL depth testing but not by painters. Subtract the
+  complete water union from shore meshes; assert no water/shore overlap and
+  regenerate all four corpora. Actual final SVG/Canvas confirms those seams gone.
+  Bridge deck/parapet/pavement paint ordering also corrected in Canvas. Earlier
+  river r1/r2 artifacts are diagnostics, not delivery baselines.
+- Tests:627 Python run,626 pass/one existing Windows symlink skip;59 Node pass;
+  Ruff,compileall,diff-check pass. Seven new Python tests cover connected water,
+  union shore/roads, source preservation, complete physical bridge certificates,
+  forged/erased/flattened crossings, all renderer profiles/schema/repeated bytes,
+  hinted edits, bounded work and sparse unknowns. New Node case tests deck height,
+  forward/reverse trajectories and exact shared source identity.
+- Performance samples (concurrent, not a controlled regression benchmark): full
+  generation OJ7.51s/GJ21.53s/PB4.60s/SQLite2.89s. Fixed9 channel stations,
+  <=24 features,<=3 crossings,2M bank/shore work and existing routing/repair caps.
+  Fresh Spring generate0.197s/validate0.119s/package0.069s in one sample.
+- Spec alignment: PASS under the approved procedural terrain extension,
+  ADR-024/032/036/037 and AC-001/002/003/006/008/011/014. Defaults, City/UCG,
+  source evidence and local static operation remain intact; no AI service,
+  runtime code execution, fabricated role or relationship. This analytical
+  level-water corridor does NOT complete drainage-derived hydrology, continuous
+  graded foundations, coastlines or tunnels. Angular banks/road dead ends,
+  W-12 density, W-15 materials and W-13/14 salience remain open.
+- Commits/delivery: docs1c7d5ec, then coherent river/crossing/renderer/contracts/
+  tests/docs work unit on feat/semantic-zoning. Normal configured upstream push
+  after final staged diff/identity/remote review; actual result reported at handoff.
+  No generated outputs/user caches, attribution, force update or protection bypass.
