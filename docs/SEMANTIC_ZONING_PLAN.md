@@ -11,6 +11,16 @@ world plan and [ADR-024](adr/ADR-024.md).
 
 ## Direction
 
+Latest maintainer correction: [ADR-032](adr/ADR-032.md) rejects both extremes.
+Preserve only a recognizable shared arterial skeleton, not the whole district
+stencil. Internal neighborhoods may adapt to different local grammars and real
+access axes. Build their actual membership from source-backed dependencies so
+verified Service/Repository/Controller types can coexist; admitting only unknown
+helpers never fulfilled the mixing requirement. Keep physical source-core and
+edge traceability, but do not mistake a global pure-role bucket for a required
+core invariant. Test cross-role pair co-location AND inherited/adapted patterns
+in the same real principal district. Earlier results below remain ablations.
+
 2026-10-19 follow-up: [ADR-031](adr/ADR-031.md) adds an inherited **district
 street field** experiment. The maintainer finds r4's block-local restart/GRID
 fallback erases the large patterns. Reserve the shared macro hub/axes/phase

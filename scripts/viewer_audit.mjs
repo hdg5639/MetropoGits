@@ -386,11 +386,17 @@ export async function auditZoning(cdp) {
       const edgeIds=new Set(METROPOGITS_DATA.ucg.edges.map(e=>e.id));
       if(!z.supportingMembers.every(m=>buildings.get(m.entityId)?.districtId===z.id && m.coreEdgeIds.length && m.coreEdgeIds.every(id=>edgeIds.has(id))))throw Error('Supporting member lacks original dependencies');
       const summary=document.querySelector('.neighborhood-core-summary')?.textContent;
-      const inherited=plan.patternScale==='district';
+      const inherited=Boolean(plan.patternScale);
       if(!summary?.includes(z.coreEntityIds.length+' source-core files') || !summary.includes(blocks.length+(inherited?' development sectors':' road-cut blocks')))throw Error('Missing physical core/block disclosure');
       if(inherited){
         const pattern=plan.districtPatterns.find(p=>p.parentId===z.parentId);
         if(!document.querySelector('.inherited-pattern-summary')?.textContent.includes(pattern.profile))throw Error('Missing inherited district pattern disclosure');
+      }
+      if(plan.patternScale==='adaptive'){
+        const summary=document.querySelector('.functional-neighborhood-summary')?.textContent;
+        if(!summary?.includes(z.internalEdgeIds.length+' original internal relations'))throw Error('Missing actual mixed-neighborhood relation count');
+        if(!z.internalEdgeIds.every(id=>edgeIds.has(id)))throw Error('Functional neighborhood invented an internal edge');
+        if(!Object.entries(z.roleCounts).every(([role,n])=>document.getElementById('inspector-content').textContent.includes(role+': '+n)))throw Error('Missing original mixed-role counts');
       }
       if(!blocks.every(b=>document.getElementById('inspector-content').textContent.includes(b.id)))throw Error('Local block plans missing from inspector');
     }

@@ -47,14 +47,14 @@ def demand(buildings, profile="GRID"):
     )
 
 
-def slots(poly, seed, *, rotation=0, phase_offset=0):
+def slots(poly, seed, *, rotation=0, phase_offset=0, axis=None, collectors=True):
     """Two frontage rows per local street, with boundary corridors reserved first."""
     inner = inset(poly, 5)
     if len(inner) < 3:
         return [], [], 0
     edges = list(zip(poly, poly[1:] + poly[:1]))
     a, b = max(edges, key=lambda e: math.dist(*e))
-    angle = math.atan2(b[1] - a[1], b[0] - a[0]) + rotation
+    angle = (math.atan2(b[1] - a[1], b[0] - a[0]) if axis is None else axis) + rotation
     c, s = math.cos(angle), math.sin(angle)
 
     def to_local(p):
@@ -121,7 +121,11 @@ def slots(poly, seed, *, rotation=0, phase_offset=0):
                 )
             )
     # Reserve cross collectors before assigning buildings to frontage lots.
-    for column in range(math.ceil((x0 + 6) / 70), math.floor((x1 - 6) / 70) + 1):
+    for column in (
+        range(math.ceil((x0 + 6) / 70), math.floor((x1 - 6) / 70) + 1)
+        if collectors
+        else ()
+    ):
         u = column * 70
         hits = []
         for p, q in zip(local, local[1:] + local[:1]):

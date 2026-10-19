@@ -26,7 +26,7 @@ def pattern_demand(clusters, members, profile):
     return {key: sum(b[key] for b in budgets) for key in budgets[0]}
 
 
-def street_field(polygon, seed, profile, parent_id):
+def street_field(polygon, seed, profile, parent_id, *, lane_identity=False):
     """Reserve the entire shared pattern before neighborhood addresses exist.
 
     Existing planners reserve roads before sampling vacant frontage sites. No
@@ -59,6 +59,13 @@ def street_field(polygon, seed, profile, parent_id):
         for r in roads
         if math.dist(r["start"], r["end"]) > 0.001
     ]
+    if lane_identity:
+        by_id = {
+            "world:backbone:" + derive(identity, r["id"], VERSION): r["id"]
+            for r in roads
+        }
+        for r in main:
+            r["sourceLaneId"] = by_id[r["id"]]
     record = dict(
         id=identity,
         version=VERSION,

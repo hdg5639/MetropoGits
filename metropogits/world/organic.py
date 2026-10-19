@@ -7,11 +7,13 @@ from .geometry import bounds, inset
 from .seed import derive, draw
 
 
-def organic_slots(polygon, seed):
+def organic_slots(polygon, seed, *, axis=None, collectors=True):
     inner = inset(polygon, 5)
     if len(inner) < 3:
         return [], [], 0
-    angle, local, world = frame(polygon, (draw(derive(seed, "axis")) - 0.5) * 0.4)
+    angle, local, world = frame(
+        polygon, (draw(derive(seed, "axis")) - 0.5) * 0.4, axis=axis
+    )
     x0, z0, x1, z1 = bounds([local(p) for p in inner])
     if max(x1 - x0, z1 - z0) > 5000:
         raise ValueError("world organic spatial extent limit")
@@ -30,7 +32,9 @@ def organic_slots(polygon, seed):
             )
             path.append(world([u, v]))
         add_corridor(lanes, polygon, path, f"organic:row:{row}", 3.5)
-    for column in range(math.floor(x0 / 90) - 1, math.ceil(x1 / 90) + 2):
+    for column in (
+        range(math.floor(x0 / 90) - 1, math.ceil(x1 / 90) + 2) if collectors else ()
+    ):
         path = []
         for row in range(math.floor(z0 / 14) - 2, math.ceil(z1 / 14) + 3):
             v = row * 14

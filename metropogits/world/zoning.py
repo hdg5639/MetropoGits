@@ -286,8 +286,10 @@ def plan_zones(
 def planning_document(world):
     if world.get("zoningPolicy") == "neighborhoods":
         doc = dict(
-            schemaVersion="planning/0.4-experimental"
-            if world.get("patternScale") == "district"
+            schemaVersion="planning/0.5-experimental"
+            if world.get("patternScale") == "adaptive"
+            else "planning/0.4-experimental"
+            if world.get("patternScale") in ("district", "adaptive")
             else "planning/0.3-experimental",
             zoningVersion=world["zoning"]["version"],
             worldSeed=world["seed"],
@@ -298,9 +300,9 @@ def planning_document(world):
             blocks=world["zoning"]["blocks"],
             mainRoads=world["zoning"]["mainRoads"],
         )
-        if world.get("patternScale") == "district":
+        if world.get("patternScale") in ("district", "adaptive"):
             doc.update(
-                patternScale="district",
+                patternScale=world["patternScale"],
                 districtPatterns=world["zoning"]["districtPatterns"],
             )
         return doc
@@ -352,7 +354,13 @@ def validate_zoning(world, scene, graph):
     records = stored.get("zones", [])
     if (
         stored.get("version")
-        != ("neighborhoods/0.1" if physical_neighborhoods else VERSION)
+        != (
+            "functional-neighborhoods/0.1"
+            if world.get("patternScale") == "adaptive"
+            else "neighborhoods/0.1"
+            if physical_neighborhoods
+            else VERSION
+        )
         or not 1 <= len(records) <= 448
     ):
         raise ValueError("invalid zoning version or zone limit")
@@ -362,9 +370,12 @@ def validate_zoning(world, scene, graph):
     grouped, _ = groups(scene)
     for key, members in grouped.items():
         from .neighborhoods import neighborhood_candidates
+        from .functional import functional_candidates
 
         choices = (
-            neighborhood_candidates(members, entities, key, graph)
+            functional_candidates(members, entities, key, graph)
+            if world.get("patternScale") == "adaptive"
+            else neighborhood_candidates(members, entities, key, graph)
             if physical_neighborhoods
             else candidates(members, entities, key)
         )

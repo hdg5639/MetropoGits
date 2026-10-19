@@ -207,9 +207,9 @@ def view_data(world, scene, graph):
                 blocks={b["id"]: b for b in world["zoning"]["blocks"]},
                 mainRoadCount=len(world["zoning"]["mainRoads"]),
             )
-            if world.get("patternScale") == "district":
+            if world.get("patternScale") in ("district", "adaptive"):
                 data["neighborhoodPlan"].update(
-                    patternScale="district",
+                    patternScale=world["patternScale"],
                     districtPatterns=world["zoning"]["districtPatterns"],
                 )
         if "softZoning" in world:
@@ -221,7 +221,9 @@ def view_data(world, scene, graph):
                 dict(
                     districtId=z["id"],
                     polygons=[list(reversed(z["polygon"]))],
-                    color=ZONE_COLORS[z["clusterKey"]],
+                    color=ZONE_COLORS.get(
+                        z["clusterKey"], ZONE_COLORS["GENERAL_MIXED"]
+                    ),
                 )
                 for z in neighborhoods
             ]
@@ -277,7 +279,7 @@ def render_svg(world, width=1200, height=750):
         lines.append(
             polygon(
                 [project(p) for p in z["polygon"]],
-                ZONE_COLORS[z["clusterKey"]],
+                ZONE_COLORS.get(z["clusterKey"], ZONE_COLORS["GENERAL_MIXED"]),
                 f'data-zone-id="{escape(z["id"])}"',
             )
         )
