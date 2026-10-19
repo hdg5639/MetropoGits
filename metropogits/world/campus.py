@@ -534,8 +534,10 @@ def apply_campuses(
         if sites:
             decision["reason"] = "PARENT_DIVERSITY_LIMIT"
             continue
-        if style == "neighborhood":
+        if style in ("neighborhood","landscape"):
             from .campus_neighborhood import neighborhood_layout
+            if style=='landscape':
+                from .campus_landscape import landscape_layout as neighborhood_layout
 
             fit = {}
             try:
@@ -634,13 +636,16 @@ def collect_plan(blocks, style="quad"):
         from .campus_neighborhood import VERSION as NEIGHBORHOOD_VERSION
 
         result.update(version=NEIGHBORHOOD_VERSION,style=style)
+    if style == 'landscape':
+        from .campus_landscape import VERSION as LANDSCAPE_VERSION
+        result.update(version=LANDSCAPE_VERSION,style=style)
     return result
 
 
 def validate_campuses(world):
     """Reconstruction is checked upstream; independently check occupied courts."""
     style = world["campusPlan"].get("style", "quad")
-    if style not in ("quad", "varied", "neighborhood") or world["campusPlan"] != collect_plan(
+    if style not in ("quad", "varied", "neighborhood", "landscape") or world["campusPlan"] != collect_plan(
         world["zoning"]["blocks"], style
     ):
         raise ValueError("campus plan differs from verified block records")
@@ -664,7 +669,7 @@ def validate_campuses(world):
     for site in sites:
         if not set(site["anchorEntityIds"]).issubset(site["memberEntityIds"]):
             raise ValueError("campus anchor is not an original member")
-        if style == 'neighborhood':
+        if style in ('neighborhood','landscape'):
             zone=next(z for z in world['zoning']['zones'] if z['id']==site['zoneId'])
             if site['memberEntityIds']!=sorted(zone['memberEntityIds']) or site['retainedMemberEntityIds']:
                 raise ValueError('campus precinct must include the entire source neighborhood')
