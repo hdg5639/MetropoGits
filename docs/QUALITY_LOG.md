@@ -8032,3 +8032,83 @@
   29acc09 walking-joint regression; this checkpoint/baseline ledger follows.
   Verify legitimate human metadata and normal upstream push on feat/semantic-zoning.
   Generated outputs/helpers remain outside Git; pre-existing fixture caches stay.
+
+## Checkpoint 2026-10-19 — organic campus frontage redevelopment
+
+- Implemented: ADR-050, explicit `--campus-style organic` / campus-plan/0.5.
+  Reserve rounded commons, connected promenades and gently fanning walking
+  frontage BEFORE generating full-size parcels and assigning source members.
+  Buildings follow actual polyline tangents and local group bearings. Retain
+  whole evidenced neighborhoods, degree anchors and graph-aware mixed placement;
+  no fabricated source, role or relation. Keep old modes and safe full-precinct
+  fallback with an explicit reason. No per-frame geometry generation.
+- Fixtures/revisions: GJ local-sha256-06eb492d57141c16; OJ
+  local-sha256-c2e80f9d3908fec8; PocketBase
+  6f370ea741f33adf889eef02e3c1b884a47aa522; SQLiteBrowser
+  ae32df153a64d250de7c77a5057deeff4092a39b. Same World terrain/boundaries from
+  environment-refresh-r1. Fresh48-source campus fixture at campus-e2e-r1/fixture.
+- Exact commands (from repository root):
+  `python ../artifacts/visual/organic_review.py environment-refresh-r1 organic-campus-r2 gj oj pocketbase`;
+  same helper/output with `sqlitebrowser`;
+  `python ../artifacts/visual/campus_neighborhood_verify.py organic-campus-r2 gj`;
+  same verifier with `oj pocketbase` and `sqlitebrowser`;
+  `python ../artifacts/visual/verify_inherited_compatibility.py`;
+  `python ../artifacts/visual/organic_integrity.py`;
+  `python -m unittest discover -s tests`; `node --test tests/*.test.mjs`.
+  Fresh pipeline: `python -m metropogits build --repo ../artifacts/visual/campus-e2e-r1/fixture --repo-id fixture/campus --out ../artifacts/visual/organic-campus-e2e-r1/build --json`;
+  `python scripts/procedural_world.py ../artifacts/visual/organic-campus-e2e-r1/build --out ../artifacts/visual/organic-campus-e2e-r1/world --seed campus-fixture --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied --street-policy porous --street-hierarchy --campus --campus-style organic`;
+  repeated with output `../artifacts/visual/organic-campus-e2e-r1/repeat`.
+- Artifacts/actual render commands:
+  `node ../artifacts/visual/campus_focus.mjs organic-campus-r2 organic-campus-reviewed-r2 gj oj pocketbase sqlitebrowser`;
+  `node ../artifacts/visual/campus_focus.mjs organic-campus-r2 organic-campus-canvas-r1 gj oj sqlitebrowser` with CAMPUS_CANVAS=1;
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/organic-campus-audit-r1 ../artifacts/visual/organic-campus-r2/gj/after ../artifacts/visual/organic-campus-r2/oj/after ../artifacts/visual/organic-campus-r2/pocketbase/after ../artifacts/visual/organic-campus-e2e-r1/world`;
+  same auditor/output organic-campus-unknown-audit-r1 with SQLiteBrowser after.
+  Inspected GJ/OJ actual whole-campus before/after, GJ court close-up, final GJ
+  CPU showcase raster and SQLite Canvas overview. Review hub
+  `../artifacts/visual/organic-campus-reviewed-r2/index.html`; CPU/data hub
+  `../artifacts/visual/organic-campus-r2/index.html`.
+- Visual findings: actual GJ86/50-source sites and OJ64-source site now use
+  fanning frontage with varied occupied bearings, not a zero-rotation success
+  claim. GJ136/OJ64 complete frames change; all other frames, terrain, surface,
+  parent/neighborhood geography stay identical. Occupied yaw bins modulo pi
+  (rounded0.01rad): GJ50/21, OJ37. Commons are connected to actual exterior roads.
+  Some long peripheral rows and the repeated fan motif remain; this is a real
+  campus-interior change, not completion of every campus variant or urban form.
+  PB/SQLite select no campus on this terrain and preserve their entire geometry.
+- Source/geometry: four real repositories retain3175 buildings,5782 exact
+  source-target trips and8592 edge identities; fresh fixture48/24/24 separately.
+  Building overlaps0, road overlaps0, owner escapes0; all buildings accessible.
+  Built streets GJ4945->5046/OJ2846->2875, PB2580/SQLite1740 unchanged. Total
+  trip length GJ+0.302%, OJ+0.025%, PB unchanged; no relation is removed to
+  improve appearance. City/UCG bytes unchanged in before/after packages.
+- Tests/determinism/stability:701 Python checks (one existing Windows symlink
+  skip),66 Node checks. All four World repeat bytes exact, twelve older World
+  goldens exact, all17 fresh CLI package files exact. World/planning/City/UCG
+  schemas and64 manifest hashes pass. Independent reconstruction rejects
+  forged group bearings. Full48->49 hinted growth retains all48 complete frames.
+- Fixes applied/reverified: initial population-dependent fan length changed old
+  tangent frames during one-file growth; fixed local reserve restores stability.
+  Packaged planning-schema audit caught the missing0.5 enum; producer and both
+  schema consumers now agree, and the regression test validates packaged
+  planning.json as well as World. No test/clearance/grade gate was weakened.
+- Performance: generation wall times GJ74.70s/OJ17.45s/PB11.45s/SQLite7.22s on
+  this Windows run, not an isolated speedup measurement. Actual3LOD viewer
+  route/source/filter/pan/Synthetic audits pass; static builds during Synthetic0.
+  SQLite correctly has no fabricated traffic. Concurrent SwiftShader audits
+  show a PB detail CPU p95 outlier32.5ms despite identical PB geometry; no FPS,
+  GPU completion or overall performance improvement is claimed. Viewer payload
+  size/static packaging cost remains a separate known issue.
+- Spec alignment: PASS, additive experimental option under approved campus
+  design5.1..5.4; technical contracts7/8/10, AC-002/003/006/008/009/011/014,
+  DEC-005..009/011. Existing modes/IDs and UCG/City intact. No new dependency,
+  runtime AI/cloud, target source execution or guessed research identity.
+- Open risks/next actions: retain macro patterns and terrain; improve remaining
+  repetitive peripheral rows only with visible payoff, not angle micro-tuning.
+  Near capacity/group-count thresholds the affected precinct can reflow; the
+  stability proof here is the named48->49 fixture, not a universal guarantee.
+  Riverside-specific campus/service access and all-purpose architectural variety
+  remain incomplete. organic-campus-r1 is an interrupted diagnostic, not delivery.
+- Commits/delivery:88aef76 atomic feature; this checkpoint follows separately on
+  feat/semantic-zoning. Configured human author/committer verified; normal upstream
+  push is the delivery step after this log commit. No generated
+  packages/clones/helpers or pre-existing fixture caches are staged.
