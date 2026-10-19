@@ -32,7 +32,7 @@ building/parcel/full-width-road clearance checks do not prove ground-to-ground
 seams are visually clean; rerun geometry, access, exact trips and determinism
 when implementing a correction. No terrain engine or schema change is implied.
 
-ADR-032's adaptive0.2 correction now reserves connecting parent arteries rather
+ADR-032's adaptive0.2 experiment reserved connecting parent arteries rather
 than imposing additional parent frontage rows/orbits across local replacements.
 Inherited neighborhoods retain the full local base pattern and actual cross-role
 memberships stay identical. Quantized child edges are checked before placement
@@ -40,6 +40,14 @@ and repaired within existing bounds, not accepted through weaker tolerances.
 Old adaptive0.1 remains readable; new cold coordinates can change and older hints
 are rejected explicitly. Experimental version enums extend compatibly; no field
 or City/UCG contract changes. Results and remaining limits belong in QUALITY_LOG.
+
+The maintainer rejected0.2's OJ visual result: removing all retained rings changed
+local tangent axes and moved288/681 buildings into a more monotonous layout.
+Adaptive0.3 restores orbital morphology and decouples the reference axes from
+thinning. Only unused, nonreserved local duplicate streets with short actual
+parallel alternatives may be removed after placement/routing. Protect all main
+patterns and used source trips. Compare against BOTH varied0.1 and rejected0.2;
+restoring variety is a correction, not proof that density/seams are finished.
 
 2026-10-19 follow-up: [ADR-031](adr/ADR-031.md) adds an inherited **district
 street field** experiment. The maintainer finds r4's block-local restart/GRID

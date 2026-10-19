@@ -6410,3 +6410,84 @@
 - Commits/delivery: one coherent fix/test/docs unit on feat/semantic-zoning,
   normal configured-upstream push after staged diff/identity review. No generated
   artifacts, unrelated user caches, attribution or protection bypass included.
+
+## Checkpoint 2026-10-19 — restore morphology instead of thinning whole cities
+
+- Implemented: maintainer rejected adaptive0.2's monotonous OJ result. Restore
+  selected shape-bearing orbital corridors and select local axes from the
+  original sparse reference field, not the thinned physical subset. Version the
+  opt-in policy/generator as0.3; retain0.1/0.2 readers and explicit old-hint rejection.
+  No repository-name special case, original role changes or City/UCG field changes.
+- Local correction: after placement/exact routing, remove only unused, nonreserved
+  near-parallel pieces with an existing short alternate path through a nearby
+  corridor. Protect all main patterns, district boundaries, driveways/entrances
+  and every physical segment used by a source trip. No coordinates, buildings,
+  source routes or new pavement change in this pass. Caps:500k index entries,
+  200k candidate comparisons,256 attempts,100k search states. Exhaustion retains
+  remaining certified roads and records it; no target removal count. Strengthen
+  validation to reject routing segments whose physical pavement was removed.
+- Fix applied/reverified: mixed capacity/quantization failures previously used
+  only the final reason to select a tiny parent repair. Reserve tiny adjustments
+  for exclusively quantization failures, preserving normal capacity growth when
+  both occur. Initial OJ probe relocated all files; this diagnosis restored all
+  681 original frames without weakening containment checks or extending budgets.
+- Fixtures/revisions: Spring-positive freshly scanned as fixture/morphology-restored-e2e;
+  same snapshot inputs as adaptive-neighborhoods-r3 and adaptive-seams-r4:
+  GJ local-sha256-06eb492d57141c16, OJ local-sha256-c2e80f9d3908fec8 (revision null),
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b. Same namespace/seed/
+  varied planning/outline; no target source/build/dependency code executed.
+- Commands run: `python -X utf8 -m metropogits build --repo tests/fixtures/repositories/spring-positive --repo-id fixture/morphology-restored-e2e --out ../artifacts/visual/morphology-restored-e2e-r1/build`;
+  `python -X utf8 -m scripts.procedural_world ../artifacts/visual/morphology-restored-e2e-r1/build --namespace fixture/morphology-restored-e2e --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied --out ../artifacts/visual/morphology-restored-e2e-r1/world`;
+  `python -X utf8 -c "import runpy,sys;sys.argv=['morphology','morphology-restored-r1'];runpy.run_path('../artifacts/visual/morphology_restore_review.py',run_name='__main__')"`;
+  legacy byte helper `verify_inherited_compatibility.py` via the same runpy form;
+  `python -X utf8 -m unittest discover -s tests -q`; `node --test tests/*.test.mjs`;
+  `ruff check metropogits scripts tests`; `python -m compileall -q metropogits scripts tests`;
+  `git diff --check`. World-focused70 tests also pass.
+- Actual renderer commands: `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/morphology-oj-reviewed-r1`
+  with morphology-restored-r1/oj/{varied,thinned,restored} and new Spring world;
+  same command with output morphology-corpus-reviewed-r1 and
+  morphology-restored-r1/{gj/varied,gj/restored,pocketbase/restored,sqlitebrowser/restored}.
+  Forced Canvas helper `node ../artifacts/visual/semantic_zoning_canvas_review.mjs ../artifacts/visual/morphology-canvas-r1`
+  with morphology-restored-r1/{oj,gj,pocketbase,sqlitebrowser}/restored and new Spring.
+  All exit0:8 WebGL/CPU cases,5 Canvas cases. No browser exceptions; Synthetic
+  ticks cause0 static geometry rebuilds. Software CPU submission timings are not FPS.
+- Artifacts inspected: OJ rejected/restored common-distance Overview, restored
+  Detail and CPU showcase, GJ restored default/CPU showcase, PocketBase CPU
+  showcase, SQLiteBrowser default, OJ Canvas role/evidence inspector. Entry
+  morphology-focus-r1/index.html links exact matched views and product viewers;
+  morphology-restored-r1/index.html retains all three policies for four corpora.
+- Visual findings: OJ ring flow and different neighborhood orientations return.
+  This is regression recovery, not a new universally superior visual baseline.
+  Repeated facades, large unused pads and some overlaid/crowded intersections
+  remain. Do not claim five tiny removals solve the entire seam problem.
+- Fidelity/results: OJ all681 complete parcel/building frames AND complete stored
+  routing object exactly equal varied0.1; only5 unused street pieces removed,
+  length18458.1→18422.1, land unchanged220041.5. Compared with rejected0.2,288
+  displaced files are restored. GJ retains rings with land359123.4 (was407636.7
+  in0.1 and313912.1 in0.2), length30412.2,8 local pieces removed. This trades some
+  0.2 density gains for morphology, not simultaneous maximum compression.
+  PB479/664 old frames retained, area187911.2/length16185.8,0 pieces removed;
+  SQLite old frames replan, area107253.1/length9306.0,0 pieces removed. No claim
+  of unchanged old geography outside OJ. Actual mixed source membership/claims
+  and all trip IDs/endpoints/edge lists remain equal across all three policies.
+- Limits: OJ/PB/SQLite reach the256 optional-attempt cap and leave unproven
+  candidates intact. Do not extend the cap for cosmetic count gains. No circles
+  are invented, no unsupported semantic role/traffic is fabricated. Remaining
+  density/landmarks/materials/terrain are still open ledger items.
+- Tests/determinism/stability:589 Python tests,588 pass/one existing Windows
+  symlink skip;56 Node pass; lint/compile/diff checks pass. New focused tests
+  cover real duplicate sharing, immutability/order, protected source trips and
+  reserved pieces, excessive detours, exhausted work and tangent-axis changes.
+  All12 default/block/district canonical snapshots unchanged; both older adaptive
+  policies validate. Four new complete packages double-generated/byte-equal;
+  original City/UCG bytes unchanged. All3175 buildings accessible,5782 source
+  trips/8592 represented edges conserved; no full-width-road/building/parcel
+  collisions or owner escapes. Current48→49 hint regression retains old frames
+  and reservations. Fresh Spring:6 buildings,2 trips,4 edges, complete access.
+- Spec alignment: PASS, technical3/4/7/8/10/12 and functional
+  AC-001/002/003/006/008/011/012/014 within the opt-in ADR-024/032 boundary.
+  Never use tests/road-length reductions alone as aesthetic acceptance again.
+- Commits/delivery: one coherent correction/test/docs unit on feat/semantic-zoning,
+  configured-upstream normal push after diff/identity review. No force/protection
+  bypass, agent attribution, generated outputs or unrelated user caches included.

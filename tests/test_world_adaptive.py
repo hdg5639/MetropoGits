@@ -10,7 +10,7 @@ from test_world_neighborhoods import fixture
 from metropogits.cli import analyze_repository
 from metropogits.layout import generate_city
 from metropogits.world.affinity import dependency_pairs
-from metropogits.world.adaptive import skeleton
+from metropogits.world.adaptive import skeleton, profile_plan
 from metropogits.world.export import package_world
 from metropogits.world.functional import functional_candidates
 from metropogits.world.generator import generate_world
@@ -136,9 +136,10 @@ class AdaptiveTests(unittest.TestCase):
         self.assertEqual(skeleton(roads), roads)
         self.assertTrue(skeleton(roads[:4], stitch=True))
         self.assertEqual(skeleton([], stitch=True), [])
-        self.assertEqual(self.world["generatorVersion"], "flat-adaptive-neighborhoods/0.2")
+        self.assertEqual(skeleton(roads, stitch=True, morphology=True), [roads[2], *roads[4:]])
+        self.assertEqual(self.world["generatorVersion"], "flat-adaptive-neighborhoods/0.3")
         self.assertTrue(all(
-            p["version"] == "adaptive-patterns/0.2"
+            p["version"] == "adaptive-patterns/0.3"
             for p in self.world["zoning"]["districtPatterns"]
         ))
 
@@ -186,6 +187,23 @@ class AdaptiveTests(unittest.TestCase):
             d["reason"] == "adaptive shared-cut quantization repair"
             for d in world["diagnostics"]
         ))
+
+    def test_local_axes_follow_reference_morphology_not_cleanup(self):
+        # A ring tangent and a radial spoke imply very different local grids.
+        zones = [dict(id="large", memberEntityIds=["a", "b"], internalEdgeIds=[], requestedProfile="RADIAL"),
+                 dict(id="mixed", memberEntityIds=["c"], internalEdgeIds=[], requestedProfile="HYBRID")]
+        polygons = {k: [[0, 0], [10, 0], [10, 10], [0, 10]] for k in ("large", "mixed")}
+        roads = [dict(id="ring", start=[0, 4], end=[10, 4]),
+                 dict(id="spoke", start=[9, -20], end=[9, 30])]
+        pattern = dict(profile="RADIAL", primaryAxis=0)
+        reference = profile_plan(zones, polygons, pattern, roads)
+        self.assertNotEqual(reference, profile_plan(zones, polygons, pattern, roads[1:]))
+        # Physical removal must never erase a protected source trip's pavement.
+        world = copy.deepcopy(self.world)
+        used = world["routing"]["segments"][0]["physicalId"]
+        world["streets"] = [s for s in world["streets"] if s["id"] != used]
+        with self.assertRaises(ValueError):
+            validate_world(world, self.scene, self.graph)
 
     def test_hinted_small_edit_preserves_complete_old_frames(self):
         with tempfile.TemporaryDirectory() as directory:

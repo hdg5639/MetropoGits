@@ -19,22 +19,22 @@ from .zone_access import access_corridors
 
 # Retain the address/identity seed namespace when revising arterial selection.
 VERSION = "adaptive-patterns/0.1"
-SEAM_VERSION = "adaptive-patterns/0.2"
-GENERATOR_VERSION = "flat-adaptive-neighborhoods/0.2"
+SEAM_VERSION = "adaptive-patterns/0.3"
+GENERATOR_VERSION = "flat-adaptive-neighborhoods/0.3"
 
 
-def adaptive_field(polygon, seed, base, parent, *, stitch=False):
+def adaptive_field(polygon, seed, base, parent, *, stitch=False, morphology=False):
     candidates, roads, pattern = street_field(
         polygon, seed, base, parent, lane_identity=True
     )
-    main = skeleton(roads, stitch=stitch)
+    main = skeleton(roads, stitch=stitch, morphology=morphology)
     return (
         candidates,
         roads,
         main,
         dict(
             pattern,
-            version=SEAM_VERSION if stitch else VERSION,
+            version=SEAM_VERSION if morphology else "adaptive-patterns/0.2" if stitch else VERSION,
             protectedStreetIds=sorted(r["id"] for r in main),
             fullFieldRoadCount=len(roads),
             roadCount=len(main),
@@ -42,15 +42,17 @@ def adaptive_field(polygon, seed, base, parent, *, stitch=False):
     )
 
 
-def skeleton(roads, *, stitch=False):
+def skeleton(roads, *, stitch=False, morphology=False):
     if stitch:
-        # Frontage rows/courts/orbits belong to their own local grammar, not to
-        # a second stencil spanning adapted neighborhoods. Keep real connecting
-        # arteries; inherited sectors still retain their complete local field.
+        # Avoid a second linear frontage stencil across adapted neighborhoods.
+        # Selected orbital families define the parent's morphology: retaining
+        # spokes alone erased that identity and rotated whole local grids.
         arteries = [
             r
             for r in roads
             if any(k in r["sourceLaneId"] for k in ("collector:", "spoke:", "spine:"))
+            or (morphology and (orbit := re.search(r"orbit:(\d+)", r["sourceLaneId"]))
+                and int(orbit[1]) % 4 == 0)
         ]
         if arteries:
             return arteries
@@ -278,7 +280,7 @@ def plan_adaptive(
 ):
     parent = clusters[0]["parentId"]
     parent_candidates, parent_roads, main, pattern = adaptive_field(
-        polygon, seed, base, parent, stitch=True
+        polygon, seed, base, parent, stitch=True, morphology=True
     )
     by_id = {b["entityId"]: b for b in members}
     profiles = pattern_profiles(clusters, base)
@@ -324,7 +326,7 @@ def plan_adaptive(
                 for key, value in demands
             ]
             continue
-        selections = profile_plan(clusters, polygons, pattern, main)
+        selections = profile_plan(clusters, polygons, pattern, skeleton(parent_roads))
         plans = {
             z["id"]: local_sites(
                 polygons[z["id"]],
