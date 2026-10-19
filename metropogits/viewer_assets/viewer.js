@@ -779,9 +779,10 @@
     return [material.roof, shade(material.wall,.8), shade(material.wall,.65)];
   }
 
-  function drawBuilding(building) {
-    const oriented=orientedBuildings[building.entityId];
+  function drawBuilding(building, visualKind = 'building', forceSelected = false, physical = null) {
+    const oriented=physical || orientedBuildings[building.entityId];
     if(oriented) {
+      const isSelected=forceSelected || selected(visualKind,building.entityId);
       const topHeight = Math.max(...oriented.parts.map(p => p.y + p.height));
       const faces=[];
       for(const face of oriented.foundationFaces || []) {
@@ -789,7 +790,7 @@
         faces.push({points:face.points.map(([x,y,z])=>project(x,z,y)),depth,color:face.color});
       }
       for(const part of oriented.parts) {
-        const palette=materialPalette(building, part, topHeight, selected("building",building.entityId));
+        const palette=materialPalette(building, part, topHeight, isSelected);
         const lift=data.surface ? .2 : 0;
         const bottom=part.footprint.map(([x,z])=>project(x,z,part.y+lift));
         const top=part.footprint.map(([x,z])=>project(x,z,part.y+part.height+lift));
@@ -801,10 +802,10 @@
       for(const face of faces.sort((a,b)=>a.depth-b.depth)) {
         polygonPath(face.points);context.fillStyle=face.color;context.fill();
         if(face.roof) {
-          context.strokeStyle=selected("building",building.entityId)?"#f8fafc":"rgba(203,213,225,.62)";
-          context.lineWidth=selected("building",building.entityId)?2.5:1;context.stroke();
+          context.strokeStyle=isSelected?"#f8fafc":"rgba(203,213,225,.62)";
+          context.lineWidth=isSelected?2.5:1;context.stroke();
         }
-        hitRegions.push({kind:"building",id:building.entityId,points:face.points});
+        hitRegions.push({kind:visualKind,id:building.entityId,points:face.points});
       }
       return;
     }
@@ -836,6 +837,18 @@
       && facility.memberEntityIds.includes(state.selected.id)
       ? scene.buildings.find(b => b.entityId === state.selected.id) : null;
     const isSelected = selected("aggregate", facility.id) || Boolean(selectedMember);
+    if(facility.physicalModel) {
+      drawBuilding({...facility,entityId:facility.id,archetype:facility.archetypeCounts[0].archetype},
+        'aggregate',isSelected,facility.physicalModel);
+      if(selectedMember) {
+        const footprint=orientedBuildings[selectedMember.entityId]?.footprint;
+        if(footprint) {
+          polygonPath(footprint.map(([x,z])=>project(x,z,facility.height+base+.7)));
+          context.strokeStyle='#22d3ee';context.lineWidth=2;context.stroke();
+        }
+      }
+      return;
+    }
     const outlines = filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay)).map((plot) => drawVolume(
       { ...plot, height: 2.2+base },
       ["#475569", "#263449", "#172033"],

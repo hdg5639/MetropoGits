@@ -691,10 +691,15 @@
     );
     const majorIds = new Set(majorDistrictIds(scene));
     const orientedIds = new Set(streetData?.orientedEntityIds || []);
+    // Rotated World parcels need certified oriented models, not the legacy
+    // axis-aligned envelope. Keep the old guard and add the checked replacement.
+    const physicalCompounds = streetData?.roleCompounds || [];
+    const physicalMembers = new Set(physicalCompounds.flatMap(a => a.memberEntityIds));
     const aggregates = roleFacilities(
       aggregateFacilities(scene, majorIds, districts, territories, streetData?.rectangles || []), scene, ucg,
       streetData?.rectangles || [],
-    ).filter(a => !a.memberEntityIds.some(id => orientedIds.has(id)));
+    ).filter(a => !a.memberEntityIds.some(id => orientedIds.has(id) || physicalMembers.has(id)))
+      .concat(physicalCompounds).sort((a,b) => a.id.localeCompare(b.id));
     const aggregateIds = new Set(aggregates.map((aggregate) => aggregate.id));
     const roleByMember = new Map(aggregates.filter(a => a.role)
       .flatMap(a => a.memberEntityIds.map(id => [id, a])));
@@ -1125,6 +1130,7 @@
   }
 
   function aggregateElevation(surface,facility) {
+    if(facility.physicalModel) return facility.physicalModel.baseElevation;
     if(!surface) return 0;
     let highest=0,work=0;
     for(const p of aggregateGroundPlots(facility,true)) {
