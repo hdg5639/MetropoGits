@@ -6,8 +6,10 @@ from .geometry import area, point, q
 from .landscape import expanded
 from .seed import derive, draw
 
-VERSION = "terrain/0.7"
-GENERATOR_VERSION = "terrain-adaptive/0.7"
+LEGACY_VERSION = "terrain/0.7"
+LEGACY_GENERATOR_VERSION = "terrain-adaptive/0.7"
+VERSION = "terrain/0.8"
+GENERATOR_VERSION = "terrain-adaptive/0.8"
 PRESET = "mountain-landscape"
 MAX_FEATURES = 64
 
@@ -89,14 +91,15 @@ def mountain_landform(center, major, minor, yaw, seed):
     )
 
 
-def generate_mountain_terrain(envelope, seed):
+def generate_mountain_terrain(envelope, seed, *, version=VERSION):
     from .watershed import generate_watershed_terrain
     from .terrain_varied import complete_landscape
 
     t = generate_watershed_terrain(envelope, seed)
-    local = derive(seed, VERSION)
-    t["seed"] = derive(seed, "global-terrain", VERSION)
-    return complete_landscape(
+    # Keep the established horizontal geography and old reconstruction exact.
+    local = derive(seed, LEGACY_VERSION)
+    t["seed"] = derive(seed, "global-terrain", LEGACY_VERSION)
+    t = complete_landscape(
         t,
         envelope,
         local,
@@ -104,8 +107,31 @@ def generate_mountain_terrain(envelope, seed):
         max(w["width"] for w in t["channel"]["waterways"]),
         t["crossings"],
         t["channel"],
-        VERSION,
+        LEGACY_VERSION,
         PRESET,
         max_features=MAX_FEATURES,
         mountains=True,
     )
+    if version == LEGACY_VERSION:
+        return t
+    if version != VERSION:
+        raise ValueError("unsupported mountain terrain version")
+    for feature in t["features"]:
+        if feature.get("landform") != "MOUNTAIN_RANGE":
+            continue
+        # Relief is subordinate to horizontal mountain breadth, not a needle
+        # made taller than the whole surrounding city. World units, not metres.
+        breadth = math.sqrt(area(feature["polygon"]))
+        height = q(min(68, feature["height"] * 0.45, breadth * 0.45))
+        factor = (height - 0.005) / (feature["height"] - 0.005)
+        for face in feature["faces"]:
+            face["points"] = [
+                [x, q(0.005 + (y - 0.005) * factor), z]
+                for x, y, z in reversed(face["points"])
+            ]
+        feature["summits"] = [
+            [x, q(0.005 + (y - 0.005) * factor), z] for x, y, z in feature["summits"]
+        ]
+        feature["height"] = height
+    t.update(version=VERSION, seed=derive(seed, "global-terrain", VERSION))
+    return t

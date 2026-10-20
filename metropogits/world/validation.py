@@ -25,7 +25,7 @@ def validate_world(world, scene, graph):
         raise ValueError("unsupported world schema")
     if "campusPlan" in world and not isinstance(world["campusPlan"], dict):
         raise ValueError("invalid campus plan")
-    mountain = world.get('generatorVersion') == MOUNTAIN_GENERATOR_VERSION
+    mountain = world.get('generatorVersion') in ('terrain-adaptive/0.7',MOUNTAIN_GENERATOR_VERSION)
     watershed = mountain or world.get("generatorVersion") == WATERSHED_GENERATOR_VERSION
     varied = watershed or world.get("generatorVersion") == VARIED_GENERATOR_VERSION
     landscape = varied or world.get("generatorVersion") == LANDSCAPE_GENERATOR_VERSION
@@ -58,7 +58,7 @@ def validate_world(world, scene, graph):
         or world.get("zoningPolicy") != "neighborhoods"
         or world.get("generatorVersion")
         not in (
-            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION, VALLEY_GENERATOR_VERSION, LANDSCAPE_GENERATOR_VERSION,VARIED_GENERATOR_VERSION,WATERSHED_GENERATOR_VERSION,MOUNTAIN_GENERATOR_VERSION)
+            ("flat-adaptive-neighborhoods/0.1", "flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", TERRAIN_GENERATOR_VERSION, RIVER_GENERATOR_VERSION, VALLEY_GENERATOR_VERSION, LANDSCAPE_GENERATOR_VERSION,VARIED_GENERATOR_VERSION,WATERSHED_GENERATOR_VERSION,'terrain-adaptive/0.7',MOUNTAIN_GENERATOR_VERSION)
             if world["patternScale"] == "adaptive"
             else ("flat-neighborhood-patterns/0.1",)
         )
@@ -79,7 +79,7 @@ def validate_world(world, scene, graph):
             LANDSCAPE_GENERATOR_VERSION,
             VARIED_GENERATOR_VERSION,
             WATERSHED_GENERATOR_VERSION,
-            MOUNTAIN_GENERATOR_VERSION,
+            'terrain-adaptive/0.7', MOUNTAIN_GENERATOR_VERSION,
         )
     ) != (world.get("patternScale") in ("district", "adaptive")):
         raise ValueError("world pattern scale version mismatch")

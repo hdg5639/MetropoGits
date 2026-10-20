@@ -8782,3 +8782,39 @@
   No merge/main operation requested in this turn. Existing local fixture build
   caches left untouched. Next: stronger purpose-specific site variants where
   they fit safely; broad silhouette/readability gains before tiny roof polish.
+
+## Checkpoint 2026-10-21 — outward mountain faces and city-proportionate relief
+- User report: mountains look Everest-like and their interior is visible.
+  Root cause reproduced on saved GJ: all80 mountain triangles face downward,
+  so normal WebGL backface culling removes the outer surface. Do not disable
+  depth/culling or hide the defect with materials. Export now orients saved
+  mountain surfaces upward without changing their canonical payloads.
+- New mountain generation uses terrain0.8 behind the existing option, with
+  height bounded by horizontal breadth and68 visual units. Saved0.7 remains
+  independently reconstructible/validatable. GJ heights55/86.4582 become
+ 21.4312/35.0684; all1324 parcel records,4667 physical streets and4209 exact
+  source-pair routes remain identical. No source claims/IDs changed.
+- Commands: `python -m unittest discover -s tests`:762 tests, OK with one existing
+  Windows symlink skip. Node70 PASS, Ruff/diff PASS. New mesh assertions check
+  every exported mountain normal, preserved original buffers, unchanged old/new
+  reserves/water, bounded heights, tamper rejection and versioned schemas.
+- Real GJ input polyglot-facilities-r2/gj at source revision
+  3d9b53f9dac9af1187ac9754cb3066b27e43b766. Command `python
+  scripts/procedural_world.py <input> --out ../artifacts/visual/mountain-surface-r1/gj
+  --zoning neighborhoods --pattern-scale adaptive --planning varied --outline
+  varied --street-policy porous --street-hierarchy --campus --campus-style
+  programmed --terrain mountain-landscape --building-style purposeful --seed
+  mountain-3`. All1324 accessible; zero building/road overlaps and owner escapes.
+  Full saved0.7 World independently validates with original source graph/city.
+- Browser: `node scripts/viewer_audit.mjs <installed-Chrome>
+  ../artifacts/visual/mountain-surface-audit-r1 <new-GJ>`. Actual default/detail
+  WebGL inspected: opaque, lit external slopes and lower broad ridges; three
+  LODs/selection/source routes/Synthetic pass, zero static rebuilds in Synthetic.
+  Software rendering submission is not a hardware FPS claim. No raster textures
+  or fake geography added. Camera collision physics is not claimed by this fix.
+- Spec alignment PASS: technical render/evidence separation, functional CPU/
+  static viewer and source identity, product determinism/static-only. ADR-057
+  records feedback and compatibility. Campus-scale landmarks are the next unit,
+  not claimed done by the mountain repair. Existing fixture caches preserved.
+- Delivery: atomic terrain correction, normal feat/polyglot-analysis push after
+  explicit staged diff and human-identity review; no main/protection changes.

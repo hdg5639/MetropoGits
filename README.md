@@ -163,8 +163,10 @@ fabric rather than dropping files. See [facility programs](docs/FACILITY_ARCHETY
 
 `--terrain mountain-landscape` adds optional multi-summit mountain reserves to
 the watershed experiment. Seed and available space can produce zero, one or two
-ranges, plus independently seeded lakes/foothills. Ridges rise 55–160 world units
-above local ground, with rock faces and continuous shoulders. These are visual
+ranges, plus independently seeded lakes/foothills. Terrain0.8 bounds relief by
+ridge breadth (at most68 world units) rather than the old0.7 alpine height range;
+old saved terrain remains reconstructible. Outward-facing rock slopes and
+continuous shoulders avoid the old backface-culling interior artifact. These are visual
 units, not geographic metres. Nature precedes streets/parcels; certified crossings
 and conditional tunnels retain their existing checks. Old terrain modes and
 default results remain available unchanged. See [ADR-056](docs/adr/ADR-056.md).

@@ -34,8 +34,11 @@ class MountainTerrainTests(unittest.TestCase):
             self.assertLessEqual(len(terrain["features"]), 64)
             self.assertLessEqual(len(terrain["crossings"]), 8)
             for f in ranges:
-                self.assertGreater(f["height"], 35)
-                self.assertLessEqual(f["height"], 160)
+                self.assertGreater(f["height"], 15)
+                self.assertLessEqual(f["height"], 68)
+                self.assertLessEqual(
+                    f["height"], math.sqrt(area(f["polygon"])) * 0.45 + 0.0001
+                )
                 self.assertGreaterEqual(len(f["summits"]), 2)
                 self.assertTrue(all(inside(p, envelope) for p in f["roadPolygon"]))
                 forms.add((f["height"], tuple(f["center"])))
@@ -137,7 +140,42 @@ class MountainTerrainTests(unittest.TestCase):
         )
         terrain = generate_mountain_terrain(rectangle([0, 0], 0, 600, 440), "3")
         validator.validate(terrain)
-        old = copy.deepcopy(terrain)
+        old = generate_mountain_terrain(
+            rectangle([0, 0], 0, 600, 440), "3", version="terrain/0.7"
+        )
+        validator.validate(old)
         old.update(version="terrain/0.6", preset="watershed-landscape")
         with self.assertRaises(ValidationError):
             validator.validate(old)
+
+    def test_old_geography_is_preserved_and_both_export_versions_face_outward(self):
+        from metropogits.world.river_landscape import natural_faces
+
+        envelope = rectangle([0, 0], 0, 600, 440)
+        old = generate_mountain_terrain(envelope, "3", version="terrain/0.7")
+        new = generate_mountain_terrain(envelope, "3")
+        old_copy = copy.deepcopy(old)
+        validate_terrain(old, "3")
+        self.assertEqual(old["channel"], new["channel"])
+        for a, b in zip(old["features"], new["features"]):
+            for key in ("id", "polygon", "roadPolygon", "noBuildPolygon"):
+                self.assertEqual(a[key], b[key])
+            if a.get("landform") == "MOUNTAIN_RANGE":
+                self.assertLess(b["height"], a["height"] * 0.46)
+        for terrain in (old, new):
+            for feature in natural_faces(
+                dict(terrain=terrain, streets=[], envelope=envelope)
+            ):
+                if feature.get("landform") != "MOUNTAIN_RANGE":
+                    continue
+                for face in feature["faces"]:
+                    a, b, c = face["points"][:3]
+                    normal_y = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (
+                        c[2] - a[2]
+                    )
+                    self.assertGreater(
+                        normal_y,
+                        0,
+                        "Backface culling must not expose the mountain interior",
+                    )
+        self.assertEqual(old_copy, old)

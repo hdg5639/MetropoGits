@@ -149,7 +149,7 @@ def terrain_plan(plans, main, boundary, ports, pattern, polygon, terrain):
     adapted_main = adapt_roads(main+boundary, terrain)
     if terrain.get("crossings"):
         from .rivers import river_roads
-        for i, r in enumerate(river_roads(terrain,polygon if terrain.get("version") in ("terrain/0.4","terrain/0.5","terrain/0.6","terrain/0.7") else None)):
+        for i, r in enumerate(river_roads(terrain,polygon if terrain.get("version") in ("terrain/0.4","terrain/0.5","terrain/0.6","terrain/0.7","terrain/0.8") else None)):
             from .geometry import ribbon
             if overlap(ribbon(r["start"], r["end"], r["width"]), polygon):
                 adapted_main.append(dict(r, id="world:river-road:"+derive(pattern["id"],str(i)),
@@ -197,11 +197,15 @@ def validate_terrain(terrain, seed):
     if (not isinstance(terrain, dict) or terrain.get("version") != VERSION
             or not 3 <= len(terrain.get("initialEnvelope", [])) <= 512
             or not 1 <= len(terrain.get("features", [])) <= 5):
-        if (not isinstance(terrain, dict) or terrain.get("version") not in (RIVER_VERSION, VALLEY_VERSION, LANDSCAPE_VERSION,VARIED_VERSION,WATERSHED_VERSION,MOUNTAIN_VERSION)
+        if (not isinstance(terrain, dict) or terrain.get("version") not in (RIVER_VERSION, VALLEY_VERSION, LANDSCAPE_VERSION,VARIED_VERSION,WATERSHED_VERSION,'terrain/0.7',MOUNTAIN_VERSION)
                 or not 3 <= len(terrain.get("initialEnvelope", [])) <= 512
-                or not 1 <= len(terrain.get("features", [])) <= (MOUNTAIN_FEATURES if terrain.get("version")==MOUNTAIN_VERSION else WATERSHED_FEATURES if terrain.get("version")==WATERSHED_VERSION else VARIED_FEATURES if terrain.get("version")==VARIED_VERSION else MAX_FEATURES)
-                or not 1 <= len(terrain.get("crossings", [])) <= (8 if terrain.get("version") in (VARIED_VERSION,WATERSHED_VERSION,MOUNTAIN_VERSION) else 4 if terrain.get("version")==LANDSCAPE_VERSION else 3)):
+                or not 1 <= len(terrain.get("features", [])) <= (MOUNTAIN_FEATURES if terrain.get("version") in ("terrain/0.7",MOUNTAIN_VERSION) else WATERSHED_FEATURES if terrain.get("version")==WATERSHED_VERSION else VARIED_FEATURES if terrain.get("version")==VARIED_VERSION else MAX_FEATURES)
+                or not 1 <= len(terrain.get("crossings", [])) <= (8 if terrain.get("version") in (VARIED_VERSION,WATERSHED_VERSION,'terrain/0.7',MOUNTAIN_VERSION) else 4 if terrain.get("version")==LANDSCAPE_VERSION else 3)):
             raise ValueError("invalid terrain payload or resource limit")
-    expected = generate_terrain(terrain["initialEnvelope"], seed, terrain.get("preset"))
+    if terrain.get('preset') == 'mountain-landscape':
+        from .mountains import generate_mountain_terrain
+        expected = generate_mountain_terrain(terrain['initialEnvelope'],seed,version=terrain['version'])
+    else:
+        expected = generate_terrain(terrain["initialEnvelope"], seed, terrain.get("preset"))
     if expected != terrain:
         raise ValueError("terrain differs from its original global field/reserves")

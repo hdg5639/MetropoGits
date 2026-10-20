@@ -211,7 +211,7 @@ def height_at(street, p):
 def blocks_ground_connection(start, end, terrain):
     """A ground alley may not join/cross an elevated bridge approach."""
     crossings=terrain.get("crossings",[])
-    if len(crossings)>(8 if terrain.get('version') in ('terrain/0.5','terrain/0.6','terrain/0.7') else 4) or any(len(c["path"])!=4 for c in crossings):
+    if len(crossings)>(8 if terrain.get('version') in ('terrain/0.5','terrain/0.6','terrain/0.7','terrain/0.8') else 4) or any(len(c["path"])!=4 for c in crossings):
         raise ValueError("ground crossing certificate limit")
     from .elevation import surface
 
