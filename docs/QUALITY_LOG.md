@@ -8590,3 +8590,66 @@
 - Spec audit PASS for source/scene/facility contracts and static-first boundary;
   experimental GJ World correction explicitly remains open. Commit completed
   facility unit locally, then verify correction before accumulated normal push.
+
+## Checkpoint 2026-10-21 — preserve campus external street connectivity
+- Implemented: before replacing local lanes with optional campus circulation,
+  compare actual pre/post physical graph components at existing external road
+  endpoints. Reject a campus proposal that severs a previously connected pair;
+  retain the original local plan and disclose
+  RETAINED_EXTERNAL_CONNECTIVITY_FALLBACK. No invented detour, dependency, bridge
+  or terrain crossing; no weakening of the route/overlap validators.
+- Root cause/evidence: the previously retained permeability shortcut was assumed
+  to be a valid backbone anchor after its connecting neighborhood lanes were
+  replaced. It became a three-segment island with one real source building.
+  Two focused tests cover severed shortcut junctions, a genuine connecting
+  replacement, original disjoint components and input immutability.
+- Full tests753 PASS (one existing Windows symlink skip),70 Node PASS;28 campus
+  integration tests, Ruff/compileall/diff checks PASS. Relevant specifications
+  reread: technical evidence/confidence and graph boundaries; functional
+  FR-018/019/020 and role/aggregate-evidence acceptance; product recognition
+  tiers and no implicit external infrastructure. Alignment PASS.
+- Exact GJ rebuild command: `python scripts/procedural_world.py
+  ../artifacts/visual/polyglot-facilities-r1/gj --out
+  ../artifacts/visual/polyglot-facilities-world-r2/gj --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus --campus-style fabric --terrain
+  watershed-landscape --building-style architectural`.
+- GJ result:1324 buildings,4209 exact source-pair trips/6157 represented edges,
+  zero building overlaps, road overlaps or owner escapes; all1324 accessible.
+  One rejected optional campus proposal, two campus neighborhoods still planned.
+ 115 addresses differ from the failed proposal, all within Backend/User; other
+  districts' source centers unchanged. Ordinary GJ graph/city also regenerated
+  byte-identically. Not a claim that changed semantic inputs never move a block.
+- PB/OJ World rerun with the same flags:664/681 buildings,1491/1457 trips,
+  zero overlaps/escapes and all accessible; both world.json byte-identical to
+  pre-guard successful outputs. Bat/SQLite have no selected campus replacement.
+  Small World/ordinary atlas determinism checks from prior checkpoint retained.
+- Final corpus revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766;
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  FastAPI9db981ca40aea36e5aa326a770278d8fe20c0b21;
+  Svelte df796708040f5200ec572b28ab7f88ecee5794dd;
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522;
+  bat f748c1a467ae161682849949a7d036ab8362f9ba;
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b.
+  Local canonical UCG revision remains null by CLI design; fixture HEADs are
+  recorded here rather than falsely rewriting source revision metadata.
+- Browser command: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/polyglot-facilities-gj-audit-r1
+  ../artifacts/visual/polyglot-facilities-world-r2/gj
+  ../artifacts/visual/polyglot-facilities-r2/gj`. Actual overview/district/detail,
+  exact source routes, synthetic and source links completed, zero static rebuilds.
+  Inspected GJ World overview and PB overview/OJ CPU showcase from large audit.
+  Actual forced --disable-webgl Chrome screenshot also inspected: ordinary atlas
+  Canvas fallback displays the shared multi-part facility models correctly.
+- Review entry: ../artifacts/visual/polyglot-reviewed-r1/index.html links seven
+  actual repositories, the source facility atlas, canonical/World graphs,
+  previews and independent validations. Generated artifacts remain outside Git.
+- Remaining limits: not full native compiler binding; dynamic/re-export/implicit
+  context remains conservative. SQLite .h/Qt enrichment weak (4/506 specialized
+  file buildings), Python host syntax skip and Svelte extended compiler config
+  remain explicitly PARTIAL. More complete parsers/technology coverage and
+  detailed model artistry are future tasks, not falsely marked complete.
+- Delivery: completed facility568bae5 plus this atomic connectivity correction
+  committed with existing human identity; normal push to feat/polyglot-analysis
+  after final staged metadata/diff review. No main/protection/history changes.

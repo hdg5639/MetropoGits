@@ -521,6 +521,51 @@ def _mixed_pocket(plan, layout, zone, pairs, roads, diagnostics=None):
     return choices, kept, plots, site
 
 
+def retains_external_connections(original, replacement, roads):
+    """Optional campus replacement must not sever existing shortcut junctions.
+
+    Check actual geometric graph components, not the assumption that every
+    declared external road is already a connected backbone anchor. Never add a
+    fictional road to rescue a campus; retain the original local plan instead.
+    """
+    from .infrastructure import atomic_streets
+
+    anchors = {tuple(p) for r in roads for p in (r['start'], r['end'])}
+
+    def components(lanes):
+        adjacency = defaultdict(set)
+        for road in atomic_streets(roads + lanes):
+            a, b = tuple(road['start']), tuple(road['end'])
+            adjacency[a].add(b)
+            adjacency[b].add(a)
+        labels = {}
+        for start in sorted(adjacency):
+            if start in labels:
+                continue
+            label = start
+            queue = [start]
+            while queue:
+                at = queue.pop()
+                if at in labels:
+                    continue
+                labels[at] = label
+                queue.extend(sorted(adjacency[at] - labels.keys()))
+        return labels
+
+    before, after = components(original), components(replacement)
+    retained = {}
+    for at in sorted(anchors):
+        if at not in before:
+            continue
+        if at not in after:
+            return False
+        old = before[at]
+        if old in retained and retained[old] != after[at]:
+            return False
+        retained[old] = after[at]
+    return True
+
+
 def apply_campuses(
     plans, selections, zones, polygons, seed, roads, terrain, pairs, style="quad"
 ):
@@ -557,6 +602,9 @@ def apply_campuses(
                 decision['reason'] = 'FULL_NEIGHBORHOOD_FIT_FALLBACK'
                 continue
             plots, walks, site = layout
+            if not retains_external_connections(plans[z['id']][1], walks, roads):
+                decision['reason'] = 'RETAINED_EXTERNAL_CONNECTIVITY_FALLBACK'
+                continue
             plans[z['id']] = (plots,walks,site['axis'],None)
             sites[z['id']] = site
             decision.update(status='SELECTED',reason='WHOLE_NEIGHBORHOOD_PLANNED')
@@ -607,6 +655,9 @@ def apply_campuses(
                 decision["reason"] = "RETAINED_CAPACITY_OR_CONNECTIVITY_FALLBACK"
             continue
         original, lanes, plots, site = mixed
+        if not retains_external_connections(plans[z['id']][1], lanes + site['walkways'], roads):
+            decision['reason'] = 'RETAINED_EXTERNAL_CONNECTIVITY_FALLBACK'
+            continue
         plans[z["id"]] = (
             original + plots,
             lanes + site["walkways"],
