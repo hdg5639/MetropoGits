@@ -277,6 +277,67 @@
   }
   globalThis.METROPOGITS_GEOMETRY_CACHE = createGeometryCache;
 
+  // Presentation-only surface coordinates. Metres on each face, not world X/Z:
+  // rotated source buildings keep their windows aligned with their own facade.
+  const vertexFloats = 15;
+  function faceCoordinates(corners) {
+    const width = Math.hypot(...subtract(corners[3], corners[0]));
+    const height = Math.hypot(...subtract(corners[1], corners[0]));
+    return {uv:[[0,0],[0,height],[width,height],[width,0]], extent:[width,height]};
+  }
+  function polygonNormal(points) {
+    // Clipped river-bank polygons can start with collinear or repeated points.
+    // A zero normal is undefined in reflection/lighting shaders, even if the
+    // polygon has valid later triangles. Preserve winding, not a guessed slope.
+    for(let i=1;i<points.length-1;i++) {
+      const n=cross(subtract(points[i],points[0]),subtract(points[i+1],points[0]));
+      if(Math.hypot(...n)>1e-8)return normalize(n);
+    }
+    return [0,1,0];
+  }
+
+  function sunMatrix(values) {
+    if (!values.length) return null;
+    const low=[Infinity,Infinity,Infinity], high=[-Infinity,-Infinity,-Infinity];
+    for(let i=0;i<values.length;i+=vertexFloats)for(let j=0;j<3;j++) {
+      low[j]=Math.min(low[j],values[i+j]); high[j]=Math.max(high[j],values[i+j]);
+    }
+    const center=low.map((v,i)=>(v+high[i])/2);
+    const radius=Math.max(10,Math.hypot(...subtract(high,low)));
+    const sun=normalize([-.6,1,.45]);
+    const view=lookAt(center.map((v,i)=>v+sun[i]*radius),center,[0,1,0]);
+    const a=[Infinity,Infinity,Infinity], b=[-Infinity,-Infinity,-Infinity];
+    for(let mask=0;mask<8;mask++) {
+      const p=transformPoint(view,low.map((v,i)=>mask&(1<<i)?high[i]:v));
+      for(let i=0;i<3;i++) {a[i]=Math.min(a[i],p[i]);b[i]=Math.max(b[i],p[i]);}
+    }
+    const left=a[0]-2,right=b[0]+2,bottom=a[1]-2,top=b[1]+2;
+    const near=-b[2]-2,far=-a[2]+2;
+    const projection=[2/(right-left),0,0,0, 0,2/(top-bottom),0,0, 0,0,-2/(far-near),0,
+      -(right+left)/(right-left),-(top+bottom)/(top-bottom),-(far+near)/(far-near),1];
+    return multiply(projection,view);
+  }
+  function canopyMesh(tree) {
+    const base=Math.min(...tree.faces.flatMap(f=>f.points.map(p=>p[1])));
+    const seed=stableVariant(tree.id,997),radius=tree.radius*.78,height=tree.height*.32;
+    const center=[tree.center[0],base+tree.height*.64,tree.center[1]];
+    function point(ring,side) {
+      const theta=ring*Math.PI/4,phi=side*Math.PI/4;
+      const r=radius*(.96+.04*Math.sin(phi*3+seed));
+      return [center[0]+r*Math.sin(theta)*Math.cos(phi),
+        center[1]+height*Math.cos(theta),center[2]+r*Math.sin(theta)*Math.sin(phi)];
+    }
+    const faces=[];
+    for(let ring=0;ring<4;ring++)for(let side=0;side<8;side++) {
+      const points=[point(ring,side),point(ring,side+1),point(ring+1,side+1),point(ring+1,side)];
+      const normals=points.map(p=>normalize([(p[0]-center[0])/radius**2,
+        (p[1]-center[1])/height**2,(p[2]-center[2])/radius**2]));
+      faces.push({points,normals});
+    }
+    return {faces,base,seed};
+  }
+  globalThis.METROPOGITS_RENDER_MATERIALS=Object.freeze({vertexFloats,faceCoordinates,polygonNormal,sunMatrix,canopyMesh});
+
   function createPickProjection(descriptors) {
     const unique = new Map(), vertices = [], projectedPoints = [];
     const regions = descriptors.map(descriptor => ({id:descriptor.id, kind:descriptor.kind,
@@ -365,27 +426,161 @@
     return shader;
   }
 
+  const derivatives = Boolean(gl.getExtension('OES_standard_derivatives'));
+  const fragmentHighp = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,gl.HIGH_FLOAT)?.precision > 0;
+  function linkProgram(vertexSource, fragmentSource) {
+    const vertex=compileShader(gl.VERTEX_SHADER,vertexSource);
+    const fragment=compileShader(gl.FRAGMENT_SHADER,fragmentSource);
+    const linked=gl.createProgram();
+    gl.attachShader(linked,vertex);gl.attachShader(linked,fragment);gl.linkProgram(linked);
+    gl.deleteShader(vertex);gl.deleteShader(fragment);
+    if(!gl.getProgramParameter(linked,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(linked)||'Program link error');
+    return linked;
+  }
+
   function createProgram() {
     const vertex = compileShader(gl.VERTEX_SHADER, `
       attribute vec3 a_position;
       attribute vec3 a_normal;
       attribute vec3 a_color;
+      attribute vec4 a_surface;
+      attribute vec2 a_extent;
       uniform mat4 u_view_projection;
+      uniform mat4 u_sun_matrix;
       varying vec3 v_color;
-      varying float v_light;
+      varying vec3 v_normal;
+      varying vec3 v_world;
+      varying vec4 v_surface;
+      varying vec2 v_extent;
+      varying vec4 v_shadow;
       void main() {
-        vec3 light_direction = normalize(vec3(0.45, 0.85, 0.35));
-        v_light = 0.46 + max(dot(normalize(a_normal), light_direction), 0.0) * 0.54;
         v_color = a_color;
+        v_normal = a_normal;
+        v_world = a_position;
+        v_surface = a_surface;
+        v_extent = a_extent;
+        v_shadow = u_sun_matrix * vec4(a_position,1.0);
         gl_Position = u_view_projection * vec4(a_position, 1.0);
       }
     `);
     const fragment = compileShader(gl.FRAGMENT_SHADER, `
-      precision mediump float;
+      ${derivatives ? '#extension GL_OES_standard_derivatives : enable' : ''}
+      precision ${fragmentHighp ? 'highp' : 'mediump'} float;
       varying vec3 v_color;
-      varying float v_light;
+      varying vec3 v_normal;
+      varying vec3 v_world;
+      varying vec4 v_surface;
+      varying vec2 v_extent;
+      varying vec4 v_shadow;
+      uniform vec3 u_eye;
+      uniform float u_detailed;
+      uniform float u_shadows;
+      uniform float u_texel;
+      uniform sampler2D u_shadow_map;
+      float hash(vec2 p) { return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+      float noise(vec2 p) {
+        vec2 i=floor(p),f=fract(p); f=f*f*(3.0-2.0*f);
+        return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.0),f.x),f.y);
+      }
+      float shadowTap(vec2 p,float depth) {
+        float stored=dot(texture2D(u_shadow_map,p),vec4(1.0,1.0/255.0,1.0/65025.0,0.0));
+        return step(depth,stored);
+      }
+      float visibility(vec3 normal) {
+        if(u_shadows<.5) return 1.0;
+        vec3 p=v_shadow.xyz*.5+.5;
+        if(min(p.x,p.y)<.002 || max(p.x,p.y)>.998 || p.z>1.0 || p.z<0.0) return 1.0;
+        float bias=.00025+.0008*(1.0-max(dot(normal,normalize(vec3(-.6,1,.45))),0.0));
+        float d=p.z-bias,t=u_texel*1.2;
+        return (shadowTap(p.xy,d)+shadowTap(p.xy+vec2(t,t),d)+shadowTap(p.xy+vec2(-t,t),d)
+          +shadowTap(p.xy+vec2(t,-t),d)+shadowTap(p.xy-vec2(t,t),d))*.2;
+      }
       void main() {
-        gl_FragColor = vec4(v_color * v_light, 1.0);
+        vec3 n=dot(v_normal,v_normal)>.00001?normalize(v_normal):vec3(0,1,0);
+        if(u_detailed<.5) {
+          float light=.46+max(dot(n,normalize(vec3(.45,.85,.35))),0.0)*.54;
+          gl_FragColor=vec4(v_color*light,1); return;
+        }
+        vec2 uv=v_surface.xy;
+        float kind=v_surface.z,seed=v_surface.w;
+        vec3 albedo=v_color;
+        vec3 view=normalize(u_eye-v_world);
+        float specular=0.0,emission=0.0;
+        float ambient=1.0;
+        float grain=noise(v_world.xz*7.0)*.04-.02;
+        if(kind>.5 && kind<4.5) {
+          // Punched masonry, glazed curtain wall, brick and ribbed metal.
+          vec2 bay=vec2(kind<1.5?1.45:1.2,1.65);
+          vec2 cell=fract(uv/bay),tile=floor(uv/bay);
+          vec2 aa=${derivatives ? 'max(fwidth(uv/bay)*.85,vec2(.008))' : 'vec2(.035)'};
+          float fidelity=1.0-smoothstep(.16,.42,max(aa.x,aa.y));
+          float wx=kind>1.5 && kind<2.5?.07:.20;
+          float wy=kind>1.5 && kind<2.5?.09:.24;
+          vec2 mask=smoothstep(vec2(wx,wy)-aa,vec2(wx,wy)+aa,cell)
+            *(1.0-smoothstep(vec2(1.0-wx,1.0-wy)-aa,vec2(1.0-wx,1.0-wy)+aa,cell));
+          float margin=smoothstep(.12,.32,min(uv.x,v_extent.x-uv.x))
+            *smoothstep(.18,.42,min(uv.y,v_extent.y-uv.y));
+          float window=mask.x*mask.y*margin*fidelity;
+          if(kind>3.5)window*=step(.63,hash(tile+seed));
+          vec3 glass=mix(vec3(.12,.22,.27),vec3(.42,.59,.65),hash(tile+seed)*.65+.20);
+          glass=mix(glass,vec3(.57,.69,.71),pow(1.0-max(dot(view,n),0.0),3.0)*.5);
+          float lit=step(.86,hash(tile+seed*2.3));
+          glass=mix(glass,vec3(.91,.72,.42),lit*.6);
+          albedo=mix(albedo,glass,window);
+          // Fine joints fade with projected size instead of sparkling at overview.
+          float joint=1.0-smoothstep(.012,.04,min(cell.x,cell.y));
+          albedo*=1.0-joint*.14*fidelity;
+          if(kind>2.5 && kind<3.5) {
+            vec2 brick=fract(vec2(uv.x*2.3+floor(uv.y*3.8)*.5,uv.y*3.8));
+            float mortar=(1.0-smoothstep(.03,.09,min(brick.x,brick.y)))*.12*fidelity;
+            albedo=mix(albedo,vec3(.61,.57,.51),mortar*(1.0-window));
+          }
+          if(kind>3.5)albedo*=1.0-(sin(uv.x*26.0)*.045+.045)*fidelity*(1.0-window);
+          specular=window*.4;
+          emission=window*lit*.06;
+          ambient=.76+.24*smoothstep(0.0,2.2,uv.y);
+        } else if(kind>4.5 && kind<5.5) {
+          vec2 tile=fract(uv*.65);
+          float rim=1.0-smoothstep(.08,.24,min(min(uv.x,v_extent.x-uv.x),min(uv.y,v_extent.y-uv.y)));
+          albedo*=.88+grain;
+          albedo=mix(albedo,vec3(.64,.65,.61),rim*.65);
+          float seam=(1.0-smoothstep(.015,.055,min(tile.x,tile.y)));
+          albedo*=1.0-seam*.13;
+        } else if(kind>5.5 && kind<6.5) {
+          albedo=mix(albedo,vec3(.19,.215,.225),.50)*(1.0+grain*2.0);
+        } else if(kind>6.5 && kind<7.5) {
+          float field=noise(v_world.xz*.17),fine=noise(v_world.xz*3.0);
+          albedo=mix(vec3(.20,.31,.19),vec3(.40,.47,.27),field*.7+fine*.3);
+        } else if(kind>7.5 && kind<8.5) {
+          float strata=noise(v_world.xz*.35+v_world.y*.17);
+          float slope=1.0-max(n.y,0.0);
+          albedo=mix(v_color,vec3(.36,.35,.31),slope*.65);
+          albedo*=.84+strata*.24;
+          albedo=mix(albedo,vec3(.51,.55,.40),(1.0-slope)*.20);
+        } else if(kind>8.5 && kind<9.5) {
+          // Still water, not simulated/measured flow. No continuous render loop.
+          float ripple=sin(v_world.x*2.4+sin(v_world.z*.6))*sin(v_world.z*3.1+v_world.x*.4);
+          n=normalize(n+vec3(ripple*.055,0,sin(v_world.z*2.1)*.06));
+          float fresnel=pow(1.0-max(dot(n,view),0.0),3.0);
+          albedo=mix(vec3(.075,.28,.32),vec3(.46,.64,.66),.22+fresnel*.60);
+          albedo+=ripple*.012; specular=.65;
+        } else if(kind>9.5 && kind<10.5) {
+          vec2 tile=fract(v_world.xz*1.4);
+          float seam=1.0-smoothstep(.015,.055,min(tile.x,tile.y));
+          albedo=mix(albedo,vec3(.53,.52,.47),.35)*(1.0-seam*.09+grain);
+        } else if(kind>10.5) {
+          albedo=mix(albedo,vec3(.31,.43,.22),.28)*(1.0+grain*2.0);
+        }
+        float direct=max(dot(n,normalize(vec3(-.6,1,.45))),0.0);
+        float shade=visibility(n);
+        vec3 sky=mix(vec3(.27,.31,.34),vec3(.55,.62,.65),n.y*.5+.5);
+        vec3 light=sky*ambient+vec3(1.0,.91,.76)*direct*shade*.65;
+        vec3 halfVector=normalize(normalize(vec3(-.6,1,.45))+view);
+        float highlight=pow(max(dot(n,halfVector),0.0),48.0)*specular*shade;
+        vec3 result=albedo*light+vec3(1.0,.94,.82)*highlight+albedo*emission;
+        float haze=1.0-exp(-length(u_eye-v_world)*.00012);
+        result=mix(result,vec3(.55,.64,.68),min(haze,.16));
+        gl_FragColor=vec4(clamp(result,0.0,1.0),1.0);
       }
     `);
     const linked = gl.createProgram();
@@ -600,6 +795,61 @@
   const normalLocation = gl.getAttribLocation(program, "a_normal");
   const colorLocation = gl.getAttribLocation(program, "a_color");
   const matrixLocation = gl.getUniformLocation(program, "u_view_projection");
+  const surfaceLocation=gl.getAttribLocation(program,'a_surface');
+  const extentLocation=gl.getAttribLocation(program,'a_extent');
+  const sunLocation=gl.getUniformLocation(program,'u_sun_matrix');
+  const eyeLocation=gl.getUniformLocation(program,'u_eye');
+  const detailedLocation=gl.getUniformLocation(program,'u_detailed');
+  const shadowLocation=gl.getUniformLocation(program,'u_shadows');
+  const texelLocation=gl.getUniformLocation(program,'u_texel');
+  const samplerLocation=gl.getUniformLocation(program,'u_shadow_map');
+  let detailedMaterials=true;
+  const materialButton=document.createElement('button');
+  materialButton.type='button';materialButton.dataset.action='toggle-materials';
+  materialButton.textContent='Rich materials';materialButton.setAttribute('aria-pressed','true');
+  materialButton.title='Procedural facade, terrain and daylight styling; not source evidence. Toggle for the flat baseline.';
+  rendererMode?.before(materialButton);
+
+  function createSunShadow() {
+    if(!fragmentHighp)return null; // 24-bit packing is unsafe in mediump.
+    let texture,depth,framebuffer,shadowProgram;
+    try {
+      const size=Math.min(2048,gl.getParameter(gl.MAX_TEXTURE_SIZE),gl.getParameter(gl.MAX_RENDERBUFFER_SIZE));
+      if(size<512)return null;
+      texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,size,size,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      depth=gl.createRenderbuffer();gl.bindRenderbuffer(gl.RENDERBUFFER,depth);
+      gl.renderbufferStorage(gl.RENDERBUFFER,gl.DEPTH_COMPONENT16,size,size);
+      framebuffer=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,texture,0);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER,gl.DEPTH_ATTACHMENT,gl.RENDERBUFFER,depth);
+      if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)throw new Error('Shadow target unavailable');
+      shadowProgram=linkProgram(`attribute vec3 a_position;uniform mat4 u_view_projection;
+        void main(){gl_Position=u_view_projection*vec4(a_position,1.0);}`,`
+        precision highp float;
+        void main(){vec3 enc=fract(gl_FragCoord.z*vec3(1.0,255.0,65025.0));
+          enc-=enc.yzz*vec3(1.0/255.0,1.0/255.0,0.0);gl_FragColor=vec4(enc,1.0);}`);
+      return {size,texture,depth,framebuffer,program:shadowProgram,
+        position:gl.getAttribLocation(shadowProgram,'a_position'),
+        matrix:gl.getUniformLocation(shadowProgram,'u_view_projection'),values:null,transform:null};
+    } catch {
+      if(texture)gl.deleteTexture(texture);if(depth)gl.deleteRenderbuffer(depth);
+      if(framebuffer)gl.deleteFramebuffer(framebuffer);if(shadowProgram)gl.deleteProgram(shadowProgram);
+      return null;
+    } finally {gl.bindFramebuffer(gl.FRAMEBUFFER,null);}
+  }
+  const sunShadow=createSunShadow();
+  // Even an untaken sampler branch needs a complete texture in WebGL1.
+  const whiteTexture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,whiteTexture);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([255,255,255,255]));
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+  // Surface rendering remains useful without optional shadow framebuffer support.
+  materialButton.title+=sunShadow?' Soft sun shadows enabled.':' Sun shadows unavailable on this device.';
   let framePending = false;
   let cameraFitted = false;
   let hitRegions = [];
@@ -644,23 +894,27 @@
     return value.map((channel) => channel + (1 - channel) * amount);
   }
 
-  function vertex(target, position, normal, vertexColor) {
-    target.push(...position, ...normal, ...vertexColor);
+  function vertex(target, position, normal, vertexColor, surface=[0,0,0,0],extent=[0,0]) {
+    target.push(...position, ...normal, ...vertexColor,...surface,...extent);
   }
 
-  function quad(target, corners, normal, vertexColor) {
-    for (const index of [0, 1, 2, 0, 2, 3]) vertex(target, corners[index], normal, vertexColor);
+  function quad(target, corners, normal, vertexColor, kind=0,seed=0) {
+    const {uv,extent}=faceCoordinates(corners);
+    if(Math.hypot(...normal)<1e-8)normal=polygonNormal(corners);
+    for (const index of [0, 1, 2, 0, 2, 3])
+      vertex(target,corners[index],normal,vertexColor,[...uv[index],kind,seed],extent);
   }
 
-  function box(target, x, y, z, width, height, depth, vertexColor, roofColor = vertexColor) {
+  function box(target, x, y, z, width, height, depth, vertexColor, roofColor = vertexColor, facade=null) {
     const x1 = x + width;
     const y1 = y + height;
     const z1 = z + depth;
-    quad(target, [[x, y1, z], [x, y1, z1], [x1, y1, z1], [x1, y1, z]], [0, 1, 0], roofColor);
-    quad(target, [[x, y, z1], [x, y1, z1], [x, y1, z], [x, y, z]], [-1, 0, 0], vertexColor);
-    quad(target, [[x1, y, z], [x1, y1, z], [x1, y1, z1], [x1, y, z1]], [1, 0, 0], vertexColor);
-    quad(target, [[x, y, z], [x, y1, z], [x1, y1, z], [x1, y, z]], [0, 0, -1], vertexColor);
-    quad(target, [[x1, y, z1], [x1, y1, z1], [x, y1, z1], [x, y, z1]], [0, 0, 1], vertexColor);
+    const kind=facade?.kind || 0,seed=facade?.seed || 0;
+    quad(target, [[x, y1, z], [x, y1, z1], [x1, y1, z1], [x1, y1, z]], [0, 1, 0], roofColor,facade?5:0,seed);
+    quad(target, [[x, y, z1], [x, y1, z1], [x, y1, z], [x, y, z]], [-1, 0, 0], vertexColor,kind,seed);
+    quad(target, [[x1, y, z], [x1, y1, z], [x1, y1, z1], [x1, y, z1]], [1, 0, 0], vertexColor,kind,seed);
+    quad(target, [[x, y, z], [x, y1, z], [x1, y1, z], [x1, y, z]], [0, 0, -1], vertexColor,kind,seed);
+    quad(target, [[x1, y, z1], [x1, y1, z1], [x, y1, z1], [x, y, z1]], [0, 0, 1], vertexColor,kind,seed);
     quad(target, [[x, y, z1], [x, y, z], [x1, y, z], [x1, y, z1]], [0, -1, 0], vertexColor);
   }
 
@@ -669,13 +923,14 @@
     vertex(target, end, [0, 1, 0], vertexColor);
   }
 
-  function orientedBox(target, footprint, y, height, vertexColor, roofColor = vertexColor) {
+  function orientedBox(target, footprint, y, height, vertexColor, roofColor = vertexColor,facade=null) {
     const top=footprint.map(([x,z])=>[x,y+height,z]);
-    quad(target,[top[0],top[3],top[2],top[1]],[0,1,0],roofColor);
+    const kind=facade?.kind || 0,seed=facade?.seed || 0;
+    quad(target,[top[0],top[3],top[2],top[1]],[0,1,0],roofColor,facade?5:0,seed);
     for(let i=0;i<4;i++) {
       const a=footprint[i],b=footprint[(i+1)%4],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
       quad(target,[[a[0],y,a[1]],top[i],top[(i+1)%4],[b[0],y,b[1]]],
-        [(b[1]-a[1])/length,0,(a[0]-b[0])/length],vertexColor);
+        [(b[1]-a[1])/length,0,(a[0]-b[0])/length],vertexColor,kind,seed);
     }
   }
 
@@ -754,6 +1009,11 @@
     if (!material) return [fallback, fallback];
     return [material.wall, material.roof].map(c => isSelected ? lighten(color(c), .62) : color(c));
   }
+  function facadeFor(building,part,isSelected) {
+    if(showRoleColors || activeFilterCount()>0 || isSelected)return null;
+    const seed=stableVariant(building.entityId,997);
+    return {kind:part.height<1.1?4:1+seed%4,seed};
+  }
   const uploadedGeometry = new WeakMap();
 
   function buildGeometry(timestamp) {
@@ -771,36 +1031,49 @@
         while(owner && !majorDistrictIds.has(owner.id))owner=districts.get(owner.parentId);
         const tint=color(pad.color || (owner?urbanContext.majorColors[majorOrder.indexOf(owner.id)%urbanContext.majorColors.length]:urbanContext.ground));
         for(const p of pad.polygons)for(let i=1;i<p.length-1;i++)
-          quad(triangles,[p[0],p[i],p[i+1],p[i+1]].map(([x,z])=>[x,-.03,z]),[0,1,0],tint);
+          quad(triangles,[p[0],p[i],p[i+1],p[i+1]].map(([x,z])=>[x,-.03,z]),[0,1,0],tint,10);
       }
     }
     if(data.surface)for(const face of data.surface.faces) {
       const p=face.points,normal=normalize(cross(subtract(p[1],p[0]),subtract(p[2],p[0])));
-      for(let i=1;i<p.length-1;i++)quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color));
+      for(let i=1;i<p.length-1;i++)quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color),10);
     }
     if(data.landscape && !structureOverlay) {
       for(const patch of data.landscape.patches) {
         if(patch.faces) {
           for(const f of patch.faces)for(let i=1;i<f.points.length-1;i++)
-            quad(triangles,[f.points[0],f.points[i],f.points[i+1],f.points[i+1]],[0,1,0],color(f.color));
+            quad(triangles,[f.points[0],f.points[i],f.points[i+1],f.points[i+1]],[0,1,0],color(f.color),7);
           continue;
         }
         const p=patch.polygon;
         for(let i=1;i<p.length-1;i++)
-          quad(triangles,[p[0],p[i+1],p[i],p[i]].map(([x,z])=>[x,.01,z]),[0,1,0],color(patch.color));
+          quad(triangles,[p[0],p[i+1],p[i],p[i]].map(([x,z])=>[x,.01,z]),[0,1,0],color(patch.color),7);
       }
-      for(const tree of data.landscape.trees)for(const face of tree.faces) {
+      for(const tree of data.landscape.trees) {
+        // Bounded decorative upgrade, inside the old tree reserve. No new tree sites.
+        if(data.landscape.trees.length<=4096 && tree.radius>0 && tree.height>0) {
+          const mesh=canopyMesh(tree);
+          box(triangles,tree.center[0]-.12,mesh.base,tree.center[1]-.12,.24,tree.height*.5,.24,color('#665544'));
+          for(const face of mesh.faces)for(const i of [0,1,2,0,2,3])
+            vertex(triangles,face.points[i],face.normals[i],color('#4c7047'),[0,0,11,mesh.seed]);
+          continue;
+        }
+        for(const face of tree.faces) {
         const p=face.points;
         const normal=normalize(cross(subtract(p[1],p[0]),subtract(p[2],p[0])));
         for(let i=1;i<p.length-1;i++)
-          quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color));
+          quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color),11);
+        }
       }
     }
     for(const feature of [...(data.terrain?.features || []), ...(data.infrastructure ? [data.infrastructure] : [])])for(const face of feature.faces) {
       const p=face.points;
       const normal=normalize(cross(subtract(p[1],p[0]),subtract(p[2],p[0])));
+      const rgb=color(face.color);
+      const kind=['RIVER','LAKE','WATER'].includes(feature.kind) && rgb[2]>rgb[0]*1.15?9:
+        ['HILL','MOUNTAIN'].includes(feature.kind)?8:0;
       for(let i=1;i<p.length-1;i++)
-        quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color));
+        quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,rgb,kind);
     }
     for (const district of framingDistricts) {
       if(data.occupiedGround && !structureOverlay) continue;
@@ -860,7 +1133,8 @@
       if (!filterEngine.corridorVisible(rectangle, renderedNetworkIds)) continue;
       if (rectangle.points) {
         quad(triangles, rectangle.points.map(([x,z],i) => [x, rectangle.pointHeights?.[i] ?? rectangle.elevation ?? 0.08, z]),
-          [0,1,0], color(filterEngine.physicalStreetColor(rectangle, data.physicalStreetPlan, currentDetailLevel, structureOverlay) || streetColors.STREET));
+          [0,1,0], color(filterEngine.physicalStreetColor(rectangle, data.physicalStreetPlan, currentDetailLevel, structureOverlay) || streetColors.STREET),
+          rectangle.streetClass==='PEDESTRIAN'?10:6);
         continue;
       }
       roadSegment(
@@ -953,7 +1227,7 @@
       const style = roadStyles.get(segment.id), width = style.width;
       if (segment.pavement) {
         for (const piece of segment.pavement) {
-          quad(triangles, piece.points.map(([x,z],i) => [x,piece.pointHeights?.[i] ?? .14,z]), [0,1,0], color(style.surface));
+          quad(triangles, piece.points.map(([x,z],i) => [x,piece.pointHeights?.[i] ?? .14,z]), [0,1,0], color(style.surface),6);
         }
       } else {
         roadSegment(triangles, segment.start, segment.end, width, 0.11, color(style.shoulder));
@@ -1029,8 +1303,9 @@
       for (const part of parts) {
         const fallback = part.shade ? lighten(selectedColor, part.shade) : selectedColor;
         const [wall, roof] = materialColors(building, part, top, selected("building", building.entityId), fallback);
+        const facade=facadeFor(building,part,selected('building',building.entityId));
         if (part.footprint) {
-          orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof);
+          orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof,facade);
           continue;
         }
         box(
@@ -1041,7 +1316,7 @@
           part.width,
           part.height,
           part.depth,
-          wall, roof,
+          wall, roof, facade,
         );
       }
       if (selected("building", building.entityId)) {
@@ -1090,7 +1365,7 @@
         const top=Math.max(...model.parts.map(p=>p.y+p.height));
         for(const part of model.parts) {
           const [wall,roof]=materialColors(proxy,part,top,isSelected,color(colors[proxy.archetype]));
-          orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof);
+          orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof,facadeFor(proxy,part,isSelected));
         }
         for(let i=0;i<4;i++) {
           const a=model.footprint[i],b=model.footprint[(i+1)%4];
@@ -1133,7 +1408,7 @@
             part.width,
             part.height,
             part.depth,
-            wall, roof,
+            wall, roof, facadeFor(aggregatePart,part,isSelected),
           );
         }
       }
@@ -1196,14 +1471,47 @@
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), usage);
       uploadedGeometry.set(buffer, values);
     }
-    const stride = 9 * Float32Array.BYTES_PER_ELEMENT;
+    const stride = vertexFloats * Float32Array.BYTES_PER_ELEMENT;
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, stride, 0);
     gl.enableVertexAttribArray(normalLocation);
     gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, stride, 3 * 4);
     gl.enableVertexAttribArray(colorLocation);
     gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, stride, 6 * 4);
-    gl.drawArrays(primitive, 0, values.length / 9);
+    gl.enableVertexAttribArray(surfaceLocation);
+    gl.vertexAttribPointer(surfaceLocation,4,gl.FLOAT,false,stride,9*4);
+    gl.enableVertexAttribArray(extentLocation);
+    gl.vertexAttribPointer(extentLocation,2,gl.FLOAT,false,stride,13*4);
+    gl.drawArrays(primitive, 0, values.length / vertexFloats);
+  }
+
+  function updateSunShadow(values) {
+    if(!sunShadow || !detailedMaterials || sunShadow.values===values || !values.length)return;
+    sunShadow.transform=sunMatrix(values);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,sunShadow.framebuffer);
+    gl.viewport(0,0,sunShadow.size,sunShadow.size);
+    gl.clearColor(1,1,1,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    gl.disable(gl.DITHER); // Packed depth bytes must not receive colour dithering.
+    gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);
+    gl.useProgram(sunShadow.program);
+    gl.uniformMatrix4fv(sunShadow.matrix,false,new Float32Array(sunShadow.transform));
+    gl.bindBuffer(gl.ARRAY_BUFFER,triangleBuffer);
+    if(uploadedGeometry.get(triangleBuffer)!==values) {
+      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(values),gl.STATIC_DRAW);
+      uploadedGeometry.set(triangleBuffer,values);
+    }
+    // Other shader attribute arrays may still point at a shorter activity buffer.
+    for(const location of [positionLocation,normalLocation,colorLocation,surfaceLocation,extentLocation])
+      gl.disableVertexAttribArray(location);
+    gl.enableVertexAttribArray(sunShadow.position);
+    gl.vertexAttribPointer(sunShadow.position,3,gl.FLOAT,false,vertexFloats*4,0);
+    gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(1.5,2.0);
+    gl.drawArrays(gl.TRIANGLES,0,values.length/vertexFloats);
+    gl.disable(gl.POLYGON_OFFSET_FILL);
+    gl.enable(gl.DITHER);
+    gl.disableVertexAttribArray(sunShadow.position);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+    sunShadow.values=values;
   }
 
   function districtLabel(district) {
@@ -1435,17 +1743,30 @@
     updateLodVisibility();
     viewProjection = cameraMatrix();
     const geometry = buildGeometry(timestamp);
+    updateSunShadow(geometry.triangles);
     gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(0.027, 0.043, 0.075, 1);
+    if(detailedMaterials)gl.clearColor(.075,.105,.13,1);
+    else gl.clearColor(0.027, 0.043, 0.075, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
     gl.useProgram(program);
     gl.uniformMatrix4fv(matrixLocation, false, new Float32Array(viewProjection));
+    const horizontal=Math.cos(state.pitch)*state.distance;
+    gl.uniform3fv(eyeLocation,new Float32Array([state.targetX+Math.sin(state.yaw)*horizontal,
+      state.targetY+Math.sin(state.pitch)*state.distance,state.targetZ+Math.cos(state.yaw)*horizontal]));
+    gl.uniform1f(detailedLocation,detailedMaterials?1:0);
+    gl.uniform1f(shadowLocation,detailedMaterials && sunShadow?.values===geometry.triangles?1:0);
+    gl.uniform1f(texelLocation,1/(sunShadow?.size || 1));
+    gl.uniformMatrix4fv(sunLocation,false,new Float32Array(sunShadow?.transform || viewProjection));
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,sunShadow?.texture || whiteTexture);
+    gl.uniform1i(samplerLocation,0);
     bindAndDraw(triangleBuffer, geometry.triangles, gl.TRIANGLES);
     bindAndDraw(activityBuffer, buildActivityGeometry(timestamp), gl.TRIANGLES, gl.DYNAMIC_DRAW);
     gl.disable(gl.CULL_FACE);
+    // Inspector paths retain their original, unlit source colours.
+    gl.uniform1f(detailedLocation,0);
     bindAndDraw(lineBuffer, geometry.lines, gl.LINES);
     // Selection-only x-ray trace: same ground path, visible behind tall buildings.
     gl.disable(gl.DEPTH_TEST);
@@ -2091,6 +2412,10 @@
   }
 
   function runAction(action) {
+    if(action==='toggle-materials') {
+      detailedMaterials=!detailedMaterials;
+      materialButton.setAttribute('aria-pressed',String(detailedMaterials));
+    }
     if (action === "toggle-role-colors" && data.buildingMaterials) {
       showRoleColors = !showRoleColors;
       document.querySelector('[data-action="toggle-role-colors"]').setAttribute('aria-pressed', String(showRoleColors));

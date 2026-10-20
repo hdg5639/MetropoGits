@@ -8885,3 +8885,79 @@
 - Delivery: separate landmark feature commit and normal feat/polyglot-analysis
   push after staged diff/metadata review. Mountain repair5857f4f already pushed.
   Existing fixture build caches left untouched.
+
+## Checkpoint 2026-10-21 — Rich materials and cached daylight
+
+- Implemented: shader-local facade bays, masonry/metal/glass surface families,
+  roof coping/seams, asphalt/paving/grass/rock/still-water detail, warm sunlight,
+  sky fill and optional cached2048-square packed-depth sun shadows. Rounded
+  decorative crowns stay within existing tree reserves; no new sites. Keyboard
+  Rich materials toggle restores flat shading without moving the camera.
+- Contract: ADR-058 and RENDER_MATERIALS.md. No source role, confidence, identity,
+  routing, canonical schema or source-building geography changes. No new library,
+  remote asset or runtime AI. CPU SVG/Canvas retain geometry-based appearance,
+  explicitly not shader-detail parity. Surface patterns are not source facts.
+- Fixtures/revisions: maintained purpose-campus at7f587e5 (31files/77trips);
+  pinned GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766
+  (1324files/4209trips/6157represented edges) and
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b
+  (506files/622trips, low semantic coverage). Reused verified corpus analysis;
+  do not claim fresh parsing of those two external repositories.
+- Fresh maintained pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/purpose-campus --repo-id fixture/purpose-campus
+  --out ../artifacts/visual/material-lighting-cold-r1/source --json`;
+  `python scripts/procedural_world.py` that source with --out
+  ../artifacts/visual/material-lighting-cold-r2/world --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus --campus-style programmed --campus-landmarks
+  --building-style purposeful --seed purpose-4. Full17-file package identical to
+  reviewed fixture. No target source/dependency/build execution.
+- Corpus packages: `python ../artifacts/visual/compile_landmark_worlds.py`
+  ../artifacts/visual/campus-landmarks-r1/<gj|sqlitebrowser|fixture>/after
+  ../artifacts/visual/material-lighting-r3/<case> --landmarks. World/City/UCG/
+  Planning and preview/showcase bytes exactly unchanged for all three cases;
+  source positions churn0. Full World validation and independent compound
+  clearance pass: every source accessible, building/road overlap/owner escape0.
+- Browser commands: `node scripts/viewer_audit.mjs`
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/material-lighting-final-audit-r3
+  ../artifacts/visual/material-lighting-r3/gj
+  ../artifacts/visual/material-lighting-r3/sqlitebrowser
+  ../artifacts/visual/material-lighting-r3/fixture.
+  Three LODs, exact route/source inspection, expansion, camera/navigation and
+  Synthetic pass. Actual GL errors0,2048 sun map cached, Synthetic static rebuilds0.
+  Updated audit counters for15-float vertices and fail on actual GL errors.
+- Matched captures: local capture_materials.mjs -> material-lighting-comparison-r5;
+  same absolute camera for rich/flat architecture/river/mountain/overview scenes.
+  Complete viewer-data SHA256 unchanged across controls. Local fallback audit
+  material-lighting-fallback-final-r1 forces no derivatives, unsupported shadow
+  framebuffer and unavailable fragment highp: WebGL still draws, GL errors0;
+  forced no-WebGL uses actual Canvas fallback. No audit-trust bypass.
+- Artifacts visually inspected: GJ matched architecture, mountain and full-city
+  frames; SQLite unknown-role overview; small-campus close-up rich/flat; actual
+  CPU showcase; Canvas fallback; comparison gallery screenshot. Review page:
+  ../artifacts/visual/material-lighting-reviewed-r1/index.html. All local links
+  and generated screenshots/helpers remain outside version control.
+- Correction applied/reverified: rich lighting exposed a black strip on clipped
+  river faces with collinear initial vertices (zero normal). Recover a valid
+  winding-preserving normal and guard zero vectors in shader; added regression,
+  regenerated packages and recaptured identical GJ camera: strip gone. Did not
+  move water or disable depth/culling to conceal it.
+- Tests: full Python767 OK (one existing Windows symlink skip); final Node76 PASS,
+  Ruff/compileall/diff PASS. Five new Node tests cover rotated facade metres,
+  sun bounds, collinear water normals, deterministic bounded outward foliage,
+  optional capability/cache guards. No failing tests weakened.
+- Cost/limits: vertices9->15 floats; additional foliage geometry and initial
+  shadow draw. JS submission p95 GJ orbit2.4-3.9ms, Synthetic2.5-2.8ms;
+  SQLite orbit0.7-1.2ms, Synthetic2.4-3.3ms; small fixture Synthetic2.1-17ms
+  (one district outlier). SwiftShader, not hardware GPU completion/FPS. Initial
+  GJ draw submission1814.6ms in final run; earlier flat baseline1262.1ms,
+  single runs under different load, no universal performance claim. Large-map
+  shadows can be coarse; surfaces remain stylized, not full PBR/AAA assets.
+- Spec alignment PASS: technical rendering split/identity/evidence, functional
+  source inspector/unknown fallback, product deterministic local/static-first.
+  Next visual priorities are art direction/architectural detail, not speculative
+  parser or routing refactors. Existing fixture build caches left untouched.
+- Delivery: one atomic renderer/material milestone commit on
+  feat/polyglot-analysis, normal upstream push after staged diff and human
+  identity review; actual command result recorded in session handoff.
