@@ -16,7 +16,7 @@ def main():
     parser.add_argument("build", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed")
-    parser.add_argument('--building-style', choices=('semantic', 'architectural'), default='semantic',
+    parser.add_argument('--building-style', choices=('semantic', 'architectural', 'purposeful'), default='semantic',
                         help='presentation only: procedural wall tones with role roof accents; never changes world geometry')
     parser.add_argument("--terrain", choices=("flat", "lake-district", "river-corridor", "river-valley", "river-landscape", "varied-landscape", "watershed-landscape"), default="flat",
                         help="adaptive only: generate protected natural terrain BEFORE urban placement")
@@ -51,7 +51,7 @@ def main():
     )
     parser.add_argument("--previous-world", type=Path)
     parser.add_argument('--campus',action='store_true',help='adaptive only: evidence-bounded campus planning with real walking access; courtyard pockets by default')
-    parser.add_argument('--campus-style',choices=('quad','varied','neighborhood','landscape','organic','fabric'),default='quad',help='campus only: fitted nonradial fabric, preserved organic/landscape precincts, or pocket pilots')
+    parser.add_argument('--campus-style',choices=('quad','varied','neighborhood','landscape','organic','fabric','programmed'),default='quad',help='campus only: fitted nonradial fabric, preserved organic/landscape precincts, or pocket pilots')
     parser.add_argument("--street-hierarchy", action="store_true",
                         help="adaptive only: offline structural street classes and connected backbone")
     parser.add_argument(

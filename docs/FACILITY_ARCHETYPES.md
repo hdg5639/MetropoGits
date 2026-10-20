@@ -52,3 +52,33 @@ Not claimed: bespoke high-detail models for all 122 catalog technologies. Redis,
 SQLAlchemy, Hibernate etc. correctly share a role family when evidence establishes
 the same function. Additional silhouettes should improve comprehension, not add
 technology logos or fabricate infrastructure.
+
+## Source-purpose precincts and massing (ADR-056)
+
+Use `--campus-style programmed --building-style purposeful` with adaptive
+neighborhood/campus options. `campus-plan/0.7` derives validation, interface,
+application, data, compute/tooling or neutral collaboration programs from actual
+member role evidence. Programmed nonradial commons and role-plus-relationship
+anchor selection retain mixed members; source-role sorting is not the objective.
+Unknown/cohesive code is not renamed a research lab. Inspectors enumerate actual
+role counts, anchor roles, supporting evidence and original members.
+
+Unsafe or undersized forms retain a connected complete fabric neighborhood with
+an explicit `programFallback`, or the original planning grammar. No geography is
+enlarged to force a successful-looking tiny campus. All prior campus styles keep
+their old meaning and source membership/road continuity gates.
+
+The independent `purposeful` building presentation derives massing from existing
+archetypes, unique observed local incoming/outgoing file neighbours, declaration
+counts and real campus anchor membership. Shared service towers differ from
+multi-target service courts; verification halls/benches/pavilions, galleries,
+archive wings and storage/task halls provide bounded within-role variation.
+These names explain static evidence, not exact runtime orchestration/test types.
+Stable path variation supplies additional architectural handedness/form variety.
+
+Rotated parts stay inside each original file footprint/height. This export-only
+view does not change world.json, UCG, City, source doors, roads, trips or persistent
+gate/test compounds. CPU, Canvas and WebGL consume the same compiled parts. The
+inspector discloses derived form, neighbour counts and declaration counts.
+Neutral walls/highest-roof role accents remain, with explicit full-role tint.
+It is still low-poly massing, not detailed material assets or a runtime profiler.

@@ -452,6 +452,10 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats,
                 ),
             )
             anchors.append(anchor)
+            if _form and hasattr(_form, 'anchor'):
+                anchors.pop()
+                anchor = _form.anchor(ids, degree, links, anchors)
+                anchors.append(anchor)
             slot = min(
                 available, key=lambda p: (math.dist(p["center"], center), p["id"])
             )

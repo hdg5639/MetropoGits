@@ -8653,3 +8653,44 @@
 - Delivery: completed facility568bae5 plus this atomic connectivity correction
   committed with existing human identity; normal push to feat/polyglot-analysis
   after final staged metadata/diff review. No main/protection/history changes.
+
+## Checkpoint 2026-10-21 — source-purpose precincts and building massing
+- Implemented: optional campus-plan/0.7 programmed precincts, with real role
+  evidence, role/affinity-selected anchors and program-sensitive nonradial
+  commons. No role-exclusive sorting or fake source functions. Purposeful
+  architecture is export-only: varied bounded service/verification/interface/
+  archive/workshop masses from existing roles and observed local topology.
+- Tests: full757 run PASS (one existing Windows skip),70 Node PASS; four new
+  program/geometry tests plus existing campus integrations. Final within-family
+  variation and captions rechecked with new suite/Ruff/Node/diff PASS. Tests
+  preserve unknowns, provenance, every source, bounded rotated geometry,
+  canonical World/graph byte identity across building styles and deterministic
+  package output. Old styles retain meaning; additive experimental style only.
+- Real fixture: tests/fixtures/repositories/purpose-campus,31 actual Python
+  sources,24 tests plus API/model/data/store/security and neutral service code.
+  No target imports or dependency installation. Build command `python -m
+  metropogits build --repo tests/fixtures/repositories/purpose-campus --repo-id
+  fixture/purpose-campus --out ../artifacts/visual/purpose-precinct-r3/source --json`.
+- World command (before/after): scripts/procedural_world.py that source directory
+  --zoning neighborhoods --pattern-scale adaptive --planning varied --outline
+  varied --street-policy porous --street-hierarchy --campus --seed purpose-4;
+  before uses fabric/architectural, after programmed/purposeful. Final artifacts
+  ../artifacts/visual/purpose-precinct-r4/{before,after}. Both31 accessible,
+ 77 trips/128 represented edges and zero building/road overlaps/owner escapes.
+- Visual/evidence audit: actual CPU showcase and WebGL district inspected from
+  purpose-precinct-audit-r4 (viewer_audit.mjs, installed Chrome). New verification
+  commons label, halls/benches/pavilions, real mixed source members and original
+  route inspection visible. Three LODs/Synthetic passed, zero static rebuilds.
+  First source-sensitive court failed external-junction preservation: do not
+  bypass it. A connected complete fabric fallback retains an explicit program
+  fallback; it is not claimed as a newly fitted purpose-specific court.
+- Larger pipeline runs: GJ1324/4209 trips and OJ681/1457 trips through the new
+  program path, zero overlaps/escapes, all accessible. Outputs purpose-precinct-r1
+  predate final massing variety/caption polish; final combined mountain review
+  will regenerate packaging rather than claim these as the final pictures.
+- Spec alignment PASS: tech role/evidence/scene boundaries, functional FR-020,
+  product mixed L1/L4 and no invented runtime services. ADR-056 documents the
+  approved user scope; UCG/City/IDs unchanged. Remaining: stylized low-poly forms,
+  not all semantic purposes known; mountainous landscape is next, not completed.
+- Delivery: atomic feature commit and normal feat/polyglot-analysis push after
+  explicit staging and identity review. Generated images stay outside Git.

@@ -1783,6 +1783,11 @@
     inspector.append(element("h2", entity.path || entityId));
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Archetype", building.archetype);
+    if (data.buildingPrograms?.[entityId]) {
+      const program = data.buildingPrograms[entityId];
+      detailRow(details, "Source-purpose form", program.label + " (derived, not a runtime claim)");
+      detailRow(details, "Observed file neighbours", `${program.incomingFiles} incoming / ${program.outgoingFiles} outgoing · ${program.declarations} declarations`);
+    }
     if (data.facilityModels?.[building.archetype]) detailRow(details, "Facility", data.facilityModels[building.archetype].label + " (source-role metaphor, not a runtime deployment)");
     if (data.buildingMaterials) detailRow(details, "Appearance", "Procedural wall tones; roof accents indicate the existing role. Not source material evidence.");
     detailRow(details, "Language", entity.language || "Unknown");
@@ -1891,12 +1896,16 @@
       factSection(inspector,'LOCAL BLOCK PLANS',blocks.map(b=>`${b.planningProfile} · ${b.memberEntityIds.length} files · ${b.id}`));
       for (const block of blocks.filter(b=>b.campusSite)) {
         const site=block.campusSite;
+        if (site.sourceProgram) factSection(inspector,'SOURCE-PURPOSE PRECINCT',[
+          site.sourceProgram.label + ' · derived from actual member roles',
+          ...Object.entries(site.sourceProgram.roleCounts).map(([role,count])=>`${role}: ${count} source files`),
+          ...site.sourceProgram.evidenceIds.slice(0,8).map(evidenceLabel)]);
         inspector.append(element('p',site.scope==='NEIGHBORHOOD'
           ? `CAMPUS NEIGHBORHOOD · ${site.variant} · All ${site.memberEntityIds.length} source files in ${site.activityCenters.length} connected activity groups. Local vehicle rows replaced by shared courts and pedestrian frontage. Existing major through roads remain. Walking access is physical planning, not a research or runtime-communication claim.`
           : `MIXED CAMPUS · ${site.variant} · ${site.memberEntityIds.length} of ${block.memberEntityIds.length} source files around ${site.courts.length} reserved courts. Remaining files retain the local street grammar. Walking access is physical planning, not a research or runtime-communication claim.`, 'campus-summary'));
         for (const [i,group] of (site.activityCenters || []).entries()) {
           const count=site.memberEntityIds.filter(k=>group.slotIds.includes(orientedBuildings[k]?.slotId)).length;
-          const button=focusButton(group.center[0],groundY(...group.center),group.center[1],110,`Activity group ${i+1} · ${count} original files`);
+          const button=focusButton(group.center[0],groundY(...group.center),group.center[1],110,`${group.programRoles?.join(' + ') || 'Activity group '+(i+1)} · ${count} original files`);
           button.classList.add('campus-group');button.dataset.anchorEntityId=group.anchorEntityId;inspector.append(button);
         }
         factSection(inspector,'CAMPUS BASIS',[block.campusDecision.reason,`${block.campusDecision.supportingEntityIds.length} evidence-supported test files · ${block.campusDecision.internalPairCount} original internal file pairs`]);

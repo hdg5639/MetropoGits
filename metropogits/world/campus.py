@@ -579,7 +579,7 @@ def apply_campuses(
         if sites:
             decision["reason"] = "PARENT_DIVERSITY_LIMIT"
             continue
-        if style in ("neighborhood","landscape","organic","fabric"):
+        if style in ("neighborhood","landscape","organic","fabric","programmed"):
             from .campus_neighborhood import neighborhood_layout
             if style=='landscape':
                 from .campus_landscape import landscape_layout as neighborhood_layout
@@ -587,6 +587,8 @@ def apply_campuses(
                 from .campus_organic import organic_layout as neighborhood_layout
             if style=='fabric':
                 from .campus_fabric import fabric_layout as neighborhood_layout
+            if style=='programmed':
+                from .campus_programmed import programmed_layout as neighborhood_layout
 
             fit = {}
             try:
@@ -602,6 +604,15 @@ def apply_campuses(
                 decision['reason'] = 'FULL_NEIGHBORHOOD_FIT_FALLBACK'
                 continue
             plots, walks, site = layout
+            if style == 'programmed' and not retains_external_connections(plans[z['id']][1], walks, roads):
+                from .campus_fabric import fabric_layout
+                from .campus_programmed import annotate_program
+                safe_layout = fabric_layout(z, polygons[z['id']], selections[z['id']]['axis'],
+                                            derive(seed,z['id'],VERSION),roads,terrain,pairs,fit)
+                annotate_program(z, safe_layout)
+                if safe_layout is not None:
+                    plots, walks, site = safe_layout
+                    fit['programFallback'] = 'CONNECTED_FABRIC_RETAINED'
             if not retains_external_connections(plans[z['id']][1], walks, roads):
                 decision['reason'] = 'RETAINED_EXTERNAL_CONNECTIVITY_FALLBACK'
                 continue
@@ -700,13 +711,16 @@ def collect_plan(blocks, style="quad"):
     if style == 'fabric':
         from .campus_fabric import VERSION as FABRIC_VERSION
         result.update(version=FABRIC_VERSION,style=style)
+    if style == 'programmed':
+        from .campus_programmed import VERSION as PROGRAM_VERSION
+        result.update(version=PROGRAM_VERSION,style=style)
     return result
 
 
 def validate_campuses(world):
     """Reconstruction is checked upstream; independently check occupied courts."""
     style = world["campusPlan"].get("style", "quad")
-    if style not in ("quad", "varied", "neighborhood", "landscape", "organic", "fabric") or world["campusPlan"] != collect_plan(
+    if style not in ("quad", "varied", "neighborhood", "landscape", "organic", "fabric", "programmed") or world["campusPlan"] != collect_plan(
         world["zoning"]["blocks"], style
     ):
         raise ValueError("campus plan differs from verified block records")
@@ -730,7 +744,7 @@ def validate_campuses(world):
     for site in sites:
         if not set(site["anchorEntityIds"]).issubset(site["memberEntityIds"]):
             raise ValueError("campus anchor is not an original member")
-        if style in ('neighborhood','landscape','organic','fabric'):
+        if style in ('neighborhood','landscape','organic','fabric','programmed'):
             zone=next(z for z in world['zoning']['zones'] if z['id']==site['zoneId'])
             if site['memberEntityIds']!=sorted(zone['memberEntityIds']) or site['retainedMemberEntityIds']:
                 raise ValueError('campus precinct must include the entire source neighborhood')

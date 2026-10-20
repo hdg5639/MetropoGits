@@ -56,8 +56,12 @@ def _landscape(world, value):
 
 
 def view_data(world, scene, graph, *, landscape=None, building_style="semantic", role_compounds=True):
-    if building_style not in ("semantic", "architectural"):
+    if building_style not in ("semantic", "architectural", "purposeful"):
         raise ValueError("unknown building presentation style")
+    programs = None
+    if building_style == 'purposeful':
+        from .architecture import purpose_world
+        world, programs = purpose_world(world, graph)
     landscape = _landscape(world, landscape)
     compounds, compound_policy = (derive_compounds(world, graph) if role_compounds else
                                   ([],dict(disabled=True,structural=False)))
@@ -70,6 +74,7 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
     districts = [dict(id=root, parentId=None, **envelope(world["envelope"]))]
     territories = []
     neighborhoods = world.get("zoning", world.get("softZoning", {})).get("zones", [])
+    precincts = {s['zoneId']:s['sourceProgram'] for s in world.get('campusPlan',{}).get('sites',[]) if 'sourceProgram' in s}
     physical_polygons = {d["id"]: d["polygon"] for d in world["districts"]}
     physical_polygons.update({z["id"]: z["polygon"] for z in neighborhoods})
     for d in world["districts"]:
@@ -80,7 +85,7 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
         districts.append(
             dict(
                 id=z["id"],
-                label=z["label"],
+                label=z['label'] + (' · '+precincts[z['id']]['label'] if z['id'] in precincts else ''),
                 parentId=z["parentId"],
                 **envelope(z["polygon"]),
             )
@@ -313,14 +318,21 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
             for i, d in enumerate(world["districts"])
         ]
         data["landscape"] = landscape
-    if building_style == "architectural":
+    if programs is not None:
+        data['buildingPrograms'] = programs
+    if building_style in ("architectural", "purposeful"):
         data["buildingMaterials"] = material_policy()
     return data
 
 
-def render_svg(world, width=1200, height=750, *, landscape=None, building_style="semantic", compounds=None):
-    if building_style not in ("semantic", "architectural"):
+def render_svg(world, width=1200, height=750, *, landscape=None, building_style="semantic", compounds=None, graph=None):
+    if building_style not in ("semantic", "architectural", "purposeful"):
         raise ValueError("unknown building presentation style")
+    if building_style == 'purposeful':
+        if graph is None:
+            raise ValueError('purposeful architecture requires its source graph')
+        from .architecture import purpose_world
+        world, _ = purpose_world(world, graph)
     landscape = _landscape(world, landscape)
     graded="surface" in world
     field=terrain_surface(world["terrain"]) if graded else None
@@ -448,7 +460,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
                 p=face["points"]
                 faces.append((sum(x+y+z for x,y,z in p)/len(p),[project([x,z],y) for x,y,z in p],face["color"],b["entityId"],1))
         for part in b["parts"]:
-            material = part_material(b, part, top) if building_style == "architectural" else None
+            material = part_material(b, part, top) if building_style in ("architectural", "purposeful") else None
             poly = part["footprint"]
             low = part["y"] + 0.2+b.get("baseElevation",0)
             high = low + part["height"]
@@ -500,6 +512,10 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
         lines.append(
             f'<text x="{x:.3f}" y="{y:.3f}" fill="#e2edf5" stroke="#10202a" stroke-width="3" paint-order="stroke" font-family="sans-serif" font-size="13" text-anchor="middle">{escape(label)}</text>'
         )
+    for site in world.get('campusPlan',{}).get('sites',[]):
+        if 'sourceProgram' in site:
+            x,y=project(site['courts'][0]['center'], .25)
+            lines.append(f'<text x="{x:.3f}" y="{y:.3f}" fill="#d8eadb" stroke="#15221c" stroke-width="3" paint-order="stroke" font-family="sans-serif" font-size="11" text-anchor="middle">{escape(site["sourceProgram"]["label"])}</text>')
     lines += [
         f'<text x="28" y="{height - 36}" fill="#b7cbd8" font-family="sans-serif" font-size="12">Structural streets (visual) · Physical layout from world.json · Source facts from UCG</text>',
         f'<text x="28" y="{height - 17}" fill="#8da9b8" font-family="sans-serif" font-size="11">Flat capacity prototype · {len(world["routing"]["routes"])} source-backed trips · No runtime traffic measurement</text>',
@@ -515,13 +531,13 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
                                          "Connected waterway and shared bridges (procedural)")
         if graded:
             lines[-2]=lines[-2].replace("Connected waterway and shared bridges (procedural)","Graded valley and level foundations (procedural)")
-    if building_style == "architectural":
+    if building_style in ("architectural", "purposeful"):
         lines[-3] = lines[-3].replace("Structural streets (visual)", "Procedural walls / role roof accents · Structural streets (visual)")
     return "\n".join(lines).encode("utf8")
 
 
 def package_world(world, scene, graph, validation, *, landscaping=True, building_style="semantic", role_compounds=True):
-    if building_style not in ("semantic", "architectural"):
+    if building_style not in ("semantic", "architectural", "purposeful"):
         raise ValueError("unknown building presentation style")
     landscape = _landscape(world, None if landscaping else False)
     resources = files("metropogits.viewer_assets")
@@ -570,13 +586,13 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
                             b'Dependency demand (select / All routes)')
     if world.get('campusPlan',{}).get('sites'):
         page = page.replace(b'Landscape (decorative)',b'Landscape / campus courts (visual)')
-    if building_style == "architectural":
+    if building_style in ("architectural", "purposeful"):
         page = page.replace(b'<span id="renderer-mode"',
                             b'<button type="button" data-action="toggle-role-colors" aria-pressed="false" title="Restore full role tint; wall materials are procedural styling, not source facts">Role colours</button><span id="renderer-mode"')
         page = page.replace(b'<span><i class="swatch generic"></i>Generic</span>',
                             b'<span title="Walls are procedural tones; role colours appear on upper roofs. Filters or Role colours restore full tint.">Walls: procedural / Roof accents: roles</span><span><i class="swatch generic"></i>Generic</span>')
     svg = render_svg(world, landscape=landscape, building_style=building_style,
-                     compounds=derive_compounds(world,graph)[0] if role_compounds else [])
+                     compounds=derive_compounds(world,graph)[0] if role_compounds else [], graph=graph)
     artifacts.update(
         {
             "index.html": page,
@@ -605,7 +621,7 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
         ".md": "text/markdown",
     }
     diagnostic_summary = _diagnostic_summary(graph["diagnostics"])
-    presentation = dict(buildingStyle=building_style, buildingMaterialsVersion=material_policy()["version"]) if building_style == "architectural" else {}
+    presentation = dict(buildingStyle=building_style, buildingMaterialsVersion=material_policy()["version"]) if building_style in ("architectural", "purposeful") else {}
     artifacts["manifest.json"] = canonical_json_bytes(
         dict(
             schemaVersion="manifest/0.1",
