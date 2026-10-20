@@ -19,9 +19,11 @@ class RepositoryBenchmarkTests(unittest.TestCase):
             with patch('scripts.repository_benchmark.git_identity', return_value={'revision': 'a'*40}):
                 result = benchmark_case(repo, root/'output', streets=True)
             self.assertFalse(marker.exists())
-            self.assertEqual(result['summary']['adapterProcessed'], 0)
-            self.assertEqual(result['summary']['structuralOnly'], 1)
-            self.assertEqual(result['summary']['dependencyEdges'], 0)
+            self.assertEqual(result['summary']['adapterProcessed'], 1)
+            self.assertEqual(result['summary']['structuralOnly'], 0)
+            # The Python AST adapter now observes the explicit pathlib import;
+            # it must still never execute the marker-writing target.
+            self.assertEqual(result['summary']['dependencyEdges'], 1)
             self.assertEqual(result['summary']['nonGenericRatio'], 0)
             self.assertTrue(result['determinism']['identicalArtifacts'])
             self.assertTrue(result['determinism']['identicalBuildingPositions'])

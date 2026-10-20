@@ -9,8 +9,11 @@ from metropogits.analyzers.java import enrich_java_graph
 from metropogits.analyzers.jsts import LANGUAGES as JSTS_LANGUAGES
 from metropogits.analyzers.jsts import enrich_jsts_graph
 from metropogits.analyzers.path_semantics import enrich_path_semantics
+from metropogits.analyzers.python import enrich_python_graph
 from metropogits.scanner import ScanLimits, ScanResult
 from scripts.validate_ucg import validate_document as validate_ucg_document
+
+SUPPORTED_LANGUAGES = frozenset({"java", "python"}) | JSTS_LANGUAGES
 
 
 def enrich_graph(
@@ -23,11 +26,13 @@ def enrich_graph(
 
     document = enrich_java_graph(root, scan, graph, limits)
     document = enrich_jsts_graph(root, scan, document, limits)
+    document = enrich_python_graph(root, scan, document, limits)
     document = enrich_path_semantics(document)
     skipped_paths = {
         item["sourcePath"]
         for item in document["diagnostics"]
-        if item["code"] in {"JAVA_ANALYSIS_SKIPPED", "JSTS_ANALYSIS_SKIPPED"}
+        if item["code"]
+        in {"JAVA_ANALYSIS_SKIPPED", "JSTS_ANALYSIS_SKIPPED", "PYTHON_ANALYSIS_SKIPPED"}
         and "sourcePath" in item
     }
     java_count = sum(
@@ -38,13 +43,17 @@ def enrich_graph(
         item.language in JSTS_LANGUAGES and item.path not in skipped_paths
         for item in scan.files
     )
-    structural_only = len(scan.files) - java_count - jsts_count
+    python_count = sum(
+        item.language == "python" and item.path not in skipped_paths
+        for item in scan.files
+    )
+    structural_only = len(scan.files) - java_count - jsts_count - python_count
     document["diagnostics"].append(
         {
             "code": "ANALYZER_COVERAGE",
             "message": (
                 f"Adapters processed {java_count} Java and {jsts_count} "
-                f"JavaScript/TypeScript file(s); {structural_only} file(s) "
+                f"JavaScript/TypeScript file(s), plus {python_count} Python AST file(s); {structural_only} file(s) "
                 "remain structural-only"
             ),
             "severity": "INFO",

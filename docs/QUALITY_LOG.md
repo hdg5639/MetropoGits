@@ -8423,3 +8423,37 @@
   verify hosted checks and integrated tree, then clean only covered feature/
   experiment branch refs. Do not delete source directories, artifacts or caches.
   Keep configured human identity and omit contributor/attribution trailers.
+
+## Checkpoint 2026-10-20 — Python AST vertical slice
+
+- Implemented: shared bounded safe reader/evidence writer and stdlib Python AST
+  imports, relative/src/package module resolution, declarations, inheritance,
+  import-bound references and call/decorator identities. No target import/exec.
+  Ambiguous modules, wildcard bindings, shadowed/reassigned imports and syntax/
+  AST-budget failures remain disclosed. This is not dynamic dispatch resolution.
+- Fixture: committed polyglot-python (four files); negative/malformed/ambiguous/
+  no-execution fixtures in tests/test_python_analyzer.py. Existing Java/JS paths
+  and schemas/IDs preserved. Benchmark coverage now includes Python rather than
+  calling its explicit pathlib dependency structural-only or zero-dependency.
+- Commands: `python -m unittest discover -s tests` —727 tests PASS, one existing
+  Windows symlink skip; `node --test tests/*.test.mjs` —68 PASS;
+  `python -m ruff check metropogits scripts tests`, compileall and diff checks PASS.
+  Initial run exposed old coverage wording and benchmark expectations; fixed
+  actual coverage accounting and repeated the entire suite successfully.
+- E2E: `python -m metropogits build --repo tests/fixtures/repositories/polyglot-python --repo-id fixture/python --out ../artifacts/visual/polyglot-python-e2e-r1/first --json`;
+  repeat with output ending /repeat. All13 packaged files byte-identical.
+  Actual initial viewer: ../artifacts/visual/polyglot-python-r1/index.html.
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/polyglot-python-audit-r1 ../artifacts/visual/polyglot-python-r1`.
+- Inspected actual overview/showcase/detail rasters; four source buildings and
+  grounded local routes survive CPU/WebGL inspection. Tiny fixture's detail
+  camera is too close for composition; overview is usable. No new facility
+  aesthetics claim yet: framework catalog/facility work follows, not guessed
+  from Python function/class names. Three-LOD available Synthetic checks preserve
+  static geometry (zero rebuilds); overview has no complete animated route.
+- Spec alignment: PASS, FR-018 and AC-002/006/007/008/009/011/012/014. Same UCG/City
+  contracts, stable IDs, explicit evidence, bounded resources and generic fallback.
+- Risks/next: native module adapters and manifests, declarative multi-ecosystem
+  signatures and differentiated facilities. Framework syntax support remains a
+  tested subset, not every installed library. Main remains unchanged while the
+  verified slice is committed/pushed on feat/polyglot-analysis. Generated artifacts,
+  helper caches and independent in-progress modules are not part of this commit.
