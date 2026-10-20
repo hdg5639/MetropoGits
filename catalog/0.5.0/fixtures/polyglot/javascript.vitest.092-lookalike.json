@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "javascript:vitest"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

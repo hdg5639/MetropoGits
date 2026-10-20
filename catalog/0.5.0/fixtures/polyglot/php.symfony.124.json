@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "php:Symfony.Bundle.FrameworkBundle.Controller.AbstractController"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "php:Symfony.Bundle.FrameworkBundle.Controller.AbstractController"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

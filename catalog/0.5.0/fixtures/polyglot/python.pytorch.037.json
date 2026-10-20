@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:torch"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "python:torch.nn.Module"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

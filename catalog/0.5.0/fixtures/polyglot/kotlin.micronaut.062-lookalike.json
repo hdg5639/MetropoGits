@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "kotlin:io.micronaut.http.annotation.Controller"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

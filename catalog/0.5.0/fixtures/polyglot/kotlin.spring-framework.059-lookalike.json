@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "kotlin:org.springframework.stereotype.Service"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

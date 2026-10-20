@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "javascript:axios"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

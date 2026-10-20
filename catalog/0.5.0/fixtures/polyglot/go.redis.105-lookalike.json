@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "go:github.com/redis/go-redis/v9"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

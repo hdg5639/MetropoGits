@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:minio.Minio"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:minio"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

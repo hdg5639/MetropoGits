@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "kotlin:org.springframework.stereotype.Repository"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "kotlin:org.springframework.stereotype.Repository"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

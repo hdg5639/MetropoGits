@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:rest_framework"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

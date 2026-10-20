@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:javax.swing.JFrame"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "java:javax.swing.JFrame"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

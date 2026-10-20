@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:@playwright/test.test"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:@playwright/test"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

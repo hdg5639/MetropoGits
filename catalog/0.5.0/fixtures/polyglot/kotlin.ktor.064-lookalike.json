@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "kotlin:io.ktor.server.engine.embeddedServer"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

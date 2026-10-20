@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "java:jakarta.inject.Singleton"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "java:jakarta.inject.Singleton"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

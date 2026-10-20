@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "csharp:Microsoft.AspNetCore.Builder.WebApplication.CreateBuilder"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "csharp:Microsoft.AspNetCore.Builder"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

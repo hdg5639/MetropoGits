@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "go:github.com/labstack/echo/v4"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

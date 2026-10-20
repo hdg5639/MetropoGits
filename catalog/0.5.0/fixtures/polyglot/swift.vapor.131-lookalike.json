@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "swift:Vapor"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

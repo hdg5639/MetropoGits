@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "AST",
+      "value": "go:main"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

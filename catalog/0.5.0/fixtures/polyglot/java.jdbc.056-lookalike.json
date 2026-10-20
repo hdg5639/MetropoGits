@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:java.sql.DriverManager"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

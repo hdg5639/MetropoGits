@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:gradio.Interface"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:gradio"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

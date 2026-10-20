@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "rust:reqwest.Client.new"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "rust:reqwest.Client"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

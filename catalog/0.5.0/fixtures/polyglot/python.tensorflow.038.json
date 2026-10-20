@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:tensorflow"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "python:tensorflow.keras.Model"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

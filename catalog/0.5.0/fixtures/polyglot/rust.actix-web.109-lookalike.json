@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "rust:actix_web.App"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "javascript:@prisma/client"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

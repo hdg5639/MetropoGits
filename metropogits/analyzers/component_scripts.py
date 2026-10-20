@@ -5,6 +5,24 @@ from html.parser import HTMLParser
 from .common import AnalysisError
 
 
+def component_line(source, language):
+    class Presence(HTMLParser):
+        line = None
+
+        def handle_starttag(self, tag, attrs):
+            if self.line is None and (
+                tag == "script"
+                or tag == "template"
+                or (language == "svelte" and tag != "style")
+            ):
+                self.line = self.getpos()[0]
+
+    parser = Presence(convert_charrefs=False)
+    parser.feed(source)
+    parser.close()
+    return parser.line
+
+
 def script_source(source):
     offsets = [0]
     for i, char in enumerate(source):

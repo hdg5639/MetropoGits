@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "go:gorm.io/gorm"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

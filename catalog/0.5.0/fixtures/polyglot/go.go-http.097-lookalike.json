@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "go:net/http"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

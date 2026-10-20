@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:passlib"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

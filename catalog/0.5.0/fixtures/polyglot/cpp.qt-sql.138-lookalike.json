@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "cpp:QSqlDatabase"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

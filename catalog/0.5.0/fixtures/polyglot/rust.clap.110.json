@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "rust:clap.Command.new"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "rust:clap.Command"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

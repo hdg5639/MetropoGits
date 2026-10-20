@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:rest_framework"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "python:rest_framework.views.APIView"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

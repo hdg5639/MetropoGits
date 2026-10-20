@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "rust:sea_orm.Database.connect"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "rust:sea_orm.Database"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

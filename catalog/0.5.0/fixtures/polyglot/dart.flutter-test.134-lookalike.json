@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "dart:package:flutter_test/flutter_test.dart"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

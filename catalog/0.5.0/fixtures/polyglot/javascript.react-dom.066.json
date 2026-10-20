@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:react-dom/client.createRoot"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:react-dom/client"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

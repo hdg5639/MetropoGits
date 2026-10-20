@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "javascript:svelte/store"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:ioredis.default"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:ioredis"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

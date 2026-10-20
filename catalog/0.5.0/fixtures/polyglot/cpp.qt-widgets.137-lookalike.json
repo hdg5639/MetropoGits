@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "cpp:QMainWindow"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

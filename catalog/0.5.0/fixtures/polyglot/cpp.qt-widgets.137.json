@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "cpp:QMainWindow"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "cpp:QMainWindow"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

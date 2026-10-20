@@ -156,6 +156,15 @@ def enrich_python_graph(root, scan, graph, limits):
                     facts.append(
                         writer.fact(path, n.lineno, "IMPORT", "python:" + full)
                     )
+                    for end in range(1, len(full.split("."))):
+                        facts.append(
+                            writer.fact(
+                                path,
+                                n.lineno,
+                                "IMPORT",
+                                "python:" + ".".join(full.split(".")[:end]),
+                            )
+                        )
                 if target:
                     writer.edge(
                         source_id,
@@ -233,7 +242,7 @@ def enrich_python_graph(root, scan, graph, limits):
                     and isinstance(compare.comparators[0], ast.Constant)
                     and compare.comparators[0].value == "__main__"
                 ):
-                    facts.append(writer.fact(path, n.lineno, "CALL", "python:__main__"))
+                    facts.append(writer.fact(path, n.lineno, "AST", "python:__main__"))
 
         for n in nodes:
             if isinstance(n, ast.Call):

@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "javascript:@jest/globals"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "php:PHPUnit.Framework.TestCase"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "php:PHPUnit.Framework.TestCase"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

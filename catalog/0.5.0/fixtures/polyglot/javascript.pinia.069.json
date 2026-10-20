@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:pinia.defineStore"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:pinia"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

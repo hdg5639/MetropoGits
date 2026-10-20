@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "python:dataclasses.dataclass"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:dataclasses"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

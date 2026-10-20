@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:httpx.AsyncClient"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:httpx"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

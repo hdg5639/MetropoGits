@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "rust:ratatui.Terminal"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

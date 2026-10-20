@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "rust:actix_web.App.new"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "rust:actix_web.App"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:bullmq.Worker"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:bullmq"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

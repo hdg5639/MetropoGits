@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:numpy"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

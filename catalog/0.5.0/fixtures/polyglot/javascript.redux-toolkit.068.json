@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:@reduxjs/toolkit.configureStore"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:@reduxjs/toolkit"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

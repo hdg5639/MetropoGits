@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:vue.defineComponent"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:vue"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

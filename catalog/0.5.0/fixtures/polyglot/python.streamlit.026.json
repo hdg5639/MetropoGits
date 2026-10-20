@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:streamlit.title"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:streamlit"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

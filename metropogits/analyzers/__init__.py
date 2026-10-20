@@ -10,6 +10,7 @@ from metropogits.analyzers.jsts import LANGUAGES as JSTS_LANGUAGES
 from metropogits.analyzers.jsts import enrich_jsts_graph
 from metropogits.analyzers.path_semantics import enrich_path_semantics
 from metropogits.analyzers.python import enrich_python_graph
+from metropogits.analyzers.frameworks import enrich_framework_graph
 from metropogits.analyzers.polyglot import (
     LANGUAGES as POLYGLOT_LANGUAGES,
     enrich_polyglot_graph,
@@ -34,6 +35,7 @@ def enrich_graph(
     document = enrich_jsts_graph(root, scan, document, limits)
     document = enrich_python_graph(root, scan, document, limits)
     document = enrich_polyglot_graph(root, scan, document, limits)
+    document = enrich_framework_graph(root, scan, document, limits)
     document = enrich_path_semantics(document)
     skipped_paths = {
         item["sourcePath"]

@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 from metropogits.module_paths import alias_targets, config_for_file, safe_relative
 from metropogits.analyzers.component_scripts import script_source
 from metropogits.analyzers.common import AnalysisError
+from metropogits.analyzers.jsx_regions import code_without_jsx
 from typing import Any
 
 from metropogits.scanner import ScanLimits, ScanResult, ScannedFile
@@ -453,7 +454,17 @@ def enrich_jsts_graph(
             source = _read_source(root, scanned, limits.max_file_bytes)
             if scanned.language in {"vue", "svelte"}:
                 source = script_source(source)
-            references_by_path[scanned.path] = _module_references(_tokenize(source))
+            tokens, jsx_regions = code_without_jsx(_tokenize(source))
+            if jsx_regions:
+                document["diagnostics"].append(
+                    _diagnostic(
+                        "JSTS_JSX_SUBSET",
+                        "INFO",
+                        "JSX subtrees including embedded expressions are excluded from lexical import extraction",
+                        scanned.path,
+                    )
+                )
+            references_by_path[scanned.path] = _module_references(tokens)
         except (OSError, JsTsAnalysisError, AnalysisError) as error:
             document["diagnostics"].append(
                 _diagnostic(

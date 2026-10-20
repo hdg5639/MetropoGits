@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "csharp:Microsoft.EntityFrameworkCore"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "csharp:Microsoft.EntityFrameworkCore.DbContext"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

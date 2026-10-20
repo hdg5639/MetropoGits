@@ -8507,3 +8507,38 @@
   symbol solving. Generic buildings remain intentional pending next signature/
   facility slice. Generated artifacts/caches are not staged; commit and normal
   feature-branch push follow. ADR-055/catalog work is a separate in-progress unit.
+
+## Checkpoint 2026-10-20 — import-bound framework signatures
+- Implemented: catalog0.5.0 (158 rules/122 technology labels); 142 new imported-use
+  profiles and nine explicit source syntax profiles. Additive catalog0.2 only;
+  previous releases and UCG0.1/City0.2 schemas unchanged (ADR-055). Documented exact
+  support tiers in ANALYZER_SUPPORT.md; no claim of 18 complete compilers.
+- Evidence: aliases, source lines and imported provider proofs; unused imports,
+  local lookalikes, reassignment, comments and JSX text cannot manufacture a
+  facility. Namespace candidate matching downgraded to INFERRED. Plain Java
+  records/main and Python AST main/dataclass have no Spring requirement.
+- Fixtures/revisions: same FastAPI9db981c/Svelte df79670/PocketBase6f370ea/
+  SQLiteBrowser ae32df1 and GamjaOJ (local clone). Commands: `python -m metropogits
+  build --repo ../visual_test_proj/{fastapi-realworld-example-app,realworld} ...`;
+  `python -m metropogits analyze --repo ../visual_test_proj/{pocketbase,sqlitebrowser,GamjaOJ} ...`.
+  Outputs ../artifacts/visual/polyglot-signatures-r1; SQLite r2 rerun.
+- Results: FastAPI14/60 role-bearing files (9API,2model,2persistence,1CLI,1test;
+  roles can overlap); Svelte23/42 UI files; PocketBase198/664 role-bearing files.
+  Qt lexical namespace candidate explosion initially skipped127 files: filter
+  facts to exact catalog identities and deduplicate before evidence emission;
+  SQLite rerun skipped only libs/json/json.hpp on the bounded subset. Unresolved
+  include paths remain explicit. .h classification/implicit Qt usage still weak.
+- Artifacts inspected: actual FastAPI WebGL overview and Svelte CPU showcase at
+  ../artifacts/visual/polyglot-signatures-audit-r1, produced with viewer_audit.mjs.
+  Both real pipelines completed three LODs, source/route inspector and Synthetic;
+  zero static rebuilds. Svelte has no complete overview animated routes. Role
+  metadata works, but current geometry still falls back for new roles: next
+  facility unit must fix this before the overall user request is complete.
+- Tests: real-source profile, schema/version, unused/shadow/local-module and JSX
+  negatives pass. Full suite748 PASS (one existing Windows symlink skip),68 Node
+  PASS; Ruff, compileall and git diff --check PASS. Existing
+  path fixture expectations now retain additional real JSX UI evidence; unknown
+  fallback test uses unsupported Zig instead of now-supported Rust main syntax.
+- Spec alignment PASS: static only; bounded adapters; honest confidence and
+  unknowns; no target builds/dependency installs/runtime API. Generated outputs
+  are outside Git. Atomic commit/normal feature-branch push after verification.

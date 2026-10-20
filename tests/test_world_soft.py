@@ -130,7 +130,9 @@ class SoftZoningTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             for i in range(30):
-                (repo / f"Server{i}.rs").write_text("fn main() {}", encoding="utf8")
+                (repo / f"Server{i}.zig").write_text(
+                    "pub fn main() void {}", encoding="utf8"
+                )
             graph = analyze_repository(repo, repository_id="fixture/unknown-soft")
             scene = generate_city(graph)
             base = generate_world(scene, graph, **self.options)

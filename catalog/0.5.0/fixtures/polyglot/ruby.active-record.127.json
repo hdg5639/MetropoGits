@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "ruby:active_record"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "ruby:active_record.ActiveRecord.Base"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

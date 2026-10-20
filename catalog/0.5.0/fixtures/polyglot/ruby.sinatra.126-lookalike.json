@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "ruby:sinatra/base"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

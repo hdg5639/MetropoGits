@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "catalog-0.1.schema.json"
 FIXTURE_SCHEMA_VERSION = "catalog-fixture/0.1"
 FACT_KINDS = frozenset(
-    {"ANNOTATION", "CALL", "CONFIG", "IMPORT", "INHERITANCE", "MANIFEST"}
+    {"ANNOTATION", "AST", "CALL", "CONFIG", "IMPORT", "INHERITANCE", "MANIFEST"}
 )
 DIRECT_EVIDENCE = frozenset(
     {"ANNOTATION", "AST", "CALL", "CONFIG", "IMPORT", "INHERITANCE"}
@@ -37,9 +37,7 @@ def _json_path(parts: list[Any]) -> str:
     return path
 
 
-def _check_sorted(
-    errors: list[str], label: str, values: list[Any], key: Any
-) -> None:
+def _check_sorted(errors: list[str], label: str, values: list[Any], key: Any) -> None:
     if values != sorted(values, key=key):
         errors.append(f"{label} must use canonical order")
 
@@ -58,8 +56,7 @@ def _required_fact_pairs(rule: dict[str, Any]) -> set[tuple[str, str]]:
     match = rule["match"]
     required = {("MANIFEST", value) for value in match["packageCoordinates"]}
     required.update(
-        (signature["kind"], signature["value"])
-        for signature in match["codeSignatures"]
+        (signature["kind"], signature["value"]) for signature in match["codeSignatures"]
     )
     required.update(
         ("CONFIG", f"{signature['key']}={signature['value']}")
@@ -78,7 +75,9 @@ def _rule_matches(rule: dict[str, Any], facts: set[tuple[str, str]]) -> bool:
     return facts.isdisjoint(blocked)
 
 
-def _validate_fixture_document(document: Any, label: str) -> tuple[list[str], set[tuple[str, str]]]:
+def _validate_fixture_document(
+    document: Any, label: str
+) -> tuple[list[str], set[tuple[str, str]]]:
     errors: list[str] = []
     if not isinstance(document, dict):
         return [f"{label}: root must be an object"], set()
@@ -87,9 +86,7 @@ def _validate_fixture_document(document: Any, label: str) -> tuple[list[str], se
     if unknown:
         errors.append(f"{label}: unknown fields: {', '.join(unknown)}")
     if document.get("schemaVersion") != FIXTURE_SCHEMA_VERSION:
-        errors.append(
-            f"{label}.schemaVersion must be {FIXTURE_SCHEMA_VERSION!r}"
-        )
+        errors.append(f"{label}.schemaVersion must be {FIXTURE_SCHEMA_VERSION!r}")
     raw_facts = document.get("facts")
     if not isinstance(raw_facts, list) or not raw_facts:
         errors.append(f"{label}.facts must be a non-empty array")
@@ -122,7 +119,10 @@ def _fixture_path(root: Path, fixture_id: str) -> Path:
     candidate = root.joinpath(*parts[:-1], f"{parts[-1]}.json")
     resolved_root = root.resolve(strict=False)
     resolved_candidate = candidate.resolve(strict=False)
-    if resolved_candidate == resolved_root or resolved_root not in resolved_candidate.parents:
+    if (
+        resolved_candidate == resolved_root
+        or resolved_root not in resolved_candidate.parents
+    ):
         raise ValueError("fixture path escapes the fixture root")
     return candidate
 
@@ -156,7 +156,12 @@ def _validate_fixtures(
 def validate_document(document: Any, fixture_root: Path | None = None) -> list[str]:
     """Return deterministic schema, policy, and optional fixture errors."""
 
-    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    schema_path = (
+        (ROOT / "schemas" / "catalog-0.2.schema.json")
+        if isinstance(document, dict) and document.get("schemaVersion") == "catalog/0.2"
+        else SCHEMA_PATH
+    )
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     schema_errors = sorted(
         validator.iter_errors(document),
@@ -285,7 +290,8 @@ def validate_document(document: Any, fixture_root: Path | None = None) -> list[s
                 f"{label}.match.packageCoordinates must use exact group:artifact values"
             )
         if rule["ecosystem"] == "npm" and any(
-            ":" in coordinate or coordinate.startswith("/") for coordinate in coordinates
+            ":" in coordinate or coordinate.startswith("/")
+            for coordinate in coordinates
         ):
             errors.append(
                 f"{label}.match.packageCoordinates must use exact npm package names"

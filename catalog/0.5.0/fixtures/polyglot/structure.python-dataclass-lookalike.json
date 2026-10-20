@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "unrelated:lookalike"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

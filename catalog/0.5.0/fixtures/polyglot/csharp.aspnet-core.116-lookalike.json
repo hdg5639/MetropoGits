@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "csharp:Microsoft.AspNetCore.Mvc"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

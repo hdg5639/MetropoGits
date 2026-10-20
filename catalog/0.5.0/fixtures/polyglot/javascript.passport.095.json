@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:passport.use"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:passport"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

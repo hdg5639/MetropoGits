@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "java:picocli.CommandLine.Command"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "java:picocli.CommandLine.Command"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

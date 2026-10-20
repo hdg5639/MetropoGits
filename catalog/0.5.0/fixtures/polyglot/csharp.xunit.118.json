@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "csharp:Xunit.Fact"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "csharp:Xunit"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

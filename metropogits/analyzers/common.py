@@ -60,6 +60,7 @@ class GraphWriter:
         }
         self.edges = {e["id"]: e for e in self.document["edges"]}
         self.evidence = {e["evidenceId"]: e for e in self.document["evidence"]}
+        self.inferred_proofs = set()
 
     def diagnostic(self, code, message, path=None, severity="INFO", **details):
         item = dict(code=code, severity=severity, message=message, **details)
@@ -129,6 +130,21 @@ class GraphWriter:
         entity = self.files[path]
         for field, values in resolve_catalog_claims(facts).items():
             for claim in values:
+                if self.inferred_proofs.intersection(claim["evidenceIds"]):
+                    claim["confidence"] = "INFERRED"
+                identities = [
+                    f.value for f in facts if f.evidence_id in claim["evidenceIds"]
+                ]
+                import_proofs = {
+                    f.evidence_id
+                    for f in facts
+                    if f.kind == "IMPORT"
+                    and any(
+                        identity == f.value or identity.startswith(f.value + ".")
+                        for identity in identities
+                    )
+                }
+                claim["evidenceIds"] = sorted(set(claim["evidenceIds"]) | import_proofs)
                 existing = next(
                     (
                         c
@@ -147,8 +163,14 @@ class GraphWriter:
             if field in entity:
                 entity[field].sort(key=lambda c: (c["value"], c["confidence"]))
 
-    def fact(self, path, line, kind, identity):
-        return CatalogFact(kind, identity, self.proof(path, line, kind, identity))
+    def fact(self, path, line, kind, identity, inferred=False):
+        proof = self.proof(path, line, kind, identity)
+        if inferred:
+            self.inferred_proofs.add(proof)
+            self.evidence[proof]["summary"] = (
+                f"Imported-namespace candidate identity: {identity[:240]}"
+            )
+        return CatalogFact(kind, identity, proof)
 
     def _bounded(self):
         if max(len(self.entities), len(self.edges), len(self.evidence)) > MAX_ITEMS:

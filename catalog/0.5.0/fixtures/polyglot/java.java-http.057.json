@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "java:java.net.http.HttpClient.newHttpClient"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "java:java.net.http.HttpClient"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

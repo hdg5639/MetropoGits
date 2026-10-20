@@ -134,7 +134,7 @@ class JavaAnalyzerTests(unittest.TestCase):
             if building["entityId"] == entity["id"]
         }
 
-        self.assertEqual("0.4.0", graph["generator"]["catalogVersion"])
+        self.assertEqual("0.5.0", graph["generator"]["catalogVersion"])
         for name, (technology, capability, role, archetype) in expected.items():
             entity = files[name]
             self.assertEqual([technology], [item["value"] for item in entity["technologies"]])

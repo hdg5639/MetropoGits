@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:passlib.context.CryptContext"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:passlib"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

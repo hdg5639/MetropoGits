@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:sqlalchemy.orm.Session"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:sqlalchemy"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

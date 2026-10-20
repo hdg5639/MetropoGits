@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "rust:ratatui.Terminal.new"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "rust:ratatui.Terminal"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

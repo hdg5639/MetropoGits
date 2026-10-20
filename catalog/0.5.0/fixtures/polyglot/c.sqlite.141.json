@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "c:sqlite3.h.sqlite3_open"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "c:sqlite3.h"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

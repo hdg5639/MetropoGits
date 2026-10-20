@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:com.google.inject.Inject"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

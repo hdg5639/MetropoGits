@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "com.example.rabbit.RabbitTemplate"
+    },
+    {
+      "kind": "MANIFEST",
+      "value": "org.springframework.amqp:spring-rabbit"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

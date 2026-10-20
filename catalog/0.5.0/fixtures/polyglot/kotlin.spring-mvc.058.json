@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "kotlin:org.springframework.web.bind.annotation.RestController"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "kotlin:org.springframework.web.bind.annotation.RestController"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

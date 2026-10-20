@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:jakarta.inject.Singleton"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

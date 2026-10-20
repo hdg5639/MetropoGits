@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "cpp:QSqlDatabase.addDatabase"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "cpp:QSqlDatabase"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

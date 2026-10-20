@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "org.springframework.kafka.core.KafkaTemplate"
+    },
+    {
+      "kind": "MANIFEST",
+      "value": "org.springframework.kafka:spring-kafka"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "go:github.com/redis/go-redis/v9.NewClient"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "go:github.com/redis/go-redis/v9"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

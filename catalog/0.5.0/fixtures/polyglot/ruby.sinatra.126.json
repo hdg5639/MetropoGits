@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "ruby:sinatra/base"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "ruby:sinatra/base.Sinatra.Base"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

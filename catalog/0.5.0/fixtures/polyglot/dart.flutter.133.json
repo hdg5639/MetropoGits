@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "dart:package:flutter/material.dart"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "dart:package:flutter/material.dart.StatefulWidget"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

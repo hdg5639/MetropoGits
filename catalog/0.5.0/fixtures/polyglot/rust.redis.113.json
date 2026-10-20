@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "rust:redis.Client.open"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "rust:redis.Client"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

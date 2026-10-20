@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:mongoose.Schema"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:mongoose"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

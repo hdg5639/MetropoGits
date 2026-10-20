@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:javafx.application.Application"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

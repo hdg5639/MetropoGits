@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "csharp:NUnit.Framework.Test"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "csharp:NUnit.Framework"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

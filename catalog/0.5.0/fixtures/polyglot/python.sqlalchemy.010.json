@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:sqlalchemy"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "python:sqlalchemy.orm.DeclarativeBase"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

@@ -1,0 +1,18 @@
+{
+  "facts": [
+    {
+      "kind": "CONFIG",
+      "value": "spring.datasource.driver-class-name=org.postgresql.Driver"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "org.springframework.data.jpa.repository.JpaRepository"
+    },
+    {
+      "kind": "MANIFEST",
+      "value": "org.postgresql:postgresql"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

@@ -1,0 +1,10 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "csharp:NUnit.Framework"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+

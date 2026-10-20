@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:django"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "python:django.db.models.Model"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
+
