@@ -214,7 +214,9 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
             for s in routing["segments"]
         },
     )
+    from metropogits.facilities import FACILITY_MODELS
     data = dict(
+        facilityModels=FACILITY_MODELS,
         scene=physical_scene,
         canonicalScene=scene,
         ucg=graph,

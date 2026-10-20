@@ -143,6 +143,9 @@
       y: offsetY,
       z: z + offsetZ,
     });
+    const facility = globalThis.METROPOGITS_DATA?.facilityModels?.[building.archetype];
+    if (facility) return facility.parts.map(([px,py,pz,pw,ph,pd,shade]) =>
+      part(px*width,py*height,pz*depth,pw*width,ph*height,pd*depth,shade));
     switch (building.archetype) {
       case "GATE": {
         const pillarWidth = width * 0.24;
@@ -624,6 +627,7 @@
     PORT: "#38bdf8",
     SERVICE_OFFICE: "#60a5fa",
     STRUCTURED_WAREHOUSE: "#34d399",
+    ...Object.fromEntries(Object.entries(data.facilityModels || {}).map(([name,model]) => [name,model.color])),
   };
   const networkColors = {
     DEPENDENCY_ROAD: "#a8b5c8",
@@ -1779,6 +1783,7 @@
     inspector.append(element("h2", entity.path || entityId));
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Archetype", building.archetype);
+    if (data.facilityModels?.[building.archetype]) detailRow(details, "Facility", data.facilityModels[building.archetype].label + " (source-role metaphor, not a runtime deployment)");
     if (data.buildingMaterials) detailRow(details, "Appearance", "Procedural wall tones; roof accents indicate the existing role. Not source material evidence.");
     detailRow(details, "Language", entity.language || "Unknown");
     detailRow(details, "Height", building.height);

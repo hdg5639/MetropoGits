@@ -12,6 +12,7 @@ from metropogits.territory import derive_district_territories
 from metropogits.streets import derive_street_grid
 from metropogits.access_routes import derive_access_routes, svg_access_lines
 from metropogits.road_hierarchy import derive_road_hierarchy
+from metropogits.facilities import FACILITY_MODELS, FACILITY_PALETTES
 from scripts.canonical_json import CanonicalJsonError, loads_strict_json
 from scripts.validate_city import validate_document as validate_city_document
 
@@ -34,6 +35,7 @@ ARCHETYPE_COLORS = {
     "SERVICE_OFFICE": ("#60a5fa", "#1d4ed8", "#1e3a8a"),
     "STRUCTURED_WAREHOUSE": ("#34d399", "#047857", "#064e3b"),
 }
+ARCHETYPE_COLORS.update(FACILITY_PALETTES)
 NETWORK_COLORS = {
     "DEPENDENCY_ROAD": "#a8b5c8",
     "HTTP_HIGHWAY": "#f97316",
@@ -85,7 +87,10 @@ def _roof_signature(
 
     stroke = '#f8fafc" stroke-opacity="0.68" stroke-width="0.8'
     lines = [f'      <g data-roof-form="{_escape(archetype)}" fill="none">']
-    if archetype == "GATE":
+    if archetype in FACILITY_MODELS:
+        for px, _, pz, pw, _, pd, _ in FACILITY_MODELS[archetype]['parts']:
+            lines.append(f'        <rect x="{_fmt(x+px*width)}" y="{_fmt(y+pz*depth)}" width="{_fmt(pw*width)}" height="{_fmt(pd*depth)}" stroke="{stroke}"/>')
+    elif archetype == "GATE":
         cap_width = width * 0.22
         lines.extend(
             [

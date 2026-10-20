@@ -77,7 +77,7 @@ class PathSemanticsTests(unittest.TestCase):
             for building in scene["buildings"]
         }
         self.assertEqual("GATE", archetypes[page["id"]])
-        self.assertEqual("PORT", archetypes[route["id"]])
+        self.assertEqual("API_HUB", archetypes[route["id"]])
         self.assertEqual("LIBRARY", archetypes[jsts_test["id"]])
         self.assertEqual("LIBRARY", archetypes[java_test["id"]])
         preview = render_preview(scene, graph).decode("utf-8")

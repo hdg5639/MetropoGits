@@ -62,6 +62,7 @@ class ProjectionTests(unittest.TestCase):
         ]
         script = """
 require(process.argv[1]);
+globalThis.METROPOGITS_DATA = {facilityModels: require(process.argv[1].replace('viewer-3d.js', 'facility-models.json'))};
 const data = JSON.parse(require('fs').readFileSync(0, 'utf8'));
 process.stdout.write(JSON.stringify(data.map(globalThis.METROPOGITS_BUILDING_FORMS.partsFor)));
 """

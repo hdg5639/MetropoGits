@@ -170,6 +170,8 @@
     PORT: ["#38bdf8", "#0369a1", "#0c4a6e"],
     SERVICE_OFFICE: ["#60a5fa", "#1d4ed8", "#1e3a8a"],
     STRUCTURED_WAREHOUSE: ["#34d399", "#047857", "#064e3b"],
+    ...Object.fromEntries(Object.entries(data.facilityModels || {}).map(([name,model]) => [name,
+      [1,.65,.42].map(scale => '#' + [1,3,5].map(i => Math.round(parseInt(model.color.slice(i,i+2),16)*scale).toString(16).padStart(2,'0')).join(''))])),
   };
   const networkColors = {
     DEPENDENCY_ROAD: "#a8b5c8",
@@ -769,6 +771,11 @@
     return outline;
   }
 
+  // Ordinary Canvas fallback uses the same facility parts as WebGL/CPU.
+  // Cache once, not on animation frames; World already supplies rotated parts.
+  const facilityGeometry = new Map(scene.buildings.filter(b => data.facilityModels?.[b.archetype])
+    .map(b => [b.entityId, {parts: globalThis.METROPOGITS_BUILDING_FORMS.partsFor(b).map(p => ({...p,
+      footprint:[[p.x,p.z],[p.x+p.width,p.z],[p.x+p.width,p.z+p.depth],[p.x,p.z+p.depth]]}))}]));
   let showRoleColors = false;
   function materialPalette(building, part, top, isSelected = false) {
     const material = filterEngine.materialPart(data.buildingMaterials, building, part, top,
@@ -780,7 +787,7 @@
   }
 
   function drawBuilding(building, visualKind = 'building', forceSelected = false, physical = null) {
-    const oriented=physical || orientedBuildings[building.entityId];
+    const oriented=physical || orientedBuildings[building.entityId] || facilityGeometry.get(building.entityId);
     if(oriented) {
       const isSelected=forceSelected || selected(visualKind,building.entityId);
       const topHeight = Math.max(...oriented.parts.map(p => p.y + p.height));
@@ -1240,6 +1247,7 @@
     inspector.append(element("h2", entity.path || entityId));
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Archetype", building.archetype);
+    if (data.facilityModels?.[building.archetype]) detailRow(details, "Facility", data.facilityModels[building.archetype].label + " (source-role metaphor, not a runtime deployment)");
     if (data.buildingMaterials) detailRow(details, "Appearance", "Procedural wall tones; roof accents indicate the existing role. Not source material evidence.");
     detailRow(details, "Language", entity.language || "Unknown");
     detailRow(details, "Height", building.height);

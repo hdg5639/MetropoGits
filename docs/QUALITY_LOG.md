@@ -8546,3 +8546,47 @@
   covered by the earlier unstaged diff check. Removed those blank lines in the
   new release only; catalog validation and diff check pass. Separate formatting
   commit, no semantic change, no rewriting prior catalogs or Git history.
+
+## Checkpoint 2026-10-21 — eleven source-role facility silhouettes
+- Implemented: 11 new families /20 total explicit forms, shared JSON geometry
+  for CPU/WebGL/Canvas and World rotation. Added source-role inspector labels,
+  preview roof outlines, architectural roof accents and packaged asset data.
+  API inbound hubs differ from outbound ports without changing API envelopes.
+  Gate/test persistent compound models remain unchanged.
+- Fixtures: real static polyglot-facilities source fixture exercises all11 models
+  plus a generic package file. Full builds: FastAPI60 files, Svelte42, PB664,
+  bat142, SQLiteBrowser506, OJ681, GJ1324. Previous checkpoint revisions retained.
+  New model archives/UI/CLI are visible in GJ (264/120/4) without fake files.
+- Commands: `python -m unittest discover -s tests`751 PASS, one existing Windows
+  symlink skip; `node --test tests/*.test.mjs`70 PASS; Ruff/compileall/diff PASS.
+  The structural-showcase test now explicitly recognizes the fixture Go main,
+  while its Rust helper and unsupported Elixir still remain generic.
+- Generated ordinary outputs ../artifacts/visual/polyglot-facilities-r1; current
+  atlas/repeat r2.13 files repeated byte-exact. World atlas repeated17 files
+  byte-exact; atlas/FastAPI/Svelte world.json unchanged across asset-only updates.
+  API geometry switch independently preserves every prior building envelope.
+- World commands: scripts/procedural_world.py with neighborhoods/adaptive/varied
+  outline+planning, porous street policy, hierarchy, campus fabric, watershed
+  terrain, architectural materials. World r2 for small three; World r1 for PB,
+  bat, SQLiteBrowser and OJ. These seven cases have zero building/road overlaps,
+  zero owner escapes, all buildings accessible and original trip edges retained.
+- Actual browser audits: polyglot-facilities-world-audit-r2 (four cases including
+  ordinary atlas), polyglot-facilities-large-audit-r1 (PB/bat/SQLite/OJ). Three
+  LODs, exact routes/source inspection and Synthetic with zero static rebuilds.
+  Inspected Svelte World overview, FastAPI CPU World showcase, atlas exact
+  api.py->models.py route and new multi-part silhouettes. Neutral walls/roof
+  accents avoid role-colored factory blocks. Forms remain stylized low-poly,
+  not bespoke detailed models per technology.
+- An initial audit correctly rejected stale viewer assets; regenerated World
+  packages instead of bypassing asset trust checks. Ordinary r1 predates final
+  inspector labels; current r2 and World large cases use current assets.
+- Open correction: GJ canonical build succeeds, but its new dense World fixture
+  fails closed at a real User/AuthServiceClient relation. Diagnostic graph shows
+  one source (User/global/config/AuthProperties.java) on a disconnected three-
+  segment island, while1323 buildings share the main component. No invalid World
+  output is published. Investigate retained shortcut endpoints during campus
+  replacement before final push/checkpoint. This is not a parser completeness
+  claim or permission to fabricate a dependency/terrain crossing.
+- Spec audit PASS for source/scene/facility contracts and static-first boundary;
+  experimental GJ World correction explicitly remains open. Commit completed
+  facility unit locally, then verify correction before accumulated normal push.

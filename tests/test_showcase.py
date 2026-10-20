@@ -22,7 +22,7 @@ def metadata(svg):
 
 
 class ShowcaseTests(unittest.TestCase):
-    def test_unknown_languages_keep_real_file_buildings(self):
+    def test_structural_city_keeps_unknown_fallback_alongside_supported_go(self):
         graph = analyze_repository(
             Path(__file__).parent / "fixtures/repositories/structural-showcase"
         )
@@ -30,8 +30,17 @@ class ShowcaseTests(unittest.TestCase):
         result = metadata(render_showcase(scene, graph))
         self.assertEqual(3, len(scene["buildings"]))
         self.assertEqual(
-            {"GENERIC_BUILDING"}, {b["archetype"] for b in scene["buildings"]}
+            {"GENERIC_BUILDING", "CLI_TERMINAL"},
+            {b["archetype"] for b in scene["buildings"]},
         )
+        files = {e["id"]: e for e in graph["entities"] if e["kind"] == "FILE"}
+        for building in scene["buildings"]:
+            expected = (
+                "CLI_TERMINAL"
+                if files[building["entityId"]]["language"] == "go"
+                else "GENERIC_BUILDING"
+            )
+            self.assertEqual(expected, building["archetype"])
         self.assertEqual(
             3, sum(m["kind"] == "file" for m in result["mappings"].values())
         )

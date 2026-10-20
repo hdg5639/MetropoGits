@@ -11,6 +11,7 @@
   const selectedIndex = requestedIndex >= 0 ? requestedIndex : history.frames.length - 1;
   const selected = history.frames[selectedIndex];
   globalThis.METROPOGITS_DATA = {
+    facilityModels: history.facilityModels,
     scene: selected.scene,
     routing: selected.routing,
     roadHierarchy: selected.roadHierarchy,

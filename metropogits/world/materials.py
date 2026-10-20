@@ -1,6 +1,7 @@
 """Presentation colours only: never mutate source roles, geometry or metrics."""
 
 import math
+from metropogits.facilities import FACILITY_COLORS
 
 VERSION = "building-materials/0.1"
 # Architectural tones, not claims about real source-code construction materials.
@@ -18,6 +19,7 @@ ROLE_COLORS = dict(
     CACHE_TOWER="#fbbf24", LIBRARY="#facc15", CONTROL_CENTER="#a78bfa",
     PORT="#38bdf8", EXCHANGE="#fb923c",
 )
+ROLE_COLORS.update(FACILITY_COLORS)
 
 
 def policy():

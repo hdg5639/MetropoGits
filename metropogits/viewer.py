@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from importlib.resources import files
 from typing import Any
+from metropogits.facilities import FACILITY_MODELS
 
 from metropogits.territory import derive_district_territories
 from metropogits.streets import derive_street_grid
@@ -50,6 +51,7 @@ def _javascript_data(scene: dict[str, Any], ucg: dict[str, Any], routing=None) -
         "METROPOGITS_DATA",
         {
             "scene": scene,
+            "facilityModels": FACILITY_MODELS,
             "routing": routing,
             "roadHierarchy": hierarchy,
             **({"streetCurves": curves} if curves else {}),
@@ -168,7 +170,7 @@ def render_history_viewer(
         '    <script src="assets/viewer-filters.js" defer></script>',
         1,
     )
-    payload = {"frames": frames, "timeline": timeline}
+    payload = {"frames": frames, "timeline": timeline, "facilityModels": FACILITY_MODELS}
     result = {
         "index.html": html.encode("utf-8"),
         "assets/viewer.css": resources.joinpath("viewer.css").read_bytes(),

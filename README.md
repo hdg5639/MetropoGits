@@ -61,6 +61,17 @@ with a diagnostic instead of being guessed.
 Unsupported source languages still produce generic buildings without guessed
 semantics.
 
+Python now has a bounded stdlib-AST adapter, and static module adapters cover
+Go, Rust, C/C++, C#, Kotlin, Scala, PHP, Ruby, Swift, Dart and Lua; Vue/Svelte
+script blocks feed the JS/TS adapter. Catalog 0.5.0 adds import-bound framework
+usage profiles across these ecosystems. These are tested subsets, not complete
+compilers or runtime discovery: see the [support matrix](docs/ANALYZER_SUPPORT.md).
+Eleven additional source-role facilities distinguish API hubs, UI pavilions,
+command terminals, model archives, data/compute labs, security checkpoints,
+worker workshops, object stores, search libraries and state hubs. Shapes are
+visual metaphors for evidenced source roles, never invented deployed services.
+Existing gate/test aggregate landmarks remain available at every LOD.
+
 Open `dist/showcase.svg` for the README composition: a fitted 3/4 isometric
 city with traceable visual blocks and up to 24 evidence routes. The generated
 snippet uses this image. `dist/preview.svg` retains the detailed top-down view.
