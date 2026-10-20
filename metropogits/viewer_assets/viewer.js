@@ -798,7 +798,15 @@
       }
       for(const part of oriented.parts) {
         const palette=materialPalette(building, part, topHeight, isSelected);
-        const lift=data.surface ? .2 : 0;
+        const lift=data.surface || part.meshFaces ? .2 : 0;
+        if(part.meshFaces) {
+          for(const face of part.meshFaces) {
+            const depth=face.points.reduce((sum,[x,y,z])=>{const r=rotatePoint(x,z);return sum+r.x+r.z+y;},0)/face.points.length;
+            faces.push({points:face.points.map(([x,y,z])=>project(x,z,y+lift)),depth,
+              color:palette[face.surface==='roof'?0:1],roof:face.surface==='roof'});
+          }
+          continue;
+        }
         const bottom=part.footprint.map(([x,z])=>project(x,z,part.y+lift));
         const top=part.footprint.map(([x,z])=>project(x,z,part.y+part.height+lift));
         const depth=part.footprint.map(([x,z])=>{const r=rotatePoint(x,z);return r.x+r.z;});
@@ -1256,6 +1264,11 @@
     if (data.buildingPrograms?.[entityId]) {
       const program = data.buildingPrograms[entityId];
       detailRow(details, "Source-purpose form", program.label + " (derived, not a runtime claim)");
+      if(program.archetypeId) {
+        detailRow(details,'Architecture recipe',program.archetypeId+' · '+program.version);
+        detailRow(details,'Source role gate',program.verifiedRole || 'Unknown — neutral architecture');
+        detailRow(details,'Rendered architectural height',program.renderedHeight+' · inside the original height envelope');
+      }
       detailRow(details, "Observed file neighbours", `${program.incomingFiles} incoming / ${program.outgoingFiles} outgoing · ${program.declarations} declarations`);
     }
     if (data.facilityModels?.[building.archetype]) detailRow(details, "Facility", data.facilityModels[building.archetype].label + " (source-role metaphor, not a runtime deployment)");

@@ -1012,7 +1012,18 @@
   function facadeFor(building,part,isSelected) {
     if(showRoleColors || activeFilterCount()>0 || isSelected)return null;
     const seed=stableVariant(building.entityId,997);
-    return {kind:part.height<1.1?4:1+seed%4,seed};
+    return {kind:part.materialKind ?? (part.height<1.1?4:1+seed%4),seed};
+  }
+  function architecturalMesh(target,part,wall,roof,facade) {
+    if(!part.meshFaces)return false;
+    for(const face of part.meshFaces) {
+      const p=face.points.map(([x,y,z])=>[x,y+.2,z]),normal=polygonNormal(p);
+      const isRoof=face.surface==='roof';
+      const kind=facade?(isRoof?5:facade.kind):0,seed=facade?.seed || 0;
+      if(p.length===4)quad(target,p,normal,isRoof?roof:wall,kind,seed);
+      else for(let i=1;i<p.length-1;i++)quad(target,[p[0],p[i],p[i+1],p[i+1]],normal,isRoof?roof:wall,kind,seed);
+    }
+    return true;
   }
   const uploadedGeometry = new WeakMap();
 
@@ -1304,6 +1315,7 @@
         const fallback = part.shade ? lighten(selectedColor, part.shade) : selectedColor;
         const [wall, roof] = materialColors(building, part, top, selected("building", building.entityId), fallback);
         const facade=facadeFor(building,part,selected('building',building.entityId));
+        if(architecturalMesh(triangles,part,wall,roof,facade))continue;
         if (part.footprint) {
           orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof,facade);
           continue;
@@ -1365,6 +1377,7 @@
         const top=Math.max(...model.parts.map(p=>p.y+p.height));
         for(const part of model.parts) {
           const [wall,roof]=materialColors(proxy,part,top,isSelected,color(colors[proxy.archetype]));
+          if(architecturalMesh(triangles,part,wall,roof,facadeFor(proxy,part,isSelected)))continue;
           orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof,facadeFor(proxy,part,isSelected));
         }
         for(let i=0;i<4;i++) {
@@ -2114,6 +2127,11 @@
     if (data.buildingPrograms?.[entityId]) {
       const program = data.buildingPrograms[entityId];
       detailRow(details, "Source-purpose form", program.label + " (derived, not a runtime claim)");
+      if(program.archetypeId) {
+        detailRow(details,'Architecture recipe',program.archetypeId+' · '+program.version);
+        detailRow(details,'Source role gate',program.verifiedRole || 'Unknown — neutral architecture');
+        detailRow(details,'Rendered architectural height',program.renderedHeight+' · inside the original height envelope');
+      }
       detailRow(details, "Observed file neighbours", `${program.incomingFiles} incoming / ${program.outgoingFiles} outgoing · ${program.declarations} declarations`);
     }
     if (data.facilityModels?.[building.archetype]) detailRow(details, "Facility", data.facilityModels[building.archetype].label + " (source-role metaphor, not a runtime deployment)");

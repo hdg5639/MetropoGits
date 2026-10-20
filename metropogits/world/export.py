@@ -68,15 +68,22 @@ def _clear_landmark_trees(landscape, compounds):
 def view_data(world, scene, graph, *, landscape=None, building_style="semantic", role_compounds=True, campus_landmarks=False):
     if campus_landmarks and not role_compounds:
         raise ValueError('campus landmarks require certified compounds')
-    if building_style not in ("semantic", "architectural", "purposeful"):
+    if building_style not in ("semantic", "architectural", "purposeful", "catalog"):
         raise ValueError("unknown building presentation style")
     programs = None
+    original_world = world
+    if building_style == 'catalog':
+        from .architecture_catalog import catalog_world
+        world, programs = catalog_world(world, graph)
     if building_style == 'purposeful':
         from .architecture import purpose_world
         world, programs = purpose_world(world, graph)
     landscape = _landscape(world, landscape)
-    compounds, compound_policy = (derive_compounds(world, graph, campus_landmarks=campus_landmarks) if role_compounds else
+    compounds, compound_policy = (derive_compounds(original_world if building_style == 'catalog' else world, graph, campus_landmarks=campus_landmarks) if role_compounds else
                                   ([],dict(disabled=True,structural=False)))
+    if building_style == 'catalog':
+        from .architecture_catalog import catalog_compounds
+        compounds = catalog_compounds(compounds)
     landscape = _clear_landmark_trees(landscape, compounds)
     root = "visual:world-root:" + derive(world["repositoryNamespace"])
 
@@ -154,7 +161,9 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
             pinnedDoors=[p["entrance"]],
         )
         if "surface" in world:
-            models[p["entityId"]]["parts"]=[dict(part,y=part["y"]+p["baseElevation"]) for part in p["parts"]]
+            models[p["entityId"]]["parts"]=[dict(part,y=part["y"]+p["baseElevation"],
+                **({"meshFaces":[dict(f,points=[[x,q(y+p["baseElevation"]),z] for x,y,z in f["points"]])
+                                 for f in part["meshFaces"]]} if "meshFaces" in part else {})) for part in p["parts"]]
             models[p["entityId"]]["foundationFaces"]=foundation_faces(p,world["terrain"])
     physical_scene = dict(
         schemaVersion="world-view/0.1",
@@ -333,19 +342,28 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
         data["landscape"] = landscape
     if programs is not None:
         data['buildingPrograms'] = programs
-    if building_style in ("architectural", "purposeful"):
+    if building_style == 'catalog':
+        from .architecture_catalog import catalog_summary
+        data['architectureCatalog'] = catalog_summary(programs)
+    if building_style in ("architectural", "purposeful", "catalog"):
         data["buildingMaterials"] = material_policy()
     return data
 
 
 def render_svg(world, width=1200, height=750, *, landscape=None, building_style="semantic", compounds=None, graph=None):
-    if building_style not in ("semantic", "architectural", "purposeful"):
+    if building_style not in ("semantic", "architectural", "purposeful", "catalog"):
         raise ValueError("unknown building presentation style")
     if building_style == 'purposeful':
         if graph is None:
             raise ValueError('purposeful architecture requires its source graph')
         from .architecture import purpose_world
         world, _ = purpose_world(world, graph)
+    if building_style == 'catalog':
+        if graph is None:
+            raise ValueError('catalog architecture requires its source graph')
+        from .architecture_catalog import catalog_world, catalog_compounds
+        world, _ = catalog_world(world, graph)
+        compounds = catalog_compounds(compounds or [])
     landscape = _landscape(world, landscape)
     graded="surface" in world
     landscape = _clear_landmark_trees(landscape, compounds or [])
@@ -357,7 +375,9 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
         model=f['physicalModel']
         display_buildings.append(dict(model,entityId=f['id'],height=f['height'],
             archetype=f['archetypeCounts'][0]['archetype'],
-            parts=[dict(p,y=q(p['y']-model['baseElevation'])) for p in model['parts']]))
+            parts=[dict(p,y=q(p['y']-model['baseElevation']),
+                **({'meshFaces':[dict(face,points=[[x,q(y-model['baseElevation']),z] for x,y,z in face['points']])
+                                 for face in p['meshFaces']]} if 'meshFaces' in p else {})) for p in model['parts']]))
     def iso(p, y=0):
         return [(p[0] - p[1]) * 0.866, (p[0] + p[1]) * 0.5 - y]
 
@@ -477,7 +497,19 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
                 p=face["points"]
                 faces.append((sum(x+y+z for x,y,z in p)/len(p),[project([x,z],y) for x,y,z in p],face["color"],b["entityId"],1))
         for part in b["parts"]:
-            material = part_material(b, part, top) if building_style in ("architectural", "purposeful") else None
+            material = part_material(b, part, top) if building_style in ("architectural", "purposeful", "catalog") else None
+            if 'meshFaces' in part:
+                for face in part['meshFaces']:
+                    vertices=[[x,y+.2+b.get('baseElevation',0),z] for x,y,z in face['points']]
+                    from .architecture_catalog import face_normal
+                    nx,ny,nz=face_normal(vertices)
+                    if nx+ny+nz<=1e-9:
+                        continue
+                    faces.append((sum(x+y+z for x,y,z in vertices)/len(vertices),
+                        [project([x,z],y) for x,y,z in vertices],
+                        material['roof' if face['surface']=='roof' else 'wall'] if material else color,
+                        b['entityId'],1 if face['surface']=='roof' else .75))
+                continue
             poly = part["footprint"]
             low = part["y"] + 0.2+b.get("baseElevation",0)
             high = low + part["height"]
@@ -554,7 +586,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
                                          "Connected waterway and shared bridges (procedural)")
         if graded:
             lines[-2]=lines[-2].replace("Connected waterway and shared bridges (procedural)","Graded valley and level foundations (procedural)")
-    if building_style in ("architectural", "purposeful"):
+    if building_style in ("architectural", "purposeful", "catalog"):
         lines[-3] = lines[-3].replace("Structural streets (visual)", "Procedural walls / role roof accents · Structural streets (visual)")
     return "\n".join(lines).encode("utf8")
 
@@ -562,7 +594,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
 def package_world(world, scene, graph, validation, *, landscaping=True, building_style="semantic", role_compounds=True, campus_landmarks=False):
     if campus_landmarks and not role_compounds:
         raise ValueError('campus landmarks require certified compounds')
-    if building_style not in ("semantic", "architectural", "purposeful"):
+    if building_style not in ("semantic", "architectural", "purposeful", "catalog"):
         raise ValueError("unknown building presentation style")
     landscape = _landscape(world, None if landscaping else False)
     resources = files("metropogits.viewer_assets")
@@ -611,7 +643,7 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
                             b'Dependency demand (select / All routes)')
     if world.get('campusPlan',{}).get('sites'):
         page = page.replace(b'Landscape (decorative)',b'Landscape / campus courts (visual)')
-    if building_style in ("architectural", "purposeful"):
+    if building_style in ("architectural", "purposeful", "catalog"):
         page = page.replace(b'<span id="renderer-mode"',
                             b'<button type="button" data-action="toggle-role-colors" aria-pressed="false" title="Restore full role tint; wall materials are procedural styling, not source facts">Role colours</button><span id="renderer-mode"')
         page = page.replace(b'<span><i class="swatch generic"></i>Generic</span>',
@@ -646,7 +678,10 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
         ".md": "text/markdown",
     }
     diagnostic_summary = _diagnostic_summary(graph["diagnostics"])
-    presentation = dict(buildingStyle=building_style, buildingMaterialsVersion=material_policy()["version"]) if building_style in ("architectural", "purposeful") else {}
+    presentation = dict(buildingStyle=building_style, buildingMaterialsVersion=material_policy()["version"]) if building_style in ("architectural", "purposeful", "catalog") else {}
+    if building_style == 'catalog':
+        from .architecture_catalog import VERSION as ARCHITECTURE_VERSION
+        presentation['architectureVersion'] = ARCHITECTURE_VERSION
     artifacts["manifest.json"] = canonical_json_bytes(
         dict(
             schemaVersion="manifest/0.1",

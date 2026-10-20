@@ -8961,3 +8961,96 @@
 - Delivery: one atomic renderer/material milestone commit on
   feat/polyglot-analysis, normal upstream push after staged diff and human
   identity review; actual command result recorded in session handoff.
+
+## Checkpoint 2026-10-21 — Evidence-gated procedural architecture
+
+- Implemented: additive --building-style catalog, architecture/0.1.85 named
+  proposal recipes,25 shared massing grammars and six primitives (box, chamfer,
+  gable, sawtooth, drum, dome), plus a shared verification complex composition.
+  These are not85 bespoke models or85 new analyzer capabilities. Specific roles
+  without source proof stay dormant. Private profiles retain source-role evidence,
+  actual local neighbours, independent seed streams and rendered height.
+- Evidence policy: DIRECT/RESOLVED role claims with real evidence IDs. TEST is
+  not simulation/benchmarking; AUTH is not token storage. Kafka/RabbitMQ require
+  messaging role plus local usage, never only a manifest. Verified UI usage may
+  add glazing. Generic inputs remain neutral. No new public archetype enum or
+  schema/identity change, no runtime service/AI or target-code execution.
+- Geometry: offline polygon meshes, material hints and rotated local shapes feed
+  CPU SVG, Canvas and WebGL. Certified compounds restyled without changing their
+  members, source/shared-target proof, persistent LOD or exact source paths.
+ 18-part/240-face per-source limits; original footprint/height/door and terrain
+  preserved. Triangle batching and cached sun lighting retained, not hardware
+  instancing. Existing styles and default remain compatible.
+- Visual correction: first renders exposed cathedral-like roofs on thin legacy
+  parcels. Apply physical roof-span and drum/dome aspect caps, low-form parcel
+  height budgets and a continuous archive hall instead of needle-like ribs.
+  Recompiled four corpora and recaptured matched views. Original height remains
+  a capacity envelope; the inspector separately reports actual rendered height.
+- Fixtures/revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJ b163acd2b5fe41edfc1e7fc7d367362851241896,
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b.
+  Pinned verified source analysis reused, not falsely claimed as fresh parsing.
+  New maintained architecture-unknown contains three unsupported Elixir files;
+  maintained purpose-campus supplies real31-source/77-trip cold analysis.
+- Fresh commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/architecture-unknown --repo-id
+  fixture/architecture-unknown --out ../artifacts/visual/architecture-unknown-r1/source
+  --json`; procedural_world.py that source -> architecture-unknown-r2/world
+  --building-style catalog --seed architecture-unknown.3 neutral sources,
+  zero relationships; no fabricated Synthetic activity.
+- Fresh purpose pipeline: build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out ../artifacts/visual/architecture-catalog-cold-r1/source
+  --json; procedural_world.py that source with --out <same-root>/world --zoning
+  neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style programmed
+  --campus-landmarks --building-style catalog --seed purpose-4. Independent
+  package repeat via compile_catalog_worlds.py --repeat -> architecture-catalog-repeat-r1/world:
+  all17 package artifacts byte-identical.
+- Corpus command: `python ../artifacts/visual/compile_catalog_worlds.py` existing
+  material-lighting-r3/{gj,sqlitebrowser} or campus-landmarks-r1/{oj,pocketbase}/after
+  -> ../artifacts/visual/architecture-catalog-r3/<name>/after; --before produces
+  purposeful baseline with the same current viewer assets. Four World/City/UCG/
+  Planning pairs byte-identical; all16 schema validations PASS. Source positions,
+  streets and routes unchanged; compiled part/mesh bounds checked inside original
+  file envelopes. All accessible, canonical building/road overlaps/owner escapes0.
+- Actual output: GJ1324files/4209trips,22 selected recipes; OJ681/1457,18;
+  PB664/1491,9; SQLite506/622,6. Real output contains the source-supported subset,
+  not every proposed semantic facility. Bounds are positive tested for all85
+  recipes/multiple rotations, even where no real-source positive exists yet.
+- Browser: viewer_audit.mjs installed Chrome -> architecture-catalog-final-audit-r3,
+  inputs architecture-catalog-r3/{gj,oj,pocketbase,sqlitebrowser}/after and
+  architecture-unknown-r2/world. Three LODs, camera, source/route controls,
+  compound expansion, demand and Synthetic PASS. GL errors0; static Synthetic
+  geometry builds0. Capabilities audit on real cold fixture forces missing
+  derivatives/highp/shadow framebuffer: WebGL still draws; no-WebGL uses Canvas.
+- Matched comparison: local capture_architecture.mjs ->
+  architecture-catalog-comparison-r2, four cases, identical absolute cameras,
+  overview/detail plus GJ frontend, real grayscale captures. Actual pointer
+  inspections verify source recipe/role rows in GJ/OJ/PB. SQLite focus has no
+  pickable evidenced target; it is not falsely reported as inspected there.
+  Atlas85 prototypes/25 grammars is explicitly not a fabricated source city.
+- Inspected actual GJ/OJ close-ups before/after correction, GJ frontend,
+  grayscale recipe atlas, unknown WebGL, Canvas fallback and CPU GJ showcase.
+  Review architecture-catalog-reviewed-r1/index.html and its actual review.png;
+  all local links verified. Generated helpers/artifacts remain outside Git.
+- Regression: Python775 OK (one existing Windows symlink skip), Node76 PASS,
+  Ruff/compileall/diff PASS. Eight new Python tests cover catalog bounds/yaw,
+  winding/dome caps, physical proportions, semantic/technology negatives,
+  resource failure, unknown input, deterministic source-preserving packages,
+  unchanged routes/compounds and unrelated graph additions. No tests weakened.
+- Benchmark: sequential same-runner PocketBase before/after using viewer_audit
+  -> architecture-catalog-benchmark-r1, same viewport/camera/LOD. Detail triangles
+ 136298->158020; Synthetic median2.2->2.1ms, p95 2.5->2.7ms; static builds0 both.
+  This is JS submission under SwiftShader, not GPU FPS. Initial submission
+ 1005.4/746.5ms reflects run/JIT order, not a universal speedup. Earlier concurrent
+  run had a143.8ms PB outlier; final full run and isolated pair did not reproduce
+  it. No sweeping performance claim; geometry/storage cost genuinely increases.
+- Spec alignment PASS: technical data/evidence/rendering split; functional source
+  inspection/unknown fallback/determinism; product local/static/no execution.
+  ADR-059 and PROCEDURAL_ARCHITECTURE.md document opt-in/private compatibility.
+  Deferred: universal semantic detection, unique bespoke85 models, new metrics,
+  streamed/instanced binary scenes, precision GPU picking and photoreal assets.
+- Delivery: one coherent renderer/catalog feature commit with tests/docs/fixtures,
+  normal feat/polyglot-analysis push after staged diff and human metadata review.
+  Existing user fixture build caches are untouched; actual delivery in handoff.

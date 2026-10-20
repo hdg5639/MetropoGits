@@ -113,3 +113,12 @@ LOD until explicit expansion; filters restore only the actual matching members.
 Inspectors disclose derived purpose, source/shared-target counts, evidence and
 all original members. High-detail textures or realistic architectural assets
 are not claimed by this change.
+
+## Procedural architecture recipes (ADR-059)
+
+The optional `catalog` World export compiles85 proposed names from25 shared
+massing grammars/six primitives, with strict source-role gates. These are private
+presentation profiles, not new City archetype enums or85 supported classifiers.
+Physical roof/aspect limits, independent seeded variations, exact source/compound
+identity and shared CPU/Canvas/WebGL meshes are documented in
+[PROCEDURAL_ARCHITECTURE.md](PROCEDURAL_ARCHITECTURE.md).
