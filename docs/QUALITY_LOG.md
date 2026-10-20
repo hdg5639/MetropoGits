@@ -8387,3 +8387,39 @@
   feat/semantic-zoning; normal configured upstream push follows. Configured human
   author/committer checked, no generated files/helpers or pre-existing fixture
   caches staged, no attribution trailers or protected-branch bypass.
+
+## Checkpoint 2026-10-20 — main integration readiness
+
+- Requested: integrate all current feature work through a main-targeted PR and
+  remove obsolete branches only after proving their changes are retained.
+  Fetched origin; main ff75c80 is an ancestor of feature c37f083 (59 commits).
+  experiment/street-grid f7f2be3 is already an ancestor of origin/main.
+- Implemented: clear all126 outstanding Ruff violations in ten affected files
+  from this feature's campus/compound/terrain work. Formatting, three unused
+  imports and three test-local lambda-to-def conversions only; no lint ignores,
+  relaxed checks, public contracts or runtime behavior changes. Four production
+  modules have identical parsed ASTs after removing the two unused imports from
+  the old comparison trees. No unrelated user files or fixture caches changed.
+- Commands: `git fetch --prune origin`; `python -m ruff check metropogits scripts tests`;
+  `python -m compileall -q metropogits scripts tests`; `python -m pip check`;
+  `node --check` for every metropogits/viewer_assets/*.js;
+  `python -m unittest discover -s tests`; `node --test tests/*.test.mjs`;
+  `git diff --check`. Full Ruff now PASS,719 Python tests PASS with one existing
+  Windows symlink skip,68 Node tests PASS, dependency/compile/parse checks PASS.
+- End-to-end fixture: rerun the previous checkpoint's spring-positive build and
+  World command with the same fixture/pavement ID, street-mesh-check seed and
+  all options, outputs ../artifacts/visual/merge-main-e2e-r1/build and world.
+  Six buildings, two trips/four edges, all six accessible, zero overlaps/escapes.
+  All17 package files are byte-identical to road-cleanup-e2e-r1/world, including
+  actual CPU previews, World, City/UCG and viewer assets. No target code runs.
+- Browser command: `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/merge-main-audit-r1 ../artifacts/visual/merge-main-e2e-r1/world`.
+  Three LODs and source/access/route/Synthetic checks complete; zero static rebuilds
+  during Synthetic. Inspected actual overview.png and showcase.png in case-1.
+  No new visual changes expected or observed; large/unknown-language comparisons
+  remain the preceding five-repository byte-preserving checkpoint's evidence.
+- Spec alignment: PASS. Local/static/evidenced analysis, stable layout/IDs,
+  schemas and existing World presets unchanged. No new feature or broad refactor.
+- Delivery plan: commit and normal push to feat/semantic-zoning, create main PR,
+  verify hosted checks and integrated tree, then clean only covered feature/
+  experiment branch refs. Do not delete source directories, artifacts or caches.
+  Keep configured human identity and omit contributor/attribution trailers.
