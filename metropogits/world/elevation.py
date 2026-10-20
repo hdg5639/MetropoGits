@@ -131,7 +131,7 @@ def surface(terrain):
     return _surface(tuple(sorted(e.items())),tuple(tuple(p) for p in terrain["channel"]["centerline"]),
                     tuple(tuple(tuple(p) for p in path) for path in terrain["channel"].get("tributaries",[])),
                     tuple(tuple(tuple(p) for p in f['polygon']) for f in terrain['features'] if f['kind']=='LAKE')
-                    if terrain.get('version') in ('terrain/0.5','terrain/0.6') else ())
+                    if terrain.get('version') in ('terrain/0.5','terrain/0.6','terrain/0.7') else ())
 
 
 @lru_cache(maxsize=8)

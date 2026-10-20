@@ -154,6 +154,21 @@ available for reproduction; the older organic fan was rejected as visually
 repetitive. See [ADR-051](docs/adr/ADR-051.md); this is not a finished simulation
 of a university, service vehicles or real runtime traffic.
 
+For source-purpose precincts, use `--campus-style programmed` and
+`--building-style purposeful`. Evidenced roles and actual file relationships
+shape validation/data/interface/application commons, real activity anchors and
+varied building masses. Unknown code remains unclassified; derived forms and
+source members are inspectable. Infeasible forms retain connected complete
+fabric rather than dropping files. See [facility programs](docs/FACILITY_ARCHETYPES.md#source-purpose-precincts-and-massing-adr-056).
+
+`--terrain mountain-landscape` adds optional multi-summit mountain reserves to
+the watershed experiment. Seed and available space can produce zero, one or two
+ranges, plus independently seeded lakes/foothills. Ridges rise 55–160 world units
+above local ground, with rock faces and continuous shoulders. These are visual
+units, not geographic metres. Nature precedes streets/parcels; certified crossings
+and conditional tunnels retain their existing checks. Old terrain modes and
+default results remain available unchanged. See [ADR-056](docs/adr/ADR-056.md).
+
 Rotated World exports also restore evidence-backed page/API/gate/test compounds
 when full clearance permits. They retain their exact source members at every
 zoom; use **Expand constituent files** to reveal individual buildings. This is

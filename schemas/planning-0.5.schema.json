@@ -6,7 +6,7 @@
   "required": ["schemaVersion","zoningVersion","patternScale","districtPatterns","worldSeed","ucgDigest","sourceCityDigest","terrainPreset","zones","blocks","mainRoads"],
   "properties": {
     "schemaVersion": {"const":"planning/0.5-experimental"},
-    "campusPlan":{"type":"object","required":["version","structural","decisions","sites"],"properties":{"version":{"enum":["campus-plan/0.1","campus-plan/0.2","campus-plan/0.3","campus-plan/0.4","campus-plan/0.5","campus-plan/0.6"]},"style":{"enum":["varied","neighborhood","landscape","organic","fabric"]},"structural":{"const":true},"sites":{"type":"array","maxItems":64}}},
+    "campusPlan":{"type":"object","required":["version","structural","decisions","sites"],"properties":{"version":{"enum":["campus-plan/0.1","campus-plan/0.2","campus-plan/0.3","campus-plan/0.4","campus-plan/0.5","campus-plan/0.6","campus-plan/0.7"]},"style":{"enum":["varied","neighborhood","landscape","organic","fabric","programmed"]},"structural":{"const":true},"sites":{"type":"array","maxItems":64}}},
     "streetPlan": {"type":"object","required":["version","structural","segments","summary"],"properties":{"version":{"const":"street-plan/0.1"},"structural":{"const":true}}},
     "zoningVersion": {"const":"functional-neighborhoods/0.1"},
     "patternScale": {"const":"adaptive"},
@@ -14,7 +14,7 @@
     "worldSeed": {"type":"string","pattern":"^[0-9a-f]{16}$"},
     "ucgDigest": {"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
     "sourceCityDigest": {"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
-    "terrainPreset": {"enum":["flat","lake-district","river-corridor","river-valley","river-landscape","varied-landscape","watershed-landscape"]},
+    "terrainPreset": {"enum":["flat","lake-district","river-corridor","river-valley","river-landscape","varied-landscape","watershed-landscape","mountain-landscape"]},
     "zones": {"type":"array","minItems":1,"maxItems":448,"items":{"type":"object","required":["id","parentId","clusterKey","classification","coreEntityIds","coreClaims","supportingMembers","structuralMemberEntityIds","internalEdgeIds","roleCounts","memberEntityIds","memberClaims","polygon","accessPorts","planningProfile"],"properties":{"planningProfile":{"const":"BLOCK_LOCAL"},"internalEdgeIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}},"memberEntityIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}}}}},
     "blocks": {"type":"array","minItems":1,"maxItems":448,"items":{"type":"object","required":["id","zoneId","memberEntityIds","polygon","boundaryTypes","planningProfile","capacity","affinity","inheritedPatternId","patternMode"],"properties":{"patternMode":{"enum":["INHERITED","ADAPTED"]},"boundaryTypes":{"type":"array","items":{"const":"NEIGHBORHOOD_BOUNDARY"}},"planningProfile":{"enum":["GRID","ORGANIC","RADIAL","INDUSTRIAL","HYBRID"]},"capacity":{"type":"integer","minimum":1}}}},
     "mainRoads": {"type":"array","maxItems":10000,"items":{"type":"object","required":["id","start","end","width","structural","patternId"],"properties":{"structural":{"const":true},"width":{"type":"number","exclusiveMinimum":0}}}}

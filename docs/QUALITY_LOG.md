@@ -8694,3 +8694,91 @@
   not all semantic purposes known; mountainous landscape is next, not completed.
 - Delivery: atomic feature commit and normal feat/polyglot-analysis push after
   explicit staging and identity review. Generated images stay outside Git.
+
+## Checkpoint 2026-10-21 — optional true mountain ranges and combined purpose review
+- Implemented: opt-in terrain/0.7 mountain-landscape, with independently seeded
+  zero-to-two fitted mountain reserves, unequal multi-summit triangular ridges,
+  shoulders and rock slopes. Height55–160 visual world units above local ground,
+  not geographic metres. Mountain-free seeds/small domains are valid. Terrain
+  still precedes whole parcels/streets; existing watershed water topology,
+  lakes, grade/crossing/conditional tunnel and resource checks remain active.
+  CPU/WebGL fit includes the tall mesh only in the new mode. Old modes preserved.
+- Integration fix: Planning0.5 also accepts programmed campus0.7; the new
+  full-pipeline schema test exposed the missing enum/style cases after the first
+  purpose unit. Corrected the schema, not the validator/tests. Existing version
+  height limits remain35 (older modes15); only terrain0.7 accepts tall ranges.
+- Prior purpose unit committed/pushed14104d6 to feat/polyglot-analysis. Final
+  combined outputs use its program/anchor/massing implementation, not the early
+  screenshots. No invented source facilities, runtime traffic or research claims.
+- Commands: `python -m unittest discover -s tests` ran761 tests, OK with one
+  existing Windows symlink skip; `node --test tests/*.test.mjs`70 PASS;
+  `python -m ruff check .` and `git diff --check` PASS. Four new mountain tests
+  cover seed counts0/1/2, multipeak mesh projected coverage without overlapping
+  cones, deterministic regeneration, tamper rejection, schema/version bounds,
+  whole-pipeline source identity/access and nearby source growth hints.
+- Real source fixture from previous checkpoint:31 maintained purpose-campus
+  Python files -> UCG -> City -> World. Build/revision retained in prior entry.
+  Final mountain small output mountain-city-r1/fixture:31 accessible,77 original
+  trips/128 represented edges; no mountain forced onto the small domain.
+- Real-corpus commands: `python scripts/procedural_world.py <input> --out <out>
+  --zoning neighborhoods --pattern-scale adaptive --planning varied --outline
+  varied --street-policy porous --street-hierarchy --campus --campus-style
+  programmed --terrain mountain-landscape --building-style purposeful --seed
+  <seed>`. Input polyglot-facilities-r2/gj, polyglot-facilities-r1/{oj,sqlitebrowser};
+  outputs ../artifacts/visual/mountain-city-r1/{gj,oj,sqlitebrowser}.
+  GJ/SQLite seed mountain-3, OJ seed mountain-2. The worldSeed values are
+  3ef81acb0da5c85d and b7f67b0b4da09353 respectively.
+- Fixture revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766;
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b.
+  These are pinned existing static source builds; no target dependencies,
+  build scripts or source programs were executed. Canonical input revision
+  metadata remains unchanged, not rewritten to claim a new analysis revision.
+- Results: GJ1324 buildings/4209 trips/6157 represented edges, two mountain
+  ranges55/86.4582 high with two actual local summits each; OJ681/1457/2589,
+  no mountain; SQLite506/622/622, two55-high ranges. All accessible; each has
+  zero building overlaps, road overlaps and owner escapes. World0.1 and
+  Planning0.5 schema validation PASS on all four final cases including small.
+- Determinism/stability: GJ repeated from the identical canonical input/flags
+  into mountain-city-repeat-r1/gj: all17 packaged artifact SHA256 hashes match.
+  Second run generate88.61s/validate18.78s/package26.44s; these are local wall
+  timings, not a speedup claim. Existing terrain0.6 GJ watershed reconstructed
+  exactly from its saved envelope/seed, equal to polyglot-facilities-world-r2/gj.
+  The focused growth test adds one unknown Rust source and retains original
+  terrain and every previous occupied frame. Changing modes/seeds may relocate
+  the city intentionally; this is not a claim of stable geography across modes.
+- Browser commands: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe" <audit-out> <inputs>`.
+  mountain-city-audit-r2 uses final GJ/OJ; mountain-city-audit-r3 uses SQLite.
+  Overview/district/detail, routes, source links, camera/selection and Synthetic
+  completed with zero static geometry rebuilds during Synthetic. These measure
+  software WebGL JS submission, not hardware GPU FPS. Small before/after audit
+  purpose-precinct-audit-r4 remains the earlier actually rendered comparison.
+- Artifacts inspected: final GJ default/district WebGL and SQLite default;
+  GJ actual AuthServiceImpl purpose inspector (1 incoming/23 outgoing local
+  file neighbours, multi-target court), OJ verification-campus top/close views,
+  CPU previews/showcases, schema output and seed cases. Actual source controls
+  exercised via artifacts/visual/capture_purpose_precincts.mjs; reports/captures
+  purpose-campus-inspector-r2/{gj,oj}. GJ programs derive DATA mixed precincts;
+  OJ derives VALIDATION precincts. Some feasible output uses complete connected
+  fabric fallback; not claimed as a newly fitted dedicated purpose court.
+- Review: ../artifacts/visual/purpose-mountains-reviewed-r1/index.html, actual
+  gallery screenshot review.png and verified local artifact links. All images
+  are real render outputs; generated assets/helpers remain outside Git.
+- Visual findings: ridges now dominate nearby building silhouettes and have
+  multiple unequal peaks, not tiny isolated hill props. Purposeful buildings
+  introduce courts, halls, wings and stepped masses; actual role accents retain
+  neutral walls. Low coverage SQLite remains an attractive mostly-generic city.
+  Close views can be occluded by a real foreground mountain; pan/orbit/high-pitch
+  inspection works. Still stylized low-poly geometry, not detailed architecture,
+  geological erosion or real hydrological simulation.
+- Spec alignment PASS: technical static evidence/provenance, City/UCG identity
+  and fallback rules; functional role/source inspection, retained aggregation
+  and graceful unknown handling; product deterministic local-first/no runtime
+  AI. ADR-056 records the approved additive scope. No protection, author
+  attribution, remote settings or default security changes.
+- Delivery: terrain feature committed separately from the purpose unit; normal
+  push to existing feat/polyglot-analysis after staged diff/identity review.
+  No merge/main operation requested in this turn. Existing local fixture build
+  caches left untouched. Next: stronger purpose-specific site variants where
+  they fit safely; broad silhouette/readability gains before tiny roof polish.

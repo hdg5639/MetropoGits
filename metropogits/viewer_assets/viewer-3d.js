@@ -732,6 +732,7 @@
     for(const parcel of Object.values(orientedBuildings))for(const part of parcel.parts)
       for(const [x,z] of part.footprint)points.push([x,part.y+part.height,z]);
     if(data.surface) for(const f of data.surface.faces)points.push(...f.points);
+    if(data.terrain?.version === 'terrain/0.7') for(const f of data.terrain.features)for(const face of f.faces)points.push(...face.points);
     const fitted=fitPerspective(points,state,cameraPolicy,viewportWidth/viewportHeight,Math.max(8,tallestBuilding));
     for (const key of ['targetX','targetY','targetZ']) {
       state[key]=fitted[key];
