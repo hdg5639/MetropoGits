@@ -55,7 +55,19 @@ def _landscape(world, value):
     return value
 
 
-def view_data(world, scene, graph, *, landscape=None, building_style="semantic", role_compounds=True):
+def _clear_landmark_trees(landscape, compounds):
+    if not landscape or not any(f.get('campusProgram') for f in compounds):
+        return landscape
+    from metropogits.street_diagonals import overlap
+    from .geometry import rectangle
+    polygons=[f['physicalModel']['footprint'] for f in compounds if f.get('campusProgram')]
+    return dict(landscape,trees=[t for t in landscape['trees'] if not any(
+        overlap(rectangle(t['center'],0,t['radius']*2,t['radius']*2),p) for p in polygons)])
+
+
+def view_data(world, scene, graph, *, landscape=None, building_style="semantic", role_compounds=True, campus_landmarks=False):
+    if campus_landmarks and not role_compounds:
+        raise ValueError('campus landmarks require certified compounds')
     if building_style not in ("semantic", "architectural", "purposeful"):
         raise ValueError("unknown building presentation style")
     programs = None
@@ -63,8 +75,9 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
         from .architecture import purpose_world
         world, programs = purpose_world(world, graph)
     landscape = _landscape(world, landscape)
-    compounds, compound_policy = (derive_compounds(world, graph) if role_compounds else
+    compounds, compound_policy = (derive_compounds(world, graph, campus_landmarks=campus_landmarks) if role_compounds else
                                   ([],dict(disabled=True,structural=False)))
+    landscape = _clear_landmark_trees(landscape, compounds)
     root = "visual:world-root:" + derive(world["repositoryNamespace"])
 
     def envelope(poly):
@@ -335,6 +348,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
         world, _ = purpose_world(world, graph)
     landscape = _landscape(world, landscape)
     graded="surface" in world
+    landscape = _clear_landmark_trees(landscape, compounds or [])
     field=terrain_surface(world["terrain"]) if graded else None
     compound_by_id={f['id']:f for f in compounds or []}
     grouped={k for f in compounds or [] for k in f['memberEntityIds']}
@@ -515,8 +529,14 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
         lines.append(
             f'<text x="{x:.3f}" y="{y:.3f}" fill="#e2edf5" stroke="#10202a" stroke-width="3" paint-order="stroke" font-family="sans-serif" font-size="13" text-anchor="middle">{escape(label)}</text>'
         )
+    landmark_zones={f['districtId'] for f in compounds or [] if f.get('campusProgram')}
+    for f in compounds or []:
+        if not f.get('campusProgram'):
+            continue
+        x,y=project(f['physicalModel']['center'],f['height']+f['physicalModel']['baseElevation']+2)
+        lines.append(f'<text x="{x:.3f}" y="{y:.3f}" fill="#e2edf5" stroke="#10202a" stroke-width="3" paint-order="stroke" font-family="sans-serif" font-size="11" text-anchor="middle">{escape(f["title"])} · {len(f["memberEntityIds"])} files</text>')
     for site in world.get('campusPlan',{}).get('sites',[]):
-        if 'sourceProgram' in site:
+        if 'sourceProgram' in site and site['zoneId'] not in landmark_zones:
             x,y=project(site['courts'][0]['center'], .25)
             lines.append(f'<text x="{x:.3f}" y="{y:.3f}" fill="#d8eadb" stroke="#15221c" stroke-width="3" paint-order="stroke" font-family="sans-serif" font-size="11" text-anchor="middle">{escape(site["sourceProgram"]["label"])}</text>')
     lines += [
@@ -539,7 +559,9 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
     return "\n".join(lines).encode("utf8")
 
 
-def package_world(world, scene, graph, validation, *, landscaping=True, building_style="semantic", role_compounds=True):
+def package_world(world, scene, graph, validation, *, landscaping=True, building_style="semantic", role_compounds=True, campus_landmarks=False):
+    if campus_landmarks and not role_compounds:
+        raise ValueError('campus landmarks require certified compounds')
     if building_style not in ("semantic", "architectural", "purposeful"):
         raise ValueError("unknown building presentation style")
     landscape = _landscape(world, None if landscaping else False)
@@ -595,12 +617,12 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
         page = page.replace(b'<span><i class="swatch generic"></i>Generic</span>',
                             b'<span title="Walls are procedural tones; role colours appear on upper roofs. Filters or Role colours restore full tint.">Walls: procedural / Roof accents: roles</span><span><i class="swatch generic"></i>Generic</span>')
     svg = render_svg(world, landscape=landscape, building_style=building_style,
-                     compounds=derive_compounds(world,graph)[0] if role_compounds else [], graph=graph)
+                     compounds=derive_compounds(world,graph,campus_landmarks=campus_landmarks)[0] if role_compounds else [], graph=graph)
     artifacts.update(
         {
             "index.html": page,
             "assets/viewer-data.js": _javascript_assignment(
-                "METROPOGITS_DATA", view_data(world, scene, graph, landscape=landscape, building_style=building_style,role_compounds=role_compounds)
+                "METROPOGITS_DATA", view_data(world, scene, graph, landscape=landscape, building_style=building_style,role_compounds=role_compounds,campus_landmarks=campus_landmarks)
             ),
             "world.json": canonical_json_bytes(world),
             "city.json": canonical_json_bytes(scene),

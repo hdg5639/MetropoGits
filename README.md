@@ -161,6 +161,13 @@ varied building masses. Unknown code remains unclassified; derived forms and
 source members are inspectable. Infeasible forms retain connected complete
 fabric rather than dropping files. See [facility programs](docs/FACILITY_ARCHETYPES.md#source-purpose-precincts-and-massing-adr-056).
 
+Add `--campus-landmarks` to express nearby related source groups as a few larger
+hall/podium/anchor complexes. These persistent visual aggregates expose exact
+members, original edges and shared local targets; they are not new source
+entities or invented peer dependencies. Streets/courts/nature remain protected,
+and canonical World/City/UCG coordinates stay unchanged. See
+[campus landmarks](docs/FACILITY_ARCHETYPES.md#campus-scale-landmarks-adr-057).
+
 `--terrain mountain-landscape` adds optional multi-summit mountain reserves to
 the watershed experiment. Seed and available space can produce zero, one or two
 ranges, plus independently seeded lakes/foothills. Terrain0.8 bounds relief by

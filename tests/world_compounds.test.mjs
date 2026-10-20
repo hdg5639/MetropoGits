@@ -41,3 +41,19 @@ test('World compound filtering never reintroduces hidden members or removes the 
  assert.deepEqual(legacy.aggregates,[]);
  assert.deepEqual(legacy.visibility('overview',ids,[]).buildingIds,ids);
 });
+
+test('campus complexes retain mixed source membership at all LODs without inventing peer routes',()=>{
+ const {ids,scene,facility,ucg}=fixture();
+ facility.role='CAMPUS:VALIDATION';facility.campusProgram={kind:'VALIDATION',derived:true};
+ facility.sourceEdgeIds=['original:a-to-target','original:b-to-target'];facility.sharedTargetIds=['actual-target'];
+ scene.buildings[1].archetype='SERVICE_OFFICE';
+ const frozen=JSON.stringify({scene,facility,ucg});
+ const p=engine.createLodPolicy(scene,null,{rectangles:[],orientedEntityIds:ids,roleCompounds:[facility]},ucg);
+ for(const lod of ['overview','district','detail']) {
+  assert.deepEqual(p.visibility(lod,ids,[]).aggregateIds,[facility.id]);
+  assert.deepEqual(p.visibility(lod,ids,[],null,new Set([facility.id])).buildingIds,ids);
+ }
+ assert.deepEqual(p.visibility('detail',['b'],[]).aggregateIds,[]);
+ assert.deepEqual(p.visibility('detail',['b'],[]).buildingIds,['b']);
+ assert.equal(JSON.stringify({scene,facility,ucg}),frozen);
+});

@@ -1388,15 +1388,15 @@
       });
     }
     for (const aggregateId of renderedAggregateIds) {
-      if (!selected("aggregate", aggregateId)) continue;
       const facility = aggregateFacilities.get(aggregateId);
+      if (!selected("aggregate", aggregateId) && !facility.campusProgram) continue;
       const anchor = projected([
         facility.labelX ?? facility.x + facility.width / 2,
         facility.height + 5+(facility.baseElevation || 0),
         facility.labelZ ?? facility.z + facility.depth / 2,
       ]);
       if (!anchor || anchor.depth < -1 || anchor.depth > 1) continue;
-      const label = `${districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files`;
+      const label = `${facility.campusProgram ? facility.title : districtCanvasLabel(districts.get(facility.districtId))} · ${facility.memberEntityIds.length} files`;
       candidates.push({
         aggregate: true,
         height: 20,
@@ -1737,7 +1737,7 @@
   function showAggregate(aggregateId) {
     const facility = aggregateFacilities.get(aggregateId);
     inspector.replaceChildren();
-    inspector.append(element("p", facility.role ? "ROLE LANDMARK · VISUAL AGGREGATE" : "CITY BLOCK · VISUAL AGGREGATE", "eyebrow"));
+    inspector.append(element("p", facility.campusProgram ? "CAMPUS LANDMARK · VISUAL AGGREGATE" : facility.role ? "ROLE LANDMARK · VISUAL AGGREGATE" : "CITY BLOCK · VISUAL AGGREGATE", "eyebrow"));
     inspector.append(element("h2", facility.title || districtLabel(districts.get(facility.districtId))));
     inspector.append(element(
       "p",
@@ -1750,6 +1750,12 @@
     detailRow(details, "Owning district", districtLabel(districts.get(facility.districtId)));
     detailRow(details, "Districts", facility.memberDistrictIds?.length || 0);
     detailRow(details, "Representation", "Deterministic visual block aggregate");
+    if (facility.campusProgram) {
+      detailRow(details, "Derived campus purpose", facility.campusProgram.label);
+      detailRow(details, "Original source edges", facility.sourceEdgeIds.length);
+      detailRow(details, "Shared local targets", facility.sharedTargetIds.length);
+      inspector.append(element('p','Grouped by original edges or shared local targets. Shared targets do not create a dependency between constituent files. Unknown roles remain unknown.','campus-landmark-disclosure'));
+    }
     inspector.append(details);
     if (facility.role) facilityControls(inspector, facility);
     if (facility.role) factSection(inspector, "GROUPING EVIDENCE", facility.evidenceIds.map(evidenceLabel));

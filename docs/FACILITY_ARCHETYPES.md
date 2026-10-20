@@ -82,3 +82,34 @@ gate/test compounds. CPU, Canvas and WebGL consume the same compiled parts. The
 inspector discloses derived form, neighbour counts and declaration counts.
 Neutral walls/highest-roof role accents remain, with explicit full-role tint.
 It is still low-poly massing, not detailed material assets or a runtime profiler.
+
+## Campus-scale landmarks (ADR-057)
+
+Add `--campus-landmarks` to a routed campus World export. This is independent
+of per-file `purposeful` massing. A few certified complexes use the complete
+clear parcel envelopes of actual nearby related files, rather than preserving
+every tiny individual footprint. Maximum four per campus,16 members per complex,
+56-unit span/36-unit height; insufficiently related or obstructed candidates
+remain individual buildings. Counts are caps, not quotas.
+
+Direct static edges and shared **local file targets** establish visual affinity.
+For example, two tests using the same judge can share a verification hall even
+without depending on one another. `sharedTargetIds` and exact `sourceEdgeIds`
+preserve that distinction; this does not create a peer dependency. Module/zone
+ownership stays separate; unknown roles are retained in accurate mixed counts.
+External package popularity alone does not generate an anchor. Co-reference
+candidate expansion is capped at128 contributors per local target.
+
+Purpose-sensitive halls/podiums/anchor towers express validation, data,
+application, interface, tooling, compute or neutral collaboration. They are
+visual aggregates, not additional files, services, universities or departments.
+World/City/UCG/Planning JSON and original source trips are unchanged. Public and
+pedestrian streets, courts, nature and unrelated parcels remain clear; existing
+constituent-only entrance spurs can terminate inside their shared facility.
+Decorative trees are cleared from enlarged complexes, never used to mask errors.
+
+CPU/Canvas/WebGL share compiled oriented geometry. Complexes persist at every
+LOD until explicit expansion; filters restore only the actual matching members.
+Inspectors disclose derived purpose, source/shared-target counts, evidence and
+all original members. High-detail textures or realistic architectural assets
+are not claimed by this change.

@@ -8818,3 +8818,70 @@
   not claimed done by the mountain repair. Existing fixture caches preserved.
 - Delivery: atomic terrain correction, normal feat/polyglot-analysis push after
   explicit staged diff and human-identity review; no main/protection changes.
+
+## Checkpoint 2026-10-21 — certified campus-scale landmark complexes
+- Implemented: optional --campus-landmarks export. A campus has at most4 large
+  complexes,16 actual members each,56-unit span/36-unit height. Full clear
+  parcel envelopes support broad halls/podiums/anchors instead of tiny file-size
+  variants. Actual roles choose validation/data/application/interface/tooling/
+  compute/neutral forms. Persistent at every LOD; explicit expansion/filtering
+  preserves exact source membership. CPU/Canvas/WebGL share compiled models.
+- Evidence: direct static edges OR shared local source targets, never inferred
+  peer dependencies or external-package popularity. Exact sourceEdgeIds and
+  sharedTargetIds disclosed. Module/zone/court/nature/public-street clearance
+  retained. Original constituent entrance spurs may end inside their complex.
+  Interstitial trees cleared; all canonical World/City/UCG/Planning bytes and
+  source trips remain unchanged. Candidate/index/clearance/co-reference work
+  bounds fail to original individual-source presentation, not missing facts.
+- Verification: full767 Python tests OK (one existing Windows symlink skip),
+ 71 Node PASS, Ruff/diff PASS. Five new Python tests cover connected16-source
+  geometry, shared target proof without fake peer edges, protected/unrelated
+  obstacles, module separation, deterministic source-preserving package output
+  and resource fallback; new Node test covers mixed-role persistent facilities.
+  Final fast generic skip and co-reference work guard reverified with focused
+  suites (5 landmark/4 compound tests) after full pass; no output change.
+- Fresh maintained source pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/purpose-campus --repo-id fixture/purpose-campus
+  --out ../artifacts/visual/campus-landmarks-fixture-cold-r1/source --json`;
+  procedural_world.py that input with --out <same-root>/world --zoning
+  neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style programmed
+  --campus-landmarks --building-style purposeful --seed purpose-4. All17 package
+  files byte-identical to reviewed fixture output;31 accessible/77 exact trips.
+  No target execution/dependencies/builds. Fixture sources are maintained in Git.
+- Real corpus: GJ1324/4209 trips, OJ681/1457, PB664/1491, SQLite506/622;
+  all accessible, zero canonical building/road overlaps/owner escapes. New
+  complexes GJ5 (2+3 across two campuses), OJ1, PB3, SQLite0; small fixture1.
+  Four World/Planning schema pairs plus fixture PASS; independent complex
+  clearance checks PASS for unrelated lots, public/pedestrian streets, nature,
+  courts, bounds and other complexes. Canonical source JSON unchanged by option.
+- Inputs: mountain-surface-r1/gj, mountain-city-r1/oj, purpose-precinct-r4/after
+  recompiled with artifacts/visual/compile_landmark_worlds.py; PB/SQLite rebuilt
+  using procedural_world.py with same adaptive flags, --terrain mountain-landscape
+  --seed mountain-3 and --campus-landmarks. Outputs campus-landmarks-r1/<case>/after.
+  GJ/OJ/SQLite source revisions as preceding checkpoints; PB revision
+  6f370ea741f33adf889eef02e3c1b884a47aa522. Pinned existing corpus analysis, not
+  falsely claimed as fresh language parsing of four unrelated repositories.
+- Browser: viewer_audit.mjs installed Chrome -> campus-landmarks-audit-r1(GJ/OJ)
+  and campus-landmarks-corpus-audit-r1(PB/SQLite/fixture). Three LODs, camera,
+  source/route inspection and Synthetic PASS; zero static rebuilds in Synthetic.
+  Actual pointer clicks exercised every new GJ/OJ/fixture landmark. Same absolute
+  camera100/pitch1.05 before/after capture uses capture_purpose_precincts.mjs
+  --landmarks --baseline <before>; reports campus-landmarks-comparison-r1.
+- Visual inspected: exact OJ pair small buildings -> broad verification hall,
+  GJ data/verification complex context and fixture selected source inspector;
+  mountain opaque exterior/relief, CPU showcases and unknown SQLite overview.
+  Review ../artifacts/visual/campus-landmarks-reviewed-r1/index.html and review.png;
+  local links verified. All artifacts/helpers remain outside Git.
+- Limits: real corpus selected complexes currently contain two source files,
+  while the unit geometry case covers16. Not every campus has a feasible related
+  aggregate; do not force a monument across roads or unsupported sources. Still
+  low-poly architecture, not a texture overhaul or completed campus art direction.
+  Full-campus pre-reserved anchor plots remain a possible next substantial step.
+- Spec alignment PASS: technical source identity/evidence and rendering split;
+  functional honest roles, inspectable aggregates and unknown fallback; product
+  deterministic static-only/local-first. ADR-057 and FACILITY_ARCHETYPES explain
+  additive export option. No canonical public schema/ID or protection changes.
+- Delivery: separate landmark feature commit and normal feat/polyglot-analysis
+  push after staged diff/metadata review. Mountain repair5857f4f already pushed.
+  Existing fixture build caches left untouched.
