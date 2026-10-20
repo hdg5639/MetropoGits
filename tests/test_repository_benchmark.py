@@ -42,8 +42,8 @@ class RepositoryBenchmarkTests(unittest.TestCase):
             graph['diagnostics'].append(dict(code='JSTS_ANALYSIS_SKIPPED', sourcePath='b.ts'))
             result = summarize(graph, generate_city(graph))
             self.assertEqual(result['files'], 3)
-            self.assertEqual(result['adapterProcessed'], 1)
-            self.assertEqual(result['structuralOnly'], 2)
+            self.assertEqual(result['adapterProcessed'], 2)
+            self.assertEqual(result['structuralOnly'], 1)
             self.assertTrue(result['unresolvedDiagnostics'])
             self.assertEqual(result['dependencyConfidence'].get('RESOLVED', 0), 0)
 

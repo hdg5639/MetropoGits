@@ -8457,3 +8457,53 @@
   tested subset, not every installed library. Main remains unchanged while the
   verified slice is committed/pushed on feat/polyglot-analysis. Generated artifacts,
   helper caches and independent in-progress modules are not part of this commit.
+
+## Checkpoint 2026-10-20 — twelve lexical adapters, SFC scripts and manifests
+
+- Implemented: bounded module/declaration extraction for Go, Rust, C/C++, C#,
+  Kotlin, Scala, PHP, Ruby, Swift, Dart and Lua. Actual Vue/Svelte script data
+  reuse JS/TS resolution with original lines; markup/comments are not code.
+  Static pyproject/requirements, Cargo, go.mod, NuGet, Composer, literal Gemfile
+  and pubspec declarations now produce MODULE/DEPENDS_ON evidence. No installs.
+- Fidelity: Go package imports do not connect every member file. Unique observed
+  exported identifiers map to their real declaration file; shadowed aliases are
+  excluded. Rust use trees/mod/relative scopes, local include paths and exact
+  namespace imports are bounded; no basename guessing. Unresolved/unsupported
+  syntax stays disclosed. Rust macros/raw strings, Lua/Ruby long comments and
+  C line-continuation comments cannot manufacture imports.
+- Tests: full suite742 PASS, one existing Windows symlink skip;68 Node PASS;
+  added12 polyglot/manifest and3 SFC tests. Late real bat malformed .csproj input
+  exposed an uncaught XML ParseError: fixed safe manifest fallback and reran all
+  new manifest/module/SFC suites, full Ruff/compile/diff checks PASS. Initial
+  benchmark r1 failed because Git was not on PATH, not source execution or a
+  parser success; final r2 prepends the installed Git cmd directory locally.
+- Commands: `python -m unittest discover -s tests`; focused test_polyglot*.py,
+  test_component_scripts.py, test_scanner.py and test_repository_benchmark.py;
+  `python -m ruff check metropogits scripts tests`; compileall; Node suite.
+  `$env:PATH = 'C:/Program Files/Git/cmd;' + $env:PATH; python scripts/repository_benchmark.py --repo ../visual_test_proj/pocketbase --repo ../visual_test_proj/bat --repo ../visual_test_proj/realworld --repo ../visual_test_proj/fastapi-realworld-example-app --out ../artifacts/visual/polyglot-modules-bench-r2`.
+- Revisions/results: PocketBase6f370ea (664/664 processed,4823 dependency edges,
+  including1605 file references); bat f748c1a (112/142, all62 Rust files processed,
+  653 dependency edges); Svelte RealWorld df79670 (42/42,22 edges); FastAPI
+  RealWorld9db981c (59/60,488 edges including9 inheritance/88 references).
+  Processing a lexical subset does not prove complete resolution. Bat contains
+  deliberate malformed syntax examples, invalid manifests and unsupported source
+  languages; Svelte has unsupported extended compiler config; one FastAPI Python
+  source is outside host AST syntax. These outputs honestly remain PARTIAL.
+- All four real builds repeated:13 artifacts and building coordinates exact.
+  Observed unprofiled build times PB46.44s/bat9.59s/Svelte0.40s/FastAPI2.61s;
+  profiling adds overhead, not an optimization comparison or SLA. New source
+  relationships increase downstream routing workload; no speedup claim.
+- SQLiteBrowser ae32df1: `python -m metropogits build --repo ../visual_test_proj/sqlitebrowser --repo-id benchmark/sqlitebrowser --out ../artifacts/visual/polyglot-modules-sqlite-r1 --json`.
+  Unconfigured include search paths remain unresolved (1203 diagnostics), never
+  guessed by basename. Build/source links remain useful, not full C++ binding.
+- Actual browser audit: scripts/viewer_audit.mjs with Chrome executable, output
+  ../artifacts/visual/polyglot-modules-audit-r1 and four benchmark */first outputs
+  plus polyglot-modules-sqlite-r1. Five cases/three LODs completed. Inspected PB
+  overview, bat src/printer.rs->src/config.rs exact route/source inspector, and
+  Svelte CPU showcase. Synthetic follows new real routes, zero static rebuilds;
+  absent overview animations are not falsely claimed as traffic coverage.
+- Spec audit PASS: extensible UCG entities/claims, unchanged UCG/City schemas and
+  stable source IDs. These are static lexical capabilities, not native compiler
+  symbol solving. Generic buildings remain intentional pending next signature/
+  facility slice. Generated artifacts/caches are not staged; commit and normal
+  feature-branch push follow. ADR-055/catalog work is a separate in-progress unit.

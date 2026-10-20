@@ -9,6 +9,8 @@ import stat
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from metropogits.module_paths import alias_targets, config_for_file, safe_relative
+from metropogits.analyzers.component_scripts import script_source
+from metropogits.analyzers.common import AnalysisError
 from typing import Any
 
 from metropogits.scanner import ScanLimits, ScanResult, ScannedFile
@@ -18,8 +20,19 @@ from scripts.validate_ucg import validate_document as validate_ucg_document
 
 
 EXTRACTOR = "jsts-static/0.1"
-LANGUAGES = frozenset({"javascript", "typescript"})
-MODULE_EXTENSIONS = (".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs")
+LANGUAGES = frozenset({"javascript", "typescript", "vue", "svelte"})
+MODULE_EXTENSIONS = (
+    ".ts",
+    ".tsx",
+    ".mts",
+    ".cts",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".vue",
+    ".svelte",
+)
 REGEX_PREFIX_KEYWORDS = frozenset(
     {
         "await",
@@ -438,8 +451,10 @@ def enrich_jsts_graph(
             continue
         try:
             source = _read_source(root, scanned, limits.max_file_bytes)
+            if scanned.language in {"vue", "svelte"}:
+                source = script_source(source)
             references_by_path[scanned.path] = _module_references(_tokenize(source))
-        except (OSError, JsTsAnalysisError) as error:
+        except (OSError, JsTsAnalysisError, AnalysisError) as error:
             document["diagnostics"].append(
                 _diagnostic(
                     "JSTS_ANALYSIS_SKIPPED",
@@ -483,27 +498,48 @@ def enrich_jsts_graph(
             confidence = "DIRECT"
             config_evidence = None
             relative = reference.specifier.startswith(("./", "../"))
-            alias = alias_targets(config, reference.specifier) if (
-                config and config.supported and not relative and safe_relative(reference.specifier)
-            ) else None
+            alias = (
+                alias_targets(config, reference.specifier)
+                if (
+                    config
+                    and config.supported
+                    and not relative
+                    and safe_relative(reference.specifier)
+                )
+                else None
+            )
             blocked = config is not None and not config.supported and not relative
             if relative or alias or blocked:
                 candidates = []
                 if relative:
-                    candidates = _local_candidates(path, reference.specifier, files_by_path)
+                    candidates = _local_candidates(
+                        path, reference.specifier, files_by_path
+                    )
                 elif alias:
                     pattern, targets = alias
                     for target in targets:
                         if not safe_relative(target):
                             continue
-                        candidates = _local_candidates(config.path, f"./{config.base}/{target}", files_by_path)
+                        candidates = _local_candidates(
+                            config.path, f"./{config.base}/{target}", files_by_path
+                        )
                         if candidates:
                             break
-                    identity = [config.path, config.base, pattern, list(dict(config.mappings)[pattern])]
+                    identity = [
+                        config.path,
+                        config.base,
+                        pattern,
+                        list(dict(config.mappings)[pattern]),
+                    ]
                     digest = hashlib.sha256(canonical_json_bytes(identity)).hexdigest()
-                    config_evidence = dict(evidenceId=f"evidence:sha256:{digest}", kind="CONFIG",
-                                           extractor="jsts-paths/0.1", sourcePath=config.path,
-                                           ruleId="jsts.configured-path", summary=f"Explicit compilerOptions.paths mapping: {pattern}")
+                    config_evidence = dict(
+                        evidenceId=f"evidence:sha256:{digest}",
+                        kind="CONFIG",
+                        extractor="jsts-paths/0.1",
+                        sourcePath=config.path,
+                        ruleId="jsts.configured-path",
+                        summary=f"Explicit compilerOptions.paths mapping: {pattern}",
+                    )
                 if len(candidates) == 1:
                     target_id = files_by_path[candidates[0]]
                     confidence = "RESOLVED"
