@@ -8542,3 +8542,7 @@
 - Spec alignment PASS: static only; bounded adapters; honest confidence and
   unknowns; no target builds/dependency installs/runtime API. Generated outputs
   are outside Git. Atomic commit/normal feature-branch push after verification.
+- Formatting follow-up: staged new JSON exposed extra blank EOF lines not
+  covered by the earlier unstaged diff check. Removed those blank lines in the
+  new release only; catalog validation and diff check pass. Separate formatting
+  commit, no semantic change, no rewriting prior catalogs or Git history.
