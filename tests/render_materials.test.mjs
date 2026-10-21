@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import '../metropogits/viewer_assets/viewer-3d.js';
 
-const {vertexFloats,faceCoordinates,polygonNormal,sunMatrix,canopyMesh}=METROPOGITS_RENDER_MATERIALS;
+const {vertexFloats,faceCoordinates,polygonCoordinates,polygonNormal,sunMatrix,canopyMesh}=METROPOGITS_RENDER_MATERIALS;
 const {transformPoint}=METROPOGITS_WEBGL_MATH;
 
 test('facade coordinates remain local metres under arbitrary building rotation',()=>{
@@ -33,6 +33,28 @@ test('sun frustum contains tall and negative-elevation surfaces, independent of 
   }
   assert.equal(JSON.stringify(values),saved);
   assert.ok(matrix.every(Number.isFinite));
+});
+
+test('gable polygons share one upright metric UV frame across every fan triangle',()=>{
+  const gable=[[0,0,0],[8,0,0],[8,4,0],[4,6,0],[0,4,0]];
+  for(const angle of [0,.67,2.1]) {
+    const c=Math.cos(angle),s=Math.sin(angle);
+    const points=gable.map(([x,y,z])=>[100+c*x-s*z,y+7,-30+s*x+c*z]);
+    const original=JSON.stringify(points),coords=polygonCoordinates(points);
+    assert.ok(Math.abs(coords.extent[0]-8)<1e-10);
+    assert.ok(Math.abs(coords.extent[1]-6)<1e-10);
+    assert.ok(Math.abs(coords.uv[0][1])<1e-10);
+    assert.ok(Math.abs(coords.uv[1][1])<1e-10);
+    assert.ok(Math.abs(coords.uv[2][1]-4)<1e-10);
+    assert.ok(Math.abs(coords.uv[4][1]-4)<1e-10);
+    for(let i=1;i<points.length-1;i++)for(const index of [0,i,i+1])
+      assert.equal(coords.uv[index][1],points[index][1]-7);
+    assert.equal(JSON.stringify(points),original);
+  }
+  for(const normal of [[0,1,0],[0,-1,0]]) {
+    const frame=polygonCoordinates([[0,0,0],[0,0,2],[3,0,2],[3,0,0]],normal);
+    assert.ok(frame.extent.every(v=>v>0&&Number.isFinite(v)));
+  }
 });
 
 test('clipped water polygons recover a finite winding-preserving normal after collinear points',()=>{
@@ -70,5 +92,6 @@ test('material/shadow controls preserve source inspection, batching and optional
   assert.match(source,/materialButton\.setAttribute\('aria-pressed',String\(detailedMaterials\)\)/);
   assert.match(source,/gl\.uniform1f\(detailedLocation,0\)/);
   assert.match(source,/showRoleColors \|\| activeFilterCount\(\)>0 \|\| isSelected/);
+  assert.match(source,/seed=floor\(v_surface\.w\+\.5\)/);
   assert.equal(vertexFloats,15);
 });

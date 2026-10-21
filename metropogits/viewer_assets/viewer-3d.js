@@ -296,6 +296,22 @@
     return [0,1,0];
   }
 
+  function polygonCoordinates(points,normal=polygonNormal(points)) {
+    // One planar UV frame per face, never a new rectangle per fan triangle.
+    // Vertical walls retain world-up window rows, including pentagonal gables.
+    let horizontal=cross([0,1,0],normal);
+    if(Math.hypot(...horizontal)<1e-8)horizontal=[1,0,0];
+    horizontal=normalize(horizontal);
+    const vertical=normalize(cross(normal,horizontal));
+    const uv=points.map(p=>{
+      const delta=subtract(p,points[0]);
+      return [horizontal.reduce((v,n,i)=>v+n*delta[i],0),vertical.reduce((v,n,i)=>v+n*delta[i],0)];
+    });
+    const low=[0,1].map(i=>Math.min(...uv.map(p=>p[i])));
+    const extent=[0,1].map(i=>Math.max(...uv.map(p=>p[i]))-low[i]);
+    return {uv:uv.map(p=>p.map((v,i)=>v-low[i])),extent};
+  }
+
   function sunMatrix(values) {
     if (!values.length) return null;
     const low=[Infinity,Infinity,Infinity], high=[-Infinity,-Infinity,-Infinity];
@@ -336,7 +352,7 @@
     }
     return {faces,base,seed};
   }
-  globalThis.METROPOGITS_RENDER_MATERIALS=Object.freeze({vertexFloats,faceCoordinates,polygonNormal,sunMatrix,canopyMesh});
+  globalThis.METROPOGITS_RENDER_MATERIALS=Object.freeze({vertexFloats,faceCoordinates,polygonCoordinates,polygonNormal,sunMatrix,canopyMesh});
 
   function createPickProjection(descriptors) {
     const unique = new Map(), vertices = [], projectedPoints = [];
@@ -502,7 +518,9 @@
           gl_FragColor=vec4(v_color*light,1); return;
         }
         vec2 uv=v_surface.xy;
-        float kind=v_surface.z,seed=v_surface.w;
+        // Instance seeds are integers. Interpolation roundoff on large seeds
+        // must not feed the chaotic hash and turn one window into pixel noise.
+        float kind=v_surface.z,seed=floor(v_surface.w+.5);
         vec3 albedo=v_color;
         vec3 view=normalize(u_eye-v_world);
         float specular=0.0,emission=0.0;
@@ -568,8 +586,25 @@
           vec2 tile=fract(v_world.xz*1.4);
           float seam=1.0-smoothstep(.015,.055,min(tile.x,tile.y));
           albedo=mix(albedo,vec3(.53,.52,.47),.35)*(1.0-seam*.09+grain);
-        } else if(kind>10.5) {
+        } else if(kind>10.5 && kind<11.5) {
           albedo=mix(albedo,vec3(.31,.43,.22),.28)*(1.0+grain*2.0);
+        } else if(kind>11.5 && kind<12.5) {
+          // One entrance panel, not a repeated grid of miniature office floors.
+          vec2 p=uv/max(v_extent,vec2(.001));
+          float border=1.0-smoothstep(.025,.07,min(min(p.x,1.0-p.x),min(p.y,1.0-p.y)));
+          float mullion=1.0-smoothstep(.008,.018,abs(p.x-.5));
+          vec3 glass=mix(vec3(.075,.16,.19),vec3(.38,.55,.60),pow(1.0-max(dot(n,view),0.0),2.0));
+          albedo=mix(glass,vec3(.65,.68,.66),max(border,mullion)*.85);
+          specular=(1.0-border)*.5;
+        } else if(kind>12.5 && kind<13.5) {
+          // Bounded loading shutter; ornament, never an actual throughput metric.
+          float rib=.5+.5*sin(uv.y*31.4);
+          albedo*=.79+rib*.16;
+          float frame=1.0-smoothstep(.025,.10,min(uv.x,v_extent.x-uv.x));
+          albedo=mix(albedo,vec3(.27,.30,.32),frame*.65);
+        } else if(kind>13.5 && kind<14.5) {
+          albedo*=.91+grain;
+          specular=.18;
         }
         float direct=max(dot(n,normalize(vec3(-.6,1,.45))),0.0);
         float shade=visibility(n);
@@ -1020,8 +1055,9 @@
       const p=face.points.map(([x,y,z])=>[x,y+.2,z]),normal=polygonNormal(p);
       const isRoof=face.surface==='roof';
       const kind=facade?(isRoof?5:facade.kind):0,seed=facade?.seed || 0;
-      if(p.length===4)quad(target,p,normal,isRoof?roof:wall,kind,seed);
-      else for(let i=1;i<p.length-1;i++)quad(target,[p[0],p[i],p[i+1],p[i+1]],normal,isRoof?roof:wall,kind,seed);
+      const {uv,extent}=polygonCoordinates(p,normal);
+      for(let i=1;i<p.length-1;i++)for(const index of [0,i,i+1])
+        vertex(target,p[index],normal,isRoof?roof:wall,[...uv[index],kind,seed],extent);
     }
     return true;
   }
@@ -2130,6 +2166,7 @@
       if(program.archetypeId) {
         detailRow(details,'Architecture recipe',program.archetypeId+' · '+program.version);
         detailRow(details,'Source role gate',program.verifiedRole || 'Unknown — neutral architecture');
+        if(program.frontageDetail)detailRow(details,'Entrance treatment',program.frontageDetail.style+' · decorative; original access retained');
         detailRow(details,'Rendered architectural height',program.renderedHeight+' · inside the original height envelope');
       }
       detailRow(details, "Observed file neighbours", `${program.incomingFiles} incoming / ${program.outgoingFiles} outgoing · ${program.declarations} declarations`);

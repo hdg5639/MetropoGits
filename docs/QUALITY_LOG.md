@@ -9054,3 +9054,76 @@
 - Delivery: one coherent renderer/catalog feature commit with tests/docs/fixtures,
   normal feat/polyglot-analysis push after staged diff and human metadata review.
   Existing user fixture build caches are untouched; actual delivery in handoff.
+
+## Checkpoint 2026-10-21 — Catalog frontage and stable facade rendering
+- Implemented: architecture/0.2 adds bounded glazed entrances, metal canopies,
+  optional side posts and loading-shutter metaphors to existing source buildings
+  and certified complexes. Original access points are not replaced. Missing
+  safe frontage room omits decoration; gateway centres remain open.18-part
+  budget retained. Massing seeds stay pinned to architecture/0.1, not rerolled
+  by this presentation revision. Private inspector explicitly says decorative.
+- Fixed during real visual review: interpolated integer seeds caused speckled
+  window lighting; round before hashing. Fan triangles incorrectly restarted
+  rectangular UVs on each gable triangle; use one upright planar metric frame
+  per polygon and emit each fan triangle once. Real same-data captures show
+  clean windows and horizontal gable rows, not merely a passing shader compile.
+- Fixtures: GJ-Cloud3d9b53f9, GamjaOJb163acd2, PocketBase6f370ea7,
+  SQLiteBrowserae32df15; maintained purpose-campus and architecture-unknown
+  fixtures from7b1a432. No target dependencies/build/application code executed.
+- Fresh E2E commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/purpose-campus --repo-id fixture/purpose-campus
+  --out ../artifacts/visual/architecture-frontage-cold-r1/source --json`;
+  `python scripts/procedural_world.py <source> --out <same-root>/world --zoning
+  neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style programmed
+  --campus-landmarks --building-style catalog --seed purpose-4`.31sources,
+ 77trips/128edges, all accessible, geometry errors0. Final repeated packaging
+  -> architecture-frontage-cold-r3/world: all package bytes deterministic.
+- Corpus: local compile_frontage_worlds.py existing architecture-catalog-r3
+  worlds -> architecture-frontage-r1, with full validate_world/bounds checks;
+  r2 repeats geometry with updated shader assets, reusing hash-verified source
+  validation. Final r3 refresh_architecture_assets.py uses the actual installed
+  bundle and regenerates manifest hashes; World/City/UCG/Planning, compiled
+  architecture and CPU SVG bytes remain unchanged from r2. This last refresh
+  is renderer-only, not a claim to have reanalyzed those repositories.
+- Integrity: validate_architecture_frontage.py validates all four UCG/City
+  pairs, compares original canonical bytes, source entrances/yaw/envelopes,
+  every old massing part, exact routes and compound membership. PASS; report
+  architecture-frontage-reviewed-r1/integrity.json. GJ1324/4209trips,
+  OJ681/1457, PB664/1491, SQLite506/622 unchanged. Unknown3files/0relations
+  retain neutral roles and no fabricated Synthetic activity.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/architecture-frontage-audit-r3` with final four r3 worlds,
+  unknown-r3 and cold-r3. Six cases/three LODs, actual camera/source/route/
+  compound/Synthetic controls PASS; no GL errors, static Synthetic builds0.
+  capture_materials.mjs -> architecture-frontage-capabilities-r2: missing
+  derivatives, fragment highp, shadow framebuffer and Canvas fallback PASS.
+- Matched capture: capture_architecture.mjs -> comparison-r4, same absolute
+  cameras, overview/close/frontage/loading and grayscale where available.
+  Source pointer inspectors verified GJ/OJ/PB; SQLite focus has no evidenced
+  pickable target and is not falsely reported as inspected. Earlier r1/r2
+  attempts were superseded after visual fixes; final QA uses current r3 assets.
+- Inspected: actual GJ frontage/loading and OJ verification complex, unsupported
+  Elixir gable after UV correction, CPU GJ showcase, Canvas fallback, gallery
+  review.png. architecture-frontage-reviewed-r1/index.html links all exist.
+  Overview composition/source geography preserved; entrance detail is a close
+  view improvement, not a major new skyline/layout claim. No photoreal claim.
+- Cost: final matched frontage cameras show GJ296788->323588 triangles,
+  OJ191052->205532, PB150658->164038, SQLite104992->115172. Draw calls unchanged
+ 3/2/3/1 respectively; decorative boxes have real geometry/upload cost.
+  Final GJ Synthetic p95 CPU3.2–4.6ms, PB2.6–3.1ms; OJ9.6ms district outlier
+  under concurrent software rendering. These are JS submission/SwiftShader
+  measurements, not GPU completion/FPS or universal performance guarantees.
+- Regression: Python777 executed, one existing Windows symlink skip, remaining
+  pass; final Node78 PASS; Ruff/compileall/diff PASS. Added rotated frontage/
+  dimensions/gateway-clearance, stable seed and shared palette assertions plus
+  gable UV/normals/roof-frame tests. No source contracts or tests weakened.
+- Spec alignment PASS: technical evidence/render split; functional AC-001/002/
+ 003/006/011; product local/static/no invented facts. ADR-059 still governs
+  export-only compatibility. Docs PROCEDURAL_ARCHITECTURE/RENDER_MATERIALS updated.
+- Remaining: conservative envelope picking, nonphotoreal materials, legacy
+  Canvas flat-world lift nuance, and universal semantic recognition are not
+  solved here. No extra scope or changes to terrain/roads/source classification.
+- Delivery: one coherent frontage/facade renderer work unit, explicit staging,
+  human Git identity review and normal feat/polyglot-analysis push; exact
+  commit/push outcome in handoff. Existing user build caches remain untouched.

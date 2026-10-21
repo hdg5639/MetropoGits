@@ -12,7 +12,9 @@ from .geometry import point, q
 from .seed import derive
 from .source_programs import file_topology
 
-VERSION = "architecture/0.1"
+VERSION = "architecture/0.2"
+# Presentation revisions must not reshuffle existing source silhouettes.
+MASSING_SEED_VERSION = "architecture/0.1"
 MAX_PARTS = 18
 MAX_FACES = 240
 
@@ -629,6 +631,106 @@ def claims(entity, key, evidence, *, usage=False):
     }
 
 
+def frontage_details(specs, envelope, family):
+    """Architectural dressing on local +Z, never a new door/path in the graph.
+
+    Find an actual ground-floor wall, not the empty middle of a court/gateway.
+    Physical dimensions bound door height, canopy thickness and projection;
+    narrow reserves omit supports rather than obstructing the central approach.
+    """
+    width, depth, height = (envelope[k] for k in ("width", "depth", "height"))
+    hosts = [
+        p
+        for p in specs
+        if p["y"] == 0
+        and p["primitive"] in ("BOX", "GABLE", "SAWTOOTH", "CHAMFER")
+        and p["width"] * width >= 0.35
+        and p["height"] * height >= 0.25
+    ]
+    if not hosts:
+        return list(specs), None
+    # Prefer the wall in front of the existing centre approach. A side pavilion
+    # is preferable to fabricating a floating lobby in the gateway opening.
+    host = min(
+        hosts,
+        key=lambda p: (
+            max(p["x"] - 0.5, 0.5 - p["x"] - p["width"], 0),
+            -p["z"] - p["depth"],
+            p["x"],
+        ),
+    )
+    wall_width = host["width"] * (0.55 if host["primitive"] == "CHAMFER" else 1)
+    middle = host["x"] + host["width"] / 2
+    face = host["z"] + host["depth"]
+    room = (1 - face) * depth
+    if room < 0.025:
+        return list(specs), None
+    loading = family in ("relational", "data", "messaging", "media")
+    style = "LOADING_BAY" if loading else "SHELTERED_LOBBY"
+    ceiling = (
+        host["height"]
+        * height
+        * (0.52 if host["primitive"] in ("GABLE", "SAWTOOTH") else 0.9)
+    )
+    door_h = min(3.2 if loading else 2.5, ceiling * 0.72)
+    door_w = min(4.8 if loading else 3.4, wall_width * width * 0.62)
+    panel_d = min(0.055, room * 0.18)
+    additions = [
+        part(
+            middle - door_w / width / 2,
+            0.015 * door_h / height,
+            face,
+            door_w / width,
+            door_h / height,
+            panel_d / depth,
+            material=13 if loading else 12,
+        )
+    ]
+    canopy_w = min(wall_width * width * 0.88, max(door_w * 1.35, door_w + 0.15))
+    projection = min(1.6 if loading else 1.25, room * 0.85)
+    canopy_y = door_h * 1.08
+    thickness = min(0.18, ceiling * 0.07)
+    if projection >= 0.1:
+        additions.append(
+            part(
+                middle - canopy_w / width / 2,
+                canopy_y / height,
+                face,
+                canopy_w / width,
+                thickness / height,
+                projection / depth,
+                material=14,
+            )
+        )
+        # Only wide public arcades need posts. Keep the doorway/central lane open.
+        if not loading and canopy_w >= 3.5 and projection >= 0.55:
+            post_w = min(0.18, canopy_w * 0.035)
+            for x in (
+                middle - canopy_w / width / 2,
+                middle + canopy_w / width / 2 - post_w / width,
+            ):
+                additions.append(
+                    part(
+                        x,
+                        0,
+                        face + (projection - post_w) / depth,
+                        post_w / width,
+                        canopy_y / height,
+                        post_w / depth,
+                        material=14,
+                    )
+                )
+    return list(specs) + additions, dict(
+        style=style,
+        derived=True,
+        decorative=True,
+        frontageAxis="LOCAL_POSITIVE_Z",
+        partCount=len(additions),
+        doorHeight=q(door_h),
+        doorWidth=q(door_w),
+    )
+
+
 def select(entity, topology, seed, evidence):
     roles = claims(entity, "roles", evidence)
     technologies = claims(entity, "technologies", evidence, usage=True)
@@ -663,7 +765,7 @@ def catalog_world(world, graph):
     parcels, profiles = [], {}
     for source in world["parcels"]:
         identity = source["entityId"]
-        seed = derive(world["seed"], identity, VERSION)
+        seed = derive(world["seed"], identity, MASSING_SEED_VERSION)
         selected, role, proof, technologies = select(
             entities[identity], topology[identity], seed, evidence
         )
@@ -770,7 +872,10 @@ def catalog_world(world, graph):
             if recipe["grammar"] in low_forms
             else source["height"]
         )
-        parts = compile_parts(dict(source, height=budget), specs)
+        envelope = dict(source, height=budget)
+        specs, detail = frontage_details(specs, envelope, recipe["family"])
+        profiles[identity]["frontageDetail"] = detail
+        parts = compile_parts(envelope, specs)
         profiles[identity]["renderedHeight"] = q(
             max(p["y"] + p["height"] for p in parts)
         )
@@ -810,7 +915,10 @@ def catalog_compounds(compounds):
             if kind == "INTERFACE"
             else CATALOG[chosen]["grammar"]
         )
-        parts = compile_parts(dict(model, height=source["height"]), grammar(form))
+        envelope = dict(model, height=source["height"])
+        family = "relational" if kind == "DATA" else "generic"
+        specs, detail = frontage_details(grammar(form), envelope, family)
+        parts = compile_parts(envelope, specs)
         base = model.get("baseElevation", 0)
         parts = [
             dict(
@@ -842,6 +950,7 @@ def catalog_compounds(compounds):
                     label=label,
                     derived=True,
                     memberCount=len(source["memberEntityIds"]),
+                    frontageDetail=detail,
                 ),
             )
         )

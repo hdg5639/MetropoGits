@@ -1267,6 +1267,7 @@
       if(program.archetypeId) {
         detailRow(details,'Architecture recipe',program.archetypeId+' · '+program.version);
         detailRow(details,'Source role gate',program.verifiedRole || 'Unknown — neutral architecture');
+        if(program.frontageDetail)detailRow(details,'Entrance treatment',program.frontageDetail.style+' · decorative; original access retained');
         detailRow(details,'Rendered architectural height',program.renderedHeight+' · inside the original height envelope');
       }
       detailRow(details, "Observed file neighbours", `${program.incomingFiles} incoming / ${program.outgoingFiles} outgoing · ${program.declarations} declarations`);

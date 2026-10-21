@@ -16,6 +16,15 @@ expansion and exact relationship paths retain their existing controls.
 - Warm directional sunlight, cool sky fill, limited distance haze, and soft sun
   shadows that ground buildings, source complexes and decorative trees.
 - Smooth decorative tree crowns within existing tree reserves, not new sites.
+- Catalog0.2 entrance glazing with door-frame/mullion shading, loading shutters
+  and metal canopy cladding. Windows/shutter ribs are shader detail, not separate
+  per-window meshes. Shared private material kinds12–14 also have matching
+  opaque CPU/Canvas colours; these are not transparent windows into interiors.
+- Instance seeds are rounded before shader hashing, preventing interpolation
+  roundoff from creating pixel noise inside one window. Catalog polygon faces
+  share one planar metric UV frame across all triangles; gable window rows stay
+  upright rather than stretching independently across each fan triangle. The
+  fan emits each triangle once instead of an additional degenerate triangle.
 
 Everything is calculated locally from the bundled code. No bitmap downloads,
 remote service, AI runtime, texture licence dependency or added renderer library.

@@ -1,6 +1,6 @@
 # Procedural architecture catalog
 
-Implementation: `architecture/0.1`, [ADR-059](adr/ADR-059.md).
+Implementation: `architecture/0.2`, [ADR-059](adr/ADR-059.md).
 Based on the maintainer's `MetropoGits_Procedural_Architecture_Catalog.md` proposal.
 
 ## Delivered vocabulary and usage
@@ -50,10 +50,27 @@ geometry prototypes, not claims that their technologies are recognized.
 
 ## Geometry and stability
 
-`hash(worldSeed, stableEntityId, architectureVersion)` supplies independent
+`hash(worldSeed, stableEntityId, massingSeedVersion)` supplies independent
 footprint, facade, roof and prop streams. Role/local-neighbour changes affect
 the relevant source, not unrelated forms. This does not fix all underlying
 world-allocator placement churn.
+
+The0.2 frontage revision pins `massingSeedVersion` to `architecture/0.1`:
+adding an entrance must not reroll every existing silhouette/material/roof.
+Ground-floor walls receive a sheltered glazed lobby or, for already evidenced
+data/logistics families, a shutter/loading canopy. These are **architectural
+metaphors**, not new semantic claims or real doors detected in code. Unknowns
+get a neutral sheltered entrance, with no invented role.
+
+Modules face local +Z (the existing frontage yaw), attach to an actual ground
+wall, and remain inside the original reserve. Open gateway/courtyard centres
+are not filled with a floating lobby. Physical-unit height/projection caps
+avoid giant doors on tall narrow lots. Wide public canopies may have two side
+posts; the central approach remains clear. When no safe frontage room exists,
+the module is omitted rather than moving buildings or intruding into roads.
+Certified source complexes use the same treatment without changing membership.
+Private `frontageDetail` metadata explicitly labels the treatment decorative;
+source entrances and exact dependency paths remain untouched.
 
 Each part stays inside the original rotated footprint/height capacity. Keep
 frontage yaw, original source door, graph IDs and exact source trips. Low

@@ -1359,6 +1359,7 @@
       hash = Math.imul(hash, 16777619);
     }
     let [wall, roof] = policy.palettes[(hash >>> 0) % policy.palettes.length];
+    if(policy.detailColors?.[part.materialKind]) [wall,roof]=policy.detailColors[part.materialKind];
     const role = policy.roleColors[building.archetype] || policy.roleColors.GENERIC_BUILDING;
     const blend = (a, b, t) => "#" + [1, 3, 5].map(i =>
       Math.round(parseInt(a.slice(i,i+2),16)*(1-t) + parseInt(b.slice(i,i+2),16)*t)

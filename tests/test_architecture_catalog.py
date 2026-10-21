@@ -11,6 +11,7 @@ from metropogits.world.architecture_catalog import (
     catalog_world,
     compile_parts,
     face_normal,
+    frontage_details,
     grammar,
     part,
     select,
@@ -19,6 +20,7 @@ from metropogits.world.architecture_catalog import (
 from metropogits.world.export import package_world, view_data
 from metropogits.world.generator import generate_world
 from metropogits.world.geometry import inside
+from metropogits.world.seed import derive
 from metropogits.world.validation import validate_world
 from metropogits.cli import analyze_repository
 from metropogits.layout import generate_city
@@ -64,6 +66,65 @@ class ArchitectureCatalogTests(unittest.TestCase):
                     sum(a * b for a, b in zip(n, mid)), -1e-8, (shape, surface, points)
                 )
                 self.assertAlmostEqual(math.hypot(*n), 1)
+
+    def test_frontage_modules_preserve_massing_and_stay_inside_all_rotated_lots(self):
+        for recipe in CATALOG.values():
+            for width, depth, height in ((2, 3, 40), (12, 8, 17), (40, 30, 36)):
+                envelope = dict(
+                    center=[33, -27],
+                    width=width,
+                    depth=depth,
+                    height=height,
+                    angle=0.67,
+                )
+                specs = grammar(recipe["grammar"])
+                saved = copy.deepcopy(specs)
+                detailed, profile = frontage_details(specs, envelope, recipe["family"])
+                self.assertEqual(specs, saved)
+                self.assertEqual(detailed[: len(specs)], specs)
+                models = compile_parts(envelope, detailed)
+                bound = compile_parts(envelope, [part(0, 0, 0, 1, 1, 1)])[0][
+                    "footprint"
+                ]
+                self.assertLessEqual(len(models), 18)
+                for model in models:
+                    self.assertTrue(
+                        all(inside(p, bound, -0.0004) for p in model["footprint"])
+                    )
+                    self.assertLessEqual(model["y"] + model["height"], height + 0.0003)
+                if profile:
+                    self.assertTrue(profile["decorative"])
+                    self.assertLessEqual(profile["doorHeight"], 3.2)
+                    # First detail is the door. Its outward normal must retain
+                    # the same road-facing +Z axis, even on diagonal parcels.
+                    door = models[len(specs)]
+                    edge = [
+                        door["footprint"][2][i] - door["footprint"][1][i]
+                        for i in (0, 1)
+                    ]
+                    self.assertGreater(
+                        edge[0] * -math.sin(0.67) + edge[1] * math.cos(0.67), 0
+                    )
+
+    def test_loading_and_public_frontage_are_visual_not_new_semantic_claims(self):
+        envelope = dict(center=[0, 0], width=30, depth=20, height=18, angle=0)
+        specs = grammar("bar")
+        public, p = frontage_details(specs, envelope, "generic")
+        loading, loading_profile = frontage_details(specs, envelope, "relational")
+        self.assertEqual(p["style"], "SHELTERED_LOBBY")
+        self.assertEqual(loading_profile["style"], "LOADING_BAY")
+        self.assertEqual(public[len(specs)]["materialKind"], 12)
+        self.assertEqual(loading[len(specs)]["materialKind"], 13)
+        self.assertGreater(len(public), len(loading))  # bounded side posts
+        # No centre post or lobby may plug a gateway opening.
+        gate = grammar("gate")
+        detailed, _ = frontage_details(gate, envelope, "api")
+        self.assertTrue(
+            all(not (s["x"] < 0.5 < s["x"] + s["width"]) for s in detailed[len(gate) :])
+        )
+        # Missing room is an honest omission, not a reserve/road collision.
+        full = [part(0, 0, 0, 1, 1, 1)]
+        self.assertEqual(frontage_details(full, envelope, "generic"), (full, None))
 
     def test_evidence_gates_do_not_turn_names_or_manifest_dependencies_into_facilities(
         self,
@@ -161,6 +222,12 @@ class ArchitectureCatalogTests(unittest.TestCase):
         styled, profiles = catalog_world(world, graph)
         self.assertEqual(styled, catalog_world(world, graph)[0])
         self.assertEqual(len(profiles), len(world["parcels"]))
+        self.assertTrue(
+            all(
+                p["visualSeed"] == derive(world["seed"], identity, "architecture/0.1")
+                for identity, p in profiles.items()
+            )
+        )
         self.assertTrue(any(p["roleEvidenceIds"] for p in profiles.values()))
         self.assertTrue(
             all(

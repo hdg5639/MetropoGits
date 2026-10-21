@@ -13,6 +13,9 @@ PALETTES = [
     ["#c2c6c3", "#667879"],  # light concrete
     ["#95a5ae", "#52616e"],  # blue-grey cladding
 ]
+# Presentation-only entrance glazing, roller shutter and canopy cladding.
+DETAIL_COLORS = {12: ["#354e59", "#566771"], 13: ["#56616a", "#728087"],
+                 14: ["#77838a", "#9ba5a9"]}
 ROLE_COLORS = dict(
     GENERIC_BUILDING="#a2adbb", SERVICE_OFFICE="#60a5fa", GATE="#f472b6",
     STRUCTURED_WAREHOUSE="#34d399", DOCUMENT_DEPOT="#6ee7b7",
@@ -23,7 +26,9 @@ ROLE_COLORS.update(FACILITY_COLORS)
 
 
 def policy():
-    return dict(version=VERSION, palettes=[p[:] for p in PALETTES], roleColors=dict(ROLE_COLORS))
+    return dict(version=VERSION, palettes=[p[:] for p in PALETTES],
+                detailColors={str(k): v[:] for k, v in DETAIL_COLORS.items()},
+                roleColors=dict(ROLE_COLORS))
 
 
 def stable_index(identity, count):
@@ -43,6 +48,8 @@ def blend(left, right, amount):
 
 def part_material(building, part, top, full_tint=False):
     wall, roof = PALETTES[stable_index(building["entityId"], len(PALETTES))]
+    if part.get("materialKind") in DETAIL_COLORS:
+        wall, roof = DETAIL_COLORS[part["materialKind"]]
     role = ROLE_COLORS.get(building["archetype"], ROLE_COLORS["GENERIC_BUILDING"])
     if full_tint:
         wall = roof = role
