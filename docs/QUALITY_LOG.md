@@ -9127,3 +9127,100 @@
 - Delivery: one coherent frontage/facade renderer work unit, explicit staging,
   human Git identity review and normal feat/polyglot-analysis push; exact
   commit/push outcome in handoff. Existing user build caches remain untouched.
+
+## Checkpoint 2026-10-21 — Architectural scale: experimental facility reservations
+- Implemented: opt-in `--campus-style estate` (campus-plan/0.8). Determine
+  bounded connected groups from real static edges/disclosed shared LOCAL file
+  targets; reserve variable multi-address sites before file subdivision. Shared
+  pedestrian spines/commons, outer source access, typed facility assignments,
+  up to four existing certified complexes per precinct. No catalog names added.
+  Source addresses retain their original dimensions; general program-sized
+  individual footprints and automatic district land expansion are NOT delivered.
+- Audit: the116-file restriction belongs to the old courtyard pilot; newer
+  whole-neighborhood planners already support12–256 sources. Preserve them.
+  ARCHITECTURAL_SCALE_PLAN and ADR-060 record the actual contract and priorities.
+- Positive fixture: fresh analysis of maintained purpose-campus31 sources;
+  seven site reservations yield four visible complexes (8/8/8/4 members) plus
+  three individuals.77 original trips/128 represented edges;31/31 accessible,
+  building/road overlap and owner escapes0. Actual WebGL inspectors expose all
+  original members; explicit expansion works, automatic zoom does not explode
+  complexes. CPU preview was inspected. This is a controlled positive, NOT proof
+  of acceptance on the four large repositories.
+- Corpus revisions: GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766;
+  GamjaOJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b.
+  Inputs: architecture-frontage-r3/{case}/after pinned City/UCG. No target
+  dependencies, build scripts or application code executed.
+- Large-corpus acceptance NOT MET: GJ/OJ/PB dedicated sites did not reliably fit
+  final connectivity/capacity conditions; SQLite has no new accepted estate.
+  Preserve the complete programmed World instead of passing partial/regressed
+  layouts. Fallback includes requested/actual style and failure reason. Only
+  optional fit/connectivity failures are caught; invalid source/schema errors
+  still fail. All four final actual styles are programmed, accepted estate0.
+- Rejected experiments: forced macro land growth moved unrelated geography;
+  removed that behavior, record unmet site pressure only. Early visually larger
+  GJ prototypes are superseded, not final successes. OJ mountain-3 also exposed
+  a pre-existing hybrid-region validation failure; keep pinned mountain-2
+  geography instead of weakening validation. Remaining fit/performance work is
+  explicit; stop proposal micro-tuning and address land/program contracts next.
+- Real commands (local helpers are outside Git):
+  `python -m metropogits build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out ../artifacts/visual/campus-estates-cold-r1/source --json`;
+  `python scripts/procedural_world.py <source> --out ../artifacts/visual/campus-estates-cold-r2/world
+  --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style estate
+  --campus-landmarks --building-style catalog --seed purpose-4`.
+  Equivalent unknown-language run -> campus-estates-unknown-r2/world: three
+  neutral Elixir files, no invented roles, dependencies or Synthetic activity.
+- Corpus cold experiments: `python ../artifacts/visual/build_campus_estates.py
+  <pinned-input> <new-output> --only-after --terrain mountain-landscape --seed
+  mountain-3` (OJ mountain-2). Final GJ run additionally uses a compatible
+  `--previous-world` hint. GJ cold attempt generation252.7s vs baseline93.2s;
+  OJ156.6 vs20.0; PB93.0 vs58.7; SQLite67.7 vs32.4. Sequential local timings,
+  not a robust benchmark; current final fallback can add another baseline pass.
+  This overhead blocks default promotion; no speedup/FPS claim.
+- Final exports: campus-estates-final-r1/{case}/{before,after}. GJ final after
+  is a real hinted generation; SQLite a cold result. OJ/PB final after replays
+  hash-verified attempted/baseline worlds through the product fallback guard,
+  then full validate_world and package_world. These two are explicitly marked
+  cached replay, NOT additional fresh cold generations. Before packages retain
+  hash-verified canonical data with actual current bundled assets.
+- Evidence: original City/UCG bytes identical in every corpus before/after;
+  GJ1324/4209 trips, OJ681/1457, PB664/1491, SQLite506/622, original endpoint and
+  edge IDs retained. New positive campus deliberately moves its addresses and
+  reconstructs certified exact trip geometry; old route coordinates are not
+  claimed identical. All final outputs have zero geometry errors/all accessible.
+- Catalog audit: actual source recipe types/grammars/neutral sources:
+  GJ22/14/518; OJ18/14/297; PB9/8/466; SQLite6/5/503. Full distribution in
+  campus-scale-reviewed-r1/integrity.json. Neutral is honest unknown coverage,
+  not an excuse to fabricate facilities. Four fallback cities are not a new
+  silhouette success; broad grayscale family differentiation remains incomplete.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/campus-estates-final-audit-r1 <four final exports>
+  <cold-r2/world> <unknown-r2/world>`: six cases/three LODs, controls, members,
+  source/route evidence, Synthetic checks PASS, GL errors0. Synthetic static
+  builds0 where applicable; unknown traffic correctly unavailable. SwiftShader
+  CPU submission metrics are not GPU completion or FPS.
+- Matched captures: capture_architecture.mjs with METRO_ARCH_INPUT set to
+  campus-estates-final-r1 -> campus-estates-comparison-r1; overview/close/street
+  and grayscale cameras, source inspectors GJ/OJ/PB. SQLite has no evidenced
+  pickable target at that framing and is not claimed inspected. Small positive:
+  capture_purpose_precincts.mjs -> campus-estates-fixture-reviewed-r1, actual
+  before/context/inspector images. Inspected positive WebGL/CPU, retained GJ
+  overview and unknown detail. Review campus-scale-reviewed-r1/index.html.
+- Regression: Python781 executed, one existing Windows symlink skip; remaining
+  PASS. Final targeted4 estate tests PASS after adding no-fit guard assertions;
+  Node78 PASS; Ruff/compileall/diff PASS. New tests cover conserved connected
+  groups, unrelated singleton request stability, narrow-site fallback, source
+  analysis-to-export, repeated world/packages, schemas, forged reservations and
+  invalid-evidence propagation. Repeated positive package17 matching files;
+  general nearby-edit geography stability for estate is NOT established.
+- Spec alignment PASS for this opt-in capability: immutable City/UCG facts,
+  source/physical split, explicit derivation/fallback, local static/no execution.
+  Full attachment acceptance remains INCOMPLETE. Do not call this a completed
+  variable-parcel/campus overhaul. Next priority: physical-envelope/land-capacity
+  contract followed by a real positive large-corpus result and bounded CPU cost.
+- Delivery: planning record8589504 plus one tested experimental planning unit;
+  explicit staging/human identity review, normal feat/polyglot-analysis push.
+  Actual hashes/push outcome in handoff. User build caches remain untouched.

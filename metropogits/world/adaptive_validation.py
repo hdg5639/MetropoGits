@@ -11,7 +11,7 @@ from .adaptive import (
 from .seed import derive
 
 
-def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False, terrain=None, porous=False, campus=False, campus_pairs=None, campus_style="quad"):
+def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False, terrain=None, porous=False, campus=False, campus_pairs=None, campus_style="quad", campus_groups=None):
     candidates, roads, main, pattern = adaptive_field(
         parent["polygon"], parent["localSeed"], base, parent["id"], stitch=stitch, morphology=morphology
     )
@@ -49,7 +49,7 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
         from .campus import apply_campuses
 
         decisions, sites = apply_campuses(plans,selections,zones,polygons,parent['localSeed'],main+boundary,terrain,
-                                         campus_pairs if campus_pairs is not None else pairs, campus_style)
+                                         campus_pairs if campus_pairs is not None else pairs, campus_style, grouping_pairs=campus_groups)
     if sites:
         walks = [w for site in sites.values() for w in site['walkways']]
         for w in walks:
@@ -64,7 +64,7 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
         b = children[0]
         if campus and (b.get('campusDecision')!=decisions[z['id']] or b.get('campusSite')!=sites.get(z['id'])):
             raise ValueError('campus decision or reserved geometry mismatch')
-        if z['id'] in sites and b.get('urbanGrammar') != ('CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric','programmed') else 'MIXED_CAMPUS'):
+        if z['id'] in sites and b.get('urbanGrammar') != ('CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate') else 'MIXED_CAMPUS'):
             raise ValueError('campus block grammar does not match the selected planning scope')
         selection = selections[z["id"]]
         choices = plans[z["id"]][0]

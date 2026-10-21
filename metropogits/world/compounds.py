@@ -62,6 +62,12 @@ def _derive(world, graph, note, *, campus_landmarks=False):
         if campus_landmarks
         else {}
     )
+    planned_sites = {
+        identity: set(site["memberEntityIds"])
+        for campus_site in world.get("campusPlan", {}).get("sites", [])
+        for site in campus_site.get("architecturalSites", [])
+        for identity in site["memberEntityIds"]
+    } if campus_landmarks else {}
     links = defaultdict(dict)
     if campus_members:
         from .campus_landmarks import campus_affinity
@@ -225,6 +231,8 @@ def _derive(world, graph, note, *, campus_landmarks=False):
             else members
         )
         limit = 1 + min(3, len(campus_members.get(zone, ())) // 48)
+        if campus and world.get("campusPlan", {}).get("style") == "estate":
+            limit = 4
         for seed in ordered:
             if campus and site_counts[zone] >= limit:
                 break
@@ -236,6 +244,8 @@ def _derive(world, graph, note, *, campus_landmarks=False):
                 (b for b in members if b["entityId"] in available and b != seed),
                 key=lambda b: (math.dist(b["center"], seed["center"]), b["entityId"]),
             ):
+                if campus and seed["entityId"] in planned_sites and b["entityId"] not in planned_sites[seed["entityId"]]:
+                    continue
                 candidate_checks += 1
                 if candidate_checks > MAX_CANDIDATES:
                     raise ValueError("role compound candidate limit")

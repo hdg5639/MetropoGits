@@ -18,14 +18,23 @@
     "streetPolicy": {"enum":["original","shared","permeable","porous"]},
     "campusPlan": {"type":"object","additionalProperties":false,"required":["version","structural","decisions","sites"],"allOf":[
       {"if":{"properties":{"version":{"const":"campus-plan/0.1"}}},"then":{"not":{"required":["style"]},"properties":{"sites":{"items":{"properties":{"variant":{"const":"ACADEMIC_QUAD"}}}}}},"else":{"required":["style"]}},
-      {"if":{"properties":{"version":{"enum":["campus-plan/0.3","campus-plan/0.4","campus-plan/0.5","campus-plan/0.6","campus-plan/0.7"]}}},"then":{"properties":{"style":{"enum":["neighborhood","landscape","organic","fabric","programmed"]},"sites":{"items":{"required":["scope","activityCenters","anchorSlots"],"properties":{"scope":{"const":"NEIGHBORHOOD"},"variant":{"const":"PEDESTRIAN_PRECINCT"},"memberEntityIds":{"minItems":12}}}}}},"else":{"properties":{"style":{"const":"varied"},"sites":{"items":{"properties":{"memberEntityIds":{"maxItems":32},"variant":{"enum":["ACADEMIC_QUAD","TECH_PARK"]}}}}}}},
+      {"if":{"properties":{"version":{"enum":["campus-plan/0.3","campus-plan/0.4","campus-plan/0.5","campus-plan/0.6","campus-plan/0.7","campus-plan/0.8"]}}},"then":{"properties":{"style":{"enum":["neighborhood","landscape","organic","fabric","programmed","estate"]},"sites":{"items":{"required":["scope","activityCenters","anchorSlots"],"properties":{"scope":{"const":"NEIGHBORHOOD"},"variant":{"const":"PEDESTRIAN_PRECINCT"},"memberEntityIds":{"minItems":12}}}}}},"else":{"properties":{"style":{"const":"varied"},"sites":{"items":{"properties":{"memberEntityIds":{"maxItems":32},"variant":{"enum":["ACADEMIC_QUAD","TECH_PARK"]}}}}}}},
       {"if":{"properties":{"version":{"const":"campus-plan/0.4"}}},"then":{"properties":{"style":{"const":"landscape"}}}},
       {"if":{"properties":{"version":{"const":"campus-plan/0.5"}}},"then":{"properties":{"style":{"const":"organic"}}}},
       {"if":{"properties":{"version":{"const":"campus-plan/0.6"}}},"then":{"properties":{"style":{"const":"fabric"}}}},
       {"if":{"properties":{"version":{"const":"campus-plan/0.7"}}},"then":{"properties":{"style":{"const":"programmed"},"sites":{"items":{"required":["sourceProgram"]}}}}},
+      {"if":{"properties":{"version":{"const":"campus-plan/0.8"}}},"then":{"properties":{"style":{"const":"estate"},"sites":{"items":{"required":["sourceProgram","facilitySiteVersion","facilityAssignments","architecturalSites"],"properties":{
+        "facilitySiteVersion":{"const":"campus-plan/0.8"},
+        "facilityAssignments":{"type":"object","maxProperties":256,"additionalProperties":{"type":"string"}},
+        "architecturalSites":{"type":"array","maxItems":256,"items":{"type":"object","required":["id","memberEntityIds","width","depth","polygon","slotIds","groupingBasis"],"properties":{
+          "id":{"type":"string"},"memberEntityIds":{"type":"array","minItems":1,"maxItems":8,"uniqueItems":true,"items":{"type":"string"}},
+          "width":{"type":"number","minimum":8,"maximum":56},"depth":{"type":"number","minimum":8,"maximum":56},
+          "polygon":{"$ref":"#/$defs/polygon"},"slotIds":{"type":"array","minItems":1,"maxItems":8,"uniqueItems":true,"items":{"type":"string"}},
+          "groupingBasis":{"const":"STATIC_EDGES_AND_SHARED_LOCAL_TARGETS"}}}}
+      }}}}}},
       {"if":{"properties":{"version":{"const":"campus-plan/0.3"}}},"then":{"properties":{"style":{"const":"neighborhood"}}}}
     ],"properties":{
-      "version":{"enum":["campus-plan/0.1","campus-plan/0.2","campus-plan/0.3","campus-plan/0.4","campus-plan/0.5","campus-plan/0.6","campus-plan/0.7"]},"style":{"enum":["varied","neighborhood","landscape","organic","fabric","programmed"]},"structural":{"const":true},
+      "version":{"enum":["campus-plan/0.1","campus-plan/0.2","campus-plan/0.3","campus-plan/0.4","campus-plan/0.5","campus-plan/0.6","campus-plan/0.7","campus-plan/0.8"]},"style":{"enum":["varied","neighborhood","landscape","organic","fabric","programmed","estate"]},"structural":{"const":true},
       "decisions":{"type":"object","maxProperties":448,"additionalProperties":{"type":"object","required":["eligible","status","reason","probability","draw","internalPairCount","externalPairCount","supportingEntityIds","evidenceIds"],"properties":{
         "eligible":{"type":"boolean"},"status":{"enum":["SELECTED","RETAINED"]},"reason":{"type":"string"},"probability":{"type":"number","minimum":0,"maximum":1},"draw":{"type":"number","minimum":0,"maximum":1},"supportingEntityIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}},"evidenceIds":{"type":"array","uniqueItems":true,"items":{"type":"string"}}}}},
       "sites":{"type":"array","maxItems":64,"items":{"type":"object","required":["zoneId","parentId","variant","memberEntityIds","retainedMemberEntityIds","anchorEntityIds","courts","walkways","axis","capacity","envelopes"],"properties":{

@@ -274,6 +274,12 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats,
                             )
                             break
         walks = list({r["id"]: r for r in walks}.values())
+        if _form and hasattr(_form, 'external_ports'):
+            port_links = _form.external_ports(walks, roads, polygon, connect)
+            if port_links is None:
+                stats['rejected'] = 'EXTERNAL_COMPONENT_ACCESS'
+                continue
+            walks.extend(port_links)
 
         def frontage(paths):
             shapes = (
@@ -329,6 +335,12 @@ def neighborhood_layout(zone, polygon, axis, seed, roads, terrain, pairs, stats,
             return lots
 
         plots = frontage(walks)
+        if _form and getattr(_form, "extra_walks", None):
+            additions = _form.extra_walks
+            if not all(path_clear(w["start"], w["end"], lawns) for w in additions):
+                stats["rejected"] = "FACILITY_PERIMETER_ACCESS"
+                continue
+            walks.extend(additions)
         # Grow only useful secondary wings. Each proposal must increase actual
         # safe frontage capacity; a crossing that destroys more plots is rejected.
         for index, center in enumerate([] if _form else centers):

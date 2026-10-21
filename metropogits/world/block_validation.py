@@ -21,6 +21,10 @@ def validate_blocks(world, scene, graph, neighborhoods):
     owners = {b["entityId"]: key for key, members in grouped.items() for b in members}
     pairs = dependency_pairs(graph, owners)
     campus_pairs = dependency_pairs(graph, dict.fromkeys(owners, "campus")) if 'campusPlan' in world else None
+    campus_groups = None
+    if world.get("campusPlan", {}).get("style") == "estate":
+        from .campus_estates import planning_affinity
+        campus_groups = planning_affinity(graph, list(neighborhoods.values()))
     parcels = {p["entityId"]: p for p in world["parcels"]}
     expected_main = []
     inherited = world.get("patternScale") == "district"
@@ -50,6 +54,7 @@ def validate_blocks(world, scene, graph, neighborhoods):
                 campus='campusPlan' in world,
                 campus_pairs=campus_pairs,
                 campus_style=world.get('campusPlan',{}).get('style','quad'),
+                campus_groups=campus_groups,
             )
             expected_patterns.append(pattern)
         elif inherited:

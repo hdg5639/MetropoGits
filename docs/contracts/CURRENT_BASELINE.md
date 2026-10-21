@@ -1,5 +1,22 @@
 # Current implementation contract baseline
 
+## Source-affinity campus estates — 2026-10-21
+
+[ADR-060](../adr/ADR-060.md) adds opt-in campus-plan/0.8 via
+`--campus-style estate`, with typed variable multi-address facility sites and
+explicit constituent assignments. Requirements precede local subdivision;
+certified complexes, not individual8x8 source addresses, provide their visible
+architecture. Static shared LOCAL targets are disclosed affinity, never new
+peer/runtime relationships. Retain UCG/City IDs, roles, evidence and dimensions.
+
+World/Planning schema extensions accept the new style while retaining all old
+versions and existing size, capacity, overlap, ownership and source checks.
+Independent planner reconstruction validates reservations and member placement.
+Program area pressure is recorded; forced terrain expansion/general variable
+individual footprints are not delivered. Failed optional layouts disclose
+retained programmed morphology/style. See
+[Architectural scale plan](../ARCHITECTURAL_SCALE_PLAN.md) for exact staged scope.
+
 ## Open river landscape and conditional mountain passes — 2026-10-19
 
 [ADR-039](../adr/ADR-039.md) adds opt-in `river-landscape`, terrain/0.4 and

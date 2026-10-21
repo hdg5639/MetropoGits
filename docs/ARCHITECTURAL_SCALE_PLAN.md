@@ -43,8 +43,10 @@ composition -> silhouette. Tiny per-file recipe details cannot solve scale.
 - Planned site area/shape varies with actual group membership; source and
   shared-local-target affinity is disclosed, never a new peer dependency.
 - Larger dedicated sites hold interconnected visible complexes and shared open
-  space. Public walking paths remain outside building envelopes; original
-  source doors and exact source trips are retained for drill-down/Synthetic.
+  space. Public walking paths remain outside building envelopes; per-file
+  doors and original relation endpoint/edge IDs remain available for drill-down.
+  Campus replanning deliberately moves affected addresses and reconstructs
+  physical trip geometry. Synthetic follows those new certified exact paths.
 - Source IDs/roles/evidence and original UCG/City contracts stay unchanged.
   No automatic zoom explosion into dozens of small buildings.
 - Terrain/court/street/parcel clearance, capacity, external-road connectivity,
@@ -58,3 +60,54 @@ composition -> silhouette. Tiny per-file recipe details cannot solve scale.
 This is a staged implementation, not a claim that the entire redesign is done.
 Progress and actual renders belong in QUALITY_LOG. Existing default layouts
 remain available for compatibility and comparison.
+
+## Opt-in implementation contract
+
+`--campus --campus-style estate --campus-landmarks --building-style catalog`
+uses campus-plan/0.8 on adaptive neighborhoods. Requirements and contiguous-land
+pressure are calculated before district allocation. This slice records the
+unmet pressure rather than silently reshaping unrelated districts/terrain to
+force success; automatic city-wide expansion belongs to the next contract step.
+
+Inside each accepted precinct, source-affinity requests determine16x16,
+24x16,32x16,16x32 and smaller sites before their retained source-address layer.
+Complete site plans are attempted first; a bounded mixed plan may reserve a few
+large anchors and place real supporting sources on free walking frontage.
+Front/rear/side access stays on facility perimeters, with source doors retained
+for exact new-layout trajectories. Up to four certified campus complexes remain
+visible across LOD, with explicit expansion and complete constituent inspectors.
+
+Evidence distinctions matter: direct dependency pairs and shared-local-target
+affinity are separate inputs. Estate eligibility discloses static source
+affinity, not runtime activity. Existing semantic roles are not renamed to make
+a research institute out of ordinary tests.
+
+World/Planning schemas add the0.8 style plus typed facility reservations and
+assignment references. They retain all old versions, source-size assertions,
+road/court/nature clearance and independent deterministic reconstruction.
+Some precincts legitimately fail the larger-site fit. Their fallback is explicit;
+an estate connectivity/capacity failure retains a programmed World rather than
+publishing a disconnected city. Invalid source/schema evidence is never hidden
+by that fallback. A retained old plan is not counted as a successful estate.
+
+## Checkpoint outcome — experimental, not promoted
+
+The maintained31-source purpose-campus fixture produces four certified complexes
+representing28 original files, with three remaining individual buildings.
+Actual WebGL/member inspectors, CPU preview and repeated packages were checked.
+
+The larger acceptance bar is NOT met. Final GJ/OJ/PocketBase optional attempts
+did not reliably accept dedicated sites and retain the complete programmed
+baseline; SQLiteBrowser likewise has no new accepted estate. OJ/PB final fallback
+exports replay hash-verified cold-attempt/baseline data through the real fallback
+guard and full World validation; they are not additional fresh cold generations.
+All four have real matched-camera renders, but are not visual improvements.
+
+Planning cost increased materially in these local attempts. Keep this opt-in
+and do not advertise it as the completed campus redesign. Stop micro-tuning
+more site proposals: next, define the source-independent physical-envelope and
+land-capacity contract, then connect actual facility demand to district land
+allocation. Do not weaken size/collision/evidence gates to force acceptance.
+
+Review: `../artifacts/visual/campus-scale-reviewed-r1/index.html` (workspace
+artifact, intentionally outside Git). Detailed evidence is in QUALITY_LOG.

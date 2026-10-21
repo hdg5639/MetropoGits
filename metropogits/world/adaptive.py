@@ -290,6 +290,7 @@ def plan_adaptive(
     campus=False,
     campus_pairs=None,
     campus_style="quad",
+    campus_groups=None,
 ):
     parent = clusters[0]["parentId"]
     parent_candidates, parent_roads, main, pattern = adaptive_field(
@@ -420,7 +421,7 @@ def plan_adaptive(
 
         campus_decisions, campus_sites = apply_campuses(
             plans, selections, clusters, polygons, seed, actual_main + boundary, terrain,
-            campus_pairs if campus_pairs is not None else pairs, campus_style)
+            campus_pairs if campus_pairs is not None else pairs, campus_style, grouping_pairs=campus_groups)
     main = actual_main + boundary
     pattern = actual_pattern
     if campus_sites:
@@ -457,8 +458,9 @@ def plan_adaptive(
             )
         if key in campus_sites:
             campus_ids = set(campus_sites[key]['memberEntityIds'])
-            if campus_style in ('neighborhood','landscape','organic','fabric','programmed'):
+            if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate'):
                 preferred = dict(preferred or {})
+                preferred.update(campus_sites[key].get('facilityAssignments', {}))
                 preferred.update(campus_sites[key]['anchorSlots'])
             placed = []
             for is_campus in (False,True):
@@ -504,7 +506,7 @@ def plan_adaptive(
         if campus:
             block['campusDecision'] = campus_decisions[key]
         if key in campus_sites:
-            block.update(urbanGrammar='CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric','programmed') else 'MIXED_CAMPUS',campusSite=campus_sites[key])
+            block.update(urbanGrammar='CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate') else 'MIXED_CAMPUS',campusSite=campus_sites[key])
         if regions:
             block["planningRegions"] = regions
         elif selections[key]["mode"] == "INHERITED" and base == "HYBRID":
