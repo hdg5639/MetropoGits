@@ -65,13 +65,17 @@ def _clear_landmark_trees(landscape, compounds):
         overlap(rectangle(t['center'],0,t['radius']*2,t['radius']*2),p) for p in polygons)])
 
 
-def view_data(world, scene, graph, *, landscape=None, building_style="semantic", role_compounds=True, campus_landmarks=False):
+def view_data(world, scene, graph, *, landscape=None, building_style="semantic", role_compounds=True, campus_landmarks=False, _urban=None):
     if campus_landmarks and not role_compounds:
         raise ValueError('campus landmarks require certified compounds')
-    if building_style not in ("semantic", "architectural", "purposeful", "catalog"):
+    if building_style not in ("semantic", "architectural", "purposeful", "catalog", "urban"):
         raise ValueError("unknown building presentation style")
     programs = None
     original_world = world
+    land = None
+    if building_style == 'urban':
+        from .urban_architecture import urban_world
+        world, programs, land = _urban or urban_world(world, graph)
     if building_style == 'catalog':
         from .architecture_catalog import catalog_world
         world, programs = catalog_world(world, graph)
@@ -79,9 +83,12 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
         from .architecture import purpose_world
         world, programs = purpose_world(world, graph)
     landscape = _landscape(world, landscape)
-    compounds, compound_policy = (derive_compounds(original_world if building_style == 'catalog' else world, graph, campus_landmarks=campus_landmarks) if role_compounds else
+    if building_style == 'urban':
+        from .urban_architecture import clear_physical_trees
+        landscape = clear_physical_trees(landscape, world)
+    compounds, compound_policy = (derive_compounds(original_world if building_style in ('catalog', 'urban') else world, graph, campus_landmarks=campus_landmarks) if role_compounds else
                                   ([],dict(disabled=True,structural=False)))
-    if building_style == 'catalog':
+    if building_style in ('catalog', 'urban'):
         from .architecture_catalog import catalog_compounds
         compounds = catalog_compounds(compounds)
     landscape = _clear_landmark_trees(landscape, compounds)
@@ -160,13 +167,15 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
             displacement=0,
             pinnedDoors=[p["entrance"]],
         )
+        if land:
+            models[p["entityId"]]["displacement"] = q(math.dist(p["center"], land['decisions'][p['entityId']]['sourceEnvelope']['center']))
         if "surface" in world:
             models[p["entityId"]]["parts"]=[dict(part,y=part["y"]+p["baseElevation"],
                 **({"meshFaces":[dict(f,points=[[x,q(y+p["baseElevation"]),z] for x,y,z in f["points"]])
                                  for f in part["meshFaces"]]} if "meshFaces" in part else {})) for part in p["parts"]]
             models[p["entityId"]]["foundationFaces"]=foundation_faces(p,world["terrain"])
     physical_scene = dict(
-        schemaVersion="world-view/0.2" if building_style == "catalog" else "world-view/0.1",
+        schemaVersion="world-view/0.3" if building_style == "urban" else "world-view/0.2" if building_style == "catalog" else "world-view/0.1",
         layoutAlgorithm=world["generatorVersion"],
         ucgDigest=world["ucgDigest"],
         theme=scene["theme"],
@@ -226,7 +235,7 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
             for a, b in zip(ring, ring[1:] + ring[:1])
         )
     if 'streetPlan' in world:
-        surfaces=street_mesh(world)
+        surfaces=street_mesh(original_world if building_style == 'urban' else world)
     pavement = dict(
         version="world-pavement/0.1",
         segments={
@@ -342,19 +351,22 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
         data["landscape"] = landscape
     if programs is not None:
         data['buildingPrograms'] = programs
-    if building_style == 'catalog':
+    if building_style in ('catalog', 'urban'):
         from .architecture_catalog import catalog_summary
         data['architectureCatalog'] = catalog_summary(programs)
         from .district_skyline import district_skyline
-        plan = district_skyline(original_world, graph)
+        plan = district_skyline(world if land else original_world, graph)
         data['urbanHeightPlan'] = {k: v for k, v in plan.items() if k != 'allocations'}
-    if building_style in ("architectural", "purposeful", "catalog"):
+    if land:
+        data['urbanLandPlan'] = {k: v for k, v in land.items() if k != 'decisions'}
+    if building_style in ("architectural", "purposeful", "catalog", "urban"):
         data["buildingMaterials"] = material_policy()
     return data
 
 
-def render_svg(world, width=1200, height=750, *, landscape=None, building_style="semantic", compounds=None, graph=None):
-    if building_style not in ("semantic", "architectural", "purposeful", "catalog"):
+def render_svg(world, width=1200, height=750, *, landscape=None, building_style="semantic", compounds=None, graph=None, _urban=None):
+    original_world = world
+    if building_style not in ("semantic", "architectural", "purposeful", "catalog", "urban"):
         raise ValueError("unknown building presentation style")
     if building_style == 'purposeful':
         if graph is None:
@@ -366,6 +378,14 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
             raise ValueError('catalog architecture requires its source graph')
         from .architecture_catalog import catalog_world, catalog_compounds
         world, _ = catalog_world(world, graph)
+        compounds = catalog_compounds(compounds or [])
+    if building_style == 'urban':
+        if graph is None:
+            raise ValueError('urban architecture requires its source graph')
+        from .urban_architecture import urban_world, clear_physical_trees
+        from .architecture_catalog import catalog_compounds
+        world, _, _ = _urban or urban_world(world, graph)
+        landscape = clear_physical_trees(_landscape(world, landscape), world)
         compounds = catalog_compounds(compounds or [])
     landscape = _landscape(world, landscape)
     graded="surface" in world
@@ -461,7 +481,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
             )
         )
     if 'streetPlan' in world:
-        for p in street_mesh(world):
+        for p in street_mesh(original_world if building_style == 'urban' else world):
             color=STREET_COLORS[p['streetClass']]['overview']
             heights=p.get('pointHeights',[.08]*len(p['points']))
             lines.append(polygon([project(v,y) for v,y in zip(p['points'],heights)],color,
@@ -500,7 +520,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
                 p=face["points"]
                 faces.append((sum(x+y+z for x,y,z in p)/len(p),[project([x,z],y) for x,y,z in p],face["color"],b["entityId"],1))
         for part in b["parts"]:
-            material = part_material(b, part, top) if building_style in ("architectural", "purposeful", "catalog") else None
+            material = part_material(b, part, top) if building_style in ("architectural", "purposeful", "catalog", "urban") else None
             if 'meshFaces' in part:
                 for face in part['meshFaces']:
                     vertices=[[x,y+.2+b.get('baseElevation',0),z] for x,y,z in face['points']]
@@ -589,17 +609,24 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
                                          "Connected waterway and shared bridges (procedural)")
         if graded:
             lines[-2]=lines[-2].replace("Connected waterway and shared bridges (procedural)","Graded valley and level foundations (procedural)")
-    if building_style in ("architectural", "purposeful", "catalog"):
+    if building_style in ("architectural", "purposeful", "catalog", "urban"):
         lines[-3] = lines[-3].replace("Structural streets (visual)", "Procedural walls / role roof accents · Structural streets (visual)")
+    if building_style == 'urban':
+        lines[-3] = lines[-3].replace("Physical layout from world.json", "World addresses + urban-land.json physical admission")
     return "\n".join(lines).encode("utf8")
 
 
 def package_world(world, scene, graph, validation, *, landscaping=True, building_style="semantic", role_compounds=True, campus_landmarks=False):
     if campus_landmarks and not role_compounds:
         raise ValueError('campus landmarks require certified compounds')
-    if building_style not in ("semantic", "architectural", "purposeful", "catalog"):
+    if building_style not in ("semantic", "architectural", "purposeful", "catalog", "urban"):
         raise ValueError("unknown building presentation style")
     landscape = _landscape(world, None if landscaping else False)
+    urban = None
+    if building_style == 'urban':
+        from .urban_architecture import urban_world, clear_physical_trees
+        urban = urban_world(world, graph)
+        landscape = clear_physical_trees(landscape, urban[0])
     resources = files("metropogits.viewer_assets")
     artifacts = {
         f"assets/{name}": resources.joinpath(name).read_bytes()
@@ -646,18 +673,18 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
                             b'Dependency demand (select / All routes)')
     if world.get('campusPlan',{}).get('sites'):
         page = page.replace(b'Landscape (decorative)',b'Landscape / campus courts (visual)')
-    if building_style in ("architectural", "purposeful", "catalog"):
+    if building_style in ("architectural", "purposeful", "catalog", "urban"):
         page = page.replace(b'<span id="renderer-mode"',
                             b'<button type="button" data-action="toggle-role-colors" aria-pressed="false" title="Restore full role tint; wall materials are procedural styling, not source facts">Role colours</button><span id="renderer-mode"')
         page = page.replace(b'<span><i class="swatch generic"></i>Generic</span>',
                             b'<span title="Walls are procedural tones; role colours appear on upper roofs. Filters or Role colours restore full tint.">Walls: procedural / Roof accents: roles</span><span><i class="swatch generic"></i>Generic</span>')
     svg = render_svg(world, landscape=landscape, building_style=building_style,
-                     compounds=derive_compounds(world,graph,campus_landmarks=campus_landmarks)[0] if role_compounds else [], graph=graph)
+                     compounds=derive_compounds(world,graph,campus_landmarks=campus_landmarks)[0] if role_compounds else [], graph=graph, _urban=urban)
     artifacts.update(
         {
             "index.html": page,
             "assets/viewer-data.js": _javascript_assignment(
-                "METROPOGITS_DATA", view_data(world, scene, graph, landscape=landscape, building_style=building_style,role_compounds=role_compounds,campus_landmarks=campus_landmarks)
+                "METROPOGITS_DATA", view_data(world, scene, graph, landscape=landscape, building_style=building_style,role_compounds=role_compounds,campus_landmarks=campus_landmarks, _urban=urban)
             ),
             "world.json": canonical_json_bytes(world),
             "city.json": canonical_json_bytes(scene),
@@ -672,11 +699,13 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
         artifacts["landscape.json"] = canonical_json_bytes(landscape)
     if "zoning" in world or "softZoning" in world:
         artifacts["planning.json"] = canonical_json_bytes(planning_document(world))
-    if building_style == "catalog":
+    if building_style in ("catalog", "urban"):
         from .urban_character import character_document
         artifacts["urban-character.json"] = canonical_json_bytes(character_document(world, graph))
         from .district_skyline import district_skyline
-        artifacts["skyline-plan.json"] = canonical_json_bytes(district_skyline(world, graph))
+        artifacts["skyline-plan.json"] = canonical_json_bytes(district_skyline(urban[0] if urban else world, graph))
+    if urban:
+        artifacts["urban-land.json"] = canonical_json_bytes(urban[2])
     types = {
         ".html": "text/html",
         ".js": "text/javascript",
@@ -686,8 +715,8 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
         ".md": "text/markdown",
     }
     diagnostic_summary = _diagnostic_summary(graph["diagnostics"])
-    presentation = dict(buildingStyle=building_style, buildingMaterialsVersion=material_policy()["version"]) if building_style in ("architectural", "purposeful", "catalog") else {}
-    if building_style == 'catalog':
+    presentation = dict(buildingStyle=building_style, buildingMaterialsVersion=material_policy()["version"]) if building_style in ("architectural", "purposeful", "catalog", "urban") else {}
+    if building_style in ('catalog', 'urban'):
         from .architecture_catalog import VERSION as ARCHITECTURE_VERSION
         presentation['architectureVersion'] = ARCHITECTURE_VERSION
         from .architecture_height import VERSION as HEIGHT_VERSION
@@ -696,6 +725,9 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
         presentation['urbanCharacterVersion'] = CHARACTER_VERSION
         from .district_skyline import VERSION as SKYLINE_VERSION
         presentation['districtSkylineVersion'] = SKYLINE_VERSION
+    if urban:
+        from .modern_massing import VERSION as MODERN_VERSION
+        presentation.update(urbanLandVersion=urban[2]['version'], urbanArchitectureVersion=MODERN_VERSION, derivedViewVersion='world-view/0.3')
     artifacts["manifest.json"] = canonical_json_bytes(
         dict(
             schemaVersion="manifest/0.1",

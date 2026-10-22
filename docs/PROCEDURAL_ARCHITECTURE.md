@@ -5,6 +5,56 @@ Implementation: `architecture/0.5`, [ADR-059](adr/ADR-059.md),
 [character ADR-064](adr/ADR-064.md), [district heights ADR-065](adr/ADR-065.md).
 Based on the maintainer's `MetropoGits_Procedural_Architecture_Catalog.md` proposal.
 
+## Urban land and modern structural massing
+
+`--building-style urban` implements the next opt-in slice of the mandatory
+redesign §§6–9, under [ADR-066](adr/ADR-066.md). Existing catalog0.5 and all other
+modes retain their meaning. This is not just a new material/theme.
+
+1. Source-first verified roles and spatial-demand/0.1 produce complete physical
+   requests: neutral blocks, supporting blocks, mixed offices, horizontal works.
+   Unknown files never become evidenced headquarters, research or infrastructure.
+2. urban-land/0.1 admits a full request, or an equal-area aspect alternative,
+   before massing selection. It reassigns vacant source-address reserves within
+   the same neighborhood, never other buildings, actual road/junction envelopes,
+   protected nature, courts or certified complexes. Modest growth to the sides/
+   rear preserves exact front doors, street points, yaw, owners and dependency
+   paths. The physical body center can recede; it is NOT claimed unchanged.
+3. Unavailable space is DEFERRED_REPLAN, with the original envelope retained;
+   no hidden reduced-area design or fictitious source is inserted. Campus members
+   and existing certified compounds are preserved. Their persistent groups do
+   not explode with zoom.
+4. urban-architecture/0.1 compiles broad curtain-wall slabs, offset wings,
+   connected atria, inhabited setbacks and podiums. Twin volumes require enough
+   actual frontage/depth; narrow plots do not receive a pair of thin rods. The
+   same small primitive kit and fixed part/face budgets remain. These layouts
+   are procedural geometry, not additional source roles or new catalog claims.
+5. Independent validation reconstructs admitted land and checks final physical
+   exclusions. Existing strict World source-size validation remains untouched.
+   CPU/WebGL use shared compiled envelopes/meshes. Original road mesh is retained;
+   decorative trees intersecting admitted bodies are removed, not protected
+   terrain. Actual material/role evidence and all source IDs remain unchanged.
+
+Derived `world-view/0.3` explicitly describes new physical width/depth/center.
+Canonical UCG/City/World/Planning bytes remain original source-address baselines.
+Checksum-covered `urban-land.json` records original/allocated envelopes, request
+area/evidence, status, demand, limits and work counts. Both source inspectors
+disclose original versus physical dimensions and massing. Manifest pins both
+new versions. Whole compiled packages remain deterministic.
+
+```powershell
+python scripts/procedural_world.py <existing-build> --out <new-output> `
+  --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied `
+  --street-policy porous --street-hierarchy --campus --campus-style precinct `
+  --campus-bootstrap --campus-landmarks --building-style urban --seed <fixed-seed>
+```
+
+This admission pass uses existing road-cut land. It does NOT implement the five
+distinct downtown master planners, merge source entities, or solve insufficient
+capacity by replanning a whole district. General parcel combination/block
+subdivision and local road/capacity repair remain explicit next work. Do not call
+the mandatory redesign complete from a successful admission or attractive view.
+
 ## Delivered vocabulary and usage
 
 `--building-style catalog` is an additive experimental World export style.

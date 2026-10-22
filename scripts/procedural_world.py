@@ -16,8 +16,8 @@ def main():
     parser.add_argument("build", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed")
-    parser.add_argument('--building-style', choices=('semantic', 'architectural', 'purposeful', 'catalog'), default='semantic',
-                        help='presentation only: procedural wall tones with role roof accents; never changes world geometry')
+    parser.add_argument('--building-style', choices=('semantic', 'architectural', 'purposeful', 'catalog', 'urban'), default='semantic',
+                        help='urban admits explicit physical land before modern massing; canonical source-address World is unchanged')
     parser.add_argument("--terrain", choices=("flat", "lake-district", "river-corridor", "river-valley", "river-landscape", "varied-landscape", "watershed-landscape", "mountain-landscape"), default="flat",
                         help="adaptive only: generate protected natural terrain BEFORE urban placement")
     parser.add_argument(

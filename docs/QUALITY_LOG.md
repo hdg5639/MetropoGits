@@ -9740,3 +9740,100 @@
   feat/polyglot-analysis. This coherent height consumer receives a separate
   verified commit and normal upstream push; final handoff records actual result.
   Only explicit task paths staged; unrelated user caches remain untouched.
+
+## Checkpoint 2026-10-22 — program-sized urban land and modern structural massing
+
+- Implemented: mandatory redesign §§6–9 vertical slice, ADR-066, opt-in
+  `--building-style urban`. urban-land/0.1 admits complete/equal-area physical
+  requests BEFORE urban-architecture/0.1 compiles broad slabs, podiums, connected
+  wings, setback volumes and eligible larger twins. No new catalog synonyms or
+  per-file import-height ranking. Derived world-view/0.3 explicitly distinguishes
+  physical envelopes from original source-address World; original validators,
+  schemas, IDs and nonurban modes remain unchanged.
+- Protected: exact doors/street points/yaw/source ownership and actual paths,
+  roads AND bevel/junction envelopes, terrain no-build polygons, courts and
+  certified campus complexes. Original source envelope stays inside its admitted
+  body. Growth to the rear changes body centers, not front doors. Unfulfilled
+  requests are DEFERRED_REPLAN, not silently downsized/deleted. Independent
+  reconstruction plus final exclusion validation checks the physical plan.
+  Original World collision/size validation is NOT claimed to validate new land.
+- Rendering: shared compiled physical meshes feed CPU/Canvas/WebGL framing,
+  shadows, picking and foundations. Both inspectors disclose original versus
+  physical dimensions/status and procedural massing. Decorative trees inside
+  new bodies are cleared; protected nature remains unchanged. Source roles,
+  evidence and certified campus geometry/membership/LOD behavior are exact.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b. Their analyzed graphs/original
+  Worlds/validation are hash-verified and reused, not claimed freshly analyzed.
+  New land admission, physical clearance and architecture validation rerun.
+- Commands: compile_urban_worlds.py district-skyline-r1/<case>/after ->
+  urban-massing-r1/<case>/after --repeat, final SQLite -> urban-massing-r2.
+  New source analysis via `python -m metropogits build --repo
+  tests/fixtures/repositories/reference-center --repo-id fixture/reference-center
+  --out ../artifacts/visual/urban-massing-fixture-r1/source --json`, and likewise
+  architecture-unknown -> urban-massing-unknown-r1/source. procedural_world.py:
+  neighborhoods/adaptive/varied planning/outline/porous/street hierarchy,
+  campus-landmarks, building-style urban, seed reference-center or unknown.
+  Final Worlds/repeat in urban-massing-fixture-r2 and unknown-r2.12 Python
+  sources/10 trips/20 edges and3 Elixir/0 edges; original World overlaps/escapes0,
+  all accessible. All20 final fresh output files repeat exactly. Target source
+  code, dependencies and builds never executed by these generation commands.
+- Integrity: 3175 original sources conserved. Admitted full requests GJ568,
+  OJ278, PB309, SQLite313 (total1468); deferred550/279/165/193; preserved complex
+  constituents206/124/190/0 (includes campus members beyond visible compounds).
+  Physical dimensions now include8×8,10×8,12×10,16×12,20×9.6 and equal-area
+  frontage alternatives. Canonical UCG/City/World/Planning bytes exact; trips
+  4209/1457/1491/622 and original role evidence unchanged. Max individual rendered
+  heights30.37/28.72/30.04/29.82 are observations, not new global caps.
+- Correction caught/reverified: SQLite initially regenerated12 old/15 new
+  pavement triangles around one junction because reassigned parcel reserves
+  changed the mesher's clearance filter. Pin BOTH CPU/WebGL pavement to original
+  World, independently protect junction hulls. Final ALL4 road meshes EXACT.
+  Final SQLite repeated/re-audited in r2/r3; other cases had identical meshes.
+  CPU footer now correctly names World addresses + urban-land.json physical
+  admission. finalize_urban_cpu.py asserts geometry/data bytes unchanged except
+  that provenance text; final manifests verify hashes AND byte counts.
+- Final artifacts: urban-massing-final-r1/<case>/{before,after}, linked by
+  urban-massing-reviewed-r1/index.html/integrity.json. Actual comparison images
+  r1(GJ), r2(OJ/PB), r3(SQLite), color/grayscale matched views6/5/5/3. Finalized
+  CPU provenance changes no geometry; comparison WebGL data/assets exact.
+  capture_urban_admission.mjs -> urban-admission-focus-r1: actual admitted
+  source selected in ALL4 with exact source path, physical sizes, role gate and
+  modern layout, plus same-camera low-angle grayscale comparison.
+- Actual browser: viewer_audit.mjs Chrome -> urban-massing-audit-r1(GJ),
+  r2(OJ/PB; earlier SQLite superseded), r3(final SQLite), r4(final Python/Elixir).
+  Six final cases, three LODs, GL errors0, route/member/filter/picking/navigation
+  PASS where applicable, Synthetic static rebuilds0, unknown traffic unavailable.
+  Inspected actual GJ overview/gray frontage/low-angle, SQLite admitted-source
+  inspector, GJ CPU showcase. Buildings visibly broaden and silhouettes differ;
+  this is not photorealism or five accepted downtown master plans. Some repeated
+  small retained lots and CPU label crowding remain explicitly open.
+- Stability: fresh13-file growth analysis from copied reference-center+neighbor
+  via real generate_world API/previous hint. All12 original doors, district
+  boundaries and admitted physical envelopes retained;13 accessible/10 trips/
+  20 edges, zero original World overlaps/escapes. Discovered pre-existing CLI
+  `--previous-world` issue: strict JSON returns Decimal coordinates but generator
+  guard accepts only int/float (invalid previous world polygon). Did NOT weaken
+  the guard or claim CLI growth passed; normal JSON/API hints work. Record this
+  for a separate CLI-number normalization fix, outside this architecture unit.
+- Cost: land checks72000/35674/30151/34207, bounded at1M per pass and500k index
+  entries. Package wall times29.39/18.61/51.84/14.42s under concurrent tests and
+  software browsers are NOT a controlled regression comparison. Actual audit
+  stores frame/draw/upload counters; CPU submission is not GPU/display FPS.
+  No performance guarantee or native rewrite claimed.
+- Regression: final full Python813 tests/one existing Windows symlink skip,
+  remaining PASS in201.902s, exit0; Node78 PASS. After CPU provenance-only change,
+  urban architecture5 PASS. Ruff/compileall/diff PASS. New tests cover rotated
+  full-area admission, evidence negatives, natural/road/court/complex exclusions,
+  order/repeat, forged allocations, resource bounds, broad versus twin silhouette
+  constraints, shared physical heights/meshes, old-mode/canonical compatibility
+  and unknown real-source fallback. No test weakened to force a visual pass.
+- Spec alignment PASS: TECH static/evidence/limits/CPU, FUNC AC002/003/006/011/
+  012, product local-first/directory ownership. No runtime AI/cloud/source
+  execution, fabricated dependency, role or source entity. General combined
+  parcels, affected-area capacity replanning and distinct master planners remain
+  unfinished; no full-redesign completion claim. Commit this coherent feature
+  atomically and normally push feat/polyglot-analysis after explicit staging;
+  final handoff records actual result. User build caches remain untouched.

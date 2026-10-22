@@ -197,6 +197,18 @@ Derived architectural capacity is independently reconstructed from form and
 horizontal span; source geometry/IDs and horizontal source-size checks stay
 intact. New view models retain legacy `sourceHeight` separately. This is NOT
 general variable horizontal land allocation or completed urban master planning.
+
+## First noncampus physical admission — 2026-10-22
+
+ADR-066 adds opt-in urban-land/0.1 before modern massing. Verified program demand
+requests larger individual physical envelopes and admits complete/equal-area
+sites from vacant address reserves, preserving actual doors, streets, nature and
+certified groups. Canonical source-sized World remains a compatibility baseline;
+derived world-view/0.3 and urban-land.json explicitly disclose the new physical
+envelopes. Narrow-source fallback is visible as DEFERRED_REPLAN, not passed off
+as successful capacity admission. This is the first general individual land
+consumer; capacity replanning/combined parcels/distinct master planners remain
+unfinished and take priority over more cosmetic catalog entries.
 Reference-count skyline modulation is retired, not scaled up into fake HQs.
 The maintainer's [mandatory redesign](URBAN_ARCHITECTURE_REDESIGN.md) and its
 [execution ledger](URBAN_REDESIGN_EXECUTION.md) govern the following work.

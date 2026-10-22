@@ -1,5 +1,20 @@
 # Current implementation contract baseline
 
+## Physical urban land and modern massing — 2026-10-22
+
+[ADR-066](../adr/ADR-066.md) adds opt-in building style `urban` with
+urban-land/0.1 and urban-architecture/0.1. Derived world-view/0.3 explicitly
+permits admitted physical envelopes different from original source addresses.
+Canonical UCG/City/World/Planning schemas, IDs, dimensions and their existing
+strict validators are unchanged. Exact source front doors, yaw, owners, paths,
+road mesh and certified campus models remain; admitted body centers/dimensions
+are disclosed separately. Full-area requests or equal-area alternatives precede
+compilation; unavailable capacity is DEFERRED_REPLAN, not silent downsizing.
+Independent admission reconstruction and collision checks precede shared CPU/
+WebGL compilation. New urban-land.json and manifest/inspectors retain evidence
+and both envelopes. Other modes/old saved artifacts remain compatible. This
+first vacant-reserve admission is not completed general land/master planning.
+
 ## Continuous district height allocation — 2026-10-22
 
 [ADR-065](../adr/ADR-065.md): catalog0.5 adds district-skyline/0.1 and

@@ -9,10 +9,10 @@ It does not replace UCG analysis, source IDs, static safety or evidence gates.
 | Remove legacy source height as architectural ceiling | Implemented in catalog0.4/ADR-063; checkpoint evidence in QUALITY_LOG |
 | Urban Character Profile: repository / district / semantic zone | First source-first profile implemented/ADR-064; weak components are not semantic communities |
 | Normalized spatial demand and distinct master planners | Relative program demand implemented; land admission and distinct master planners NOT implemented |
-| Flexible physical parcels / affected-area capacity replanning | Partial estate precedent only; general system not implemented |
+| Flexible physical parcels / affected-area capacity replanning | Opt-in urban-land/0.1 admits full program requests into vacant reserves before massing; insufficient capacity explicitly deferred; general local replanning still open |
 | Source-backed architectural compounds | Existing certified campus groups; general redesign incomplete |
 | District-level skyline composition | Continuous height-field migration on existing land implemented/ADR-065; master-planned skyline NOT complete |
-| Distinctive composable architecture | Existing catalog is a baseline, not accepted final diversity |
+| Distinctive composable architecture | urban-architecture/0.1 adds broad slabs, setback cores, podiums, linked towers and wings; cross-repo grayscale review; not accepted final diversity |
 | Terrain / roads / shared spaces integration | Preserve existing systems; new planner integration pending |
 | WebGL / CPU and cross-repository acceptance | All redesign acceptance tests A–E remain open |
 

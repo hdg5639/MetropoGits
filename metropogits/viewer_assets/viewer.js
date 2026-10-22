@@ -1268,6 +1268,12 @@
         detailRow(details,'Architecture recipe',program.archetypeId+' · '+program.version);
         detailRow(details,'Source role gate',program.verifiedRole || 'Unknown — neutral architecture');
         if(program.frontageDetail)detailRow(details,'Entrance treatment',program.frontageDetail.style+' · decorative; original access retained');
+        if(program.massingLayout)detailRow(details,'Modern massing',program.massingLayout+' · procedural composition, not an additional source role');
+        if(program.landAllocation) {
+          const land=program.landAllocation;
+          detailRow(details,'Physical land admission',land.status+' · '+land.version);
+          detailRow(details,'Address / physical envelope',land.sourceEnvelope.width+' × '+land.sourceEnvelope.depth+' → '+land.allocatedEnvelope.width+' × '+land.allocatedEnvelope.depth+' · original door and source ownership retained');
+        }
         detailRow(details,'Rendered architectural height',program.renderedHeight+(program.heightPolicy?' · inside derived architectural capacity':' · inside the original height envelope'));
         if(program.heightPolicy) {
           detailRow(details,'Legacy source-scene height',program.sourceHeight+' · not an architectural maximum');

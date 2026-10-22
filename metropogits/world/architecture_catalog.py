@@ -756,7 +756,9 @@ def select(entity, topology, seed, evidence):
     return identity, role, proof, technologies
 
 
-def catalog_world(world, graph):
+def catalog_world(world, graph, *, massing="catalog"):
+    if massing not in ("catalog", "modern"):
+        raise ValueError("unknown architecture massing system")
     from .district_skyline import district_skyline, allocated_height
     from .architecture_height import (
         VERSION as HEIGHT_VERSION,
@@ -783,6 +785,10 @@ def catalog_world(world, graph):
         selected, role, proof, technologies = selections[identity]
         recipe = CATALOG[selected]
         specs = grammar(recipe["grammar"])
+        layout = None
+        if massing == "modern":
+            from .modern_massing import modern_grammar
+            specs, layout = modern_grammar(recipe["grammar"], source, seed)
         # Independent roof/material stream; no geometry changes when UI filters.
         facade_seed = derive(seed, "facade")
         roof_seed = derive(seed, "roof")
@@ -859,6 +865,9 @@ def catalog_world(world, graph):
             relationEvidenceIds=topology[identity]["evidenceIds"],
             technologyModifiers=modifiers,
         )
+        if layout:
+            from .modern_massing import VERSION as MASSING_VERSION
+            profiles[identity].update(version=MASSING_VERSION, massingLayout=layout)
         form = recipe["grammar"]
         budget = height_capacity(source, form)
         profiles[identity]["sourceHeight"] = source["height"]
