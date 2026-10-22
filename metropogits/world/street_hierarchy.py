@@ -25,6 +25,12 @@ COLORS = {
 
 def derive_street_plan(world):
     """Pure bounded classification/audit; never edit physical roads or trips."""
+    version = 'street-plan/0.2' if 'capacityPlan' in world else VERSION
+    def address(at):
+        if 'capacityPlan' in world:
+            from scripts.canonical_json import canonical_json_bytes
+            return canonical_json_bytes(list(at)).decode('ascii')
+        return str(at)
     streets = sorted(world["streets"], key=lambda s: s["id"])
     if len(streets) > MAX_STREETS:
         raise ValueError("street hierarchy input limit")
@@ -70,7 +76,7 @@ def derive_street_plan(world):
     for node in sorted(adjacency):
         if node in node_component:
             continue
-        key = "world:street-component:" + derive(str(node), VERSION)
+        key = "world:street-component:" + derive(address(node), version)
         queue, ids = [node], set()
         node_component[node] = key
         while queue:
@@ -225,7 +231,7 @@ def derive_street_plan(world):
     for z in sorted(world.get("zoning", {}).get("zones", []), key=lambda z: z["id"]):
         for at in sorted(z.get("accessPorts", [])):
             roads, component = attachment(at, frontage=True)
-            key = "world:street-port:" + derive(z["id"], str(at), VERSION)
+            key = "world:street-port:" + derive(z["id"], address(at), version)
             ports.append(
                 dict(
                     id=key,
@@ -241,7 +247,7 @@ def derive_street_plan(world):
                 missing.append(key)
     counts = Counter(p["streetClass"] for p in profiles.values())
     return dict(
-        version=VERSION,
+        version=version,
         structural=True,
         segments=profiles,
         backboneStreetIds=sorted(

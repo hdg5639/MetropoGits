@@ -176,6 +176,11 @@ def annotate(streets, parcels, terrain):
                 a,b = road["start"],road["end"]
                 ya,yb = [entrances.get(tuple(p),s.height(p)+.08) for p in (a,b)]
                 profile = [[*p[:2],q(ya+(yb-ya)*math.dist(a,p[:2])/math.dist(a,b))] for p in profile]
+                if road.get('linearRamp'):
+                    # This access was already authored as one linear ramp.
+                    # Redundant terrain-grid cuts quantize its Y independently
+                    # and can fabricate a steep submillimeter stair-step.
+                    profile = [profile[0], profile[-1]]
             road["heights"] = [profile[0][2],profile[-1][2]]
         road["heightProfile"] = profile
         count += len(profile)

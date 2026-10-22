@@ -68,6 +68,10 @@ def _estate_fallback(function):
     """An optional physical plan must not break an otherwise useful city."""
     @wraps(function)
     def guarded(scene, graph, **options):
+        if options.get('capacity_replan'):
+            # A final physical program cannot silently switch to the old small
+            # programmed baseline when capacity is missing.
+            return function(scene, graph, **options)
         fallback = None
         try:
             result = function(scene, graph, **options)
@@ -118,9 +122,14 @@ def generate_world(
     campus=False,
     campus_style="quad",
     campus_bootstrap=False,
+    capacity_replan=False,
     _route=True,
     _planning_frame=False,
 ):
+    if not isinstance(capacity_replan, bool):
+        raise ValueError('capacity replanning must be a boolean')
+    if capacity_replan and campus and campus_style != 'precinct':
+        raise ValueError('capacity campus planning requires precinct style; older fixed-slot styles are unchanged')
     if _planning_frame and (not campus or campus_style != 'programmed' or pattern_scale != 'adaptive'):
         raise ValueError('internal planning frame requires programmed adaptive campus planning')
     if campus_style not in ("quad", "varied", "neighborhood", "landscape", "organic", "fabric", "programmed", "estate", "precinct") or (campus_style != "quad" and not campus):
@@ -251,6 +260,15 @@ def generate_world(
     if errors:
         raise ValueError("invalid world input: " + "; ".join(errors[:3]))
     grouped, _ = groups(scene)
+    programs = None
+    if capacity_replan:
+        if pattern_scale != 'adaptive':
+            raise ValueError('capacity replanning requires adaptive neighborhoods')
+        from .capacity import architectural_programs
+        programs = architectural_programs(scene, graph)
+        grouped = {key: [dict(b, width=programs[b['entityId']]['width'],
+                             depth=programs[b['entityId']]['depth'], _capacityProgram=True)
+                         for b in members] for key, members in grouped.items()}
     if not grouped:
         raise ValueError("world requires at least one analyzed source file")
     identity = namespace or graph["repository"]["id"]
@@ -310,6 +328,12 @@ def generate_world(
         for key, zones in clusters.items():
             extra = 0
             required = 0
+            selected_capacity_zone = None
+            if capacity_replan:
+                eligible = [(eligibility(z, campus_groups, local_seeds[key]), z) for z in zones
+                            if 12 <= len(z['memberEntityIds']) <= 256]
+                selected_capacity_zone = next((z['id'] for decision, z in sorted(eligible, key=lambda v: (v[0]['draw'], v[1]['id']))
+                                               if decision['eligible'] and decision['draw'] < decision['probability']), None)
             for zone in zones:
                 decision_pairs = campus_groups if campus_style == 'precinct' else campus_pairs
                 if not 12 <= len(zone['memberEntityIds']) <= 256 or not eligibility(zone, decision_pairs, local_seeds[key])['eligible']:
@@ -317,6 +341,10 @@ def generate_world(
                 if campus_style == 'precinct':
                     from .campus_reservation import program_demand
                     program_area = program_demand(zone, campus_groups)['total']
+                    if capacity_replan:
+                        if zone['id'] != selected_capacity_zone:
+                            continue
+                        program_area *= 2
                     available = budgets[key]['total'] * len(zone['memberEntityIds']) / len(grouped[key])
                     required += program_area
                     extra += max(0, program_area - available)
@@ -330,6 +358,8 @@ def generate_world(
                     extra += max(0, program_area - available)
             budgets[key]['facilityProgramArea'] = required
             budgets[key]['facilitySiteReserve'] = extra
+            if capacity_replan:
+                budgets[key]['total'] += extra
             # Existing developable land already includes circulation/growth
             # reserves. Record the unmet request; do not silently regenerate
             # terrain or unrelated districts to force an optional campus fit.
@@ -523,7 +553,7 @@ def generate_world(
                             plan_adaptive
                             if pattern_scale == "adaptive"
                             else plan_district_pattern
-                        )(*args, **(dict(terrain=terrain_data, porous=street_policy == "porous",campus=campus,campus_pairs=campus_pairs,campus_style=campus_style,campus_groups=campus_groups)
+                        )(*args, **(dict(terrain=terrain_data, porous=street_policy == "porous",campus=campus,campus_pairs=campus_pairs,campus_style=campus_style,campus_groups=campus_groups, capacity_programs=programs)
                                     if pattern_scale == "adaptive" else {}))
                         district_patterns.append(pattern)
                     else:
@@ -575,7 +605,7 @@ def generate_world(
                     local_seed,
                     old_parcels if attempt == 0 and compatible else None,
                 )
-            if terrain in landscape_presets and not compatible and placed is not None and len(candidates)<len(members)+1:
+            if not capacity_replan and terrain in landscape_presets and not compatible and placed is not None and len(candidates)<len(members)+1:
                 # Do not accept a terrain-constrained district at exactly full
                 # capacity: retain one real vacant address for hinted growth.
                 placed=None
@@ -757,6 +787,12 @@ def generate_world(
             main_roads + boundaries, parcels, routing,
         )
         planning_diagnostics.append(circulation_note)
+    if capacity_replan and terrain in landscape_presets:
+        from .capacity import stabilize_infrastructure
+        streets, seam_repair = stabilize_infrastructure(streets, parcels, terrain_data)
+        annotate(streets, parcels, terrain_data)
+        routing, networks, coverage = route_world(graph, parcels, streets)
+        planning_diagnostics.append(seam_repair)
     reused = sorted(grouped) if compatible and attempt == 0 else []
     if zoned:
         reused = sorted(reused_zoned) if compatible and attempt == 0 else []
@@ -874,6 +910,9 @@ def generate_world(
         from .campus import collect_plan
 
         world['campusPlan'] = collect_plan(development_blocks, campus_style)
+    if capacity_replan:
+        from .capacity import capacity_report
+        world['capacityPlan'] = capacity_report(world, programs)
     if street_hierarchy or campus:
         from .street_hierarchy import derive_street_plan
 

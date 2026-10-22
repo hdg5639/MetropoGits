@@ -23,6 +23,15 @@ from .mountains import GENERATOR_VERSION as MOUNTAIN_GENERATOR_VERSION, PRESET a
 def validate_world(world, scene, graph):
     if world.get("schemaVersion") != VERSION:
         raise ValueError("unsupported world schema")
+    programs = None
+    if 'capacityPlan' in world:
+        from .capacity import architectural_programs, capacity_report
+        programs = architectural_programs(scene, graph)
+        if world['capacityPlan'] != capacity_report(world, programs):
+            raise ValueError('capacity plan differs from source program or physical allocation')
+    if any('linearRamp' in r for r in world['streets']) and (
+        programs is None or any(r.get('linearRamp') is not True or not r['access'] for r in world['streets'] if 'linearRamp' in r)):
+        raise ValueError('linear access ramp requires the physical capacity contract')
     if "campusPlan" in world and not isinstance(world["campusPlan"], dict):
         raise ValueError("invalid campus plan")
     mountain = world.get('generatorVersion') in ('terrain-adaptive/0.7',MOUNTAIN_GENERATOR_VERSION)
@@ -92,6 +101,9 @@ def validate_world(world, scene, graph):
     ] != sha256_digest(scene):
         raise ValueError("world source digest mismatch")
     source = {b["entityId"]: b for b in scene["buildings"]}
+    if programs is not None:
+        source = {key: dict(b, width=programs[key]['width'], depth=programs[key]['depth'])
+                  for key, b in source.items()}
     parcels = world["parcels"]
     if {d["id"] for d in world["logicalDistricts"]} != {
         d["id"] for d in scene["districts"]

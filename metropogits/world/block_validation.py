@@ -55,6 +55,7 @@ def validate_blocks(world, scene, graph, neighborhoods):
                 campus_pairs=campus_pairs,
                 campus_style=world.get('campusPlan',{}).get('style','quad'),
                 campus_groups=campus_groups,
+                capacity_programs=world.get('capacityPlan', {}).get('programs'),
             )
             expected_patterns.append(pattern)
         elif inherited:

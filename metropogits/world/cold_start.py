@@ -19,6 +19,8 @@ def cold_start(function):
         enabled = options.pop("campus_bootstrap", False)
         if not isinstance(enabled, bool):
             raise ValueError("campus bootstrap must be a boolean")
+        if enabled and options.get('capacity_replan'):
+            raise ValueError('capacity replanning already plans from programs; do not use the legacy campus bootstrap')
         if not enabled:
             return function(scene, graph, **options)
         if options.get("previous") is not None:

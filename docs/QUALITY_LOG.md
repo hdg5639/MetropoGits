@@ -9837,3 +9837,104 @@
   unfinished; no full-redesign completion claim. Commit this coherent feature
   atomically and normally push feat/polyglot-analysis after explicit staging;
   final handoff records actual result. User build caches remain untouched.
+
+## Checkpoint 2026-10-22 — demand-first physical capacity (ADR-067)
+
+- Implemented: `capacity-replan/0.1` architectural programs enter district and
+  neighborhood demand BEFORE physical streets/variable frontage parcels.
+  Actual widths/depths are allocated atomically with setbacks and protected
+  terrain; failed capacity expands/repartitions the affected district and
+  rebuilds access. Final dependencies route on that physical graph. Exhaustion
+  is a generation error; package export also refuses legacy deferred urban
+  admission. Original City/UCG/source IDs/evidence are not rewritten.
+- Physical scale: GJ source envelopes range36–648 square units (median80),
+  compiled heights2.0757–41.2418 (median9.6967); no universal height clamp.
+  These are procedural architectural dimensions, not measured source metrics.
+- Fixtures / pinned revisions: GJ-Cloud
+  `3d9b53f9dac9af1187ac9754cb3066b27e43b766`; GamjaOJ
+  `b163acd2b5fe41edfc1e7fc7d367362851241896`; PocketBase
+  `6f370ea741f33adf889eef02e3c1b884a47aa522`; SQLiteBrowser
+  `ae32df153a64d250de7c77a5057deeff4092a39b`. Fresh static analysis of all four
+  clones produced byte-equivalent canonical UCG digests to the pinned inputs;
+  measured analysis33.684/21.267/26.012/16.904s respectively. No target source,
+  build script or dependency installer was executed. Maintained reference-center,
+  purpose-campus and unsupported architecture-unknown fixtures are also covered.
+- Commands / artifacts: from the repo, `python
+  ../artifacts/visual/build_capacity.py
+  ../artifacts/visual/urban-massing-final-r1/CASE/after
+  ../artifacts/visual/capacity-core-r1/CASE/after --campus --seed SEED --repeat`;
+  CASE=gj/oj/pocketbase/sqlitebrowser and SEED=mountain-3/mountain-2/mountain-2/
+  mountain-3. This calls real `generate_world -> validate_world -> package_world`,
+  twice, comparing complete artifact bytes. Source City/UCG are preserved.
+  Public equivalent generation uses `python -m scripts.procedural_world BUILD
+  --out NEW --capacity-replan --building-style urban --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus --campus-style precinct --terrain
+  mountain-landscape --seed SEED` (omit legacy bootstrap).
+- Results: GJ1324/OJ681/PocketBase664/SQLiteBrowser506 allocated, **final
+  DEFERRED_REPLAN0 in every case**. Independent validation reports building
+  overlaps0, road overlaps0, owner escapes0 and all1324/681/664/506 doors
+  structurally accessible. Exact source trips4209/1457/1491/622 and represented
+  graph edges6157/2589/1880/622 retained. Per-district footprint/parcel/total
+  requirement versus allocated land is in each `capacity-report.json`; four
+  complete regenerated packages are byte-deterministic.
+- Timings (generate/validate/package seconds, concurrent local jobs, not an
+  isolated-run speedup claim): GJ82.432/16.622/36.684,
+  OJ78.042/10.567/23.014, PocketBase28.766/6.136/20.939,
+  SQLiteBrowser14.384/6.439/11.976. Caching static rejected/accepted geometric
+  frontage proposals avoids repeated terrain/road searches for identical demand
+  sizes; work/resource bounds remain explicit.
+- Fixes reverified: source-foundation relief uses the existing1.0-unit gate;
+  frontage reserves sibling streets and parent boundary setback; quantized
+  hybrid partitions repair to an exact shared existing-vertex diagonal rather
+  than increasing area/containment tolerances. Final junction seam coalescence
+  pins all source/bridge/tunnel ports and re-routes; explicit linear access ramps
+  omit redundant micro grid cuts rather than accepting artificially steep
+  quantized Y steps. Strict JSON previous hints normalize numeric types after
+  duplicate/nonfinite rejection. Small hinted growth retains the unrelated
+  district in the maintained fixture.
+- Saved-artifact round trip exposed a derived port-ID bug (`str(0.0)` versus
+  canonical JSON `0`). New capacity-only street-plan/0.2 uses canonical numeric
+  coordinates for port/component IDs. `refresh_capacity_core.py` regenerated
+  ONLY street-plan metadata and presentation into `capacity-core-r2`; all other
+  World fields were asserted identical. All four saved Worlds independently
+  validate after JSON reload; repeated packaging after reload is byte-identical.
+  Older street-plan/0.1 output remains unchanged.
+- Actual renderer check: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/capacity-core-audit-r1` with OJ/PocketBase/SQLiteBrowser
+  core-r1 packages, then `capacity-core-audit-r2` with GJ. Inspected actual GJ
+  WebGL overview/CPU showcase, OJ WebGL detail, PocketBase overview and the earlier
+  SQLiteBrowser district capture. Three LODs, source/road inspector, filtering,
+  camera and Synthetic run; no static geometry regeneration during animation.
+  Orbit CPU p95 across LODs: GJ2.7–3.7ms, OJ1.2–2.1ms,
+  PocketBase1.2–1.7ms, SQLiteBrowser1.2–1.4ms. First draw submissions
+  2078.9/1512.2/1299.6/656.2ms. Headless SwiftShader CPU submission metrics,
+  **not measured GPU completion/FPS**. Metadata-only port IDs do not alter these
+  inspected meshes/cameras. Final architecture review must rerun updated assets.
+- Actual compiled geometry diagnostic: `python -m scripts.urban_capacity_audit
+  ../artifacts/visual/capacity-core-r2/gj/after --out
+  ../artifacts/visual/capacity-core-metrics-r2/gj.json`. Independent rendered
+  pavement surfaces36825; positive pavement/building-envelope intersections0.
+  Visible1321 objects yield19 normalized solid occupancy shapes /17 near-repeat
+  clusters (Jaccard>=0.90), largest cluster19.98%. This is measured geometry,
+  not85 catalog labels; finite10x10x16 sampling is not visual approval.
+- Tests: full Python822 passed with one existing Windows symlink skip
+  (`capacity-tests-r2.log`,256.774s); current targeted capacity12, geometry
+  metrics2, legacy urban5 pass. Node78 pass. Another full checkpoint is required
+  after the next correction. `git diff --check` passes. Generated artifacts and
+  unrelated user Maven/Gradle build caches remain outside staging.
+- Visual findings / next actions: capacity is now real and complete, but this
+  is **NOT the full requested redesign acceptance**. Variable spacing reveals
+  the legacy fixed16/22-distance and56-span compound assumptions: GJ3 visible
+  compounds/6 files, OJ1/2, PocketBase1/2, SQLiteBrowser0. Campuses lose their
+  previous large silhouettes and some districts remain over-expanded/underused.
+  Prioritize source-affinity cohort planning, footprint-aware aggregation and
+  substantially different architectural structures; then compare matched-angle
+  grayscale renders and actual geometry repetition across all four repositories.
+- Spec alignment: PASS for the maintainer-approved physical replan extension,
+  TECH§3/4/7, AC-001/002/003/006/008/011/012, directory ownership/static/local
+  safety. No fabricated semantic facility, dependency, external runtime or
+  source omission. Distinct master planners and visual acceptance remain open.
+- Commits / push: commit this coherent capacity capability on
+  `feat/polyglot-analysis` after explicit staging/metadata review; normal push
+  only, never protected-main bypass. The following checkpoint records delivery.

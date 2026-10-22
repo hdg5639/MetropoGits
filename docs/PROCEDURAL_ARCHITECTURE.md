@@ -1,5 +1,28 @@
 # Procedural architecture catalog
 
+## Demand-first physical sites (ADR-067)
+
+The procedural CLI's `--building-style urban` now selects physical capacity
+planning before massing. Use `--zoning neighborhoods --pattern-scale adaptive`;
+optional whole-campus planning uses `--campus --campus-style precinct` without
+`--campus-bootstrap`. Width/depth requests, circulation, terrain and expansion
+reserves drive district allocation and real heterogeneous frontage parcels.
+Insufficient land triggers bounded replanning, never a final deferred success.
+Source City/UCG are unchanged; new physical World dimensions are explicitly
+versioned by `capacityPlan.version=capacity-replan/0.1`. Both inspectors disclose
+the source glyph versus physical site and that streets/access were replanned.
+Archived urban-land/0.1 diagnostic views remain readable; exporting a new urban
+package with any deferred request now fails and requires regeneration.
+
+`python -m scripts.urban_capacity_audit PACKAGE --out NEW.json` independently
+checks a saved package, rendered pavement clearance and actual compiled source/
+visible-compound geometry. `--baseline OLD` additionally compares source hashes
+and material-blind shape repetition. The finite occupancy metric is not visual
+approval: actual matched grayscale renders and browser checks are still needed.
+
+Sections below describe the earlier catalog/height/presentation modes; their
+immutable-geography guarantees do not apply to the explicitly replanned mode.
+
 Implementation: `architecture/0.5`, [ADR-059](adr/ADR-059.md),
 [height separation ADR-063](adr/ADR-063.md),
 [character ADR-064](adr/ADR-064.md), [district heights ADR-065](adr/ADR-065.md).

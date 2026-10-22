@@ -1,5 +1,41 @@
 # Current implementation contract baseline
 
+## Demand-first physical capacity — 2026-10-22
+
+[ADR-067](../adr/ADR-067.md) adds `--capacity-replan`, also selected by the
+procedural CLI's `--building-style urban`. Adaptive neighborhoods are required;
+the new physical campus planner uses `--campus --campus-style precinct`, not
+the old fixed-slot campus bootstrap. UCG/City and source IDs/evidence stay
+unchanged. Experimental World adds explicit `capacityPlan` with version
+`capacity-replan/0.1`: source-glyph dimensions are no longer physical limits in
+this mode. Validators reconstruct program dimensions and independently check
+every parcel, road, protected feature, door and source-backed trip. Legacy
+Worlds retain strict original-City size checks.
+
+Programs precede district/zone/road allocation. Heterogeneous physical sites
+are subdivided on real street frontage, with independently sized rectangles,
+setbacks, circulation/public realm, terrain and growth reserves. Bounded repair
+can enlarge affected districts and rebuild their roads/access. Failure is a
+generation error, never a successful deferred placement. Urban package export
+also refuses a legacy admission containing any `DEFERRED_REPLAN` sources;
+existing archived diagnostics remain readable.
+
+New-mode `street-plan/0.2` uses canonical numeric coordinates in derived port/
+component IDs, so `0.0 -> 0` serialization cannot invalidate saved packages.
+Source doors/bridge ports remain fixed during final submillimeter seam repair;
+`linearRamp: true` marks an actual linear access ramp with two end heights,
+avoiding artificial Y-quantization steps at redundant terrain-grid cuts. Old
+street-plan/0.1 and legacy ramp output retain their meaning.
+
+`rendered-morphology/0.1` measures compiled solid cross-sections with a
+10x10x16 occupancy grid, ignoring yaw, mirrors, materials and tiny entrance
+props. Report normalized and scale-aware shape counts/near repeats alongside
+matched grayscale captures; this is not a perceptual quality score.
+
+This capacity capability is not acceptance of the entire urban redesign.
+Campus/source-compound consolidation and morphological differentiation remain
+explicit correction tasks in the execution ledger.
+
 ## Physical urban land and modern massing — 2026-10-22
 
 [ADR-066](../adr/ADR-066.md) adds opt-in building style `urban` with

@@ -2170,8 +2170,8 @@
         if(program.massingLayout)detailRow(details,'Modern massing',program.massingLayout+' · procedural composition, not an additional source role');
         if(program.landAllocation) {
           const land=program.landAllocation;
-          detailRow(details,'Physical land admission',land.status+' · '+land.version);
-          detailRow(details,'Address / physical envelope',land.sourceEnvelope.width+' × '+land.sourceEnvelope.depth+' → '+land.allocatedEnvelope.width+' × '+land.allocatedEnvelope.depth+' · original door and source ownership retained');
+          detailRow(details,land.replanned?'Physical capacity planning':'Physical land admission',land.status+' · '+land.version);
+          detailRow(details,land.replanned?'Source glyph / physical site':'Address / physical envelope',land.sourceEnvelope.width+' × '+land.sourceEnvelope.depth+' → '+land.allocatedEnvelope.width+' × '+land.allocatedEnvelope.depth+(land.replanned?' · districts, streets and access replanned; source identity retained':' · original door and source ownership retained'));
         }
         detailRow(details,'Rendered architectural height',program.renderedHeight+(program.heightPolicy?' · inside derived architectural capacity':' · inside the original height envelope'));
         if(program.heightPolicy) {

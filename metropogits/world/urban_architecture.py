@@ -8,15 +8,34 @@ from .geometry import rectangle
 
 
 def urban_world(world, graph):
-    compounds = derive_compounds(world, graph, campus_landmarks=True)[0]
-    physical, plan = admit_land(world, graph, compounds)
-    validate_land(world, physical, graph, compounds, plan)
+    if 'capacityPlan' in world:
+        # A physical program has already shaped district boundaries, roads and
+        # parcels. Do not run the obsolete vacancy-only admission a second time.
+        from .capacity import VERSION
+        from .geometry import q
+        decisions = {}
+        for p in world['parcels']:
+            program = world['capacityPlan']['programs'][p['entityId']]
+            envelope = {k: p[k] for k in ('center', 'angle', 'width', 'depth', 'footprint')}
+            decisions[p['entityId']] = dict(status='ALLOCATED', request=program,
+                sourceEnvelope=dict(envelope, **program['sourceEnvelope']), allocatedEnvelope=envelope,
+                allocatedArea=q(p['width'] * p['depth']))
+        physical = world
+        plan = dict(version=VERSION, derived=True, structural=False, decisions=decisions,
+                    counts=world['capacityPlan']['counts'], districts=world['capacityPlan']['districts'],
+                    basis='DEMAND_FIRST_PHYSICAL_REPLAN_NOT_SOURCE_FACTS', limitations=[])
+    else:
+        compounds = derive_compounds(world, graph, campus_landmarks=True)[0]
+        physical, plan = admit_land(world, graph, compounds)
+        validate_land(world, physical, graph, compounds, plan)
     styled, profiles = catalog_world(physical, graph, massing="modern")
     for identity, profile in profiles.items():
         decision = plan["decisions"][identity]
         profile["landAllocation"] = dict(version=plan["version"], status=decision["status"],
                                          sourceEnvelope=decision["sourceEnvelope"],
                                          allocatedEnvelope=decision["allocatedEnvelope"], request=decision["request"])
+        if 'capacityPlan' in world:
+            profile['landAllocation']['replanned'] = True
     return styled, profiles, plan
 
 

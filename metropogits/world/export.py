@@ -612,7 +612,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
     if building_style in ("architectural", "purposeful", "catalog", "urban"):
         lines[-3] = lines[-3].replace("Structural streets (visual)", "Procedural walls / role roof accents · Structural streets (visual)")
     if building_style == 'urban':
-        lines[-3] = lines[-3].replace("Physical layout from world.json", "World addresses + urban-land.json physical admission")
+        lines[-3] = lines[-3].replace("Physical layout from world.json", "Demand-first physical layout from world.json" if 'capacityPlan' in world else "World addresses + urban-land.json physical admission")
     return "\n".join(lines).encode("utf8")
 
 
@@ -626,6 +626,8 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
     if building_style == 'urban':
         from .urban_architecture import urban_world, clear_physical_trees
         urban = urban_world(world, graph)
+        if urban[2]['counts'].get('DEFERRED_REPLAN', 0):
+            raise ValueError('urban export has unresolved physical capacity; regenerate with capacity replanning')
         landscape = clear_physical_trees(landscape, urban[0])
     resources = files("metropogits.viewer_assets")
     artifacts = {
