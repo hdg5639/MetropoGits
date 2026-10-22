@@ -9662,3 +9662,81 @@
   skyline and five typologies remain open; weak components are not communities.
 - Atomic feature commit and normal feature-upstream push at the verified session
   checkpoint; final handoff records actual hashes/results. User caches untouched.
+
+## Checkpoint 2026-10-22 — continuous district height composition
+
+- Implemented: catalog0.5/ADR-065 distinguishes physical-height0.1 capacity from
+  height-allocation0.1 actual height. District-skyline0.1 composes broad elliptical
+  fields across existing functional neighborhoods; no individual fan-in ranking.
+  Source-first character affects aggregate amplitude only with verified roles.
+  Unknown import stars remain neutral. Skyline-plan.json and BOTH inspectors
+  disclose capacity/allocation/legacy source height and planning limitations.
+- Scope: existing land is intentionally retained, NOT quietly declared a new
+  master plan. No uniform10/30/42 recap. Capacity still scales with span; the
+  20-wide tower140 capacity and larger-than42 allocation are tested. Certified
+  campus compound meshes/members stay exact; explicit file expansion is retained.
+  Independent validation reconstructs the field/allocation and all mesh bounds.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b. Their analysis/World/validation
+  are reused after manifest checksum verification, not claimed freshly generated.
+- Commands: compile_frontage_worlds.py height-cap-r2/<case>/after ->
+  district-skyline-r1/<case>/after --reuse-validation --repeat for all4.
+  refresh_architecture_assets.py makes matched before packages from the prior
+  compiled geometry, preserving its data/SVG. Actual source builds for purpose-
+  campus and architecture-unknown via `python -m metropogits build --repo
+  tests/fixtures/repositories/<fixture> --repo-id fixture/<fixture> --out
+  ../artifacts/visual/district-skyline-<fixture-or-unknown>-r1/source --json`.
+  procedural_world.py on those builds: adaptive neighborhoods, varied planning/
+  outline, porous street hierarchy, catalog/landmarks; purpose-campus adds
+  precinct/bootstrap, seed campus-estates-1, unknown seed unknown. Exact paths
+  are district-skyline-fixture-r1 and district-skyline-unknown-r1. Purpose full
+  generation repeated: all19 emitted files byte-identical;31 sources/77 trips/
+  128 edges, all accessible, zero overlaps/escapes. Unknown3 sources/0 relations,
+  no fabricated traffic. Target sources/build/dependencies never executed.
+- Integrity: review_district_skyline.py -> district-skyline-reviewed-r1/
+  integrity.json checks exact canonical UCG/City/World/Planning bytes, every
+  original XZ footprint/frontage/door/owner, trips/edge coverage, role proof,
+  recipe choice and campus physical models/membership. Source counts1324/681/
+  664/506, trips4209/1457/1491/622 unchanged. Original World collisions/escapes0.
+- Actual individual maximum heights42 ->26.6834/27.8688/26.1694/24.3368; these
+  are measured corpus results, NOT a new upper bound. Sources still taller than
+  10:296/167/223/215. Counts include retained constituent layers inside compounds,
+  not just visible masses. Existing certified campus heights remain unchanged.
+- Browser: viewer_audit.mjs Chrome -> district-skyline-audit-r1 (GJ/purpose/
+  unknown) and r2 (OJ/PB/SQLite). Six cases, three LODs each, GL errors0,
+  exact route/member/picking/filter/camera checks PASS where applicable,
+  Synthetic static rebuilds0; unknown no-edge Synthetic correctly unavailable.
+  capture_architecture.mjs via METRO_ARCH_INPUT=district-skyline-r1 produces
+  actual matched color/grayscale overview/district/frontage views6/5/5/3 in
+  comparison-r1 (GJ) and r2 (others). Its generic-only SQLite classified-role
+  inspector is absent, NOT claimed passed. capture_district_heights.mjs separately
+  selects an actual legacy10 generic source in ALL4: exact source path verified,
+  capacity42 versus allocated/rendered26.68/27.87/25.69/24.34 disclosed.
+- Inspected actual GJ before/after overview, grayscale closeup, OJ/PB overview,
+  GJ CPU showcase, SQLite height inspector and unknown overview. Excess scattered
+  spikes are reduced and campus geometry remains recognizable. Small horizontal
+  parcels, repeated individual silhouettes and some CPU label crowding remain;
+  no claim of five distinctive built downtowns or final architectural acceptance.
+- Performance: non-traced character/height-field CPU seconds respectively
+  GJ0.756/0.109, OJ0.372/0.036, PB0.496/0.031, SQLite0.252/0.018 in this runner.
+  Separate tracemalloc planning peaks29.72/15.00/20.62/10.41MiB; instrumented
+  times in integrity.json are much higher and are NOT used as normal runtime.
+  Extra profile artifacts6.21/3.19/4.80/1.44MB; not embedded in viewer payload.
+  Only compact district summaries/allocations enter viewer data. No universal
+  FPS guarantee: audit records software browser CPU submission, not GPU completion.
+- Regression: full Python808 tests, one existing Windows symlink skip, remaining
+  PASS in250.207s/exit0; Node78 PASS. Final inspector assertion additions re-run
+  height4 PASS. Ruff/compileall/diff PASS. Tests cover continuous transition,
+  no imported-utility business identity, duplicate/order/unrelated-owner stability,
+  source/land conservation, forged allocations and independent bounds rejection.
+- Spec alignment PASS: TECH evidence/static safety/geometry, FUNC AC002/003/006/
+  011/012 and product directory ownership/local-first. Canonical contracts and
+  noncatalog modes unchanged; no AI/cloud/target execution. Distinct master
+  planners and actual variable horizontal land admission remain the next major
+  dependency; do not replace them with more height/form micro-tuning.
+- Prior source-profile work unit9ee61a7 was committed and normally pushed to
+  feat/polyglot-analysis. This coherent height consumer receives a separate
+  verified commit and normal upstream push; final handoff records actual result.
+  Only explicit task paths staged; unrelated user caches remain untouched.

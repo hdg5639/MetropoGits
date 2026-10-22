@@ -11,7 +11,7 @@ It does not replace UCG analysis, source IDs, static safety or evidence gates.
 | Normalized spatial demand and distinct master planners | Relative program demand implemented; land admission and distinct master planners NOT implemented |
 | Flexible physical parcels / affected-area capacity replanning | Partial estate precedent only; general system not implemented |
 | Source-backed architectural compounds | Existing certified campus groups; general redesign incomplete |
-| District-level skyline composition | Not implemented; reference-skyline is NOT completion |
+| District-level skyline composition | Continuous height-field migration on existing land implemented/ADR-065; master-planned skyline NOT complete |
 | Distinctive composable architecture | Existing catalog is a baseline, not accepted final diversity |
 | Terrain / roads / shared spaces integration | Preserve existing systems; new planner integration pending |
 | WebGL / CPU and cross-repository acceptance | All redesign acceptance tests A–E remain open |

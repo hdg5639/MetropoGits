@@ -345,6 +345,9 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
     if building_style == 'catalog':
         from .architecture_catalog import catalog_summary
         data['architectureCatalog'] = catalog_summary(programs)
+        from .district_skyline import district_skyline
+        plan = district_skyline(original_world, graph)
+        data['urbanHeightPlan'] = {k: v for k, v in plan.items() if k != 'allocations'}
     if building_style in ("architectural", "purposeful", "catalog"):
         data["buildingMaterials"] = material_policy()
     return data
@@ -672,6 +675,8 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
     if building_style == "catalog":
         from .urban_character import character_document
         artifacts["urban-character.json"] = canonical_json_bytes(character_document(world, graph))
+        from .district_skyline import district_skyline
+        artifacts["skyline-plan.json"] = canonical_json_bytes(district_skyline(world, graph))
     types = {
         ".html": "text/html",
         ".js": "text/javascript",
@@ -689,6 +694,8 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
         presentation['physicalHeightPolicyVersion'] = HEIGHT_VERSION
         from .urban_character import VERSION as CHARACTER_VERSION
         presentation['urbanCharacterVersion'] = CHARACTER_VERSION
+        from .district_skyline import VERSION as SKYLINE_VERSION
+        presentation['districtSkylineVersion'] = SKYLINE_VERSION
     artifacts["manifest.json"] = canonical_json_bytes(
         dict(
             schemaVersion="manifest/0.1",

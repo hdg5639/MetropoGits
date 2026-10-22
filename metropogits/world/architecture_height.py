@@ -49,9 +49,12 @@ def height_capacity(source, form):
     return result
 
 
-def validate_architectural_heights(original, styled, profiles):
+def validate_architectural_heights(original, styled, profiles, graph):
     """Independent derived-view check, not a relaxation of World source checks."""
     from .architecture_catalog import CATALOG
+    from .district_skyline import district_skyline, allocated_height
+
+    plan = district_skyline(original, graph)
 
     sources = {p["entityId"]: p for p in original["parcels"]}
     models = {p["entityId"]: p for p in styled["parcels"]}
@@ -77,7 +80,11 @@ def validate_architectural_heights(original, styled, profiles):
             derived=True,
         ):
             raise ValueError("architectural height policy mismatch")
-        if model["height"] != capacity or model["sourceHeight"] != source["height"]:
+        allocation = plan["allocations"][identity]
+        allocated = allocated_height(capacity, policy["form"], allocation)
+        if profile.get("heightAllocation") != dict(allocation, allocatedHeight=allocated):
+            raise ValueError("architectural height allocation mismatch")
+        if model["height"] != allocated or model["sourceHeight"] != source["height"]:
             raise ValueError("architectural height capacity mismatch")
         if any(
             model[k] != v for k, v in source.items() if k not in ("parts", "height")
@@ -91,7 +98,7 @@ def validate_architectural_heights(original, styled, profiles):
                 not all(math.isfinite(part[k]) for k in ("y", "height"))
                 or part["y"] < 0
                 or part["height"] <= 0
-                or part["y"] + part["height"] > capacity + 0.0004
+                or part["y"] + part["height"] > allocated + 0.0004
             ):
                 raise ValueError("architectural part escaped height capacity")
             if not all(inside(p, footprint, -0.0005) for p in part["footprint"]):
@@ -100,7 +107,7 @@ def validate_architectural_heights(original, styled, profiles):
                 for x, y, z in face["points"]:
                     if (
                         not all(math.isfinite(v) for v in (x, y, z))
-                        or not 0 <= y <= capacity + 0.0004
+                        or not 0 <= y <= allocated + 0.0004
                         or not inside([x, z], footprint, -0.0005)
                     ):
                         raise ValueError("architectural mesh escaped capacity")

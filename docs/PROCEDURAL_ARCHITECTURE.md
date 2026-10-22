@@ -1,7 +1,8 @@
 # Procedural architecture catalog
 
-Implementation: `architecture/0.4`, [ADR-059](adr/ADR-059.md),
-[height separation ADR-063](adr/ADR-063.md).
+Implementation: `architecture/0.5`, [ADR-059](adr/ADR-059.md),
+[height separation ADR-063](adr/ADR-063.md),
+[character ADR-064](adr/ADR-064.md), [district heights ADR-065](adr/ADR-065.md).
 Based on the maintainer's `MetropoGits_Procedural_Architecture_Catalog.md` proposal.
 
 ## Delivered vocabulary and usage
@@ -121,8 +122,41 @@ count recipe bias. Changing a file's incoming count cannot assign a skyscraper
 or HQ. The old module is retained only for historical diagnostic tests/artifacts.
 Semantic/purposeful/architectural styles and saved old packages keep their old
 meaning. This removes the capacity coupling; it does NOT implement the new
-UrbanCharacterProfile or composed master-planned city. See the
+composed master-planned city. See the
 [redesign ledger](URBAN_REDESIGN_EXECUTION.md).
+
+### Current0.5 character inputs and continuous district height allocation
+
+`urban-character.json` provides independently usable source-first profiles at
+repository/district/zone scope. Facts distinguish unique local/boundary file
+relations, external usage versus declared dependencies, normalized centralization,
+weak components, modules and verified roles/capabilities. Exact source IDs,
+original edge IDs and evidence are retained. Planning preferences and relative
+program-equivalent spatial demand are explicitly derived and UNALLOCATED.
+Weak components are not semantic communities; preferences are not actual CBDs.
+
+`skyline-plan.json` is a bounded migration consumer on the existing geography.
+Up to3 elliptical height-field centers per directory produce a continuous
+transition across existing functional neighborhoods. The coordinates are not
+source facilities. Only evidenced aggregate programs influence amplitude;
+unknown fallback is neutral and independent of an import hub's incoming count.
+
+Form/footprint capacity remains physical-height/0.1. Actual physical height now
+uses height-allocation/0.1 inside that capacity: tall forms28–100%, medium50–100%,
+institutional70–100%, low halls88–100%, according to the continuous district
+field. There is no absolute replacement cap. Independent validation reconstructs
+both capacity and allocation from the original World/UCG. Original source height
+is not used as a maximum. Both inspectors disclose all three values.
+
+Individual ground envelopes, source membership, roles, roads, terrain and trips
+are unchanged. Certified campus compound geometry remains unchanged at every
+LOD; explicit member representations use the new field when expanded. Compiled
+height feeds CPU/WebGL, camera, picking and shadows consistently.
+
+This is NOT the five distinct master planners or general variable-size land
+allocation. Small source lots still limit horizontal form. The next major
+dependency is admission of the new spatial demand before parcel subdivision,
+with terrain-first capacity checks, not another per-file importance modifier.
 
 ### Historical0.3 reference centers — retired from current catalog
 

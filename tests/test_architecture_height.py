@@ -57,8 +57,8 @@ class ArchitecturalHeightTests(unittest.TestCase):
     ):
         w, g, _ = fixture()
         styled, profiles = catalog_world(w, g)
-        validate_architectural_heights(w, styled, profiles)
-        for change in ("capacity", "form", "part", "mesh", "geography"):
+        validate_architectural_heights(w, styled, profiles, g)
+        for change in ("capacity", "form", "part", "mesh", "geography", "allocation"):
             bad, p = copy.deepcopy(styled), copy.deepcopy(profiles)
             model = bad["parcels"][0]
             profile = p[model["entityId"]]
@@ -74,8 +74,10 @@ class ArchitecturalHeightTests(unittest.TestCase):
                 ]
             if change == "geography":
                 model["center"][0] += 1
+            if change == "allocation":
+                profile["heightAllocation"]["fieldIntensity"] = 1
             with self.assertRaises(ValueError):
-                validate_architectural_heights(w, bad, p)
+                validate_architectural_heights(w, bad, p, g)
 
     def test_real_world_keeps_canonical_height_but_all_render_targets_use_physical_capacity(
         self,
@@ -125,6 +127,8 @@ class ArchitecturalHeightTests(unittest.TestCase):
             self.assertIn("if(program.heightPolicy)", text)
             self.assertIn("Legacy source-scene height", text)
             self.assertIn("inside derived architectural capacity", text)
+            self.assertIn("District height allocation", text)
+            self.assertIn("not a constructed master plan", text)
 
 
 if __name__ == "__main__":

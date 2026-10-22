@@ -12,7 +12,7 @@ from .geometry import point, q
 from .seed import derive
 from .source_programs import file_topology
 
-VERSION = "architecture/0.4"
+VERSION = "architecture/0.5"
 # Presentation revisions must not reshuffle existing source silhouettes.
 MASSING_SEED_VERSION = "architecture/0.1"
 MAX_PARTS = 18
@@ -757,6 +757,7 @@ def select(entity, topology, seed, evidence):
 
 
 def catalog_world(world, graph):
+    from .district_skyline import district_skyline, allocated_height
     from .architecture_height import (
         VERSION as HEIGHT_VERSION,
         RATIOS,
@@ -767,6 +768,7 @@ def catalog_world(world, graph):
     evidence = {e["evidenceId"]: e for e in graph["evidence"]}
     entities = {e["id"]: e for e in graph["entities"] if e["kind"] == "FILE"}
     topology = file_topology(graph)
+    height_plan = district_skyline(world, graph)
     selections = {}
     for source in world["parcels"]:
         identity = source["entityId"]
@@ -869,7 +871,10 @@ def catalog_world(world, graph):
             basis="ARCHITECTURAL_FORM_AND_FOOTPRINT",
             derived=True,
         )
-        envelope = dict(source, height=budget)
+        allocation = height_plan["allocations"][identity]
+        allocated = allocated_height(budget, form, allocation)
+        profiles[identity]["heightAllocation"] = dict(allocation, allocatedHeight=allocated)
+        envelope = dict(source, height=allocated)
         specs, detail = frontage_details(specs, envelope, recipe["family"])
         profiles[identity]["frontageDetail"] = detail
         parts = compile_parts(envelope, specs)
@@ -877,10 +882,10 @@ def catalog_world(world, graph):
             max(p["y"] + p["height"] for p in parts)
         )
         parcels.append(
-            dict(source, sourceHeight=source["height"], height=budget, parts=parts)
+            dict(source, sourceHeight=source["height"], height=allocated, parts=parts)
         )
     styled = dict(world, parcels=parcels)
-    validate_architectural_heights(world, styled, profiles)
+    validate_architectural_heights(world, styled, profiles, graph)
     return styled, profiles
 
 

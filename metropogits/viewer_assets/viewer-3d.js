@@ -2171,6 +2171,7 @@
         if(program.heightPolicy) {
           detailRow(details,'Legacy source-scene height',program.sourceHeight+' · not an architectural maximum');
           detailRow(details,'Architectural height capacity',program.heightPolicy.capacity+' · '+program.heightPolicy.version+' · form/footprint, not import count');
+          if(program.heightAllocation) detailRow(details,'District height allocation',program.heightAllocation.allocatedHeight+' · '+program.heightAllocation.version+' · continuous district field, not file importance');
         }
       }
       detailRow(details, "Observed file neighbours", `${program.incomingFiles} incoming / ${program.outgoingFiles} outgoing · ${program.declarations} declarations`);
@@ -2244,6 +2245,11 @@
       ? districtLabel(districts.get(district.parentId))
       : "City root");
     detailRow(details, "Size", `${district.width} × ${district.depth}`);
+    const heightPlan = data.urbanHeightPlan?.districts[districtId] || data.urbanHeightPlan?.districts[data.semanticZoning?.[districtId]?.parentId];
+    if(heightPlan) {
+      detailRow(details, 'Urban planning preference', heightPlan.preferredTypology+' · derived advice, not a constructed master plan');
+      detailRow(details, 'Height composition', heightPlan.centers.length+' continuous field centers · '+data.urbanHeightPlan.version+' · aesthetic, not source facilities');
+    }
     inspector.append(details);
     showZoningDetails(districtId, offset);
     inspector.append(focusButton(

@@ -1,5 +1,18 @@
 # Current implementation contract baseline
 
+## Continuous district height allocation — 2026-10-22
+
+[ADR-065](../adr/ADR-065.md): catalog0.5 adds district-skyline/0.1 and
+height-allocation/0.1. Form/footprint capacity remains physical-height/0.1;
+actual compiled height uses a continuous district field within it. No legacy10
+recap, universal maximum, per-file fan-in height or new HQ claim. Add
+skyline-plan.json and compact inspector data; independently validate allocation
+and all parts/mesh vertices. Canonical schemas/geography/relationships and
+certified campus models remain unchanged. World-view0.2 already describes
+architectural height; other modes and saved old artifacts retain their meaning.
+The field composes existing land; distinct master plans/variable land admission
+remain explicitly pending, not silently claimed from this migration consumer.
+
 ## Source-first urban character — 2026-10-22
 
 [ADR-064](../adr/ADR-064.md) adds `urban-character/0.1` repository/district/zone
