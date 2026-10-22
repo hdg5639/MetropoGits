@@ -9382,3 +9382,85 @@
   generated artifacts remain outside Git. One coherent feature commit and
   normal feat/polyglot-analysis push after explicit staging/human identity audit;
   actual commit/push outcome in handoff. User build caches untouched.
+
+## Checkpoint 2026-10-22 — purpose-specific silhouettes on certified campus land
+
+- Implemented: export-only campus-massing/0.1 differentiates large connected
+  validation halls, model archive wings, storage-access halls, application
+  tower/open wings, interface galleries, compute pavilions and tooling workshops.
+  Existing certified program evidence gates selection. No catalog-name expansion,
+  regrouping, extra source entities, runtime instance claims or planner rewrite.
+  Wide/deep sites adapt the masses; physical proportions cap height; frontage
+  dressing attaches after the transform. All parts remain within certified land.
+- Scope: GJ has6 changed complexes (3 validation,2 application,1 model archive);
+  OJ6 and PocketBase6 validation complexes. PB's unclassified seventh complex
+  remains unchanged. SQLiteBrowser has0 new/changed campuses, honestly. Other
+  supported program shapes are unit-tested, not claimed as corpus discoveries.
+- Sources: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b, reused from the
+  previously verified campus-bootstrap-r2 packages. Large analysis/geography
+  was NOT regenerated. Fresh purpose-campus and unknown-Elixir sources at
+  69d57e4 were analyzed through the real CLI; no target code/builds executed.
+- Commands: `python ../artifacts/visual/compile_frontage_worlds.py
+  ../artifacts/visual/campus-bootstrap-r2/<case>/after
+  ../artifacts/visual/campus-silhouettes-r1/<case>/after --repeat` for all4.
+  This runs independent World validation and real shared-mesh export twice.
+  `python -m metropogits build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out
+  ../artifacts/visual/campus-silhouettes-fixture-r1/source --json`; then
+  `python scripts/procedural_world.py <source> --out <world> --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus --campus-style precinct --campus-bootstrap
+  --campus-landmarks --building-style catalog --seed purpose-4`.
+  Same fresh commands for architecture-unknown with its own repo ID/seed unknown.
+- Integrity: review_campus_silhouettes.py checks every manifest hash, exact
+  canonical World/City/UCG/Planning bytes, individual source meshes/profiles,
+  scene, exact routing, original group IDs/membership/evidence and certified
+  footprint/foundation/yaw equality. Only selected compound presentation parts
+  and their disclosed profiles differ. Source counts1324/681/664/506 and
+  trips4209/1457/1491/622 unchanged; all accessible, overlaps/escapes0.
+  Fresh31-source fixture:4 complexes/28 members plus3 singletons,77 trips;
+  unknown3 sources/0 trips. Repeat full product CLI yields17 byte-identical files.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/campus-silhouettes-audit-r1 <four new packages>
+  <fixture-r1/world> <unknown-r1/world>`:6 cases,3 LODs, actual camera/filter/
+  source/compound-member/expansion/route interactions PASS; GL errors0;
+  Synthetic static rebuilds0, unknown correctly has no fabricated traffic.
+  Concurrent SwiftShader CPU p95 samples are not GPU timings or an FPS claim.
+- Actual visual comparison: capture_architecture.mjs with METRO_ARCH_INPUT set
+  to campus-silhouettes-r1 produced4 matched-camera comparisons, color and
+  grayscale (GJ6 views, OJ5, PB5, SQLite3). Before is the hash-verified original
+  export, not a fresh analysis. capture_purpose_precincts.mjs inspected all6
+  GJ real source-member inspectors with before/context captures. No mockups.
+  Inspected GJ close before/after and data/application context, PB campus in
+  grayscale, GJ CPU showcase, small WebGL detail and unknown CPU preview.
+  Validation roof fingers and lower spine read differently from the old long
+  podium/tower; application and model silhouettes remain distinct without colour.
+  Overview improvements are modest: most small sources are intentionally
+  unchanged. Existing dense overview label collisions remain a correction task.
+- Geometry cost: campus explicit mesh-face counts GJ240->209, OJ480->378,
+  PB480->378 (box primitives are separate, so this is NOT total triangles).
+  Campus parts42->52/44->50/50->56; every compound stays within18 parts/240
+  explicit faces. Viewer-data size change is below9KB per case, not a general
+  package-size optimization. No per-frame geometry/planning work added.
+- Regression: `python -m unittest discover -s tests -v`:792 executed,
+ 1 pre-existing Windows symlink skip, remaining PASS in351.4s. PowerShell's
+  stderr-to-file wrapper recorded NativeCommandError for unittest's stderr
+  progress, despite its final OK result; no test failure traceback. Targeted
+ 5-test rerun explicitly confirmed Python exit0. Node `--test tests/*.test.mjs`:
+ 78PASS. Ruff, compileall and diff checks PASS. Five new tests cover7 distinct
+  massing signatures, missing/unrelated proof, rotated/deep/small/elevated bounds,
+  height/face/part budgets, frontage, real-source provenance and exact route/
+  member/input conservation. Existing goldens/security/stability checks pass.
+- Spec alignment PASS: technical geometry/evidence contracts, functional source
+  inspection/deterministic exports/unknown fallback, product static/local/no AI.
+  ADR-060 source/physical distinction preserved; no public schema/ID change.
+- Artifacts: campus-silhouettes-reviewed-r1/index.html and integrity.json;
+  campus-silhouettes-comparison-r1, members-r1, audit-r1 and live r1 packages.
+  Helpers/artifacts remain outside Git. Next: individual program-sized envelopes
+  and greater within-program architectural variety; do not claim a completed
+  city-wide redesign or photorealism. One coherent renderer/test/docs commit,
+  normal feat/polyglot-analysis push after staging/identity review; actual
+  commit/push result in handoff. Unrelated user build caches untouched.

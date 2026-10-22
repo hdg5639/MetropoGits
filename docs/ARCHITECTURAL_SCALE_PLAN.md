@@ -157,3 +157,35 @@ programmed fallback. This resolves a first-run dependency, not general single-fi
 physical-envelope sizing, all-seed campus fit or a universal performance target.
 The extra planning pass has real CPU cost; do not compare it as if it were a warm
 run or call matching prior visuals a newly invented architectural style.
+
+## Purpose silhouettes on certified land (2026-10-22)
+
+Catalog export now uses `campus-massing/0.1` for already certified complexes.
+This is the silhouette slice, not another regrouping or planner replacement:
+
+- Validation: low comb halls with a shared spine and unequal roof-lit wings.
+- Data-model groups: stepped archive fingers, NOT a claimed database center.
+  Direct persistence/storage roles may instead select linked storage halls.
+- Application: one taller anchor, low connected wings and an open court.
+- Interface / compute / tooling: terraced galleries / linked pavilions /
+  workshop halls, activated only by their existing source-program evidence.
+
+Unclassified, unsupported or unproved programs retain the previous neutral
+aggregate. Role proof and classified membership are required; attractive names
+or group size alone cannot activate specialized forms. Architectural volumes
+are metaphors, not observed room/server/department counts.
+
+The export records the program, layout and original role evidence separately
+from the existing catalog identity. The catalog remains85 recipes. Source
+meshes, group IDs/members, canonical World/City/UCG/Planning, reserved footprints,
+terrain, walking network and exact dependency trajectories remain unchanged.
+Massing adapts to wide/deep sites and stays inside the certified height bound;
+frontage details attach after that transformation. No per-frame planner or new
+render dependency. Existing semantic/purposeful presentation stays available.
+
+Compare actual matched-camera color/grayscale renders in the workspace review
+`../artifacts/visual/campus-silhouettes-reviewed-r1/index.html`. GJ exercises
+validation/data/application forms; OJ/PocketBase primarily exercise validation.
+Do not advertise unit-tested dormant forms as real-corpus semantic discoveries.
+General individual-file physical envelopes and city-wide campus diversity remain
+separate unfinished work; this change improves existing large facilities only.

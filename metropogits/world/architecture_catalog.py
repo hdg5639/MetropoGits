@@ -885,6 +885,8 @@ def catalog_world(world, graph):
 
 def catalog_compounds(compounds):
     """Restyle already-certified groups; never regroup or invent a landmark."""
+    from .campus_architecture import campus_massing
+
     result = []
     for source in compounds:
         model = source["physicalModel"]
@@ -917,7 +919,13 @@ def catalog_compounds(compounds):
         )
         envelope = dict(model, height=source["height"])
         family = "relational" if kind == "DATA" else "generic"
-        specs, detail = frontage_details(grammar(form), envelope, family)
+        massing = campus_massing(source)
+        if massing:
+            specs, envelope["height"], profile = massing
+            label = profile["label"]
+        else:
+            specs, profile = grammar(form), None
+        specs, detail = frontage_details(specs, envelope, family)
         parts = compile_parts(envelope, specs)
         base = model.get("baseElevation", 0)
         parts = [
@@ -951,6 +959,7 @@ def catalog_compounds(compounds):
                     derived=True,
                     memberCount=len(source["memberEntityIds"]),
                     frontageDetail=detail,
+                    **({"campusMassing": profile} if profile else {}),
                 ),
             )
         )

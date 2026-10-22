@@ -84,6 +84,17 @@ fail explicitly instead of dropping files. Certified compounds are restyled in
 place, never regrouped; membership, proof, persistent LOD and expansion remain.
 Verification complexes combine hall/roof/anchor volumes, not new source facilities.
 
+Certified campus groups additionally use `campus-massing/0.1`: source-program
+evidence selects large comb halls, archive wings, application tower/court,
+terraced galleries, connected compute volumes or tooling workshops. Generic
+groups retain their neutral aggregate; data models alone do not become storage
+facilities. These are private export silhouettes, not new catalog entries or
+source entities. Wide/deep lot adaptation and physical height caps preserve
+the same certified footprint and exact source routes. Their versioned
+`architecture.campusMassing` profile discloses layout, program and role evidence.
+See [architectural scale plan](ARCHITECTURAL_SCALE_PLAN.md) and
+`tests/test_campus_architecture.py` for the explicit limits and checks.
+
 ## Shared rendering and compatibility
 
 Offline-compiled private `meshFaces` and material hints feed CPU SVG, Canvas and
