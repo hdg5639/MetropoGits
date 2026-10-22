@@ -71,7 +71,7 @@ def _estate_fallback(function):
         try:
             result = function(scene, graph, **options)
         except ValueError as error:
-            if options.get('campus_style') != 'estate' or not str(error).startswith((
+            if options.get('campus_style') not in ('estate', 'precinct') or not str(error).startswith((
                 'world infrastructure disconnected at ',
                 'world parcel capacity infeasible after bounded envelope repair',
             )):
@@ -79,7 +79,7 @@ def _estate_fallback(function):
             fallback = str(error)
         else:
             plan = result.get('campusPlan', {})
-            if options.get('campus_style') == 'estate' and not any(s.get('architecturalSites') for s in plan.get('sites', [])) and any(
+            if options.get('campus_style') in ('estate', 'precinct') and not any(s.get('architecturalSites') for s in plan.get('sites', [])) and any(
                 d.get('eligible') and d.get('reason') not in ('NOT_ELIGIBLE', 'SEEDED_OTHER_GRAMMAR', 'PARENT_DIVERSITY_LIMIT')
                 for d in plan.get('decisions', {}).values()
             ):
@@ -89,7 +89,7 @@ def _estate_fallback(function):
         retained = function(scene, graph, **dict(options, campus_style='programmed'))
         retained['diagnostics'].append(dict(
             reason='estate planning fallback: retained programmed campus',
-            requestedCampusStyle='estate', actualCampusStyle='programmed',
+            requestedCampusStyle=options['campus_style'], actualCampusStyle='programmed',
             limitOrFailure=fallback,
         ))
         return retained
@@ -115,7 +115,7 @@ def generate_world(
     campus_style="quad",
     _route=True,
 ):
-    if campus_style not in ("quad", "varied", "neighborhood", "landscape", "organic", "fabric", "programmed", "estate") or (campus_style != "quad" and not campus):
+    if campus_style not in ("quad", "varied", "neighborhood", "landscape", "organic", "fabric", "programmed", "estate", "precinct") or (campus_style != "quad" and not campus):
         raise ValueError('non-default campus style requires --campus; unknown styles are invalid')
     if campus and (pattern_scale!='adaptive' or not _route):
         raise ValueError('campus requires routed adaptive neighborhoods')
@@ -293,7 +293,7 @@ def generate_world(
     pairs = dependency_pairs(graph, owners) if zoning == "neighborhoods" else {}
     campus_pairs = dependency_pairs(graph, dict.fromkeys(owners, "campus")) if campus else None
     campus_groups = None
-    if campus and campus_style == "estate":
+    if campus and campus_style in ("estate", "precinct"):
         from .campus_estates import planning_affinity, requirements
         from .campus import eligibility
         campus_groups = planning_affinity(graph, [z for zones in clusters.values() for z in zones])
@@ -303,7 +303,15 @@ def generate_world(
             extra = 0
             required = 0
             for zone in zones:
-                if not 12 <= len(zone['memberEntityIds']) <= 256 or not eligibility(zone, campus_pairs, local_seeds[key])['eligible']:
+                decision_pairs = campus_groups if campus_style == 'precinct' else campus_pairs
+                if not 12 <= len(zone['memberEntityIds']) <= 256 or not eligibility(zone, decision_pairs, local_seeds[key])['eligible']:
+                    continue
+                if campus_style == 'precinct':
+                    from .campus_reservation import program_demand
+                    program_area = program_demand(zone, campus_groups)['total']
+                    available = budgets[key]['total'] * len(zone['memberEntityIds']) / len(grouped[key])
+                    required += program_area
+                    extra += max(0, program_area - available)
                     continue
                 requests = [r for r in requirements(zone, campus_groups) if len(r['memberEntityIds']) >= 3][:4]
                 if requests:
@@ -351,7 +359,8 @@ def generate_world(
         and previous.get("terrainPreset", "flat") == terrain
         and (previous.get("streetPolicy") == "porous") == (street_policy == "porous")
         and ('campusPlan' in previous)==campus
-        and previous.get('campusPlan',{}).get('style','quad')==campus_style
+        and (previous.get('campusPlan',{}).get('style','quad')==campus_style
+             or (campus_style == 'precinct' and previous.get('campusPlan',{}).get('style') in ('programmed','estate')))
         and (
             pattern_scale == "block"
             or previous.get("generatorVersion") in (
@@ -382,6 +391,9 @@ def generate_world(
         {p["entityId"]: p["slotId"] for p in previous["parcels"]} if compatible else {}
     )
     repairs = []
+    if compatible and campus_style == 'precinct' and previous.get('campusPlan', {}).get('style') != 'precinct':
+        repairs.append(dict(reason='precinct migration: retain compatible baseline geography; reconstruct local circulation',
+                            previousCampusStyle=previous['campusPlan']['style']))
     terrain_data = previous.get("terrain") if compatible and terrain != "flat" else None
     if terrain_data:
         validate_terrain(terrain_data, resolved_seed)
@@ -706,7 +718,7 @@ def generate_world(
             used={s["physicalId"] for s in new_routing["segments"]}
             if any(s.get("tunnelId")==tunnel["id"] and s["id"] in used for s in candidate):
                 streets,routing,networks,coverage=candidate,new_routing,new_networks,new_coverage
-    if campus and campus_style in ("neighborhood","landscape","organic","fabric","programmed","estate"):
+    if campus and campus_style in ("neighborhood","landscape","organic","fabric","programmed","estate","precinct"):
         from .campus_circulation import prune_campus_tails
 
         streets, circulation_note = prune_campus_tails(

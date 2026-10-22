@@ -231,7 +231,10 @@ def _derive(world, graph, note, *, campus_landmarks=False):
             else members
         )
         limit = 1 + min(3, len(campus_members.get(zone, ())) // 48)
-        if campus and world.get("campusPlan", {}).get("style") == "estate":
+        if campus and (world.get("campusPlan", {}).get("style") == "estate" or (
+            world.get("campusPlan", {}).get("style") == "precinct"
+            and any(b['entityId'] in planned_sites for b in members)
+        )):
             limit = 4
         for seed in ordered:
             if campus and site_counts[zone] >= limit:

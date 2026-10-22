@@ -22,7 +22,7 @@ def validate_blocks(world, scene, graph, neighborhoods):
     pairs = dependency_pairs(graph, owners)
     campus_pairs = dependency_pairs(graph, dict.fromkeys(owners, "campus")) if 'campusPlan' in world else None
     campus_groups = None
-    if world.get("campusPlan", {}).get("style") == "estate":
+    if world.get("campusPlan", {}).get("style") in ("estate", "precinct"):
         from .campus_estates import planning_affinity
         campus_groups = planning_affinity(graph, list(neighborhoods.values()))
     parcels = {p["entityId"]: p for p in world["parcels"]}

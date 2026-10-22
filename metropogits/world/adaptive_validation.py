@@ -17,6 +17,10 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
     )
     polygons = {z["id"]: z["polygon"] for z in zones}
     selections = profile_plan(zones, polygons, pattern, skeleton(roads) if morphology else main)
+    if campus and campus_style == 'precinct':
+        from .campus_reservation import reserve_precinct
+        main, pattern = reserve_precinct(zones, polygons, parent['localSeed'], main, pattern, terrain,
+                                        campus_groups if campus_groups is not None else campus_pairs or {})
     plans = {
         z["id"]: local_sites(
             z["polygon"],
@@ -49,7 +53,8 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
         from .campus import apply_campuses
 
         decisions, sites = apply_campuses(plans,selections,zones,polygons,parent['localSeed'],main+boundary,terrain,
-                                         campus_pairs if campus_pairs is not None else pairs, campus_style, grouping_pairs=campus_groups)
+                                         campus_pairs if campus_pairs is not None else pairs, campus_style, grouping_pairs=campus_groups,
+                                         reserved_zone=pattern.get('campusReservation', {}).get('zoneId'))
     if sites:
         walks = [w for site in sites.values() for w in site['walkways']]
         for w in walks:
@@ -64,7 +69,7 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
         b = children[0]
         if campus and (b.get('campusDecision')!=decisions[z['id']] or b.get('campusSite')!=sites.get(z['id'])):
             raise ValueError('campus decision or reserved geometry mismatch')
-        if z['id'] in sites and b.get('urbanGrammar') != ('CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate') else 'MIXED_CAMPUS'):
+        if z['id'] in sites and b.get('urbanGrammar') != ('CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate','precinct') else 'MIXED_CAMPUS'):
             raise ValueError('campus block grammar does not match the selected planning scope')
         selection = selections[z["id"]]
         choices = plans[z["id"]][0]

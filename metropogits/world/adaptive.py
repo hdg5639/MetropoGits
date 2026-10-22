@@ -341,6 +341,13 @@ def plan_adaptive(
             ]
             continue
         selections = profile_plan(clusters, polygons, pattern, skeleton(parent_roads))
+        reserved_main, reserved_pattern = main, pattern
+        if campus and campus_style == 'precinct':
+            from .campus_reservation import reserve_precinct
+            reserved_main, reserved_pattern = reserve_precinct(
+                clusters, polygons, seed, main, pattern, terrain,
+                campus_groups if campus_groups is not None else campus_pairs or {},
+            )
         plans = {
             z["id"]: local_sites(
                 polygons[z["id"]],
@@ -348,19 +355,19 @@ def plan_adaptive(
                 selections[z["id"]],
                 parent_candidates,
                 parent_roads,
-                main,
+                reserved_main,
             )
             for z in clusters
         }
         plans, boundary, ports = reserve_complete_plan(
-            plans, polygons, main, polygon, pattern, clusters, pairs
+            plans, polygons, reserved_main, polygon, reserved_pattern, clusters, pairs
         )
-        actual_main, actual_pattern = main, pattern
+        actual_main, actual_pattern = reserved_main, reserved_pattern
         if terrain:
             from .terrain import terrain_plan
 
             plans, actual_main, boundary, ports, actual_pattern = terrain_plan(
-                plans, main, boundary, ports, pattern, polygon, terrain
+                plans, reserved_main, boundary, ports, reserved_pattern, polygon, terrain
             )
         unreserved_plans = plans
         if porous:
@@ -421,7 +428,8 @@ def plan_adaptive(
 
         campus_decisions, campus_sites = apply_campuses(
             plans, selections, clusters, polygons, seed, actual_main + boundary, terrain,
-            campus_pairs if campus_pairs is not None else pairs, campus_style, grouping_pairs=campus_groups)
+            campus_pairs if campus_pairs is not None else pairs, campus_style, grouping_pairs=campus_groups,
+            reserved_zone=actual_pattern.get('campusReservation', {}).get('zoneId'))
     main = actual_main + boundary
     pattern = actual_pattern
     if campus_sites:
@@ -458,7 +466,7 @@ def plan_adaptive(
             )
         if key in campus_sites:
             campus_ids = set(campus_sites[key]['memberEntityIds'])
-            if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate'):
+            if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate','precinct'):
                 preferred = dict(preferred or {})
                 preferred.update(campus_sites[key].get('facilityAssignments', {}))
                 preferred.update(campus_sites[key]['anchorSlots'])
@@ -506,7 +514,7 @@ def plan_adaptive(
         if campus:
             block['campusDecision'] = campus_decisions[key]
         if key in campus_sites:
-            block.update(urbanGrammar='CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate') else 'MIXED_CAMPUS',campusSite=campus_sites[key])
+            block.update(urbanGrammar='CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate','precinct') else 'MIXED_CAMPUS',campusSite=campus_sites[key])
         if regions:
             block["planningRegions"] = regions
         elif selections[key]["mode"] == "INHERITED" and base == "HYBRID":

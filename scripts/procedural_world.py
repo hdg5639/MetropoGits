@@ -52,7 +52,7 @@ def main():
     parser.add_argument("--previous-world", type=Path)
     parser.add_argument('--campus',action='store_true',help='adaptive only: evidence-bounded campus planning with real walking access; courtyard pockets by default')
     parser.add_argument('--campus-landmarks',action='store_true',help='export only: merge nearby related campus files into a few persistent large complexes')
-    parser.add_argument('--campus-style',choices=('quad','varied','neighborhood','landscape','organic','fabric','programmed','estate'),default='quad',help='campus only: estate reserves variable facility sites before source subdivision; older fitted precincts and pocket pilots retained')
+    parser.add_argument('--campus-style',choices=('quad','varied','neighborhood','landscape','organic','fabric','programmed','estate','precinct'),default='quad',help='campus only: precinct reserves program land before arterial streets; estate reserves facility sites; older styles retained')
     parser.add_argument("--street-hierarchy", action="store_true",
                         help="adaptive only: offline structural street classes and connected backbone")
     parser.add_argument(

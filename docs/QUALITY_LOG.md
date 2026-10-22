@@ -9224,3 +9224,86 @@
 - Delivery: planning record8589504 plus one tested experimental planning unit;
   explicit staging/human identity review, normal feat/polyglot-analysis push.
   Actual hashes/push outcome in handoff. User build caches remain untouched.
+
+## Checkpoint 2026-10-22 — Reserve campus program land before arterial subdivision
+- Implemented: ADR-061 opt-in `precinct`/campus-plan0.9. Derive facility/common/
+  circulation demand, reserve a sufficiently large existing sector, divert
+  internal structural arterials onto a shared perimeter, preserve all outside
+  endpoints and protect nature. Typed0.8 facility reservations remain the
+  constituent layer. Independent adaptive reconstruction checks exact geometry,
+  program and road identity; no weaker collision/evidence/source-size gates.
+- Root cause: local probes on pinned PocketBase showed ample area but many
+  pre-existing structural spans splitting candidate land. Global expansion was
+  not necessary for the positive results. A new explicit compatible previous
+  World migration keeps existing geography while rebuilding local circulation.
+  Exterior components are connected before source lots; unreserved parents keep
+  their working programmed campus rather than silently losing it.
+- Fixtures/revisions: GJ3d9b53f9, OJb163acd2, PocketBase6f370ea7,
+  SQLiteBrowserae32df15, maintained purpose-campus and architecture-unknown
+  from1bc7183. Large inputs reuse pinned architecture-frontage-r3 City/UCG;
+  source analysis was not rerun on those clones. No target dependencies/build/
+  application code executed. Fresh fixture analysis was run this session.
+- Commands: `python -m metropogits build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out ../artifacts/visual/campus-reservation-cold-r1/source --json`;
+  same for architecture-unknown -> campus-reservation-unknown-r1/source.
+  Local build_campus_estates.py invokes actual generate_world/validate_world/
+  package_world with `--style precinct --terrain mountain-landscape --seed
+  mountain-3` (OJ mountain-2) and explicit `--previous-world` pinned before World
+  -> campus-reservation-r4/{gj,oj,pocketbase,sqlitebrowser}/after. All are real
+  generation/export, NOT the previous checkpoint's cached fallback replay.
+- Large positives: GJ one reserved sector,29 files represented by4 large
+  complexes; PB one sector,32 files/4 complexes; OJ two sectors,28 files/6
+  complexes. Existing programmed campuses in other parents retained. SQLite
+  cannot fit a safe new precinct and retains programmed morphology; do not
+  fabricate specialized facilities to force universal coverage.
+- Locality: exact original UCG/City bytes, trip IDs/endpoints/edge membership,
+  natural terrain, city envelope and ALL district/sector polygons unchanged in
+  r4 matched runs. Outside reserved sectors, exact address/yaw/access preserved:
+  GJ1212/1212, OJ585/585, PB586/586, SQLite506/506. Replanned source addresses
+  inside reservations deliberately change; their physical trips are rebuilt.
+  All1324/681/664/506 sources accessible;4209/1457/1491/622 trips retained;
+  building/road overlaps and owner escapes0. JSON schemas/manifest hashes checked.
+- Determinism: fresh31-source fixture ->4 complexes/28 files,77 trips/128 edges;
+  repeated generation tested,17 package files byte-identical in repeat-r1.
+  Unknown Elixir3 files remain neutral with0 relations/traffic. Growth check
+  check_precinct_growth.py adds one unrelated Python file to a generated copy
+  of purpose-campus:31->32 sources, unchanged boundaries and28/31 old addresses
+  retained. Three individual fallback files relocate; explicitly not perfect
+  per-file stability. All28 original complex members remain fixed.
+- Cold versus migration: a genuine cold GJ run (r2) accepts2 complexes/12 files,
+  but different capacity repairs change macro geography. Cold PB remains a
+  fallback. Do not call those same-site comparisons or claim universal cold fit.
+  Final hinted generation seconds GJ28.0/PB17.2/OJ13.3/SQLite30.8, validation
+  15.0/10.7/9.6/12.2, export26.6/14.8/16.8/9.5. Concurrent local runs; not a
+  controlled speed comparison against older cold timings. No general speedup.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/campus-reservation-audit-r1 <four r4 after exports>
+  <cold-r1/purpose/after> <unknown-r1/unknown/after>`: six cases/three LODs,
+  camera/filters/source/roads/expansion/Synthetic PASS,30 GL state samples0.
+  Synthetic static rebuilds0; unknown correctly has no traffic. PB overview
+  Synthetic p95 CPU8.3ms under concurrent SwiftShader; other PB LODs3.6/3.9ms.
+  These are JS submission, not GPU completion/FPS or hardware performance.
+- Visuals: capture_architecture.mjs with METRO_ARCH_INPUT=campus-reservation-r4
+  -> campus-reservation-comparison-r1, same absolute overview/close/campus/street
+  cameras and grayscale. GJ/OJ/PB source inspectors verified; SQLite has no
+  evidenced pickable target at that frame, not falsely marked inspected.
+  capture_purpose_precincts.mjs -> campus-reservation-members-r1: six GJ campus
+  complexes, actual members/evidence/explicit expansion. Inspected GJ before/
+  after campus/close, PB/OJ campus, GJ member inspector and actual CPU showcase.
+  Internal through-roads no longer slice the shared campus; larger horizontal/
+  courtyard facilities are legible. Remaining small rows and repeated recipes
+  still exist; not a completed universal architectural-diversity redesign.
+- Artifacts: campus-reservation-reviewed-r1/index.html, integrity.json, growth.json;
+  local gallery links checked. Artifacts/helpers intentionally outside Git.
+- Regression: Python784 executed, one existing Windows symlink skip, remaining
+  PASS; Node78 PASS; Ruff/compileall/diff PASS. New tests cover program capacity,
+  outside endpoints, protected terrain rejection, deterministic reconstruction,
+  forged reservation rejection, compatible migration and old campus retention.
+  Existing estate/default algorithms and source contracts remain compatible.
+- Spec alignment PASS: technical evidence/physical split; functional AC-001/002/
+ 003/006/011/014; product local/static/unknown/no execution. Next: individual
+  program-sized physical envelopes, varied campus compositions and cold-mode
+  fit/performance. This opt-in reservation slice is verified, not default-promoted.
+- Delivery: one coherent planning work unit with explicit staging and human
+  metadata review; normal feat/polyglot-analysis push. Actual commit/push outcome
+  in handoff. Existing user fixture build caches remain untouched.

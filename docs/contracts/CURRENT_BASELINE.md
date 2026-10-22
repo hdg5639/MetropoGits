@@ -1,5 +1,21 @@
 # Current implementation contract baseline
 
+## Program-led precinct reservations — 2026-10-22
+
+[ADR-061](../adr/ADR-061.md) adds opt-in `--campus-style precinct` with
+campus-plan/0.9. Source-derived physical demand reserves a sufficiently large
+existing sector before arterial subdivision. Internal structural spans divert
+onto a shared perimeter while outside endpoints, nature and sector/district
+polygons remain. The adaptive pattern records campus-reservation/0.1; independent
+reconstruction verifies its exact demand, reservation and street identity.
+
+Typed facility sites keep their0.8 representation. UCG/City and source dimensions
+are unchanged. Existing campus styles remain supported; unreserved parents keep
+their programmed campus. Compatible explicit previous-world migration reuses
+baseline geography while reconstructing circulation and exact dependency trips.
+All original evidence/capacity/terrain/overlap/access checks remain mandatory.
+This is not universal individual footprint scaling or forced city-wide growth.
+
 ## Source-affinity campus estates — 2026-10-21
 
 [ADR-060](../adr/ADR-060.md) adds opt-in campus-plan/0.8 via

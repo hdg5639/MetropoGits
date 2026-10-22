@@ -111,3 +111,29 @@ allocation. Do not weaken size/collision/evidence gates to force acceptance.
 
 Review: `../artifacts/visual/campus-scale-reviewed-r1/index.html` (workspace
 artifact, intentionally outside Git). Detailed evidence is in QUALITY_LOG.
+
+## Next slice — land reservation before arterial subdivision (2026-10-22)
+
+ADR-061 adds `--campus-style precinct`, campus-plan/0.9, leaving0.8/default
+behavior unchanged. The obstacle was not merely insufficient area: inherited
+arterials fragmented already sufficient sectors before large sites could fit.
+Derive physical program demand, select a feasible existing sector, then reserve
+its interior before committing the arterial network. Redirect structural
+through-streets to a shared perimeter; keep external endpoints, original
+district/sector polygons and nature. Fit connected facilities afterwards.
+
+This is **contiguous land reservation**, not a claim of automatic city-wide
+expansion or general variable individual-file footprints. Reject protected
+water/mountain perimeter conflicts; a failed fit retains working morphology.
+Parents without a safe new reservation retain their existing programmed campus
+instead of silently erasing it. Exterior components connect before source lots
+are assigned. Real dependency trips are reconstructed only after geometry fits.
+
+An explicit compatible previous World can migrate programmed/estate geography
+to precinct style. Controlled before/after outputs use this public hint path;
+they are real generation/validation/export, not cached result replay. A cold
+GJ positive also exists, but cold mode changes can avoid different historical
+capacity repairs and change macro geography, so do not label them same-site.
+
+New positive large-corpus results and exact locality measurements belong in
+QUALITY_LOG and campus-reservation-reviewed-r1, not in catalog-count claims.

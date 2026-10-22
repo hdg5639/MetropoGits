@@ -89,7 +89,7 @@ class EstateFabric(Fabric):
         from .infrastructure import atomic_streets
         from .radial import _clipped
 
-        if self.complete:
+        if self.complete and not getattr(self, 'connect_perimeter', False):
             return []
 
         atomic = atomic_streets(roads)
@@ -377,7 +377,7 @@ class EstateFabric(Fabric):
 
 
 def estate_layout(
-    zone, polygon, axis, seed, roads, terrain, pairs, stats, *, observed_pairs=None
+    zone, polygon, axis, seed, roads, terrain, pairs, stats, *, observed_pairs=None, connect_perimeter=False
 ):
     from .campus_neighborhood import neighborhood_layout
 
@@ -391,6 +391,7 @@ def estate_layout(
         form = EstateFabric(
             zone, polygon, axis, seed, roads, pairs, maximum, rotate, complete
         )
+        form.connect_perimeter = connect_perimeter
         try:
             result = neighborhood_layout(
                 zone, polygon, axis, seed, roads, terrain, pairs, stats, _form=form
