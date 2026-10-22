@@ -10083,3 +10083,24 @@
   NVIDIA/D3D11 browser run. Unrelated Gradle/Maven fixture caches were preserved
   and not staged. This documentation-only delivery record follows the verified
   feature commit; no additional implementation change is claimed.
+
+## Checkpoint 2026-10-23 — PR3 integration lint correction
+- Implemented: remove one unused local `nearest` import from program_local_sites;
+  no capacity, geometry, evidence or runtime behavior changes.
+- Fixture(s): maintained capacity fixtures, including actual programmed campus
+  generation, unsupported language fallback and saved-package round trips.
+- Commands run: `python -m ruff check metropogits scripts tests` (ruff0.14.2),
+  `python -m compileall -q metropogits scripts tests`,
+  `python -m unittest discover -s tests -p test_capacity_replan.py -v`.
+- Results: lint/compilation pass;12 capacity tests pass. Existing four-repository
+  artifacts/visual findings remain applicable because only an unused import was
+  removed; no new visual rendering or full-suite run is claimed here.
+- Remote evidence: PR3 targets main from feat/polyglot-analysis. First CI run
+  39806084666 passed action-smoke, but quality failed on F401 at capacity.py178;
+  this exact failure is corrected without suppressing lint or tests.
+- Spec alignment: PASS; contracts and all safety/evidence defaults unchanged.
+- Open risks: GitHub rejected the requested approval with422, `Can not approve
+  your own pull request`; authenticated account and PR author are both hdg5639.
+  Independent approval is still required; no review/protection bypass or merge.
+- Commits / push: prepare this verified lint correction as its own atomic commit
+  on the existing PR branch, then normal push to trigger fresh required CI.

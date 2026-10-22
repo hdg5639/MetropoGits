@@ -175,7 +175,7 @@ def program_local_sites(polygon, seed, selection, parent_candidates, parent_road
         # A tiny sector may fall between two arterial rows. Reserve one actual
         # access street before lots, rather than enlarging the whole city merely
         # to make a periodic stencil hit this polygon.
-        from .geometry import centroid, nearest
+        from .geometry import centroid
         from .radial import _clipped
         center = centroid(polygon)
         axis = selection['axis']
