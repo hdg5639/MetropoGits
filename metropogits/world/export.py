@@ -166,7 +166,7 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
                                  for f in part["meshFaces"]]} if "meshFaces" in part else {})) for part in p["parts"]]
             models[p["entityId"]]["foundationFaces"]=foundation_faces(p,world["terrain"])
     physical_scene = dict(
-        schemaVersion="world-view/0.1",
+        schemaVersion="world-view/0.2" if building_style == "catalog" else "world-view/0.1",
         layoutAlgorithm=world["generatorVersion"],
         ucgDigest=world["ucgDigest"],
         theme=scene["theme"],
@@ -682,6 +682,8 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
     if building_style == 'catalog':
         from .architecture_catalog import VERSION as ARCHITECTURE_VERSION
         presentation['architectureVersion'] = ARCHITECTURE_VERSION
+        from .architecture_height import VERSION as HEIGHT_VERSION
+        presentation['physicalHeightPolicyVersion'] = HEIGHT_VERSION
     artifacts["manifest.json"] = canonical_json_bytes(
         dict(
             schemaVersion="manifest/0.1",

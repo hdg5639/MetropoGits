@@ -9545,3 +9545,86 @@
   files remain outside Git. One renderer/fixtures/docs work unit, commit and normal
   feat/polyglot-analysis push after explicit staging/human identity review; actual
   result in handoff. Unrelated user build caches preserved.
+
+## Checkpoint 2026-10-22 — remove legacy10 as architectural height ceiling
+
+- Work units: preserve the maintainer's mandatory urban redesign verbatim and
+  its unfinished execution ledger (docs commit6d50820); implement the separately
+  prioritized height prerequisite under ADR-063. Do NOT mark typology/master
+  planning acceptance complete from this height change.
+- Implemented: catalog0.4/physical-height0.1 separates legacy source-scene height
+  from derived architectural capacity. Capacity uses actual smaller horizontal
+  span and architectural form; no minimum with legacy height, no universal
+  replacement constant. Six-unit tower capacity42; twenty-unit tower140 in tests.
+  Original City/World height10 remains only as compatible legacy data. Derived
+  world-view0.2 has architectural height plus sourceHeight; profiles/manifest
+  pin the policy. Independent reconstruction checks form, capacity, every part/
+  mesh vertex, unchanged horizontal geography and source conservation.
+- Also retired: reference-skyline massing/height modulation and SERVICE incoming
+  count recipe bias. The legacy diagnostic module remains testable for archived
+  artifacts, but cannot assign new skyscrapers/HQs. Roles/technology confidence,
+  unknown fallback and exact source relations are not changed.
+- Consumers: common offline meshes feed CPU/WebGL, actual physical dimensions
+  feed framing/LOD/picking/shadows; source inspectors distinguish legacy height
+  from capacity. First real r1 inspection caught the duplicated WebGL inspector
+  still saying original height; corrected BOTH Canvas and WebGL consumers.
+  Final r2 packages refresh only verified bundled assets; compiled physical
+  geometry/data/canonical artifacts/SVG are byte-identical to r1.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b from reference-centers-r2.
+  Large analysis/World layout and its unchanged hash-verified World validation
+  were reused, NOT rerun. New architectural validation runs on every compile.
+  Fresh12-file reference-center and3-file unknown-Elixir source pipelines run
+  again after the final UI fix. No target source/build/dependencies executed.
+- Commands: compile_frontage_worlds.py <verified reference-centers-r2 input>
+  <height-cap-r1 after> --repeat --reuse-validation for all4; final verified
+  refresh_architecture_assets.py -> height-cap-r2/{case}/{before,after}.
+  `python -m metropogits build --repo tests/fixtures/repositories/reference-center
+  --repo-id fixture/reference-center --out ../artifacts/visual/height-cap-fixture-r2/source --json`;
+  `python scripts/procedural_world.py <source> --out <world> --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus-landmarks --building-style catalog
+  --seed reference-center`. Same fresh build/world pipeline for architecture-unknown.
+- Integrity: review_height_cap.py verifies manifest hashes, exact canonical
+  UCG/City/World/Planning bytes, original source role/technology proof, unchanged
+  footprints/frontage/doors/terrain/streets/trips/campus physical meshes. Source
+  counts1324/681/664/506 and trips4209/1457/1491/622 remain unchanged. Original
+  World overlaps/escapes0 and all sources accessible. No old validator weakened.
+  Four compile/package repeats pass; final fresh product CLI repeat matches17 files.
+- Measured compiled individual heights: all4 range2.352–42, not a new global42
+  cap. Sources with legacy height10 now compiled above10: GJ248/632,
+  OJ150/315, PB248/466, SQLite249/502. These counts include retained file layers
+  inside persistent complexes, NOT a claim all are simultaneously visible.
+- Actual browser: viewer_audit.mjs final r2, four large outputs plus fresh small
+  and unknown -> height-cap-audit-r2. Six cases/three LODs, camera/filter/source/
+  route/compound/expansion interactions PASS, GL errors0, Synthetic static
+  rebuilds0; unknown graph has no invented traffic. Additional real selectable
+  generic source in EACH large city shows legacy10/rendered42 and the correct
+  capacity disclosure -> height-cap-inspectors-r2/report.json and screenshots.
+- Visual comparison: same-camera color/grayscale overview/district/entrance
+  captures from actual r1 geometry (6/5/5/3 views) remain valid for physically
+  identical final r2, except the corrected inspector explicitly linked separately.
+  Inspected GJ actual overview and selected tall source; CPU/shared-geometry
+  regression tests pass. Height constraint is visibly gone. Thin source-sized
+  parcels now expose scattered slender towers: this is NOT a composed downtown
+  or the mandatory urban redesign's visual acceptance. Prioritize variable land/
+  master planning; do not mask that structure with texture or recap to10.
+- Regression: full Python801 executed/1 existing Windows symlink skip, remaining
+  PASS in174s, explicit exit0. After final inspector-only fix, targeted height4
+  plus audit-harness1 pass; final Node78PASS, Ruff/compileall/diff PASS. New tests
+  reject forged capacity/form/geometry/nonfinite dimensions and verify original
+  canonical bytes, physical view heights, repeatability, unknown honesty, and
+  independence from file import counts. Legacy tests now explicitly test legacy
+  diagnostics, while asserting current catalog does not use that height effect.
+- Spec alignment PASS with explicit ADR-063 approved height-contract separation.
+  Public canonical schemas/IDs remain unchanged; derived view version increments.
+  Semantic/purposeful/architectural and saved old packages preserve their behavior.
+  No AI/runtime/cloud service or unsafe target execution added. Software browser
+  CPU submission timings are not GPU/display FPS or a universal performance claim.
+- Artifacts: height-cap-reviewed-r1/index.html/integrity.json, live height-cap-r2,
+  geometry comparisons-r1, final inspectors-r2 and audit-r2. Helpers/artifacts
+  remain outside Git. Height feature gets its own atomic commit, then both verified
+  commits push normally to feat/polyglot-analysis after human identity/staging
+  review; actual outcome in handoff. Unrelated user build caches untouched.

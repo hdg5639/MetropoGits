@@ -12,7 +12,7 @@ from .geometry import point, q
 from .seed import derive
 from .source_programs import file_topology
 
-VERSION = "architecture/0.3"
+VERSION = "architecture/0.4"
 # Presentation revisions must not reshuffle existing source silhouettes.
 MASSING_SEED_VERSION = "architecture/0.1"
 MAX_PARTS = 18
@@ -742,8 +742,6 @@ def select(entity, topology, seed, evidence):
     choices = ROLE_CHOICES.get(
         role, ("GENERIC_ROW", "GENERIC_MIDRISE", "GENERIC_TOWER", "UNCLASSIFIED_DEPOT")
     )
-    if role == "SERVICE" and topology["incoming"] >= 4:
-        choices = ("OFFICE_STEPPED", "OFFICE_BAR")
     if role in ("MESSAGE_PRODUCER", "MESSAGE_CONSUMER"):
         if "KAFKA" in technologies:
             choices = ("KAFKA_PORT",)
@@ -759,31 +757,23 @@ def select(entity, topology, seed, evidence):
 
 
 def catalog_world(world, graph):
-    from .skyline import reference_centers, skyline_massing
+    from .architecture_height import (
+        VERSION as HEIGHT_VERSION,
+        RATIOS,
+        height_capacity,
+        validate_architectural_heights,
+    )
 
     evidence = {e["evidenceId"]: e for e in graph["evidence"]}
     entities = {e["id"]: e for e in graph["entities"] if e["kind"] == "FILE"}
     topology = file_topology(graph)
     selections = {}
-    eligible = set()
     for source in world["parcels"]:
         identity = source["entityId"]
         seed = derive(world["seed"], identity, MASSING_SEED_VERSION)
         selections[identity] = select(
             entities[identity], topology[identity], seed, evidence
         )
-        if source["archetype"] in (
-            "GENERIC_BUILDING",
-            "SERVICE_OFFICE",
-            "UI_PAVILION",
-        ) and selections[identity][1] in (
-            None,
-            "GENERAL_COMPONENT",
-            "SERVICE",
-            "UI_COMPONENT",
-        ):
-            eligible.add(identity)
-    skyline = reference_centers(world, graph, eligible)
     parcels, profiles = [], {}
     for source in world["parcels"]:
         identity = source["entityId"]
@@ -791,11 +781,6 @@ def catalog_world(world, graph):
         selected, role, proof, technologies = selections[identity]
         recipe = CATALOG[selected]
         specs = grammar(recipe["grammar"])
-        skyline_profile = None
-        if identity in skyline:
-            specs, skyline_budget, skyline_profile = skyline_massing(
-                skyline[identity], source, specs
-            )
         # Independent roof/material stream; no geometry changes when UI filters.
         facade_seed = derive(seed, "facade")
         roof_seed = derive(seed, "roof")
@@ -871,43 +856,19 @@ def catalog_world(world, graph):
             declarations=topology[identity]["declarations"],
             relationEvidenceIds=topology[identity]["evidenceIds"],
             technologyModifiers=modifiers,
-            **({"skyline": skyline_profile} if skyline_profile else {}),
         )
-        if skyline_profile:
-            profiles[identity]["label"] = (
-                "Static-reference center / "
-                if skyline_profile["tier"] == "CORE"
-                else "Reference-linked terraces / "
-                if skyline_profile["tier"] == "LINKED"
-                else "Center surroundings (proximity only) / "
-            ) + profiles[identity]["label"]
-        # A thin legacy parcel must not turn a low shed into a cathedral. Keep
-        # original source height as a capacity bound, not a mandatory roof top.
-        low_forms = {
-            "shed",
-            "row",
-            "warehouse",
-            "sawtooth",
-            "pavilions",
-            "gallery",
-            "terminal",
-            "hall",
-            "containers",
-            "archive",
-            "gate",
-            "vault",
-            "pods",
-            "hub",
-            "silos",
-            "dome",
-        }
-        budget = (
-            min(source["height"], min(source["width"], source["depth"]) * 2)
-            if recipe["grammar"] in low_forms
-            else source["height"]
+        form = recipe["grammar"]
+        budget = height_capacity(source, form)
+        profiles[identity]["sourceHeight"] = source["height"]
+        profiles[identity]["heightPolicy"] = dict(
+            version=HEIGHT_VERSION,
+            form=form,
+            smallerSpan=q(min(source["width"], source["depth"])),
+            ratio=RATIOS[form],
+            capacity=budget,
+            basis="ARCHITECTURAL_FORM_AND_FOOTPRINT",
+            derived=True,
         )
-        if skyline_profile:
-            budget = skyline_budget
         envelope = dict(source, height=budget)
         specs, detail = frontage_details(specs, envelope, recipe["family"])
         profiles[identity]["frontageDetail"] = detail
@@ -915,8 +876,12 @@ def catalog_world(world, graph):
         profiles[identity]["renderedHeight"] = q(
             max(p["y"] + p["height"] for p in parts)
         )
-        parcels.append(dict(source, parts=parts))
-    return dict(world, parcels=parcels), profiles
+        parcels.append(
+            dict(source, sourceHeight=source["height"], height=budget, parts=parts)
+        )
+    styled = dict(world, parcels=parcels)
+    validate_architectural_heights(world, styled, profiles)
+    return styled, profiles
 
 
 def catalog_compounds(compounds):

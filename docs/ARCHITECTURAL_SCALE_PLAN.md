@@ -189,3 +189,14 @@ validation/data/application forms; OJ/PocketBase primarily exercise validation.
 Do not advertise unit-tested dormant forms as real-corpus semantic discoveries.
 General individual-file physical envelopes and city-wide campus diversity remain
 separate unfinished work; this change improves existing large facilities only.
+
+## Height prerequisite — requested explicitly, 2026-10-22
+
+ADR-063/catalog0.4 stops using legacy source-scene height as a physical ceiling.
+Derived architectural capacity is independently reconstructed from form and
+horizontal span; source geometry/IDs and horizontal source-size checks stay
+intact. New view models retain legacy `sourceHeight` separately. This is NOT
+general variable horizontal land allocation or completed urban master planning.
+Reference-count skyline modulation is retired, not scaled up into fake HQs.
+The maintainer's [mandatory redesign](URBAN_ARCHITECTURE_REDESIGN.md) and its
+[execution ledger](URBAN_REDESIGN_EXECUTION.md) govern the following work.

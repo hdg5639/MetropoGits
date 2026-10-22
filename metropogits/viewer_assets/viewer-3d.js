@@ -2167,7 +2167,11 @@
         detailRow(details,'Architecture recipe',program.archetypeId+' · '+program.version);
         detailRow(details,'Source role gate',program.verifiedRole || 'Unknown — neutral architecture');
         if(program.frontageDetail)detailRow(details,'Entrance treatment',program.frontageDetail.style+' · decorative; original access retained');
-        detailRow(details,'Rendered architectural height',program.renderedHeight+' · inside the original height envelope');
+        detailRow(details,'Rendered architectural height',program.renderedHeight+(program.heightPolicy?' · inside derived architectural capacity':' · inside the original height envelope'));
+        if(program.heightPolicy) {
+          detailRow(details,'Legacy source-scene height',program.sourceHeight+' · not an architectural maximum');
+          detailRow(details,'Architectural height capacity',program.heightPolicy.capacity+' · '+program.heightPolicy.version+' · form/footprint, not import count');
+        }
       }
       detailRow(details, "Observed file neighbours", `${program.incomingFiles} incoming / ${program.outgoingFiles} outgoing · ${program.declarations} declarations`);
     }

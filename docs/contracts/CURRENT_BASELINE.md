@@ -1,5 +1,19 @@
 # Current implementation contract baseline
 
+## Architectural height separation — 2026-10-22
+
+[ADR-063](../adr/ADR-063.md), explicitly requested by the maintainer, removes
+legacy source height10 as a catalog architectural ceiling. Catalog0.4 uses
+physical-height/0.1 form/footprint capacities and independently checks compiled
+parts/mesh vertices and unchanged ground geography. Derived world-view/0.2
+models distinguish architectural `height` from legacy `sourceHeight`; canonical
+UCG/City/World/Planning bytes and their old size validators remain unchanged.
+CPU and WebGL consume the same new geometry. The inspector and manifest disclose
+the policy. There is no universal replacement height cap and no import-count
+height assignment. Reference-skyline0.1 massing is retired from catalog0.4;
+old artifacts/modes retain their meaning. Full urban redesign is tracked in
+[the execution ledger](../URBAN_REDESIGN_EXECUTION.md), not claimed complete here.
+
 ## Cold-start campus bootstrap — 2026-10-22
 
 [ADR-062](../adr/ADR-062.md) adds explicit `--campus-bootstrap` for precinct

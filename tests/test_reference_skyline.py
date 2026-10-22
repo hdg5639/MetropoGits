@@ -70,14 +70,14 @@ class ReferenceSkylineTests(unittest.TestCase):
         validate_world(world, scene, graph)
         saved = copy.deepcopy((world, scene, graph))
         _, profiles = catalog_world(world, graph)
-        cores = [
-            (k, p)
-            for k, p in profiles.items()
-            if p.get("skyline", {}).get("tier") == "CORE"
-        ]
+        # The rejected0.3 analysis stays testable as a legacy diagnostic, but
+        # catalog0.4 must not turn its reference hub into a skyscraper/HQ.
+        legacy = reference_centers(world, graph, profiles)
+        cores = [(k, p) for k, p in legacy.items() if p["tier"] == "CORE"]
         self.assertEqual(len(cores), 1)
         self.assertTrue(cores[0][0].endswith("app/shared.py"))
-        self.assertEqual(cores[0][1]["skyline"]["centerIncomingFiles"], 10)
+        self.assertEqual(cores[0][1]["centerIncomingFiles"], 10)
+        self.assertTrue(all("skyline" not in p for p in profiles.values()))
         self.assertTrue(all(p["verifiedRole"] is None for p in profiles.values()))
         self.assertEqual(saved, (world, scene, graph))
 
@@ -103,9 +103,9 @@ class ReferenceSkylineTests(unittest.TestCase):
         )
         self.assertTrue(all(p["family"] == "generic" for p in profiles.values()))
         self.assertEqual(styled, catalog_world(world, graph)[0])
-        self.assertGreater(
-            profiles[ids[0]]["renderedHeight"], profiles[ids[1]]["renderedHeight"]
-        )
+        # Import fan-in no longer controls architectural height or massing.
+        without_edges = catalog_world(world, dict(graph, edges=[]))[0]
+        self.assertEqual(styled["parcels"], without_edges["parcels"])
 
     def test_unknown_unresolved_manifest_or_sparse_input_does_not_invent_a_center(self):
         for confidence, edge_type in (

@@ -1,6 +1,7 @@
 # Procedural architecture catalog
 
-Implementation: `architecture/0.3`, [ADR-059](adr/ADR-059.md).
+Implementation: `architecture/0.4`, [ADR-059](adr/ADR-059.md),
+[height separation ADR-063](adr/ADR-063.md).
 Based on the maintainer's `MetropoGits_Procedural_Architecture_Catalog.md` proposal.
 
 ## Delivered vocabulary and usage
@@ -72,12 +73,13 @@ Certified source complexes use the same treatment without changing membership.
 Private `frontageDetail` metadata explicitly labels the treatment decorative;
 source entrances and exact dependency paths remain untouched.
 
-Each part stays inside the original rotated footprint/height capacity. Keep
-frontage yaw, original source door, graph IDs and exact source trips. Low
+Each part stays inside the original rotated footprint and the independently
+reconstructed architectural height capacity (0.4 onward). Keep frontage yaw,
+original source door, graph IDs and exact source trips. Low
 hall/warehouse/row massing is limited by real parcel span, and roof rise by
 physical bay width. Drums/domes use physical aspect limits: tall thin legacy
-envelopes cannot create needle roofs/domes. Original height is a capacity bound,
-not a mandatory visible roof top. Props never imply deployed instance counts.
+envelopes cannot create needle roofs/domes. The legacy source-scene height is
+no longer an architectural ceiling. Props never imply deployed instance counts.
 
 Per-source budgets:18 parts and240 polygon faces. Invalid recipes/budget overflow
 fail explicitly instead of dropping files. Certified compounds are restyled in
@@ -97,7 +99,34 @@ See [architectural scale plan](ARCHITECTURAL_SCALE_PLAN.md) and
 
 ## Shared rendering and compatibility
 
-### Static-reference centers and relative skyline
+### Architectural height separation — 0.4
+
+`physical-height/0.1` replaces the minimum with the original source height.
+Capacity = smaller actual footprint span × the form's documented aspect ratio;
+e.g. tower7, bar3.5, warehouse1.5. A6-unit tower envelope can be42 high, and
+a20-unit tower envelope140 high: there is no replacement universal42-unit cap.
+These are conservative architectural proportions, not code-size, import-count,
+business-importance or deployed-instance facts. Low/round roof aspect limits
+remain in the compiler. No new random-height stream or reference multiplier.
+
+Canonical City/World `height` remains unchanged for compatibility. Derived
+world-view/0.2 models use architectural `height` and retain `sourceHeight`;
+profiles store `heightPolicy` and actual `renderedHeight`. A separate validator
+reconstructs the form/capacity and checks every part/mesh plus original ground
+geography. CPU/WebGL/camera/LOD/picking/shadows use this same physical model;
+the inspector distinguishes legacy height from architectural capacity.
+
+Catalog0.4 also retires reference-skyline massing and the per-Service incoming
+count recipe bias. Changing a file's incoming count cannot assign a skyscraper
+or HQ. The old module is retained only for historical diagnostic tests/artifacts.
+Semantic/purposeful/architectural styles and saved old packages keep their old
+meaning. This removes the capacity coupling; it does NOT implement the new
+UrbanCharacterProfile or composed master-planned city. See the
+[redesign ledger](URBAN_REDESIGN_EXECUTION.md).
+
+### Historical0.3 reference centers — retired from current catalog
+
+The following describes archived0.3 behavior only, not the new planning engine.
 
 Version0.3 adds `reference-skyline/0.1`, a presentation modifier, NOT a real
 business district or runtime-load claim. Within existing directory ownership,
