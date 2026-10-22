@@ -10068,3 +10068,18 @@
   `origin/feat/polyglot-analysis`, verified against ls-remote. This whole-site
   correction is tested and prepared for its separate atomic commit and normal
   feature-branch push; the delivery record follows after actual Git success.
+
+### Delivery 2026-10-23
+
+- Whole-site correction committed as
+  `c1b08f5da03e00c5db4f83e11c2d567db0ec1b42` and normal `git push` succeeded to
+  `origin/feat/polyglot-analysis` (`2e743e3..c1b08f5`). Human author/committer and
+  final message reviewed; no agent attribution, force push, protected-main
+  bypass, remote-setting change or generated-artifact publication.
+- Final review links target capacity-architecture-r4. Its CPU SVG previews were
+  deterministically recompiled after the label correction; every World, graph,
+  source City and compiled WebGL byte remains identical to the validated r3
+  package. Actual final CPU previews were opened/rasterized by the separate
+  NVIDIA/D3D11 browser run. Unrelated Gradle/Maven fixture caches were preserved
+  and not staged. This documentation-only delivery record follows the verified
+  feature commit; no additional implementation change is claimed.
