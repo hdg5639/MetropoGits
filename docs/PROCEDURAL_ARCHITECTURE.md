@@ -1,6 +1,6 @@
 # Procedural architecture catalog
 
-Implementation: `architecture/0.2`, [ADR-059](adr/ADR-059.md).
+Implementation: `architecture/0.3`, [ADR-059](adr/ADR-059.md).
 Based on the maintainer's `MetropoGits_Procedural_Architecture_Catalog.md` proposal.
 
 ## Delivered vocabulary and usage
@@ -96,6 +96,42 @@ See [architectural scale plan](ARCHITECTURAL_SCALE_PLAN.md) and
 `tests/test_campus_architecture.py` for the explicit limits and checks.
 
 ## Shared rendering and compatibility
+
+### Static-reference centers and relative skyline
+
+Version0.3 adds `reference-skyline/0.1`, a presentation modifier, NOT a real
+business district or runtime-load claim. Within existing directory ownership,
+an eligible source needs six distinct DIRECT/RESOLVED incoming local files,
+eight nearby eligible lots and two actual nearby file neighbours. Fixed radius48,
+center separation96 and at most3 centers per owner bound the extent. Manifest
+dependencies and unresolved/inferred edges cannot create centers. Duplicate
+symbol observations never inflate the unique-file count.
+
+Existing generic/service/interface buildings may participate; unknown sources
+remain semantically unknown. Campus source layers, gates, tests, storage and
+other specialized facilities retain their previous forms. The center gets a
+setback tower, actual linked neighbours get midrise bars/terraces, while nearby
+unlinked context retains its existing varied form at a lower height. Proximity
+does NOT create a relationship. Private `skyline` profiles disclose tier, center
+entity, observed counts, proof and the non-relational context distinction;
+the existing source inspector labels the center as static-reference-derived.
+
+All masses remain inside original source footprint/yaw/height capacity. The
+budget is capped by2.8 times the smaller span, then multiplied by1/.78 for
+core/linked and.66/.42 for high-/low-reference context. No individual source,
+source role, district, terrain, street, doorway, campus or exact trip is moved.
+This produces relative hierarchy, NOT a skyscraper district or land-use replan.
+General program-sized physical envelopes remain unfinished separate work.
+Fixed thresholds and local distance avoid repository-wide percentile churn;
+spatial work is explicitly capped at300000 checks, with a clear failure.
+
+The maintained plain-Python `reference-center` fixture proves that an ordinary
+shared function can produce a structural center without invented Service/DB
+roles. The unsupported-Elixir fixture has no evidenced local graph and keeps
+its prior neutral architecture. Tests cover confidence negatives, owner/space
+separation, repetition/order, budgets, physical bounds and source immutability.
+
+### Common rendering
 
 Offline-compiled private `meshFaces` and material hints feed CPU SVG, Canvas and
 WebGL. Renderers do not classify sources independently. Round/angled roofs are

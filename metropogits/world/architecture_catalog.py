@@ -12,7 +12,7 @@ from .geometry import point, q
 from .seed import derive
 from .source_programs import file_topology
 
-VERSION = "architecture/0.2"
+VERSION = "architecture/0.3"
 # Presentation revisions must not reshuffle existing source silhouettes.
 MASSING_SEED_VERSION = "architecture/0.1"
 MAX_PARTS = 18
@@ -759,18 +759,43 @@ def select(entity, topology, seed, evidence):
 
 
 def catalog_world(world, graph):
+    from .skyline import reference_centers, skyline_massing
+
     evidence = {e["evidenceId"]: e for e in graph["evidence"]}
     entities = {e["id"]: e for e in graph["entities"] if e["kind"] == "FILE"}
     topology = file_topology(graph)
+    selections = {}
+    eligible = set()
+    for source in world["parcels"]:
+        identity = source["entityId"]
+        seed = derive(world["seed"], identity, MASSING_SEED_VERSION)
+        selections[identity] = select(
+            entities[identity], topology[identity], seed, evidence
+        )
+        if source["archetype"] in (
+            "GENERIC_BUILDING",
+            "SERVICE_OFFICE",
+            "UI_PAVILION",
+        ) and selections[identity][1] in (
+            None,
+            "GENERAL_COMPONENT",
+            "SERVICE",
+            "UI_COMPONENT",
+        ):
+            eligible.add(identity)
+    skyline = reference_centers(world, graph, eligible)
     parcels, profiles = [], {}
     for source in world["parcels"]:
         identity = source["entityId"]
         seed = derive(world["seed"], identity, MASSING_SEED_VERSION)
-        selected, role, proof, technologies = select(
-            entities[identity], topology[identity], seed, evidence
-        )
+        selected, role, proof, technologies = selections[identity]
         recipe = CATALOG[selected]
         specs = grammar(recipe["grammar"])
+        skyline_profile = None
+        if identity in skyline:
+            specs, skyline_budget, skyline_profile = skyline_massing(
+                skyline[identity], source, specs
+            )
         # Independent roof/material stream; no geometry changes when UI filters.
         facade_seed = derive(seed, "facade")
         roof_seed = derive(seed, "roof")
@@ -846,7 +871,16 @@ def catalog_world(world, graph):
             declarations=topology[identity]["declarations"],
             relationEvidenceIds=topology[identity]["evidenceIds"],
             technologyModifiers=modifiers,
+            **({"skyline": skyline_profile} if skyline_profile else {}),
         )
+        if skyline_profile:
+            profiles[identity]["label"] = (
+                "Static-reference center / "
+                if skyline_profile["tier"] == "CORE"
+                else "Reference-linked terraces / "
+                if skyline_profile["tier"] == "LINKED"
+                else "Center surroundings (proximity only) / "
+            ) + profiles[identity]["label"]
         # A thin legacy parcel must not turn a low shed into a cathedral. Keep
         # original source height as a capacity bound, not a mandatory roof top.
         low_forms = {
@@ -872,6 +906,8 @@ def catalog_world(world, graph):
             if recipe["grammar"] in low_forms
             else source["height"]
         )
+        if skyline_profile:
+            budget = skyline_budget
         envelope = dict(source, height=budget)
         specs, detail = frontage_details(specs, envelope, recipe["family"])
         profiles[identity]["frontageDetail"] = detail

@@ -9464,3 +9464,84 @@
   city-wide redesign or photorealism. One coherent renderer/test/docs commit,
   normal feat/polyglot-analysis push after staging/identity review; actual
   commit/push result in handoff. Unrelated user build caches untouched.
+
+## Checkpoint 2026-10-22 — static-reference centers and relative building skyline
+
+- Implemented: architecture/0.3 adds reference-skyline/0.1 inside catalog export.
+  Existing local files with six distinct DIRECT/RESOLVED incoming file users,
+  eight nearby eligible lots and two actual nearby neighbours may anchor a
+  relative skyline. Radius48, separation96, max3 per directory owner, max300000
+  spatial checks. No percentile/global graph-community coordinate shuffle.
+  Core setback tower, linked bars/terraces, lower varied context. Existing
+  campus source layers and specialized gates/tests/storage remain unchanged.
+- Meaning: centers describe static reference concentration, not measured traffic,
+  business importance or a claimed Service role. Utility types/exceptions/UI
+  common modules can qualify. Unknowns retain empty role proof/generic family.
+  Mere proximity is explicitly non-relational context. Original doors, source
+  IDs/roles, directory ownership, canonical dimensions and exact trips remain.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b reused from verified
+  campus-silhouettes-r1 packages. Large repository analysis/world generation
+  was NOT rerun. Fresh maintained12-file plain-Python reference-center fixture
+  and3-file unknown-Elixir fixture ran through analysis, City, World and export.
+  The former has one real shared-function core/10 incoming files/10 trips/20
+  represented edges, all12 files remain semantically generic. Unknown has no
+  center/0 trips. No target code, dependency installation or builds executed.
+- Commands: compile_frontage_worlds.py <prior package> <new after> --repeat
+  produced r1 prototype for GJ/OJ/PB with full independent World validation.
+  Final r2 re-exports use --reuse-validation with canonical/validation manifest
+  hashes, retaining that exact World; SQLite r2 runs full validation directly.
+  R1 simple-context massing is superseded: r2 keeps existing context variety.
+  Final outputs: ../artifacts/visual/reference-centers-r2/<case>/after.
+  `python -m metropogits build --repo tests/fixtures/repositories/reference-center
+  --repo-id fixture/reference-center --out
+  ../artifacts/visual/reference-centers-fixture-r1/source --json`; then
+  `python scripts/procedural_world.py <source> --out <world> --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus-landmarks --building-style catalog
+  --seed reference-center`. Same fresh pipeline for architecture-unknown.
+- Integrity: all4 manifest hashes PASS. Canonical World/City/UCG/Planning bytes,
+  original physical capacity/footprints/yaw/foundations, source role/technology
+  evidence, original individual recipe identity/seeds, campus complexes and exact
+  trips are unchanged. GJ1324/OJ681/PB664/SQLite506 sources and4209/1457/1491/622
+  trips retained, all accessible; World overlaps/escapes0. New parts independently
+  checked inside old physical footprints/height capacities. Final centers:
+  GJ10/OJ5/PB5/SQLite4. Participating core/linked/context counts10/75/87,
+ 5/47/37,5/32/80,4/42/80. Changed source meshes170/88/116/126.
+  Four repeated exports match; fresh source->World CLI repeat matches17 files.
+- Browser: viewer_audit.mjs with installed Chrome, four r2 outputs plus fresh
+  small/unknown outputs -> reference-centers-audit-r1. Six cases/three LODs,
+  source/route/member/expansion/filter/navigation controls PASS, GL errors0,
+  Synthetic static rebuilds0; unsupported graph does not animate fake traffic.
+  Software CPU submission timings are not GPU/display FPS or universal speedups.
+- Visual evidence: actual matched cameras, color/grayscale, overview and3 core
+  closeups per large case. Comparison-r2 contains successful GJ/OJ, r3 contains
+  PB/SQLite. Earlier r1 capture cleanup called a nonexistent CDP method; fixed
+  the helper, NOT product tests/asset trust. R2 PB center bbox midpoint was
+  occluded; r3 retries a closer top-down camera for its source-inspector click,
+  retaining identical before/after comparison cameras. All4 center inspectors
+  show static-reference label plus actual original file-neighbour counts.
+  Reviewed GJ before/after close, PB close, fresh small detail and GJ CPU showcase.
+  Relative nearby roof/height contrast is visible in closeups; overview change
+  is modest. This is NOT the requested ultimate large downtown/skyscraper city.
+- Limits/next priority: actual source capacities often remain10 units (GJ UI13).
+  Do not inflate them or weaken validators to claim skyscrapers. Next meaningful
+  step is the independently reconstructed physical-envelope contract for larger
+  individual facilities/highrises, not more micro-tuning these ratios. Existing
+  overview label collisions and conservative envelope picking remain open.
+- Regression: final full unittest797 executed in204.1s,1 existing Windows symlink
+  skip, remaining PASS, explicit Python exit0 via cmd stderr redirection. Node78
+  PASS; Ruff/compileall/diff PASS. Five new tests cover actual pure-Python source,
+  duplicate/weak/manifest negatives, owner/proximity separation, source conservation,
+  order/unrelated-entity stability, footprint/height bounds and spatial work cap.
+- Spec alignment PASS: technical evidence/geometry contracts, functional CPU
+  preview/determinism/source inspection/unknown fallback, product static-local
+  source-faithful geography. No public schema/ID or source-size invariant changed;
+  semantic/purposeful/default noncatalog modes retain their behavior.
+- Artifacts: reference-centers-reviewed-r1/index.html/integrity.json with actual
+  r2/r3 links, live r2 exports, audit-r1 and fresh fixtures. Helpers and generated
+  files remain outside Git. One renderer/fixtures/docs work unit, commit and normal
+  feat/polyglot-analysis push after explicit staging/human identity review; actual
+  result in handoff. Unrelated user build caches preserved.
