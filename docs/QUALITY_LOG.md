@@ -9307,3 +9307,78 @@
 - Delivery: one coherent planning work unit with explicit staging and human
   metadata review; normal feat/polyglot-analysis push. Actual commit/push outcome
   in handoff. Existing user fixture build caches remain untouched.
+
+## Checkpoint 2026-10-22 — First-run campus bootstrap without a previous World
+- Implemented: ADR-062 adds explicit `--campus-bootstrap` for precinct mode.
+  Compute one deterministic programmed geography/capacity prepass, stop before
+  atomic streets/dependency routing/tunnels/surface rendering, then use its
+  private transient PlanningFrame in the existing migration path. No cached
+  World input, new public schema, source identity change or default-mode change.
+  Final ordinary reconstruction/evidence/terrain/capacity/access gates retained.
+- Fix applied/reverified: the fallback wrapper initially assumed every result
+  was a dictionary; explicitly pass the private PlanningFrame through it.
+  Failed r1 attempts produced no successful package and are superseded by r2.
+  Reject bootstrap with a previous World, a wrong campus style or nonboolean
+  API option. Invalid CLI invocation produced the expected error and no output.
+- Fixtures: pinned GJ3d9b53f9, OJb163acd2, PocketBase6f370ea7,
+  SQLiteBrowserae32df15 City/UCG from architecture-frontage-r3. Large repository
+  analysis was reused, NOT rerun. Fresh purpose-campus/architecture-unknown
+  analysis from1aba449 fixture sources. No target code/dependencies/build hooks
+  executed; no external AI/service/runtime dependency introduced.
+- Commands: `python -m metropogits build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out ../artifacts/visual/campus-bootstrap-fixture-r1/source --json`;
+  `python scripts/procedural_world.py <source> --out <new-world> --zoning
+  neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style precinct
+  --campus-bootstrap --campus-landmarks --building-style catalog --seed purpose-4`.
+  Same real product CLI for unknown fixture -> campus-bootstrap-unknown-r1.
+  Repeat product generation -> fixture-r1/repeat. Large local helper invokes
+  actual generator/validate_world/package_world with `--style precinct
+  --bootstrap --terrain mountain-landscape --seed mountain-3` (OJ mountain-2),
+  NO `--previous-world` -> campus-bootstrap-r2/{case}/after.
+- Actual cold positives: GJ29 files/4 new precinct complexes; PB32/4; OJ28/6
+  across two sectors. Existing other campuses retained. SQLite still cannot
+  fit a safe new precinct and honestly retains programmed morphology. Do not
+  force fictitious facilities or advertise universal source/seed coverage.
+- Integrity: all four new outputs have EXACT envelope/district/parcel/terrain/
+  zoning/street/routing/network/coverage/topology equality to the prior visually
+  verified hinted r4 result, despite no external World input. UCG/City bytes
+  unchanged. All1324/681/664/506 sources accessible,4209/1457/1491/622 trips,
+  zero building/road overlaps or owner escapes; schemas/manifest hashes PASS.
+  Every final World discloses campus-bootstrap/0.1, internal-not-cached provenance
+  and zero baseline routing passes. Transient frames are NOT exported or called
+  complete/validated Worlds. Report campus-bootstrap-reviewed-r1/integrity.json.
+- Cost: concurrent local generation seconds GJ105.4/PB68.8/OJ31.1/SQLite62.5;
+  validation16.7/11.6/10.6/13.9; export29.4/15.9/18.5/10.8. The extra planning
+  pass costs CPU; warm hinted timing is not a fair speed baseline. No general
+  speedup/FPS claim. Main delivered change is reproducible first-run fit.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/campus-bootstrap-audit-r1 <GJ/PB r2 after>
+  <fixture-r1/world> <unknown-r1/world>`: four real cases/three LODs,
+  camera/filter/source/road/member/Synthetic interactions PASS, GL errors0,
+  Synthetic static builds0, unknown traffic correctly unavailable. Small fixture
+  overview Synthetic p95 CPU7.3ms under concurrent SwiftShader; its other LODs
+  3.2/2.8ms. CPU submission is not GPU completion/FPS. OJ/SQLite new exports
+  were schema/World/hash checked with exact prior physical-result equality;
+  their full browser audit was not rerun this checkpoint.
+- Visual inspection: actual new GJ close and CPU showcase, PB shared campus,
+  unknown detail; physical landmarks/courts/roads remain intact. New GJ/PB
+  same-camera overview/campus/street captures -> bootstrap-comparison-r1;
+  source-bound recipe inspectors verified. Before images use hash-verified
+  existing programmed packages, not a claim of fresh before generation. This
+  is a first-run capability, not new architectural silhouettes or materials.
+- Regression: Python787 executed, one existing Windows symlink skip, remaining
+  PASS; Node78 PASS; Ruff/compileall/diff PASS. Three new tests prove prepass
+  routing is never invoked, geography matches a full real baseline, bootstrap
+  matches explicit migration, deterministic generation/source immutability,
+  invalid combinations and honest fallback. Full17-file product CLI packages
+  repeat byte-identically. Prior default/hint behavior and golden cases pass.
+- Spec alignment PASS: technical source/physical split and bounded local work;
+  functional AC-001/002/003/006/011/014; product static/no execution/unknown.
+  Next: individual program-sized physical envelopes and silhouette identity;
+  all-seed campus fit and planning cost remain open. Default not promoted.
+- Artifacts: campus-bootstrap-reviewed-r1/index.html/integrity.json, r2 live
+  outputs, comparison-r1 and audit-r1. Gallery local links checked. Helpers and
+  generated artifacts remain outside Git. One coherent feature commit and
+  normal feat/polyglot-analysis push after explicit staging/human identity audit;
+  actual commit/push outcome in handoff. User build caches untouched.

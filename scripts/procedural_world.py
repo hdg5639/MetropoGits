@@ -50,6 +50,7 @@ def main():
         "--namespace", help="portable world identity; does not rewrite existing UCG IDs"
     )
     parser.add_argument("--previous-world", type=Path)
+    parser.add_argument('--campus-bootstrap', action='store_true', help='precinct only: compute a transient geography baseline without requiring a previous World; skip baseline routing/export')
     parser.add_argument('--campus',action='store_true',help='adaptive only: evidence-bounded campus planning with real walking access; courtyard pockets by default')
     parser.add_argument('--campus-landmarks',action='store_true',help='export only: merge nearby related campus files into a few persistent large complexes')
     parser.add_argument('--campus-style',choices=('quad','varied','neighborhood','landscape','organic','fabric','programmed','estate','precinct'),default='quad',help='campus only: precinct reserves program land before arterial streets; estate reserves facility sites; older styles retained')
@@ -100,6 +101,7 @@ def main():
             street_hierarchy=args.street_hierarchy,
             campus=args.campus,
             campus_style=args.campus_style,
+            campus_bootstrap=args.campus_bootstrap,
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)

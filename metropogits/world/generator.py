@@ -46,6 +46,7 @@ from .neighborhoods import VERSION as NEIGHBORHOOD_VERSION, neighborhood_candida
 from .neighborhood_layout import neighborhood_demand, plan_neighborhoods
 from .district_patterns import pattern_demand, plan_district_pattern
 from .functional import functional_candidates, VERSION as FUNCTIONAL_VERSION
+from .cold_start import cold_start, PlanningFrame
 from .adaptive import (
     GENERATOR_VERSION as ADAPTIVE_GENERATOR_VERSION,
     plan_adaptive,
@@ -78,6 +79,8 @@ def _estate_fallback(function):
                 raise
             fallback = str(error)
         else:
+            if isinstance(result, PlanningFrame):
+                return result
             plan = result.get('campusPlan', {})
             if options.get('campus_style') in ('estate', 'precinct') and not any(s.get('architecturalSites') for s in plan.get('sites', [])) and any(
                 d.get('eligible') and d.get('reason') not in ('NOT_ELIGIBLE', 'SEEDED_OTHER_GRAMMAR', 'PARENT_DIVERSITY_LIMIT')
@@ -96,6 +99,7 @@ def _estate_fallback(function):
     return guarded
 
 
+@cold_start
 @_estate_fallback
 def generate_world(
     scene,
@@ -113,8 +117,12 @@ def generate_world(
     street_hierarchy=False,
     campus=False,
     campus_style="quad",
+    campus_bootstrap=False,
     _route=True,
+    _planning_frame=False,
 ):
+    if _planning_frame and (not campus or campus_style != 'programmed' or pattern_scale != 'adaptive'):
+        raise ValueError('internal planning frame requires programmed adaptive campus planning')
     if campus_style not in ("quad", "varied", "neighborhood", "landscape", "organic", "fabric", "programmed", "estate", "precinct") or (campus_style != "quad" and not campus):
         raise ValueError('non-default campus style requires --campus; unknown styles are invalid')
     if campus and (pattern_scale!='adaptive' or not _route):
@@ -648,6 +656,29 @@ def generate_world(
         raise ValueError(
             "world parcel capacity infeasible after bounded envelope repair"
         )
+    if _planning_frame:
+        # Internal geometry only: stop BEFORE atomic streets, any dependency
+        # routing, tunnel evaluation, surface meshing or export. This object is
+        # not a schema-valid World and must never be published as one.
+        from .campus import collect_plan
+        frame_version = {
+            NATURAL_PRESET: TERRAIN_GENERATOR_VERSION,
+            RIVER_PRESET: RIVER_GENERATOR_VERSION,
+            VALLEY_PRESET: VALLEY_GENERATOR_VERSION,
+            LANDSCAPE_PRESET: LANDSCAPE_GENERATOR_VERSION,
+            VARIED_PRESET: VARIED_GENERATOR_VERSION,
+            WATERSHED_PRESET: WATERSHED_GENERATOR_VERSION,
+            MOUNTAIN_PRESET: MOUNTAIN_GENERATOR_VERSION,
+        }.get(terrain, ADAPTIVE_GENERATOR_VERSION)
+        return PlanningFrame(dict(
+            schemaVersion=VERSION, generatorVersion=frame_version,
+            seed=resolved_seed, repositoryNamespace=identity,
+            envelope=envelope, districts=districts, parcels=parcels,
+            planningPolicy=planning, outlinePolicy=outline, zoningPolicy=zoning,
+            patternScale=pattern_scale, terrainPreset=terrain, streetPolicy=street_policy,
+            terrain=terrain_data, campusPlan=collect_plan(development_blocks, 'programmed'),
+            zoning=dict(zones=semantic_zones, blocks=development_blocks),
+        ))
     if terrain in landscape_presets:
         from .river_landscape import joined_streets
         raw=joined_streets(raw,parcels,terrain_data,tolerance=.002 if terrain in (WATERSHED_PRESET,MOUNTAIN_PRESET) else .0005)

@@ -1,5 +1,17 @@
 # Current implementation contract baseline
 
+## Cold-start campus bootstrap — 2026-10-22
+
+[ADR-062](../adr/ADR-062.md) adds explicit `--campus-bootstrap` for precinct
+initial generation without a previous World. One private geography/capacity
+prepass stops before dependency routing and export; final ordinary generation
+uses its transient layout hint and retains all existing validation gates.
+The internal PlanningFrame is not a valid/publishable World. Diagnostics disclose
+campus-bootstrap/0.1 and internal—not cached—provenance. No public schema/ID
+changes. Bootstrap and supplied previous-world hints are mutually exclusive;
+all previous defaults/styles remain available unchanged. Extra planning cost
+and infeasible-campus fallback remain explicit.
+
 ## Program-led precinct reservations — 2026-10-22
 
 [ADR-061](../adr/ADR-061.md) adds opt-in `--campus-style precinct` with

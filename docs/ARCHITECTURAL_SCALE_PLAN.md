@@ -137,3 +137,23 @@ capacity repairs and change macro geography, so do not label them same-site.
 
 New positive large-corpus results and exact locality measurements belong in
 QUALITY_LOG and campus-reservation-reviewed-r1, not in catalog-count claims.
+
+## First-run bootstrap — no previous World file (2026-10-22)
+
+ADR-062 adds explicit `--campus-bootstrap` to precinct mode. It computes the
+programmed geography/capacity baseline internally, stops before street
+atomization/dependency routing/surface rendering, then uses that private frame
+for the existing migration path. The transient frame is NOT a complete World
+and is never published. All final geometry/source/evidence validators still run.
+
+For initial generation, use `--campus --campus-style precinct --campus-bootstrap`.
+For later repository revisions, use the generated `--previous-world` without
+bootstrap; combining the two is rejected. Old defaults and saved worlds retain
+their meaning. Seed, namespace, source contracts and static-only safety stay fixed.
+
+The pinned GJ/PocketBase/OJ first runs now reproduce the formerly hinted positive
+campuses without reading any existing World. SQLite still legitimately retains
+programmed fallback. This resolves a first-run dependency, not general single-file
+physical-envelope sizing, all-seed campus fit or a universal performance target.
+The extra planning pass has real CPU cost; do not compare it as if it were a warm
+run or call matching prior visuals a newly invented architectural style.
