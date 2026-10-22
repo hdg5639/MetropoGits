@@ -7,8 +7,8 @@ It does not replace UCG analysis, source IDs, static safety or evidence gates.
 | Dependency order | Status |
 |---|---|
 | Remove legacy source height as architectural ceiling | Implemented in catalog0.4/ADR-063; checkpoint evidence in QUALITY_LOG |
-| Urban Character Profile: repository / district / semantic zone | Not implemented |
-| Normalized spatial demand and distinct master planners | Not implemented |
+| Urban Character Profile: repository / district / semantic zone | First source-first profile implemented/ADR-064; weak components are not semantic communities |
+| Normalized spatial demand and distinct master planners | Relative program demand implemented; land admission and distinct master planners NOT implemented |
 | Flexible physical parcels / affected-area capacity replanning | Partial estate precedent only; general system not implemented |
 | Source-backed architectural compounds | Existing certified campus groups; general redesign incomplete |
 | District-level skyline composition | Not implemented; reference-skyline is NOT completion |

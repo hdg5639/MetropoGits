@@ -669,6 +669,9 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
         artifacts["landscape.json"] = canonical_json_bytes(landscape)
     if "zoning" in world or "softZoning" in world:
         artifacts["planning.json"] = canonical_json_bytes(planning_document(world))
+    if building_style == "catalog":
+        from .urban_character import character_document
+        artifacts["urban-character.json"] = canonical_json_bytes(character_document(world, graph))
     types = {
         ".html": "text/html",
         ".js": "text/javascript",
@@ -684,6 +687,8 @@ def package_world(world, scene, graph, validation, *, landscaping=True, building
         presentation['architectureVersion'] = ARCHITECTURE_VERSION
         from .architecture_height import VERSION as HEIGHT_VERSION
         presentation['physicalHeightPolicyVersion'] = HEIGHT_VERSION
+        from .urban_character import VERSION as CHARACTER_VERSION
+        presentation['urbanCharacterVersion'] = CHARACTER_VERSION
     artifacts["manifest.json"] = canonical_json_bytes(
         dict(
             schemaVersion="manifest/0.1",

@@ -9628,3 +9628,37 @@
   remain outside Git. Height feature gets its own atomic commit, then both verified
   commits push normally to feat/polyglot-analysis after human identity/staging
   review; actual outcome in handoff. Unrelated user build caches untouched.
+
+## Checkpoint 2026-10-22 — source-first urban character prerequisite
+
+- Implemented: ADR-064, layout-independent CharacterEngine, verified local/
+  boundary/external versus declared dependency counts, normalized centralization,
+  weak components/module distribution, role/technology/capability evidence,
+  derived typology preferences and relative UNALLOCATED spatial demand. Catalog
+  packages add checksum-covered urban-character.json. No new roles or geometry.
+- Fixtures/commands: fresh purpose-campus31-source analysis via `python -m
+  metropogits build --repo tests/fixtures/repositories/purpose-campus --repo-id
+  fixture/purpose-campus --out ../artifacts/visual/urban-character-fixture-r1/source
+  --json`; procedural_world.py on that source with adaptive neighborhoods,
+  varied planning/outline, porous hierarchy, precinct/bootstrap/landmarks,
+  catalog, seed campus-estates-1. Full source-to-World validation:31 buildings,
+  77 trips,128 edges, zero building/road overlaps or owner escapes, all accessible.
+- Large case: compile_frontage_worlds.py height-cap-r2/gj/after ->
+  urban-character-r1/gj --reuse-validation --repeat. Original GJ pinned revision
+  3d9b53f9dac9af1187ac9754cb3066b27e43b766; analysis/World reused, not rerun.
+ 21 profiles,6,214,328 bytes. UCG/City/World/Planning/SVG/viewer-data EXACT bytes
+  identical to prior output. Profile-only prerequisite does not claim visual gains.
+- Tests: urban-character4 and height4 PASS; Ruff PASS. Tests cover actual Spring
+  roles and unknown-Elixir source, exact proofs, duplicate/symbol normalization,
+  ordering, boundary pairs, external usage versus declaration, weak/missing
+  evidence rejection, no fan-in-star -> business district, no input mutation.
+- Actual renderer: viewer_audit.mjs Chrome on fresh purpose fixture ->
+  urban-character-audit-r1, three LODs, source/route/compound/camera/Synthetic
+  checks PASS, GL errors0, Synthetic static builds0. Actual overview inspected;
+  existing complexes and source membership retained. No new appearance asserted.
+- Spec alignment PASS: TECH evidence/static/bounds/CPU, FUNC AC002/006/011/012,
+  product evidence-first/directory ownership. No runtime AI/network/target builds.
+  Existing rendering/semantic modes unchanged. New planners/variable land/district
+  skyline and five typologies remain open; weak components are not communities.
+- Atomic feature commit and normal feature-upstream push at the verified session
+  checkpoint; final handoff records actual hashes/results. User caches untouched.

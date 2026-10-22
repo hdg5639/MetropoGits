@@ -1,5 +1,15 @@
 # Current implementation contract baseline
 
+## Source-first urban character — 2026-10-22
+
+[ADR-064](../adr/ADR-064.md) adds `urban-character/0.1` repository/district/zone
+profiles and `spatial-demand/0.1` relative unallocated demand. Catalog exports
+include checksum-covered `urban-character.json`. Facts retain exact source,
+edge and evidence IDs; derived typology preferences are not constructed urban
+plans. No canonical schemas, IDs, geography, physical meshes or existing modes
+change in this slice. It is a dependency of the mandatory redesign, not its
+visual completion.
+
 ## Architectural height separation — 2026-10-22
 
 [ADR-063](../adr/ADR-063.md), explicitly requested by the maintainer, removes
