@@ -123,11 +123,32 @@ def campus_massing(source):
     else:
         return None
     model = source["physicalModel"]
+    physical = source.get('physicalProgramVersion') == 'capacity-replan/0.2'
+    if physical:
+        # The same evidenced purpose admits several genuinely different
+        # compositions. This changes volumes/voids, not role classifications.
+        # No research/data-center claim is inferred from an attractive shape.
+        from .modern_massing import modern_grammar
+        choice = int(derive(source['id'], 'program-composition/0.2'), 16) % 4
+        alternatives = {
+            'APPLICATION': ('bar', 'tower', 'atrium', 'bar'),
+            'VALIDATION': ('verification', 'pavilions', 'court', 'bar'),
+            'INTERFACE': ('bar', 'atrium', 'court', 'bar'),
+            'COMPUTE': ('pods', 'pavilions', 'bar', 'atrium'),
+            'TOOLING': ('warehouse', 'sawtooth', 'hall', 'bar'),
+            'DATA': ('warehouse', 'hall', 'sawtooth', 'court') if kind == 'DATA' and storage else ('bar', 'atrium', 'court', 'bar'),
+        }
+        # Keep one original, purpose-specific system in the population.
+        if choice:
+            specs, layout = modern_grammar(alternatives[kind][choice], model, source['id'])
+        if kind == 'APPLICATION' and choice != 1:
+            proportion = 1.05  # Horizontal offices are not stretched towers.
     # Deep sites use the long axis for halls, not a stretched monumental roof.
     # This rotates only architectural masses; the real footprint/yaw and road
     # entrances stay fixed. Frontage dressing is resolved AFTER the transform.
     transpose = model["depth"] > model["width"] * 1.25
-    height = min(source["height"], min(model["width"], model["depth"]) * proportion)
+    capacity = min(model['width'], model['depth']) * proportion
+    height = capacity if physical else min(source['height'], capacity)
     for p in specs:
         if transpose:
             p["x"], p["z"] = p["z"], p["x"]
@@ -138,7 +159,7 @@ def campus_massing(source):
         specs,
         height,
         dict(
-            version=VERSION,
+            version='campus-massing/0.2' if physical else VERSION,
             layout=layout,
             label=label,
             programKind=kind,

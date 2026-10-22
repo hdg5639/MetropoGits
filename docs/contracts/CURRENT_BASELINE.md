@@ -7,7 +7,7 @@ procedural CLI's `--building-style urban`. Adaptive neighborhoods are required;
 the new physical campus planner uses `--campus --campus-style precinct`, not
 the old fixed-slot campus bootstrap. UCG/City and source IDs/evidence stay
 unchanged. Experimental World adds explicit `capacityPlan` with version
-`capacity-replan/0.1`: source-glyph dimensions are no longer physical limits in
+`capacity-replan/0.2` (legacy0.1 remains readable): source-glyph dimensions are no longer physical limits in
 this mode. Validators reconstruct program dimensions and independently check
 every parcel, road, protected feature, door and source-backed trip. Legacy
 Worlds retain strict original-City size checks.
@@ -31,6 +31,19 @@ street-plan/0.1 and legacy ramp output retain their meaning.
 10x10x16 occupancy grid, ignoring yaw, mirrors, materials and tiny entrance
 props. Report normalized and scale-aware shape counts/near repeats alongside
 matched grayscale captures; this is not a perceptual quality score.
+
+Capacity0.2 reserves evidenced multi-source sites before real-file subdivision,
+with variable individual envelopes and shared exterior access. Local service
+aisles are regenerated for the whole site dimensions, not retained small-plot
+stencils. `architecturalSites` and `cohorts` disclose exact constituent IDs and
+static grouping evidence; these are visual planning, not invented runtime
+facilities or relationships. Partial geography hints yield to valid full
+placement. See ADR-067 for terrain, local repair and interior-address rules.
+
+The urban capacity audit checks rendered pavement against both source envelopes
+and visible complex ground-floor solids. It measures actual compiled occupancy
+for the visible scene, excluding hidden constituent models; composite models
+are counted separately from truly unclassified source-role fallbacks.
 
 This capacity capability is not acceptance of the entire urban redesign.
 Campus/source-compound consolidation and morphological differentiation remain

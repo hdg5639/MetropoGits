@@ -26,8 +26,9 @@ def validate_world(world, scene, graph):
     programs = None
     if 'capacityPlan' in world:
         from .capacity import architectural_programs, capacity_report
-        programs = architectural_programs(scene, graph)
-        if world['capacityPlan'] != capacity_report(world, programs):
+        capacity_version = world['capacityPlan'].get('version')
+        programs = architectural_programs(scene, graph, version=capacity_version)
+        if world['capacityPlan'] != capacity_report(world, programs, version=capacity_version):
             raise ValueError('capacity plan differs from source program or physical allocation')
     if any('linearRamp' in r for r in world['streets']) and (
         programs is None or any(r.get('linearRamp') is not True or not r['access'] for r in world['streets'] if 'linearRamp' in r)):

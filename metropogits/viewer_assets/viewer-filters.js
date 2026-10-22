@@ -3,6 +3,17 @@
 
   const confidenceOrder = ["UNKNOWN", "DECLARED", "HEURISTIC", "DIRECT", "RESOLVED"];
 
+  function compoundPresentation(facility, isSelected = false) {
+    const sourceComplex = Boolean(facility.role?.startsWith('SOURCE_COMPLEX:'));
+    return {
+      persistentLabel: isSelected || Boolean(facility.campusProgram && !sourceComplex),
+      eyebrow: sourceComplex ? 'SOURCE COMPLEX · VISUAL AGGREGATE'
+        : facility.campusProgram ? 'CAMPUS LANDMARK · VISUAL AGGREGATE'
+        : facility.role ? 'ROLE LANDMARK · VISUAL AGGREGATE' : 'CITY BLOCK · VISUAL AGGREGATE',
+      purposeLabel: sourceComplex ? 'Derived source purpose' : 'Derived campus purpose',
+    };
+  }
+
   function sorted(values, preferredOrder = []) {
     const order = new Map(preferredOrder.map((value, index) => [value, index]));
     return [...values].sort((left, right) => {
@@ -1371,6 +1382,7 @@
   }
 
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    compoundPresentation,
     materialPart,
     physicalStreetColor,
     physicalMarkingVisible,

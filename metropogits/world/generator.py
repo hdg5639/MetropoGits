@@ -267,7 +267,8 @@ def generate_world(
         from .capacity import architectural_programs
         programs = architectural_programs(scene, graph)
         grouped = {key: [dict(b, width=programs[b['entityId']]['width'],
-                             depth=programs[b['entityId']]['depth'], _capacityProgram=True)
+                             depth=programs[b['entityId']]['depth'], _capacityProgram=True,
+                             cohortId=programs[b['entityId']]['cohortId'])
                          for b in members] for key, members in grouped.items()}
     if not grouped:
         raise ValueError("world requires at least one analyzed source file")

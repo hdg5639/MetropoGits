@@ -14,7 +14,7 @@ MAX_INDEX = 500_000
 MAX_PIECES = 250_000
 
 
-def street_mesh(world):
+def street_mesh(world, *, compounds=()):
     if len(world["streets"]) > 50_000:
         raise ValueError("street mesh input limit")
     streets = sorted(world["streets"], key=lambda s: s["id"])
@@ -60,6 +60,13 @@ def street_mesh(world):
 
     for p in world["parcels"]:
         reserve(p["parcel"], "clearance")
+    for compound in compounds:
+        if compound.get('physicalProgramVersion') != 'capacity-replan/0.2':
+            continue
+        model = compound['physicalModel']
+        for part in model['parts']:
+            if part['y'] <= model.get('baseElevation', 0) + .15 and part.get('materialKind') not in (12, 13, 14):
+                reserve(part['footprint'], 'interior')
     for f in world.get("terrain", {}).get("features", []):
         reserve(f["noBuildPolygon"], "clearance")
     for site in world.get("campusPlan", {}).get("sites", []):
@@ -159,6 +166,15 @@ def street_mesh(world):
     )
     for s, cls, poly, walking in ordered:
         pieces = [poly]
+        if s['access']:
+            # A file's logical door may become an interior compound address.
+            # Keep its exact routing/provenance, but never paint a public road
+            # through that certified complex's ground-floor solid volumes.
+            for obstacle in nearby(poly, 'interior'):
+                pieces = [part for p in pieces for part in
+                          (subtract(p, obstacle) if overlap(p, obstacle) else [p])]
+                if len(pieces) > 128:
+                    raise ValueError('street mesh interior clipping piece limit')
         if walking:
             for obstacle in nearby(poly, "vehicle"):
                 pieces = [

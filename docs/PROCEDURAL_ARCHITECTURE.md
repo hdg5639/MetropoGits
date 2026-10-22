@@ -9,7 +9,7 @@ optional whole-campus planning uses `--campus --campus-style precinct` without
 reserves drive district allocation and real heterogeneous frontage parcels.
 Insufficient land triggers bounded replanning, never a final deferred success.
 Source City/UCG are unchanged; new physical World dimensions are explicitly
-versioned by `capacityPlan.version=capacity-replan/0.1`. Both inspectors disclose
+versioned by `capacityPlan.version=capacity-replan/0.2`. Both inspectors disclose
 the source glyph versus physical site and that streets/access were replanned.
 Archived urban-land/0.1 diagnostic views remain readable; exporting a new urban
 package with any deferred request now fails and requires regeneration.
@@ -19,6 +19,21 @@ checks a saved package, rendered pavement clearance and actual compiled source/
 visible-compound geometry. `--baseline OLD` additionally compares source hashes
 and material-blind shape repetition. The finite occupancy metric is not visual
 approval: actual matched grayscale renders and browser checks are still needed.
+
+The0.2 planner reserves complete source-affinity sites before subdividing their
+real file envelopes. Private requests include perimeter access and heterogeneous
+rows, not uniform parcels. Source roles, IDs, evidence and logical dependencies
+are unchanged. Physical campus complexes can form up to four landmarks; other
+evidenced source cohorts may form neutral/source-purpose complexes, never
+fabricated research institutes. Compound eligibility scales with real envelope
+sizes instead of old16/22-distance limits. Both CPU and WebGL compile the same
+multi-body massing and exclude ground-floor interiors from public pavement.
+
+Local service aisles follow the neighborhood frontage axis with demand-driven
+spacing; the former fine-grained local pattern is not immutable. Parent
+arterials, functional neighborhood ownership, courts and protected terrain are
+reserved independently. Valid complete placement takes priority over obsolete
+coordinates. Legacy0.1 capacity Worlds retain their reconstruction rules.
 
 Sections below describe the earlier catalog/height/presentation modes; their
 immutable-geography guarantees do not apply to the explicitly replanned mode.

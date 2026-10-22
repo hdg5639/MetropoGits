@@ -38,8 +38,9 @@ def rendered_models(styled, profiles, compounds):
                       **(dict(meshFaces=[dict(face, points=[[x, y - base, z] for x, y, z in face['points']])
                                          for face in p['meshFaces']]) if 'meshFaces' in p else {})) for p in model['parts']]
         models.append(dict(model, entityId=f['id'], parts=parts, height=max(p['y'] + p['height'] for p in parts)))
-        actual_profiles[f['id']] = dict(family='CERTIFIED_SOURCE_COMPLEX', verifiedRole=None,
-                                       massingLayout=f.get('architecture', {}).get('archetypeId', 'SOURCE_COMPLEX'))
+        actual_profiles[f['id']] = dict(family='CERTIFIED_SOURCE_COMPLEX', verifiedRole=None, composite=True,
+                                       massingLayout=f.get('architecture', {}).get('campusMassing', {}).get('layout',
+                                           f.get('architecture', {}).get('archetypeId', 'SOURCE_COMPLEX')))
     return dict(styled, parcels=models), actual_profiles
 
 
@@ -52,8 +53,13 @@ def assess(package):
     index = ClearanceIndex()
     for p in world['parcels']:
         index.add(('source', p['entityId']), p['footprint'])
+    for f in compounds:
+        model = f['physicalModel']
+        for i, part in enumerate(model['parts']):
+            if part['y'] <= model.get('baseElevation', 0) + .15 and part.get('materialKind') not in (12, 13, 14):
+                index.add(('complex', f['id'], i), part['footprint'])
     intersections, surface_count = [], 0
-    for surface in street_mesh(world):
+    for surface in street_mesh(world, compounds=compounds):
         poly = surface['points']
         surface_count += 1
         near = {key for cell in index.cells_for(poly) for key in index.cells[cell]}

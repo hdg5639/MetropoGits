@@ -13,10 +13,11 @@ from .seed import derive
 
 def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, stitch=False, morphology=False, terrain=None, porous=False, campus=False, campus_pairs=None, campus_style="quad", campus_groups=None, capacity_programs=None):
     if capacity_programs is not None:
-        from .capacity import program_field, planning_scale
+        from .capacity import program_field, planning_scale, VERSION as CAPACITY_VERSION, LEGACY_VERSION
+        capacity_version = CAPACITY_VERSION if any('cohortId' in p for p in capacity_programs.values()) else LEGACY_VERSION
         members = [parcels[k] for z in zones for k in z['memberEntityIds']]
         scale = planning_scale(members)
-        candidates, roads, main, pattern = program_field(parent['polygon'], parent['localSeed'], base, parent['id'], scale)
+        candidates, roads, main, pattern = program_field(parent['polygon'], parent['localSeed'], base, parent['id'], scale, version=capacity_version)
     else:
         candidates, roads, main, pattern = adaptive_field(
             parent["polygon"], parent["localSeed"], base, parent["id"], stitch=stitch, morphology=morphology
@@ -36,7 +37,7 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
             candidates,
             roads,
             main,
-            **(dict(scale=scale) if capacity_programs is not None else {}),
+            **(dict(scale=scale, members=[parcels[k] for k in z['memberEntityIds']]) if capacity_programs is not None else {}),
         )
         for z in zones
     }
@@ -66,7 +67,7 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
             decisions, sites = capacity_campuses(
                 plans, selections, zones, polygons, parent['localSeed'], main + boundary, terrain,
                 campus_pairs if campus_pairs is not None else pairs, campus_style, campus_groups,
-                pattern.get('campusReservation', {}).get('zoneId'))
+                pattern.get('campusReservation', {}).get('zoneId'), version=capacity_version)
         complete_roads = main + boundary + [r for plan in plans.values() for r in plan[1]]
         for z in zones:
             key = z['id']
@@ -121,7 +122,7 @@ def validate_adaptive_parent(parent, zones, blocks, parcels, pairs, base, *, sti
                 or p["parcel"] != s["polygon"]
                 or any(
                     p.get(k) != s.get(k)
-                    for k in ("center", "angle", "entrance", "streetPoint")
+                    for k in ("center", "angle", "entrance", "streetPoint", "architecturalSiteId")
                 )
             ):
                 raise ValueError(

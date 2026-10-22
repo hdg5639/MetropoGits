@@ -1746,7 +1746,7 @@
     }
     for (const aggregateId of renderedAggregateIds) {
       const facility = aggregateFacilities.get(aggregateId);
-      if (!selected("aggregate", aggregateId) && !facility.campusProgram) continue;
+      if (!filterEngine.compoundPresentation(facility, selected("aggregate", aggregateId)).persistentLabel) continue;
       const anchor = projected([
         facility.labelX ?? facility.x + facility.width / 2,
         facility.height + 5+(facility.baseElevation || 0),
@@ -2107,7 +2107,7 @@
   function showAggregate(aggregateId) {
     const facility = aggregateFacilities.get(aggregateId);
     inspector.replaceChildren();
-    inspector.append(element("p", facility.campusProgram ? "CAMPUS LANDMARK · VISUAL AGGREGATE" : facility.role ? "ROLE LANDMARK · VISUAL AGGREGATE" : "CITY BLOCK · VISUAL AGGREGATE", "eyebrow"));
+    inspector.append(element("p", filterEngine.compoundPresentation(facility).eyebrow, "eyebrow"));
     inspector.append(element("h2", facility.title || districtLabel(districts.get(facility.districtId))));
     inspector.append(element(
       "p",
@@ -2121,7 +2121,7 @@
     detailRow(details, "Districts", facility.memberDistrictIds?.length || 0);
     detailRow(details, "Representation", "Deterministic visual block aggregate");
     if (facility.campusProgram) {
-      detailRow(details, "Derived campus purpose", facility.campusProgram.label);
+      detailRow(details, filterEngine.compoundPresentation(facility).purposeLabel, facility.campusProgram.label);
       detailRow(details, "Original source edges", facility.sourceEdgeIds.length);
       detailRow(details, "Shared local targets", facility.sharedTargetIds.length);
       inspector.append(element('p','Grouped by original edges or shared local targets. Shared targets do not create a dependency between constituent files. Unknown roles remain unknown.','campus-landmark-disclosure'));

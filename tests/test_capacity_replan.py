@@ -129,6 +129,43 @@ class CapacityReplanTests(unittest.TestCase):
         self.assertTrue(site['courts'])
         self.assertTrue(site['sourceProgram']['evidenceIds'])
         self.assertGreater(len({(p['width'], p['depth']) for p in world['parcels']}), 3)
+        data = view_data(world, scene, graph, building_style='urban', campus_landmarks=True)
+        complexes = data['streets']['roleCompounds']
+        self.assertEqual(len(complexes), 4)
+        self.assertGreaterEqual(sum(len(c['memberEntityIds']) for c in complexes), 12)
+        self.assertTrue(world['capacityPlan']['architecturalSites'])
+        from metropogits.world.export import render_svg
+        from xml.etree import ElementTree
+        ordinary = copy.deepcopy(complexes)
+        for c in ordinary:
+            c['role'] = 'SOURCE_COMPLEX:VALIDATION'
+        svg = render_svg(world, building_style='urban', graph=graph, compounds=ordinary)
+        labels = [t.text for t in ElementTree.fromstring(svg).iter('{http://www.w3.org/2000/svg}text')]
+        for c in ordinary:
+            self.assertNotIn(f"{c['title']} · {len(c['memberEntityIds'])} files", labels)
+            self.assertIn(c['id'].encode(), svg)
+        # File doors inside a certified complex are logical interior addresses,
+        # not public asphalt painted through its new ground-floor solids.
+        from metropogits.world.street_mesh import street_mesh
+        from metropogits.world.geometry import area
+        from metropogits.block_orientation import clip
+        from metropogits.world.urban_land import ClearanceIndex
+        ground = ClearanceIndex()
+        for c in complexes:
+            model = c['physicalModel']
+            for i, part in enumerate(model['parts']):
+                if part['y'] <= model.get('baseElevation', 0) + .15 and part.get('materialKind') not in (12, 13, 14):
+                    ground.add((c['id'], i), part['footprint'])
+        for pavement in street_mesh(world, compounds=complexes):
+            poly = pavement['points']
+            for key in {k for cell in ground.cells_for(poly) for k in ground.cells[cell]}:
+                self.assertLessEqual(area(clip(poly, ground.shapes[key])), .001)
+        # Private planning units must never appear as invented source entities.
+        self.assertEqual({p['entityId'] for p in world['parcels']}, {b['entityId'] for b in scene['buildings']})
+        forged = copy.deepcopy(world)
+        next(p for p in forged['parcels'] if p.get('architecturalSiteId'))['architecturalSiteId'] = 'invented'
+        with self.assertRaises(ValueError):
+            validate_world(forged, scene, graph)
 
     def test_quantized_micro_junction_is_coalesced_without_deleting_access(self):
         from metropogits.world.capacity import stabilize_infrastructure

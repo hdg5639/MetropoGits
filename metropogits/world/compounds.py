@@ -42,6 +42,7 @@ def _derive(world, graph, note, *, campus_landmarks=False):
     from .elevation import surface, foundation_faces
 
     parcels = sorted(world["parcels"], key=lambda p: p["entityId"])
+    program_sites = world.get('capacityPlan', {}).get('version') == 'capacity-replan/0.2'
     if len(parcels) > 10_000 or len(world["streets"]) > 50_000:
         raise ValueError("role compound input limit")
     evidence = {e["evidenceId"]: e for e in graph["evidence"]}
@@ -68,8 +69,9 @@ def _derive(world, graph, note, *, campus_landmarks=False):
         for site in campus_site.get("architecturalSites", [])
         for identity in site["memberEntityIds"]
     } if campus_landmarks else {}
+    cohorts = world.get('capacityPlan', {}).get('cohorts', {}) if program_sites else {}
     links = defaultdict(dict)
-    if campus_members:
+    if campus_members or cohorts:
         from .campus_landmarks import campus_affinity
 
         pairs = campus_affinity(
@@ -77,7 +79,7 @@ def _derive(world, graph, note, *, campus_landmarks=False):
             {
                 p["entityId"]: p.get("zoneId", p["districtId"])
                 for p in parcels
-                if p["entityId"]
+                if cohorts or p["entityId"]
                 in campus_members.get(p.get("zoneId", p["districtId"]), set())
             },
         )
@@ -92,12 +94,16 @@ def _derive(world, graph, note, *, campus_landmarks=False):
         eligible_campus = (
             p["entityId"] in campus_members.get(zone, set()) and links[p["entityId"]]
         )
-        if role is None and not eligible_campus:
+        cohort = cohorts.get(p.get('cohortId'), {})
+        eligible_cohort = len(cohort.get('memberEntityIds', [])) >= 2 and bool(cohort.get('edgeIds')) and bool(links[p['entityId']])
+        if role is None and not eligible_campus and not eligible_cohort:
             continue
         path = entities[p["entityId"]]["path"]
         owner = next((m["id"] for m in modules if path.startswith(m["path"] + "/")), "")
         if eligible_campus:
             groups[zone, owner, "CAMPUS"].append(p)
+        if eligible_cohort:
+            groups[zone, owner, 'COHORT:' + p['cohortId']].append(p)
         if role is not None:
             groups[zone, owner, role].append(p)
     obstacles = []
@@ -144,7 +150,8 @@ def _derive(world, graph, note, *, campus_landmarks=False):
             [[c * p[0] + s * p[1], -s * p[0] + c * p[1]] for p in vertices]
         )
         width, depth = hi - lo, zh - zo
-        if max(width, depth) > 56 or sum(
+        span_limit = min(160, max(56, 4 * max(max(b['width'], b['depth']) for b in members) + 12)) if program_sites else 56
+        if max(width, depth) > span_limit or sum(
             area(b["parcel" if campus else "footprint"]) for b in members
         ) / (width * depth) < (0.55 if campus else 0.43):
             return None
@@ -219,8 +226,11 @@ def _derive(world, graph, note, *, campus_landmarks=False):
     candidate_checks = 0
     reserved = set()
     site_counts = defaultdict(int)
-    for (zone, owner, role), members in sorted(groups.items()):
-        campus = role == "CAMPUS"
+    for (zone, owner, role), members in sorted(groups.items(), key=lambda item: (
+            item[0][0], item[0][1], 0 if item[0][2].startswith('COHORT:') else 1, item[0][2])):
+        cohort = role.startswith('COHORT:')
+        campus = role == "CAMPUS" or cohort
+        capped_site = campus and (not cohort or zone in campus_members)
         available = {p["entityId"] for p in members} - reserved
         ordered = (
             sorted(
@@ -231,13 +241,15 @@ def _derive(world, graph, note, *, campus_landmarks=False):
             else members
         )
         limit = 1 + min(3, len(campus_members.get(zone, ())) // 48)
+        if program_sites and capped_site:
+            limit = 4
         if campus and (world.get("campusPlan", {}).get("style") == "estate" or (
             world.get("campusPlan", {}).get("style") == "precinct"
             and any(b['entityId'] in planned_sites for b in members)
         )):
             limit = 4
         for seed in ordered:
-            if campus and site_counts[zone] >= limit:
+            if capped_site and site_counts[zone] >= limit:
                 break
             if seed["entityId"] not in available:
                 continue
@@ -245,7 +257,8 @@ def _derive(world, graph, note, *, campus_landmarks=False):
             model = None
             for b in sorted(
                 (b for b in members if b["entityId"] in available and b != seed),
-                key=lambda b: (math.dist(b["center"], seed["center"]), b["entityId"]),
+                key=lambda b: (bool(program_sites and b.get('cohortId') != seed.get('cohortId')),
+                               math.dist(b["center"], seed["center"]), b["entityId"]),
             ):
                 if campus and seed["entityId"] in planned_sites and b["entityId"] not in planned_sites[seed["entityId"]]:
                     continue
@@ -254,9 +267,10 @@ def _derive(world, graph, note, *, campus_landmarks=False):
                     raise ValueError("role compound candidate limit")
                 if len(chosen) >= 16:
                     break
-                if min(math.dist(b["center"], p["center"]) for p in chosen) > (
-                    22 if campus else 16
-                ):
+                adjacent = any(math.dist(b['center'], p['center']) <=
+                               (max(b['width'], b['depth']) + max(p['width'], p['depth'])) / 2 + 4 for p in chosen) if program_sites else min(
+                                   math.dist(b['center'], p['center']) for p in chosen) <= (22 if campus else 16)
+                if not adjacent:
                     continue
                 if campus and not any(
                     links[b["entityId"]].get(p["entityId"]) for p in chosen
@@ -371,6 +385,23 @@ def _derive(world, graph, note, *, campus_landmarks=False):
                 )
                 site_counts[zone] += 1
                 note["campusLandmarks"]["selected"] += 1
+            if program_sites:
+                result[-1]['physicalProgramVersion'] = world['capacityPlan']['version']
+                if cohort:
+                    result[-1]['cohortId'] = role[len('COHORT:'):]
+                    if zone not in campus_members:
+                        result[-1]['role'] = 'SOURCE_COMPLEX:' + result[-1].get('campusProgram', {}).get('kind', 'COLLABORATION')
+                # The old aggregate glyph's30/36-unit ceiling is not physical
+                # capacity. Large certified sites use form/footprint ratios.
+                kind = result[-1].get('campusProgram', {}).get('kind')
+                ratio = {'APPLICATION': 2.4, 'VALIDATION': .95, 'DATA': 1.15,
+                         'INTERFACE': 1.1, 'COMPUTE': 1.25, 'TOOLING': 1.0}.get(kind, 1.25)
+                old_height = result[-1]['height']
+                height = q(min(model['width'], model['depth']) * ratio)
+                base = model.get('baseElevation', 0)
+                model['parts'] = [dict(part, y=q(base + (part['y'] - base) * height / old_height),
+                                       height=q(part['height'] * height / old_height)) for part in model['parts']]
+                result[-1]['height'] = height
             # Empty interstitial space may belong to a previous compound's
             # checked envelope even when no original parcel occupies it.
             add(model["footprint"], "compound", result[-1])

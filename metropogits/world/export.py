@@ -235,7 +235,7 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
             for a, b in zip(ring, ring[1:] + ring[:1])
         )
     if 'streetPlan' in world:
-        surfaces=street_mesh(original_world if building_style == 'urban' else world)
+        surfaces=street_mesh(original_world if building_style == 'urban' else world, compounds=compounds)
     pavement = dict(
         version="world-pavement/0.1",
         segments={
@@ -481,7 +481,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
             )
         )
     if 'streetPlan' in world:
-        for p in street_mesh(original_world if building_style == 'urban' else world):
+        for p in street_mesh(original_world if building_style == 'urban' else world, compounds=compounds or []):
             color=STREET_COLORS[p['streetClass']]['overview']
             heights=p.get('pointHeights',[.08]*len(p['points']))
             lines.append(polygon([project(v,y) for v,y in zip(p['points'],heights)],color,
@@ -584,10 +584,9 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
         lines.append(
             f'<text x="{x:.3f}" y="{y:.3f}" fill="#e2edf5" stroke="#10202a" stroke-width="3" paint-order="stroke" font-family="sans-serif" font-size="13" text-anchor="middle">{escape(label)}</text>'
         )
-    landmark_zones={f['districtId'] for f in compounds or [] if f.get('campusProgram')}
-    for f in compounds or []:
-        if not f.get('campusProgram'):
-            continue
+    landmarks = [f for f in compounds or [] if f.get('campusProgram') and not f.get('role', '').startswith('SOURCE_COMPLEX:')]
+    landmark_zones={f['districtId'] for f in landmarks}
+    for f in landmarks:
         x,y=project(f['physicalModel']['center'],f['height']+f['physicalModel']['baseElevation']+2)
         lines.append(f'<text x="{x:.3f}" y="{y:.3f}" fill="#e2edf5" stroke="#10202a" stroke-width="3" paint-order="stroke" font-family="sans-serif" font-size="11" text-anchor="middle">{escape(f["title"])} · {len(f["memberEntityIds"])} files</text>')
     for site in world.get('campusPlan',{}).get('sites',[]):

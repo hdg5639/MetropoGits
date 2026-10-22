@@ -6,7 +6,7 @@ its physical admission are versioned, deterministic visual derivations.
 """
 
 import math
-from collections import Counter
+from collections import Counter, defaultdict
 from functools import lru_cache
 
 from .geometry import area, inside, point, q, rectangle, ribbon
@@ -15,7 +15,8 @@ from .seed import derive
 from .urban_character import CharacterEngine, verified_claims
 from .urban_land import ClearanceIndex
 
-VERSION = 'capacity-replan/0.1'
+LEGACY_VERSION = 'capacity-replan/0.1'
+VERSION = 'capacity-replan/0.2'
 MAX_PROPOSALS = 1_500_000
 
 
@@ -35,7 +36,9 @@ def junction_exclusions(geometry):
     return [hull(points) for _, points in sorted(tips.items()) if len(points) >= 4 and len(hull(points)) >= 3]
 
 
-def architectural_programs(scene, graph):
+def architectural_programs(scene, graph, *, version=VERSION):
+    if version not in (LEGACY_VERSION, VERSION):
+        raise ValueError('unsupported physical capacity version')
     engine = CharacterEngine(graph)
     grouped, _ = groups(scene)
     result = {}
@@ -45,7 +48,8 @@ def architectural_programs(scene, graph):
             identity = b['entityId']
             roles = verified_claims(engine.files[identity], 'roles', engine.evidence)
             values = {r['value'] for r in roles}
-            variant = int(derive(identity, VERSION, 'land-program'), 16) % 4
+            # Preserve already admitted program sizes when adding cohorts.
+            variant = int(derive(identity, LEGACY_VERSION, 'land-program'), 16) % 4
             if values & {'PERSISTENCE_ADAPTER', 'OBJECT_STORAGE_ADAPTER', 'DATA_PROCESSOR', 'ML_COMPONENT'}:
                 family = 'HORIZONTAL_WORKS'
                 dimensions = ((20, 12), (24, 14), (30, 16), (36, 18))
@@ -70,6 +74,27 @@ def architectural_programs(scene, graph):
                 sourceEnvelope={k: b[k] for k in ('width', 'depth', 'height')},
                 districtId=district, districtDemand=demand['perSourceUnits'],
                 derived=True, basis='SOURCE_PROGRAM_NOT_PER_FILE_POPULARITY')
+    if version == VERSION:
+        from .functional import functional_candidates
+        from .campus_estates import planning_affinity, requirements
+        from .campus_landmarks import source_edges
+        entities = {e['id']: e for e in graph['entities']}
+        zones = [z for district, members in grouped.items() for z in functional_candidates(members, entities, district, graph)]
+        pairs = planning_affinity(graph, zones)
+        records = source_edges(graph)
+        for zone in zones:
+            for cohort in requirements(zone, pairs):
+                own = set(cohort['memberEntityIds'])
+                targets = defaultdict(set)
+                for a, b, edge in records:
+                    if a in own:
+                        targets[b].add(a)
+                shared = {target for target, sources in targets.items() if len(sources) >= 2}
+                edges = [e for a, b, e in records if a in own and (b in own or b in shared)]
+                for identity in own:
+                    result[identity].update(cohortId=cohort['id'],
+                        cohortEdgeIds=sorted(e['id'] for e in edges),
+                        cohortEvidenceIds=sorted({k for e in edges for k in e['evidenceIds']}))
     return dict(sorted(result.items()))
 
 
@@ -107,10 +132,13 @@ def scale_planning(value, scale):
 def planning_scale(members):
     # Roads are planned for the actual site depths BEFORE their frontage is
     # subdivided. This is a street-spacing rule, not a uniform parcel size.
+    if any('cohortId' in b for b in members):
+        from .compound_sites import units
+        return max(1.5, (2 * max(b['depth'] for b in units(members)) + 12) / 24)
     return max(2, (max(b['depth'] for b in members) + 6) / 8)
 
 
-def program_field(polygon, seed, base, parent, scale):
+def program_field(polygon, seed, base, parent, scale, *, version=VERSION):
     from .adaptive import adaptive_field
     small = [point([x / scale for x in p]) for p in polygon]
     candidates, roads, main, pattern = adaptive_field(small, seed, base, parent, stitch=True, morphology=True)
@@ -118,13 +146,24 @@ def program_field(polygon, seed, base, parent, scale):
     if base == 'HYBRID':
         from .hybrid import hybrid_regions
         pattern['regions'] = hybrid_regions(polygon, seed)
-    pattern.update(capacityVersion=VERSION, programStreetScale=scale)
+    pattern.update(capacityVersion=version, programStreetScale=scale)
     return candidates, roads, main, pattern
 
 
-def program_local_sites(polygon, seed, selection, parent_candidates, parent_roads, backbone, scale):
+def program_local_sites(polygon, seed, selection, parent_candidates, parent_roads, backbone, scale, members=None):
     from .adaptive import local_sites
-    if selection['mode'] == 'INHERITED':
+    if members is not None and any('cohortId' in b for b in members):
+        # Replace legacy small-glyph local streets BEFORE whole-site admission.
+        # The inherited district arterials, functional borders and terrain stay
+        # authoritative; local service aisles follow its frontage axis but have
+        # room for two full architectural sites, not two eight-unit glyph rows.
+        from .planning import slots
+        small = [point([x / scale for x in p]) for p in polygon]
+        plan = scale_planning((*slots(small, seed, axis=selection['axis'], collectors=False), None), scale)
+        if selection['profile'] == 'HYBRID':
+            from .hybrid import hybrid_regions
+            plan = (*plan[:3], hybrid_regions(polygon, seed))
+    elif selection['mode'] == 'INHERITED':
         plan = local_sites(polygon, seed, selection, parent_candidates, parent_roads, backbone)
     else:
         small = [point([x / scale for x in p]) for p in polygon]
@@ -149,7 +188,7 @@ def program_local_sites(polygon, seed, selection, parent_candidates, parent_road
     return plan
 
 
-def fit_programs(members, polygon, plan, external_roads, terrain, seed, *, courts=(), preferences=None):
+def fit_programs(members, polygon, plan, external_roads, terrain, seed, *, courts=(), preferences=None, _planning_units=False):
     """Subdivide real street frontage into independently sized physical lots.
 
     Large programs reserve complete sites first. Street directions follow the
@@ -157,6 +196,10 @@ def fit_programs(members, polygon, plan, external_roads, terrain, seed, *, court
     grid cells. Failure returns an incomplete *internal* proposal and triggers
     parent capacity repair; it can never be exported as successful placement.
     """
+    if not _planning_units and any('cohortId' in b for b in members):
+        from .compound_sites import allocate
+        return allocate(members, polygon, plan, external_roads, terrain, seed,
+                        courts=courts, preferences=preferences)
     _, lanes, axis, regions = plan
     index = ClearanceIndex()
     roads = sorted(lanes + external_roads, key=lambda r: (str(r.get('id', '')), r['start'], r['end']))
@@ -177,20 +220,47 @@ def fit_programs(members, polygon, plan, external_roads, terrain, seed, *, court
     cursors = {}
     occupied = ClearanceIndex()
     rejected_static, accepted_static = set(), set()
+    cohort_frontage = {}
     # Keep each source's road-family preference stable rather than ranking
     # sources by their incoming references.
     lane_order = sorted(lanes, key=lambda r: (-math.dist(r['start'], r['end']), str(r.get('id', ''))))
     from .radial import _clipped
     lane_order += [dict(r, start=p[0], end=p[1]) for r in external_roads
                    if (p := _clipped(r['start'], r['end'], polygon)) and math.dist(*p) > 4]
-    for b in sorted(members, key=lambda b: (-b['width'] * b['depth'], derive(seed, b['entityId']))):
+    cohort_area = Counter()
+    for b in members:
+        cohort_area[b.get('cohortId', b['entityId'])] += b['width'] * b['depth']
+    ordered_members = sorted(members, key=lambda b: (
+        -cohort_area[b['cohortId']], b['cohortId'], -b['width'] * b['depth'], derive(seed, b['entityId']))) if any('cohortId' in b for b in members) else sorted(
+            members, key=lambda b: (-b['width'] * b['depth'], derive(seed, b['entityId'])))
+    for b in ordered_members:
         width, depth = b['width'], b['depth']
+        site_shape = tuple((c['source']['width'], c['source']['depth'], c['x'], c['z'], c['facing'])
+                           for c in b.get('_site', {}).get('children', []))
         fitted = None
         preferred = (preferences or {}).get(b['entityId'])
         from .geometry import nearest
         ordered = sorted(lane_order, key=lambda r: (math.dist(preferred, nearest(preferred, r['start'], r['end'])),
                                                     str(r.get('id', '')))) if preferred else lane_order
-        for lane in ordered:
+        def carrier(lane):
+            import re
+            identity = str(lane.get('sourceLaneId', lane.get('id', '')))
+            group = re.search(r'(?:row:-?\d+|orbit:\d+|court:\d+:-?\d+)', identity)
+            return lane.get('group') or (group[0] if group else identity)
+        anchor = cohort_frontage.get(b.get('cohortId'))
+        carriers = [(lane, None) for lane in ordered]
+        if anchor:
+            def affinity(item):
+                lane, side = item
+                a, z = lane['start'], lane['end']
+                length = math.dist(a, z)
+                normal = [-(z[1] - a[1]) * side / length, (z[0] - a[0]) * side / length]
+                aligned = sum(normal[i] * anchor['normal'][i] for i in (0, 1)) > .8
+                priority = 0 if carrier(lane) == anchor['carrier'] and aligned else 1 if aligned else 2
+                return priority, math.dist(anchor['point'], nearest(anchor['point'], a, z)), str(lane.get('id', '')), side
+            carriers = sorted(((lane, side) for lane in ordered for side in (-1, 1)
+                               if math.dist(lane['start'], lane['end']) > .5), key=affinity)
+        for lane, preferred_side in carriers:
             a, end = lane['start'], lane['end']
             length = math.dist(a, end)
             if length < .5:
@@ -205,17 +275,20 @@ def fit_programs(members, polygon, plan, external_roads, terrain, seed, *, court
                          range(max(0, math.ceil((first - 2) / 2)), math.floor((length - width - 4) / 2) + 1)])
             for along in stations:
                 at = point([a[i] + along * u[i] for i in (0, 1)])
-                for side in (-1, 1):
+                base_setback = max(1.8, lane['width'] / 2 + 1.3)
+                offsets = (0, width * .2, width * .45) if '_site' in b else (0,)
+                for side, extra_setback in ((side, distance) for side in
+                        ((preferred_side,) if preferred_side is not None else (-1, 1)) for distance in offsets):
                     if (lane_key, side) in cursors and along - width / 2 < cursors[lane_key, side]:
                         continue
-                    candidate_key = (width, depth, lane_key, along, side)
+                    candidate_key = (width, depth, lane_key, along, side, extra_setback, site_shape)
                     if candidate_key in rejected_static:
                         continue
                     work += 1
                     if work > MAX_PROPOSALS:
                         raise ValueError('capacity frontage proposal limit')
                     normal = [-u[1] * side, u[0] * side]
-                    setback = max(1.8, lane['width'] / 2 + 1.3)
+                    setback = base_setback + extra_setback
                     center = point([at[i] + normal[i] * (depth / 2 + setback) for i in (0, 1)])
                     angle = math.atan2(normal[0], -normal[1])
                     parcel = rectangle(center, angle, width + 2, depth + 2)
@@ -236,15 +309,21 @@ def fit_programs(members, polygon, plan, external_roads, terrain, seed, *, court
                     if any(overlap(approach, index.shapes[k]) for k in obstacles):
                         rejected_static.add(candidate_key)
                         continue
-                    if field and candidate_key not in accepted_static:
-                        from .elevation import MAX_LOT_RELIEF, MAX_ACCESS_GRADE
-                        low, high = field.range(parcel)
-                        if high - low > MAX_LOT_RELIEF or abs(high + .04 - field.height(at)) / setback > MAX_ACCESS_GRADE - .001:
-                            rejected_static.add(candidate_key)
-                            continue
-                    accepted_static.add(candidate_key)
                     if not occupied.clear(parcel, set()) or not occupied.clear(approach, set()):
                         continue
+                    if field and candidate_key not in accepted_static:
+                        if '_site' in b:
+                            from .compound_sites import suitable
+                            if not suitable(b, dict(center=center, angle=angle, streetPoint=at), field):
+                                rejected_static.add(candidate_key)
+                                continue
+                        else:
+                            from .elevation import MAX_LOT_RELIEF, MAX_ACCESS_GRADE
+                            low, high = field.range(parcel)
+                            if high - low > MAX_LOT_RELIEF or abs(high + .04 - field.height(at)) / setback > MAX_ACCESS_GRADE - .001:
+                                rejected_static.add(candidate_key)
+                                continue
+                    accepted_static.add(candidate_key)
                     fitted = dict(id='program:' + derive(seed, b['entityId']), entityId=b['entityId'],
                                   center=center, angle=angle, polygon=parcel, entrance=entrance,
                                   streetPoint=at, laneId=lane.get('id', 'program-road'))
@@ -255,6 +334,8 @@ def fit_programs(members, polygon, plan, external_roads, terrain, seed, *, court
                     occupied.add(('parcel', b['entityId']), parcel)
                     occupied.add(('approach', b['entityId']), approach)
                     cursors[lane_key, side] = along + width / 2 + 2.1
+                    if 'cohortId' in b:
+                        cohort_frontage.setdefault(b['cohortId'], dict(carrier=carrier(lane), normal=normal, point=at))
                     break
                 if fitted:
                     break
@@ -298,15 +379,15 @@ def program_regions(plan, selection, pattern, polygon):
     return (*plan[:3], regions or None)
 
 
-def capacity_campuses(plans, selections, zones, polygons, seed, roads, terrain, pairs, style, grouping_pairs, reserved_zone):
+def capacity_campuses(plans, selections, zones, polygons, seed, roads, terrain, pairs, style, grouping_pairs, reserved_zone, *, version=VERSION):
     """Whole source-backed physical sites, not the old fixed glyph subplots."""
     if style != 'precinct':
         raise ValueError('physical campus requires precinct planning')
     return program_precinct(plans, selections, zones, polygons, seed, roads, terrain,
-                            grouping_pairs or pairs, reserved_zone)
+                            grouping_pairs or pairs, reserved_zone, version=version)
 
 
-def program_precinct(plans, selections, zones, polygons, seed, roads, terrain, pairs, reserved_zone):
+def program_precinct(plans, selections, zones, polygons, seed, roads, terrain, pairs, reserved_zone, *, version=VERSION):
     """A whole, variable-lot pedestrian campus, without glyph-sized subplots."""
     from .campus import eligibility
     from .campus_programmed import ProgrammedFabric, annotate_program
@@ -343,7 +424,7 @@ def program_precinct(plans, selections, zones, polygons, seed, roads, terrain, p
             decision['reason'] = 'PROTECTED_COMMONS_FIT'
             continue
         at, lawn, loop = selected
-        identity = 'world:program-campus:' + derive(seed, key, VERSION)
+        identity = 'world:program-campus:' + derive(seed, key, version)
         walks = []
         for number, road in enumerate(plans[key][1]):
             for piece, (a, b) in enumerate(outside(road['start'], road['end'], loop)):
@@ -379,7 +460,7 @@ def program_precinct(plans, selections, zones, polygons, seed, roads, terrain, p
                     activityCenters=[dict(id=identity + ':activity', center=point(at), courtId=court['id'], anchorEntityId=anchor, slotIds=[])],
                     courts=[court], walkways=walks, axis=axis, capacity=len(zone['memberEntityIds']),
                     envelopes=[poly], scope='NEIGHBORHOOD', vehicleFrontageSlotIds=[],
-                    facilityAssignments={}, architecturalSites=[], capacityVersion=VERSION)
+                    facilityAssignments={}, architecturalSites=[], capacityVersion=version)
         annotate_program(zone, ([], walks, site))
         plans[key] = ([], walks, axis, None)
         sites[key] = site
@@ -408,7 +489,7 @@ def update_campus_addresses(site, choices):
     site['facilityAssignments'] = {k: s['id'] for k, s in by_id.items()}
 
 
-def capacity_report(world, programs):
+def capacity_report(world, programs, *, version=VERSION):
     parcels = {p['entityId']: p for p in world['parcels']}
     if set(parcels) != set(programs):
         raise ValueError('capacity replan omitted or duplicated source entities')
@@ -416,6 +497,8 @@ def capacity_report(world, programs):
         p = parcels[identity]
         if p['width'] != wanted['width'] or p['depth'] != wanted['depth']:
             raise ValueError('capacity replan shrank or changed a physical program')
+        if 'cohortId' in wanted and p.get('cohortId') != wanted['cohortId']:
+            raise ValueError('physical source lost its evidenced architectural cohort')
     districts = {}
     for d in world['districts']:
         identities = [k for k, p in programs.items() if p['districtId'] == d['id']]
@@ -424,9 +507,27 @@ def capacity_report(world, programs):
             requiredParcelArea=q(sum(programs[k]['parcelWidth'] * programs[k]['parcelDepth'] for k in identities)),
             requiredTotalArea=q(d['areaDemand']['total']), allocatedLandArea=q(area(d['polygon'])),
             sourceEntities=len(identities), allocatedEntities=len(identities), unresolved=0)
-    return dict(version=VERSION, derived=True, programs=programs, districts=districts,
+        if version == VERSION:
+            districts[d['id']]['requiredSiteLandArea'] = q(d['areaDemand']['parcelArea'])
+    result = dict(version=version, derived=True, programs=programs, districts=districts,
                 counts={'ALLOCATED': len(parcels), 'DEFERRED_REPLAN': 0},
                 families=dict(sorted(Counter(p['family'] for p in programs.values()).items())))
+    if version == VERSION:
+        cohorts = defaultdict(list)
+        for identity, p in programs.items():
+            cohorts[p['cohortId']].append(identity)
+        result['cohorts'] = {key: dict(memberEntityIds=sorted(ids), requiredFootprintArea=q(sum(programs[k]['area'] for k in ids)),
+                                     edgeIds=programs[ids[0]]['cohortEdgeIds'], evidenceIds=programs[ids[0]]['cohortEvidenceIds'],
+                                     basis='STATIC_EDGES_AND_SHARED_LOCAL_TARGETS_NOT_PEER_CONNECTIONS') for key, ids in sorted(cohorts.items())}
+        shared_sites = defaultdict(list)
+        for p in parcels.values():
+            if p.get('architecturalSiteId'):
+                shared_sites[p['architecturalSiteId']].append(p['entityId'])
+        result['architecturalSites'] = {key: dict(memberEntityIds=sorted(ids), cohortId=programs[ids[0]]['cohortId'],
+                                                sourceFootprintArea=q(sum(programs[k]['area'] for k in ids)),
+                                                sharedExteriorAccess=True)
+                                        for key, ids in sorted(shared_sites.items())}
+    return result
 
 
 def stabilize_infrastructure(streets, parcels, terrain):

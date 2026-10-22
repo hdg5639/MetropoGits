@@ -38,7 +38,7 @@ no missing sources, overlapping buildings/roads or disconnected required doors;
 entire packages repeat byte-for-byte. See QUALITY_LOG for exact evidence and
 the subsequent canonical street-port ID migration/round-trip check.
 
-**Blocking visual correction, next work unit:** new variable sites expose an
+**Capacity0.1 correction identified:** new variable sites expose an
 old small-plot assumption in source-complex consolidation. GJ now has only3
 certified compounds/6 constituent files, OJ1/2, PocketBase1/2; these are NOT a
 satisfactory replacement for the former campus landmarks. Plan related
@@ -46,3 +46,20 @@ architectural cohorts together and scale consolidation by real footprints.
 Then improve actual morphology and density, measure rendered near repeats and
 review identical-angle grayscale district/street images. No overall redesign
 completion claim is permitted at this checkpoint.
+
+## Whole-site correction, capacity0.2 — 2026-10-23
+
+Implemented bounded, evidenced source-cohort requests BEFORE land/street/file
+subdivision. Sites reserve complete variable source envelopes plus shared
+exterior access; real sources and graph paths survive consolidation. Local
+service aisles are rebuilt for whole-site depths; failed neighborhoods gain
+repair land without inflating the weights of successful neighbors. Terrain
+relief and grade are independently checked on actual buildings and paths.
+
+Physical footprint-scaled consolidation replaces the obsolete small-distance
+assumption, and compiled source/complex massing now varies roof systems,
+structural volumes, courtyards, tower setbacks and linked wings. Source interior
+addresses remain routable but are not painted through complex solids as public
+roads. Acceptance evidence and remaining visual limitations are recorded in the
+next QUALITY_LOG checkpoint; the wider five-typology downtown/master-plan
+redesign is still not declared complete from this capacity milestone.

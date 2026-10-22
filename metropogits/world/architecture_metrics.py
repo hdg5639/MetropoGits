@@ -96,5 +96,6 @@ def geometry_metrics(styled, profiles):
                 footprintSizes=dict(sorted(Counter(f"{p['width']}x{p['depth']}" for p in models).items())),
                 catalogFamilies=dict(sorted(Counter(p['family'] for p in profiles.values()).items())),
                 actualCompositions=dict(sorted(Counter(p.get('massingLayout', 'CATALOG') for p in profiles.values()).items())),
-                neutralRoleSources=sum(p['verifiedRole'] is None for p in profiles.values()),
+                neutralRoleSources=sum(p['verifiedRole'] is None and not p.get('composite') for p in profiles.values()),
+                compositeModels=sum(bool(p.get('composite')) for p in profiles.values()),
                 limitation='Finite-resolution solid geometry similarity; inspect matched grayscale renders as well.')

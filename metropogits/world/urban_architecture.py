@@ -11,7 +11,6 @@ def urban_world(world, graph):
     if 'capacityPlan' in world:
         # A physical program has already shaped district boundaries, roads and
         # parcels. Do not run the obsolete vacancy-only admission a second time.
-        from .capacity import VERSION
         from .geometry import q
         decisions = {}
         for p in world['parcels']:
@@ -21,7 +20,7 @@ def urban_world(world, graph):
                 sourceEnvelope=dict(envelope, **program['sourceEnvelope']), allocatedEnvelope=envelope,
                 allocatedArea=q(p['width'] * p['depth']))
         physical = world
-        plan = dict(version=VERSION, derived=True, structural=False, decisions=decisions,
+        plan = dict(version=world['capacityPlan']['version'], derived=True, structural=False, decisions=decisions,
                     counts=world['capacityPlan']['counts'], districts=world['capacityPlan']['districts'],
                     basis='DEMAND_FIRST_PHYSICAL_REPLAN_NOT_SOURCE_FACTS', limitations=[])
     else:

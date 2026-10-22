@@ -51,6 +51,25 @@ class CampusArchitectureTests(unittest.TestCase):
         ("TOOLING", {"CLI_ENTRYPOINT": 2}),
     ]
 
+    def test_physical_campuses_vary_real_solid_geometry_without_changing_role_proof(self):
+        from metropogits.world.architecture_metrics import occupancy
+        from scripts.urban_capacity_audit import rendered_models
+        for kind, roles in self.PROGRAMS:
+            shapes, layouts = set(), set()
+            for seed in range(20):
+                source = compound(kind, roles, width=48, depth=34)
+                source.update(id=f'physical-complex:{seed}', physicalProgramVersion='capacity-replan/0.2')
+                before = copy.deepcopy(source)
+                actual = catalog_compounds([source])[0]
+                models, _ = rendered_models(dict(parcels=[]), {}, [actual])
+                shapes.add(occupancy(models['parcels'][0]))
+                layouts.add(actual['architecture']['campusMassing']['layout'])
+                self.assertEqual(source, before)
+                self.assertEqual(actual['memberEntityIds'], source['memberEntityIds'])
+                self.assertEqual(actual['architecture']['campusMassing']['roleEvidenceIds'], ['evidence:role'])
+            self.assertGreaterEqual(len(shapes), 3, kind)
+            self.assertGreaterEqual(len(layouts), 3, kind)
+
     def test_real_sources_keep_exact_members_routes_and_individual_meshes(self):
         graph = analyze_repository(
             Path("tests/fixtures/repositories/purpose-campus"),

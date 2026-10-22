@@ -97,15 +97,21 @@ class UrbanArchitectureTests(unittest.TestCase):
 
     def test_modern_systems_have_broad_cores_and_structurally_different_silhouettes(self):
         seen = set()
+        shapes = set()
+        from metropogits.world.architecture_metrics import occupancy
         envelope = dict(width=16,depth=12,height=48,center=[0,0],angle=.53)
-        for i in range(32):
+        for i in range(64):
             specs,layout = modern_grammar("tower",envelope,str(i))
             seen.add(layout)
             parts = compile_parts(envelope,specs)
+            shapes.add(occupancy(dict(envelope,parts=parts)))
             self.assertTrue(parts)
-            self.assertGreaterEqual(max(s["width"] for s in specs if s["height"]>.3),.36)
+            # Composed setback cores may span several connected vertical
+            # sections; test substantial volumes, not an old single-box height.
+            self.assertGreaterEqual(max(s["width"] for s in specs if s["height"]>.2),.36)
             self.assertLessEqual(len(parts),18)
-        self.assertEqual(len(seen),4)
+        self.assertGreaterEqual(len(seen),7)
+        self.assertGreaterEqual(len(shapes),7)
         narrow = dict(envelope,width=6,depth=6)
         for i in range(16):
             specs,layout = modern_grammar("tower",narrow,str(i))

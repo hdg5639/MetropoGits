@@ -939,7 +939,13 @@ def catalog_compounds(compounds):
             specs, envelope["height"], profile = massing
             label = profile["label"]
         else:
-            specs, profile = grammar(form), None
+            if source.get('physicalProgramVersion') == 'capacity-replan/0.2':
+                from .modern_massing import modern_grammar
+                specs, layout = modern_grammar(form, envelope, source['id'])
+                profile = dict(version='neutral-source-complex/0.2', layout=layout,
+                               derived=True, presentationOnly=True, volumesAreNotSourceCounts=True)
+            else:
+                specs, profile = grammar(form), None
         specs, detail = frontage_details(specs, envelope, family)
         parts = compile_parts(envelope, specs)
         base = model.get("baseElevation", 0)
@@ -966,7 +972,9 @@ def catalog_compounds(compounds):
         result.append(
             dict(
                 source,
-                physicalModel=dict(model, parts=parts),
+                **(dict(height=q(envelope['height'])) if source.get('physicalProgramVersion') == 'capacity-replan/0.2' else {}),
+                physicalModel=dict(model, parts=parts,
+                                   **(dict(height=q(envelope['height'])) if source.get('physicalProgramVersion') == 'capacity-replan/0.2' else {})),
                 architecture=dict(
                     version=VERSION,
                     archetypeId="AGGREGATE_COURT" if kind == "VALIDATION" else chosen,

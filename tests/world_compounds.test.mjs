@@ -3,6 +3,16 @@ import test from 'node:test';
 import '../metropogits/viewer_assets/viewer-filters.js';
 const engine=globalThis.METROPOGITS_FILTERS;
 
+test('ordinary source complexes do not claim campus status or crowd persistent labels',()=>{
+ const ordinary={role:'SOURCE_COMPLEX:APPLICATION',campusProgram:{kind:'APPLICATION'}};
+ assert.equal(engine.compoundPresentation(ordinary).persistentLabel,false);
+ assert.equal(engine.compoundPresentation(ordinary,true).persistentLabel,true);
+ assert.equal(engine.compoundPresentation(ordinary).eyebrow,'SOURCE COMPLEX · VISUAL AGGREGATE');
+ assert.equal(engine.compoundPresentation(ordinary).purposeLabel,'Derived source purpose');
+ assert.equal(engine.compoundPresentation({role:'CAMPUS:VALIDATION',campusProgram:{kind:'VALIDATION'}}).persistentLabel,true);
+ assert.equal(engine.compoundPresentation({role:'TEST'}).persistentLabel,false);
+});
+
 function fixture(){
  const ids=['a','b','c','d'];
  const scene={districts:[{id:'root',parentId:null},{id:'d',parentId:'root'}],networks:[],

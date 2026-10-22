@@ -9938,3 +9938,133 @@
 - Commits / push: commit this coherent capacity capability on
   `feat/polyglot-analysis` after explicit staging/metadata review; normal push
   only, never protected-main bypass. The following checkpoint records delivery.
+
+## Checkpoint 2026-10-23 — Whole-site capacity and actual architectural diversity
+
+- Implemented: capacity-replan/0.2 reserves source-affinity sites before land,
+  roads and real-file subdivision. Variable individual envelopes, shared
+  exterior promenades and private logical addresses replace post-hoc packing
+  across a road. Inadequate small-plot local aisles are regenerated for actual
+  site depths; failed neighborhoods gain repair weight without unnecessarily
+  increasing successful neighbors. Actual building foundations and shared path
+  grades are checked separately; relief/grade gates were not weakened.
+- Architectural outcome: footprint-aware certified consolidation, up to four
+  campus landmarks, compositional tower/slab/setback/linked-office/industrial/
+  roof-lit-hall/courtyard/atrium systems. Physical complex heights derive from
+  form/site dimensions, not old30/36-unit glyph ceilings. No global height10
+  clamp. Ordinary source complexes do not impersonate campus landmarks in either
+  inspector. Persistent labels are limited to real campus landmarks/selection,
+  including CPU SVG. Internal source addresses retain exact graph paths, but
+  public pavement is clipped out of the new complex ground-floor solids.
+- Fixtures / pinned revisions (unchanged from the preceding source-analysis
+  check): GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766;
+  GamjaOJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b.
+  Maintained reference-center/purpose-campus and unsupported Elixir cases also
+  pass; no source execution or dependency installation.
+- Commands run: `python ../artifacts/visual/build_capacity.py
+  ../artifacts/visual/capacity-core-r2/CASE/after
+  ../artifacts/visual/capacity-architecture-r1/CASE/after --campus --repeat`
+  for all four; OJ adds `--seed mountain-2`, others use mountain-3. Helper calls
+  actual generate_world/validate_world/package_world with capacity_replan,
+  neighborhoods/adaptive/varied planning/varied outline/porous street hierarchy,
+  mountain-landscape and precinct campus. Entire pipeline/package runs twice.
+  Saved JSON revalidation and repeated packaging use
+  `finalize_capacity_architecture.py CASE` -> r2. Trusted viewer-only label
+  refresh -> r3; deterministic CPU-only label refresh with
+  `refresh_capacity_preview.py CASE` -> r4. Assertions preserve every World,
+  City/UCG, compiled WebGL datum and non-preview artifact during the final
+  refresh. Final usable packages: `../artifacts/visual/capacity-architecture-r4`.
+- Reproduction through the committed CLI: `python -m scripts.procedural_world
+  BUILD --out NEW --seed mountain-3 --capacity-replan --building-style urban
+  --terrain mountain-landscape --zoning neighborhoods --pattern-scale adaptive
+  --planning varied --outline varied --street-policy porous --street-hierarchy
+  --campus --campus-style precinct --campus-landmarks`. Use mountain-2 for OJ.
+- Complete placements GJ1324/OJ681/PocketBase664/SQLiteBrowser506. Initial final
+  deferred counts550/279/165/193 -> **0/0/0/0**. No omitted or duplicate source,
+  source/evidence/UCG digest changes, building overlaps, road overlaps, owner
+  escapes or disconnected required doors. Preserved complete trips
+  4209/1457/1491/622, represented graph edges6157/2589/1880/622.
+- Capacity, in World area units, site requirement / total requirement /
+  allocated land: GJ413798.48/1755526.37/1755526.31;
+  OJ218513.20/1367067.82/1367067.78;
+  PocketBase194750.92/946457.01/946457.03;
+  SQLiteBrowser135110.52/604498.80/604498.82. Totals include circulation,
+  public/terrain/growth/repair reserves; sub-unit quantized boundary differences
+  are not silently missing physical parcels. Every actual parcel/solid is
+  independently checked rather than accepting these budget ratios as proof.
+- Independent command: `python -m scripts.urban_capacity_audit
+  ../artifacts/visual/capacity-architecture-r2/CASE/after --out
+  ../artifacts/visual/capacity-architecture-metrics-r1/CASE.json` for all four.
+  Rendered pavement versus source envelopes AND visible complex ground-floor
+  solids: zero positive intersections. Visible complexes/constituent files:
+  GJ218/699, OJ86/283, PocketBase92/281, SQLiteBrowser99/248. All source members
+  remain inspectable and explicit expansion is still available at every LOD.
+- Actual visible geometry: GJ843 models/45 normalized solid shapes, OJ484/39,
+  PocketBase475/27, SQLiteBrowser357/22. Largest Jaccard>=.90 near-repeat clusters
+  19.93%/8.88%/10.74%/15.13%. Measurement samples compiled solids10x10x16,
+  excluding hidden constituents, material/color/yaw/mirror/tiny-detail changes.
+  It is a finite diagnostic, not a perceptual quality score/catalog count.
+  Visible footprint area min/median/max:
+  GJ36/120/2184.7695, OJ48/140/2107.56,
+  PocketBase64/120/1161.1641, SQLiteBrowser64/120/801.9657.
+  Actual rendered height min/median/max:
+  GJ4.3188/11.3807/80.8128, OJ5.402/13.2527/80.8128,
+  PocketBase5.4151/12.7232/40.6203, SQLiteBrowser5.7203/11.4672/35.6008.
+  These are World units, not measured meters/floors/runtime scale.
+  Role-unclassified source counts518/297/466/503 are explicitly retained as
+  neutral; composites are not incorrectly counted as unclassified source files.
+- Generation/validation/package seconds (concurrent jobs, not isolated speedup
+  claims): GJ87.274/14.537/55.335; OJ137.948/14.320/30.066;
+  PocketBase71.573/9.107/28.332; SQLiteBrowser46.846/6.839/18.752.
+  Whole-site planning costs more, particularly OJ; no unsupported claim of
+  generation performance improvement is made.
+- Actual browser check: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/capacity-architecture-audit-r2` with all four r3 packages.
+  Three LODs, source/compound inspection and expansion, route provenance,
+  filtering, camera, Synthetic and CPU previews pass. Static Synthetic rebuilds
+  zero. Software-renderer run has an observed PocketBase CPU p95 outlier120.1ms;
+  raw data retained, not filtered away. These are submission costs, not GPU FPS.
+- Separate sequential local GPU command: `node
+  ../artifacts/visual/measure_capacity_hardware.mjs
+  ../artifacts/visual/capacity-architecture-hardware-r2`. Actual reported backend
+  NVIDIA RTX3080/D3D11, Chrome152,1280x800, Detail/all routes/Synthetic,60 measured
+  frames per city. Observed animation submission cadence164.94–165.03Hz, CPU p95
+  GJ1.7/OJ2.1/PocketBase1.9/SQLiteBrowser1.6ms,3 draw calls, triangles
+  613320/419608/364150/252168, static rebuilds0. First draw submission
+  2026.2/1323.6/1284.4/994.8ms. Explicit-GC retained JS heap approximately
+  429.7/270.1/203.5/129.1MiB; raw transient heaps also retained in report.
+  This is NOT a GPU timer/presentation-fence measurement or whole process/GPU
+  memory measurement. Dense-scene memory remains a material optimization target.
+- Artifacts inspected: actual matched grayscale overview/district/street,
+  campus/industrial where present in `capacity-architecture-comparison-r2`;
+  GJ overview/district, OJ campus, PocketBase street and SQLiteBrowser overview;
+  corrected real CPU SVG raster in `capacity-architecture-hardware-r2`.
+  `capture_capacity_architecture.mjs` uses identical yaw/pitch and identical
+  district/street distance with source-ID-matched targets after geography moves.
+  Overviews fit separately; they are not falsely claimed equal-scale.
+  Review entry: `../artifacts/visual/capacity-architecture-reviewed-r1/index.html`.
+- Visual findings: distinct large office/podium/setback/linked and low-hall/
+  courtyard forms are visible without color. Campus landmarks no longer vanish
+  because fixed16/22-distance thresholds cannot cross old roads. General-source
+  complex labels initially obscured whole cities; this was corrected in WebGL,
+  both inspectors and actual README SVG, without hiding source geometry.
+  Some long straight local rows and large reserve areas remain; this milestone
+  is not acceptance of every later downtown/campus master-planner typology.
+- Spec alignment: PASS under maintainer-approved ADR-067; UCG/City/source IDs,
+  provenance, static/local safety, deterministic output and unknown-role
+  fallback preserved. Only explicitly versioned physical geography is replanned.
+  Capacity0.1 saved Worlds remain reconstructable; no weakened old size checks.
+- Tests: full `python -m unittest discover -s tests -v`:830 tests,1 existing
+  Windows symlink skip,no failures (`capacity-architecture-tests-r3.log`,386.346s,
+  concurrent browser work). Latest CPU-label change additionally rechecked all12
+  capacity tests. `node --test tests/*.test.mjs`:79 pass. New tests cover whole
+  compound site exclusion/access at multiple yaws, no invented unrelated source
+  grouping, actual compiled purpose-shape variation, source/site forgery,
+  complex/pavement clipping and truthful uncluttered label policy. Final
+  `git diff --check` passes; user Gradle/Maven caches remain unstaged.
+- Commits / push: prior capacity capability2e743e3 was normally pushed to
+  `origin/feat/polyglot-analysis`, verified against ls-remote. This whole-site
+  correction is tested and prepared for its separate atomic commit and normal
+  feature-branch push; the delivery record follows after actual Git success.

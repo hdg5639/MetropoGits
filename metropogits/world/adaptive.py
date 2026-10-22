@@ -295,9 +295,10 @@ def plan_adaptive(
 ):
     parent = clusters[0]["parentId"]
     if capacity_programs is not None:
-        from .capacity import program_field, planning_scale
+        from .capacity import program_field, planning_scale, VERSION as CAPACITY_VERSION, LEGACY_VERSION
+        capacity_version = CAPACITY_VERSION if any('cohortId' in p for p in capacity_programs.values()) else LEGACY_VERSION
         scale = planning_scale(members)
-        parent_candidates, parent_roads, main, pattern = program_field(polygon, seed, base, parent, scale)
+        parent_candidates, parent_roads, main, pattern = program_field(polygon, seed, base, parent, scale, version=capacity_version)
     else:
         parent_candidates, parent_roads, main, pattern = adaptive_field(
             polygon, seed, base, parent, stitch=True, morphology=True
@@ -373,7 +374,7 @@ def plan_adaptive(
                 parent_candidates,
                 parent_roads,
                 reserved_main,
-                **(dict(scale=scale) if capacity_programs is not None else {}),
+                **(dict(scale=scale, members=[by_id[k] for k in z['memberEntityIds']]) if capacity_programs is not None else {}),
             )
             for z in clusters
         }
@@ -405,7 +406,7 @@ def plan_adaptive(
                 campus_decisions, campus_sites = capacity_campuses(
                     plans, selections, clusters, polygons, seed, actual_main + boundary, terrain,
                     campus_pairs if campus_pairs is not None else pairs, campus_style, campus_groups,
-                    actual_pattern.get('campusReservation', {}).get('zoneId'))
+                    actual_pattern.get('campusReservation', {}).get('zoneId'), version=capacity_version)
             complete_roads = actual_main + boundary + [r for plan in plans.values() for r in plan[1]]
             for z in clusters:
                 key = z['id']
@@ -446,17 +447,19 @@ def plan_adaptive(
             reuse = False
         else:
             counts = {z["id"]: len(z["memberEntityIds"]) for z in clusters}
+            physical_cohorts = capacity_programs is not None and any('cohortId' in p for p in capacity_programs.values())
             demands = [
                 (
                     key,
                     value
-                    * max(
+                    * ((max(1.35, min(2, (counts[key] + 2) / max(1, len(plans[key][0])))) if key in failed else 1)
+                       if physical_cohorts else max(
                         0.75,
                         min(
                             1.7,
                             math.sqrt((counts[key] + 2) / max(1, len(plans[key][0]))),
                         ),
-                    ),
+                    )),
                 )
                 for key, value in demands
             ]
