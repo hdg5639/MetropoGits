@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:typer.Typer"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:typer"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

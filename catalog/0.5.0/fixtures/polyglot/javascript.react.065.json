@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:react.createElement"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:react"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

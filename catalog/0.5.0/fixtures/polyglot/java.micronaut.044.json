@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "java:io.micronaut.http.annotation.Controller"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "java:io.micronaut.http.annotation.Controller"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

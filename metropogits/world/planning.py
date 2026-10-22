@@ -36,6 +36,15 @@ def demand(buildings, profile="GRID"):
         for b in buildings
     )
     access = (60 if profile == "INDUSTRIAL" else 32) * len(buildings)
+    if any(b.get('_capacityProgram') for b in buildings):
+        # Actual circulation, public realm and expansion reserves are computed
+        # before district allocation, not after a fixed glyph grid exists.
+        if any('cohortId' in b for b in buildings):
+            from .compound_sites import units
+            parcel = sum((u['width'] + 2) * (u['depth'] + 2) for u in units(buildings))
+            access = parcel * .35
+        else:
+            access = parcel * 1.1
     reserve = (parcel + access) * 0.25
     boundary = 64 * math.sqrt(len(buildings)) + 400
     return dict(
@@ -166,8 +175,14 @@ def populate(buildings, candidates, zone_id, entity_paths, seed, previous=None):
         return None
     available = {p["id"]: p for p in candidates}
     assignments = {}
+    source_ids = {b['entityId'] for b in buildings}
+    for key, slot in list(available.items()):
+        if slot.get('entityId') in source_ids:
+            assignments[slot['entityId']] = available.pop(key)
     probes = 0
     for b in buildings:
+        if b['entityId'] in assignments:
+            continue
         key = (previous or {}).get(b["entityId"])
         if key in available:
             assignments[b["entityId"]] = available.pop(key)
@@ -237,4 +252,8 @@ def populate(buildings, candidates, zone_id, entity_paths, seed, previous=None):
             result[-1]["blockProfile"] = slot["blockProfile"]
         if "planningRegionId" in slot:
             result[-1]["planningRegionId"] = slot["planningRegionId"]
+        if 'cohortId' in b:
+            result[-1]['cohortId'] = b['cohortId']
+        if 'architecturalSiteId' in slot:
+            result[-1]['architecturalSiteId'] = slot['architecturalSiteId']
     return result

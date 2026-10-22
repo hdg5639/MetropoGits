@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:pytest"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:java.net.http.HttpClient"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

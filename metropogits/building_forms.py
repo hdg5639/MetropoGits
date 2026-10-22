@@ -1,5 +1,7 @@
 """World-space cuboids matching the browser's evidence-backed silhouettes."""
 
+from metropogits.facilities import FACILITY_MODELS
+
 FORMS = {
     # x, y, z, width, height, depth, shade, all relative to the file envelope.
     "GATE": [
@@ -52,6 +54,7 @@ FORMS = {
         (0.32, 0.58, 0.3, 0.36, 0.2, 0.4, 0.28),
     ],
 }
+FORMS.update({name: model['parts'] for name, model in FACILITY_MODELS.items()})
 GENERIC_FORMS = [
     [(0.05, 0, 0.05, 0.9, 0.82, 0.9, 0), (0.3, 0.82, 0.3, 0.4, 0.18, 0.4, 0.18)],
     [(0, 0, 0.08, 0.42, 0.78, 0.84, 0), (0.58, 0, 0.08, 0.42, 1, 0.84, 0.12)],

@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "go:github.com/go-chi/chi/v5"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

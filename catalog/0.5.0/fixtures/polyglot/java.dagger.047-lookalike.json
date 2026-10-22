@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:dagger.Module"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

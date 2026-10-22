@@ -35,15 +35,16 @@ class PathSemanticsTests(unittest.TestCase):
         jsts_test = files["Frontend/portal/src/__tests__/widget.test.tsx"]
         java_test = files["Backend/src/test/java/example/UserServiceTest.java"]
 
-        self.assertEqual({"UI_PAGE"}, claim_values(page, "roles"))
+        self.assertEqual({"UI_PAGE", "UI_COMPONENT"}, claim_values(page, "roles"))
         self.assertEqual({"UI"}, claim_values(page, "capabilities"))
-        self.assertEqual({"NEXT_JS"}, claim_values(page, "technologies"))
+        self.assertEqual({"NEXT_JS", "JSX"}, claim_values(page, "technologies"))
         self.assertEqual({"API_ENDPOINT"}, claim_values(route, "roles"))
         self.assertEqual({"API"}, claim_values(route, "capabilities"))
         self.assertEqual({"NEXT_JS"}, claim_values(route, "technologies"))
         for entity in (jsts_test, java_test):
-            self.assertEqual({"TEST"}, claim_values(entity, "roles"))
-            self.assertEqual({"TEST"}, claim_values(entity, "capabilities"))
+            extra = {'UI_COMPONENT'} if entity is jsts_test else set()
+            self.assertEqual({'TEST'} | extra, claim_values(entity, 'roles'))
+            self.assertEqual({'TEST', 'UI'} if extra else {'TEST'}, claim_values(entity, 'capabilities'))
 
         evidence = {item["evidenceId"]: item for item in graph["evidence"]}
         path_evidence_ids = {
@@ -52,6 +53,7 @@ class PathSemanticsTests(unittest.TestCase):
             for field in ("roles", "capabilities", "technologies")
             for claim in entity.get(field, [])
             for evidence_id in claim["evidenceIds"]
+            if evidence[evidence_id]["kind"] == "PATH"
         }
         self.assertEqual(
             {
@@ -62,7 +64,10 @@ class PathSemanticsTests(unittest.TestCase):
             {evidence[evidence_id]["ruleId"] for evidence_id in path_evidence_ids},
         )
         self.assertTrue(
-            all(evidence[evidence_id]["kind"] == "PATH" for evidence_id in path_evidence_ids)
+            all(
+                evidence[evidence_id]["kind"] == "PATH"
+                for evidence_id in path_evidence_ids
+            )
         )
         self.assertEqual([], validate_document(graph))
 
@@ -72,7 +77,7 @@ class PathSemanticsTests(unittest.TestCase):
             for building in scene["buildings"]
         }
         self.assertEqual("GATE", archetypes[page["id"]])
-        self.assertEqual("PORT", archetypes[route["id"]])
+        self.assertEqual("API_HUB", archetypes[route["id"]])
         self.assertEqual("LIBRARY", archetypes[jsts_test["id"]])
         self.assertEqual("LIBRARY", archetypes[java_test["id"]])
         preview = render_preview(scene, graph).decode("utf-8")
@@ -85,9 +90,11 @@ class PathSemanticsTests(unittest.TestCase):
         )
 
         for entity in files_by_path(graph).values():
-            self.assertEqual(set(), claim_values(entity, "roles"))
-            self.assertEqual(set(), claim_values(entity, "capabilities"))
-            self.assertEqual(set(), claim_values(entity, "technologies"))
+            # Real JSX is UI syntax even outside a framework route directory.
+            roles = claim_values(entity, "roles")
+            self.assertTrue(roles <= {"UI_COMPONENT"})
+            self.assertTrue(claim_values(entity, "capabilities") <= {"UI"})
+            self.assertTrue(claim_values(entity, "technologies") <= {"JSX"})
         self.assertFalse(any(item["kind"] == "PATH" for item in graph["evidence"]))
 
     def test_path_semantics_are_deterministic(self):

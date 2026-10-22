@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:kafkajs.Kafka"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:kafkajs"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

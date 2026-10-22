@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:starlette.applications.Starlette"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:starlette.applications"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

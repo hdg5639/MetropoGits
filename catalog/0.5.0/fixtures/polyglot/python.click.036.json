@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "python:click.group"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:click"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

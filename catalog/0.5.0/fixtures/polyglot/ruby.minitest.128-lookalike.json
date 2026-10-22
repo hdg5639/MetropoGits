@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "ruby:minitest/autorun"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

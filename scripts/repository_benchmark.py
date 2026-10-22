@@ -17,7 +17,7 @@ import subprocess
 from pathlib import Path
 from time import perf_counter
 
-from metropogits.analyzers.jsts import LANGUAGES as JSTS_LANGUAGES
+from metropogits.analyzers import SUPPORTED_LANGUAGES
 from metropogits.cli import build_repository
 from scripts.canonical_json import canonical_json_bytes, loads_strict_json
 from scripts.road_consolidation import package
@@ -36,11 +36,11 @@ def summarize(graph, scene):
     """Coverage denominators are scanned FILE entities, not all repository files."""
     files = [e for e in graph['entities'] if e['kind'] == 'FILE']
     skipped = {d.get('sourcePath') for d in graph['diagnostics']
-               if d['code'] in {'JAVA_ANALYSIS_SKIPPED', 'JSTS_ANALYSIS_SKIPPED'}}
+               if d['code'].endswith('_ANALYSIS_SKIPPED')}
     languages = []
     for language in sorted({e.get('language', 'unknown') for e in files}):
         members = [e for e in files if e.get('language', 'unknown') == language]
-        supported = language == 'java' or language in JSTS_LANGUAGES
+        supported = language in SUPPORTED_LANGUAGES
         processed = sum(supported and e['path'] not in skipped for e in members)
         languages.append(dict(language=language, files=len(members), adapterProcessed=processed,
                               structuralOnly=len(members)-processed))

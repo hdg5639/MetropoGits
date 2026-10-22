@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "go:gorm.io/gorm.Open"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "go:gorm.io/gorm"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

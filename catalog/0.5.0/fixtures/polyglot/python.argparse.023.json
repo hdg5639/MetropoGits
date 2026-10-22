@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:argparse.ArgumentParser"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:argparse"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

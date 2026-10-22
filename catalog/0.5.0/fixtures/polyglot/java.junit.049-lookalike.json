@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:org.junit.Test"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

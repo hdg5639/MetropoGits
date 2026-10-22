@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "javascript:ioredis"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "java:com.google.inject.Inject"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "java:com.google.inject.Inject"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

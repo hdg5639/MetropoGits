@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "php:Illuminate.Database.Eloquent.Model"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "php:Illuminate.Database.Eloquent.Model"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

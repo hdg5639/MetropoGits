@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "kotlin:org.springframework.context.annotation.Configuration"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

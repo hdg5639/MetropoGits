@@ -1,5 +1,151 @@
 # Current implementation contract baseline
 
+## Demand-first physical capacity — 2026-10-22
+
+[ADR-067](../adr/ADR-067.md) adds `--capacity-replan`, also selected by the
+procedural CLI's `--building-style urban`. Adaptive neighborhoods are required;
+the new physical campus planner uses `--campus --campus-style precinct`, not
+the old fixed-slot campus bootstrap. UCG/City and source IDs/evidence stay
+unchanged. Experimental World adds explicit `capacityPlan` with version
+`capacity-replan/0.2` (legacy0.1 remains readable): source-glyph dimensions are no longer physical limits in
+this mode. Validators reconstruct program dimensions and independently check
+every parcel, road, protected feature, door and source-backed trip. Legacy
+Worlds retain strict original-City size checks.
+
+Programs precede district/zone/road allocation. Heterogeneous physical sites
+are subdivided on real street frontage, with independently sized rectangles,
+setbacks, circulation/public realm, terrain and growth reserves. Bounded repair
+can enlarge affected districts and rebuild their roads/access. Failure is a
+generation error, never a successful deferred placement. Urban package export
+also refuses a legacy admission containing any `DEFERRED_REPLAN` sources;
+existing archived diagnostics remain readable.
+
+New-mode `street-plan/0.2` uses canonical numeric coordinates in derived port/
+component IDs, so `0.0 -> 0` serialization cannot invalidate saved packages.
+Source doors/bridge ports remain fixed during final submillimeter seam repair;
+`linearRamp: true` marks an actual linear access ramp with two end heights,
+avoiding artificial Y-quantization steps at redundant terrain-grid cuts. Old
+street-plan/0.1 and legacy ramp output retain their meaning.
+
+`rendered-morphology/0.1` measures compiled solid cross-sections with a
+10x10x16 occupancy grid, ignoring yaw, mirrors, materials and tiny entrance
+props. Report normalized and scale-aware shape counts/near repeats alongside
+matched grayscale captures; this is not a perceptual quality score.
+
+Capacity0.2 reserves evidenced multi-source sites before real-file subdivision,
+with variable individual envelopes and shared exterior access. Local service
+aisles are regenerated for the whole site dimensions, not retained small-plot
+stencils. `architecturalSites` and `cohorts` disclose exact constituent IDs and
+static grouping evidence; these are visual planning, not invented runtime
+facilities or relationships. Partial geography hints yield to valid full
+placement. See ADR-067 for terrain, local repair and interior-address rules.
+
+The urban capacity audit checks rendered pavement against both source envelopes
+and visible complex ground-floor solids. It measures actual compiled occupancy
+for the visible scene, excluding hidden constituent models; composite models
+are counted separately from truly unclassified source-role fallbacks.
+
+This capacity capability is not acceptance of the entire urban redesign.
+Campus/source-compound consolidation and morphological differentiation remain
+explicit correction tasks in the execution ledger.
+
+## Physical urban land and modern massing — 2026-10-22
+
+[ADR-066](../adr/ADR-066.md) adds opt-in building style `urban` with
+urban-land/0.1 and urban-architecture/0.1. Derived world-view/0.3 explicitly
+permits admitted physical envelopes different from original source addresses.
+Canonical UCG/City/World/Planning schemas, IDs, dimensions and their existing
+strict validators are unchanged. Exact source front doors, yaw, owners, paths,
+road mesh and certified campus models remain; admitted body centers/dimensions
+are disclosed separately. Full-area requests or equal-area alternatives precede
+compilation; unavailable capacity is DEFERRED_REPLAN, not silent downsizing.
+Independent admission reconstruction and collision checks precede shared CPU/
+WebGL compilation. New urban-land.json and manifest/inspectors retain evidence
+and both envelopes. Other modes/old saved artifacts remain compatible. This
+first vacant-reserve admission is not completed general land/master planning.
+
+## Continuous district height allocation — 2026-10-22
+
+[ADR-065](../adr/ADR-065.md): catalog0.5 adds district-skyline/0.1 and
+height-allocation/0.1. Form/footprint capacity remains physical-height/0.1;
+actual compiled height uses a continuous district field within it. No legacy10
+recap, universal maximum, per-file fan-in height or new HQ claim. Add
+skyline-plan.json and compact inspector data; independently validate allocation
+and all parts/mesh vertices. Canonical schemas/geography/relationships and
+certified campus models remain unchanged. World-view0.2 already describes
+architectural height; other modes and saved old artifacts retain their meaning.
+The field composes existing land; distinct master plans/variable land admission
+remain explicitly pending, not silently claimed from this migration consumer.
+
+## Source-first urban character — 2026-10-22
+
+[ADR-064](../adr/ADR-064.md) adds `urban-character/0.1` repository/district/zone
+profiles and `spatial-demand/0.1` relative unallocated demand. Catalog exports
+include checksum-covered `urban-character.json`. Facts retain exact source,
+edge and evidence IDs; derived typology preferences are not constructed urban
+plans. No canonical schemas, IDs, geography, physical meshes or existing modes
+change in this slice. It is a dependency of the mandatory redesign, not its
+visual completion.
+
+## Architectural height separation — 2026-10-22
+
+[ADR-063](../adr/ADR-063.md), explicitly requested by the maintainer, removes
+legacy source height10 as a catalog architectural ceiling. Catalog0.4 uses
+physical-height/0.1 form/footprint capacities and independently checks compiled
+parts/mesh vertices and unchanged ground geography. Derived world-view/0.2
+models distinguish architectural `height` from legacy `sourceHeight`; canonical
+UCG/City/World/Planning bytes and their old size validators remain unchanged.
+CPU and WebGL consume the same new geometry. The inspector and manifest disclose
+the policy. There is no universal replacement height cap and no import-count
+height assignment. Reference-skyline0.1 massing is retired from catalog0.4;
+old artifacts/modes retain their meaning. Full urban redesign is tracked in
+[the execution ledger](../URBAN_REDESIGN_EXECUTION.md), not claimed complete here.
+
+## Cold-start campus bootstrap — 2026-10-22
+
+[ADR-062](../adr/ADR-062.md) adds explicit `--campus-bootstrap` for precinct
+initial generation without a previous World. One private geography/capacity
+prepass stops before dependency routing and export; final ordinary generation
+uses its transient layout hint and retains all existing validation gates.
+The internal PlanningFrame is not a valid/publishable World. Diagnostics disclose
+campus-bootstrap/0.1 and internal—not cached—provenance. No public schema/ID
+changes. Bootstrap and supplied previous-world hints are mutually exclusive;
+all previous defaults/styles remain available unchanged. Extra planning cost
+and infeasible-campus fallback remain explicit.
+
+## Program-led precinct reservations — 2026-10-22
+
+[ADR-061](../adr/ADR-061.md) adds opt-in `--campus-style precinct` with
+campus-plan/0.9. Source-derived physical demand reserves a sufficiently large
+existing sector before arterial subdivision. Internal structural spans divert
+onto a shared perimeter while outside endpoints, nature and sector/district
+polygons remain. The adaptive pattern records campus-reservation/0.1; independent
+reconstruction verifies its exact demand, reservation and street identity.
+
+Typed facility sites keep their0.8 representation. UCG/City and source dimensions
+are unchanged. Existing campus styles remain supported; unreserved parents keep
+their programmed campus. Compatible explicit previous-world migration reuses
+baseline geography while reconstructing circulation and exact dependency trips.
+All original evidence/capacity/terrain/overlap/access checks remain mandatory.
+This is not universal individual footprint scaling or forced city-wide growth.
+
+## Source-affinity campus estates — 2026-10-21
+
+[ADR-060](../adr/ADR-060.md) adds opt-in campus-plan/0.8 via
+`--campus-style estate`, with typed variable multi-address facility sites and
+explicit constituent assignments. Requirements precede local subdivision;
+certified complexes, not individual8x8 source addresses, provide their visible
+architecture. Static shared LOCAL targets are disclosed affinity, never new
+peer/runtime relationships. Retain UCG/City IDs, roles, evidence and dimensions.
+
+World/Planning schema extensions accept the new style while retaining all old
+versions and existing size, capacity, overlap, ownership and source checks.
+Independent planner reconstruction validates reservations and member placement.
+Program area pressure is recorded; forced terrain expansion/general variable
+individual footprints are not delivered. Failed optional layouts disclose
+retained programmed morphology/style. See
+[Architectural scale plan](../ARCHITECTURAL_SCALE_PLAN.md) for exact staged scope.
+
 ## Open river landscape and conditional mountain passes — 2026-10-19
 
 [ADR-039](../adr/ADR-039.md) adds opt-in `river-landscape`, terrain/0.4 and

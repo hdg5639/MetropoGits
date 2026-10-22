@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:motor.motor_asyncio.AsyncIOMotorClient"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:motor"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

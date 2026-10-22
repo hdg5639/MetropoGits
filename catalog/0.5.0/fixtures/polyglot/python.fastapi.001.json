@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:fastapi.FastAPI"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:fastapi"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

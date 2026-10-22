@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "rust:sea_orm.Database"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

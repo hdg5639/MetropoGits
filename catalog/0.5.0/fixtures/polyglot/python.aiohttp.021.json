@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:aiohttp.ClientSession"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:aiohttp"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

@@ -12,6 +12,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from metropogits.frontage import Affinity, arrange_equal_shapes, assign_frontage, derive_affinity
+from metropogits.facilities import FACILITY_MODELS
 
 from scripts.canonical_json import (
     CanonicalJsonError,
@@ -46,7 +47,7 @@ NETWORK_ZONE_MIN_BUILDINGS = 20
 NETWORK_ZONE_MAX_BUILDINGS = 64
 
 ROLE_STYLES = {
-    "API_ENDPOINT": ("PORT", 15),
+    "API_ENDPOINT": ("API_HUB", 15),
     "ENTRYPOINT": ("GATE", 18),
     "UI_PAGE": ("GATE", 18),
     "TEST": ("LIBRARY", 12),
@@ -75,6 +76,8 @@ ROLE_PRIORITY = {
     "CONFIGURATION": 5,
     "GENERAL_COMPONENT": 6,
 }
+ROLE_STYLES.update({model['role']: (name, model['height']) for name, model in FACILITY_MODELS.items()})
+ROLE_PRIORITY.update({model['role']: model['priority'] for model in FACILITY_MODELS.values()})
 
 
 class LayoutError(ValueError):

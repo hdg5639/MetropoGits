@@ -8,7 +8,7 @@ from time import perf_counter
 from metropogits.world.generator import generate_world
 from metropogits.world.validation import validate_world
 from metropogits.world.export import package_world
-from scripts.canonical_json import loads_strict_json
+from scripts.canonical_json import loads_strict_json, canonical_json_bytes
 
 
 def main():
@@ -16,9 +16,11 @@ def main():
     parser.add_argument("build", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed")
-    parser.add_argument('--building-style', choices=('semantic', 'architectural'), default='semantic',
-                        help='presentation only: procedural wall tones with role roof accents; never changes world geometry')
-    parser.add_argument("--terrain", choices=("flat", "lake-district", "river-corridor", "river-valley", "river-landscape", "varied-landscape", "watershed-landscape"), default="flat",
+    parser.add_argument('--capacity-replan', action='store_true',
+                        help='adaptive: allocate physical architecture programs before districts/roads/parcels; insufficient capacity is a hard error')
+    parser.add_argument('--building-style', choices=('semantic', 'architectural', 'purposeful', 'catalog', 'urban'), default='semantic',
+                        help='urban uses demand-first physical replanning (adaptive neighborhoods required); original City/UCG remain unchanged')
+    parser.add_argument("--terrain", choices=("flat", "lake-district", "river-corridor", "river-valley", "river-landscape", "varied-landscape", "watershed-landscape", "mountain-landscape"), default="flat",
                         help="adaptive only: generate protected natural terrain BEFORE urban placement")
     parser.add_argument(
         "--zoning",
@@ -50,8 +52,10 @@ def main():
         "--namespace", help="portable world identity; does not rewrite existing UCG IDs"
     )
     parser.add_argument("--previous-world", type=Path)
+    parser.add_argument('--campus-bootstrap', action='store_true', help='precinct only: compute a transient geography baseline without requiring a previous World; skip baseline routing/export')
     parser.add_argument('--campus',action='store_true',help='adaptive only: evidence-bounded campus planning with real walking access; courtyard pockets by default')
-    parser.add_argument('--campus-style',choices=('quad','varied','neighborhood','landscape','organic','fabric'),default='quad',help='campus only: fitted nonradial fabric, preserved organic/landscape precincts, or pocket pilots')
+    parser.add_argument('--campus-landmarks',action='store_true',help='export only: merge nearby related campus files into a few persistent large complexes')
+    parser.add_argument('--campus-style',choices=('quad','varied','neighborhood','landscape','organic','fabric','programmed','estate','precinct'),default='quad',help='campus only: precinct reserves program land before arterial streets; estate reserves facility sites; older styles retained')
     parser.add_argument("--street-hierarchy", action="store_true",
                         help="adaptive only: offline structural street classes and connected backbone")
     parser.add_argument(
@@ -89,7 +93,10 @@ def main():
             graph,
             seed=args.seed,
             namespace=args.namespace,
-            previous=read(args.previous_world) if args.previous_world else None,
+            # Strict decoding still rejects duplicate/nonfinite JSON. Geometry
+            # hints then use native numbers, like the public Python API; Decimal
+            # objects from the strict reader are not valid geometric coordinates.
+            previous=json.loads(canonical_json_bytes(read(args.previous_world))) if args.previous_world else None,
             planning=args.planning,
             outline=args.outline,
             zoning=args.zoning,
@@ -99,11 +106,13 @@ def main():
             street_hierarchy=args.street_hierarchy,
             campus=args.campus,
             campus_style=args.campus_style,
+            campus_bootstrap=args.campus_bootstrap,
+            capacity_replan=args.capacity_replan or args.building_style == 'urban',
         )
         generated = perf_counter()
         validation = validate_world(world, scene, graph)
         validated = perf_counter()
-        artifacts = package_world(world, scene, graph, validation, building_style=args.building_style)
+        artifacts = package_world(world, scene, graph, validation, building_style=args.building_style,campus_landmarks=args.campus_landmarks)
         packaged = perf_counter()
         args.out.mkdir(parents=True, exist_ok=False)
         for name, content in artifacts.items():

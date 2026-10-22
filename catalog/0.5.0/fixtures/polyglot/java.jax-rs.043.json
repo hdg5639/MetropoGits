@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "java:javax.ws.rs.Path"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "java:javax.ws.rs.Path"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

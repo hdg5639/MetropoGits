@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "javascript:redis"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

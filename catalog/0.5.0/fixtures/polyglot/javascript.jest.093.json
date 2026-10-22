@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:@jest/globals.test"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:@jest/globals"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

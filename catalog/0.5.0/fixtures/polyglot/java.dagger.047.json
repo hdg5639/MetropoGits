@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "java:dagger.Module"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "java:dagger.Module"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

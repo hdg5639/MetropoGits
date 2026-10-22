@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:fastify.default"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:fastify"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

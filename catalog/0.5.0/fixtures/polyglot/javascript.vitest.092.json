@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:vitest.test"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:vitest"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

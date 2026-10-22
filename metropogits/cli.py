@@ -554,7 +554,7 @@ def _run(args: argparse.Namespace) -> CommandResult:
             raise CliError("--ucg is required when validating a City Scene")
         graph = _load_json(args.ucg, "UCG")
         errors = validate_city_document(document, graph)
-    elif schema_version == "catalog/0.1":
+    elif schema_version in {"catalog/0.1", "catalog/0.2"}:
         errors = validate_catalog_document(document, args.input.parent / "fixtures")
     elif schema_version == "history/0.1":
         errors = validate_history_document(document)

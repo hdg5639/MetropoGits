@@ -21,6 +21,10 @@ def validate_blocks(world, scene, graph, neighborhoods):
     owners = {b["entityId"]: key for key, members in grouped.items() for b in members}
     pairs = dependency_pairs(graph, owners)
     campus_pairs = dependency_pairs(graph, dict.fromkeys(owners, "campus")) if 'campusPlan' in world else None
+    campus_groups = None
+    if world.get("campusPlan", {}).get("style") in ("estate", "precinct"):
+        from .campus_estates import planning_affinity
+        campus_groups = planning_affinity(graph, list(neighborhoods.values()))
     parcels = {p["entityId"]: p for p in world["parcels"]}
     expected_main = []
     inherited = world.get("patternScale") == "district"
@@ -43,13 +47,15 @@ def validate_blocks(world, scene, graph, neighborhoods):
                 requested_profile(
                     world.get("planningPolicy", "grid"), parent["localSeed"]
                 ),
-                stitch=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", "terrain-adaptive/0.1", "terrain-adaptive/0.2", "terrain-adaptive/0.3", "terrain-adaptive/0.4", "terrain-adaptive/0.5", "terrain-adaptive/0.6"),
-                morphology=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", "terrain-adaptive/0.1", "terrain-adaptive/0.2", "terrain-adaptive/0.3", "terrain-adaptive/0.4", "terrain-adaptive/0.5", "terrain-adaptive/0.6"),
+                stitch=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.2", "flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", "terrain-adaptive/0.1", "terrain-adaptive/0.2", "terrain-adaptive/0.3", "terrain-adaptive/0.4", "terrain-adaptive/0.5", "terrain-adaptive/0.6","terrain-adaptive/0.7","terrain-adaptive/0.8"),
+                morphology=world["generatorVersion"] in ("flat-adaptive-neighborhoods/0.3", "flat-adaptive-neighborhoods/0.4", "flat-adaptive-neighborhoods/0.5", "flat-adaptive-neighborhoods/0.6", "terrain-adaptive/0.1", "terrain-adaptive/0.2", "terrain-adaptive/0.3", "terrain-adaptive/0.4", "terrain-adaptive/0.5", "terrain-adaptive/0.6","terrain-adaptive/0.7","terrain-adaptive/0.8"),
                 terrain=world.get("terrain"),
                 porous=world.get("streetPolicy") == "porous",
                 campus='campusPlan' in world,
                 campus_pairs=campus_pairs,
                 campus_style=world.get('campusPlan',{}).get('style','quad'),
+                campus_groups=campus_groups,
+                capacity_programs=world.get('capacityPlan', {}).get('programs'),
             )
             expected_patterns.append(pattern)
         elif inherited:

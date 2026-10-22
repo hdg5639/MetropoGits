@@ -8423,3 +8423,1684 @@
   verify hosted checks and integrated tree, then clean only covered feature/
   experiment branch refs. Do not delete source directories, artifacts or caches.
   Keep configured human identity and omit contributor/attribution trailers.
+
+## Checkpoint 2026-10-20 — Python AST vertical slice
+
+- Implemented: shared bounded safe reader/evidence writer and stdlib Python AST
+  imports, relative/src/package module resolution, declarations, inheritance,
+  import-bound references and call/decorator identities. No target import/exec.
+  Ambiguous modules, wildcard bindings, shadowed/reassigned imports and syntax/
+  AST-budget failures remain disclosed. This is not dynamic dispatch resolution.
+- Fixture: committed polyglot-python (four files); negative/malformed/ambiguous/
+  no-execution fixtures in tests/test_python_analyzer.py. Existing Java/JS paths
+  and schemas/IDs preserved. Benchmark coverage now includes Python rather than
+  calling its explicit pathlib dependency structural-only or zero-dependency.
+- Commands: `python -m unittest discover -s tests` —727 tests PASS, one existing
+  Windows symlink skip; `node --test tests/*.test.mjs` —68 PASS;
+  `python -m ruff check metropogits scripts tests`, compileall and diff checks PASS.
+  Initial run exposed old coverage wording and benchmark expectations; fixed
+  actual coverage accounting and repeated the entire suite successfully.
+- E2E: `python -m metropogits build --repo tests/fixtures/repositories/polyglot-python --repo-id fixture/python --out ../artifacts/visual/polyglot-python-e2e-r1/first --json`;
+  repeat with output ending /repeat. All13 packaged files byte-identical.
+  Actual initial viewer: ../artifacts/visual/polyglot-python-r1/index.html.
+  `node scripts/viewer_audit.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" ../artifacts/visual/polyglot-python-audit-r1 ../artifacts/visual/polyglot-python-r1`.
+- Inspected actual overview/showcase/detail rasters; four source buildings and
+  grounded local routes survive CPU/WebGL inspection. Tiny fixture's detail
+  camera is too close for composition; overview is usable. No new facility
+  aesthetics claim yet: framework catalog/facility work follows, not guessed
+  from Python function/class names. Three-LOD available Synthetic checks preserve
+  static geometry (zero rebuilds); overview has no complete animated route.
+- Spec alignment: PASS, FR-018 and AC-002/006/007/008/009/011/012/014. Same UCG/City
+  contracts, stable IDs, explicit evidence, bounded resources and generic fallback.
+- Risks/next: native module adapters and manifests, declarative multi-ecosystem
+  signatures and differentiated facilities. Framework syntax support remains a
+  tested subset, not every installed library. Main remains unchanged while the
+  verified slice is committed/pushed on feat/polyglot-analysis. Generated artifacts,
+  helper caches and independent in-progress modules are not part of this commit.
+
+## Checkpoint 2026-10-20 — twelve lexical adapters, SFC scripts and manifests
+
+- Implemented: bounded module/declaration extraction for Go, Rust, C/C++, C#,
+  Kotlin, Scala, PHP, Ruby, Swift, Dart and Lua. Actual Vue/Svelte script data
+  reuse JS/TS resolution with original lines; markup/comments are not code.
+  Static pyproject/requirements, Cargo, go.mod, NuGet, Composer, literal Gemfile
+  and pubspec declarations now produce MODULE/DEPENDS_ON evidence. No installs.
+- Fidelity: Go package imports do not connect every member file. Unique observed
+  exported identifiers map to their real declaration file; shadowed aliases are
+  excluded. Rust use trees/mod/relative scopes, local include paths and exact
+  namespace imports are bounded; no basename guessing. Unresolved/unsupported
+  syntax stays disclosed. Rust macros/raw strings, Lua/Ruby long comments and
+  C line-continuation comments cannot manufacture imports.
+- Tests: full suite742 PASS, one existing Windows symlink skip;68 Node PASS;
+  added12 polyglot/manifest and3 SFC tests. Late real bat malformed .csproj input
+  exposed an uncaught XML ParseError: fixed safe manifest fallback and reran all
+  new manifest/module/SFC suites, full Ruff/compile/diff checks PASS. Initial
+  benchmark r1 failed because Git was not on PATH, not source execution or a
+  parser success; final r2 prepends the installed Git cmd directory locally.
+- Commands: `python -m unittest discover -s tests`; focused test_polyglot*.py,
+  test_component_scripts.py, test_scanner.py and test_repository_benchmark.py;
+  `python -m ruff check metropogits scripts tests`; compileall; Node suite.
+  `$env:PATH = 'C:/Program Files/Git/cmd;' + $env:PATH; python scripts/repository_benchmark.py --repo ../visual_test_proj/pocketbase --repo ../visual_test_proj/bat --repo ../visual_test_proj/realworld --repo ../visual_test_proj/fastapi-realworld-example-app --out ../artifacts/visual/polyglot-modules-bench-r2`.
+- Revisions/results: PocketBase6f370ea (664/664 processed,4823 dependency edges,
+  including1605 file references); bat f748c1a (112/142, all62 Rust files processed,
+  653 dependency edges); Svelte RealWorld df79670 (42/42,22 edges); FastAPI
+  RealWorld9db981c (59/60,488 edges including9 inheritance/88 references).
+  Processing a lexical subset does not prove complete resolution. Bat contains
+  deliberate malformed syntax examples, invalid manifests and unsupported source
+  languages; Svelte has unsupported extended compiler config; one FastAPI Python
+  source is outside host AST syntax. These outputs honestly remain PARTIAL.
+- All four real builds repeated:13 artifacts and building coordinates exact.
+  Observed unprofiled build times PB46.44s/bat9.59s/Svelte0.40s/FastAPI2.61s;
+  profiling adds overhead, not an optimization comparison or SLA. New source
+  relationships increase downstream routing workload; no speedup claim.
+- SQLiteBrowser ae32df1: `python -m metropogits build --repo ../visual_test_proj/sqlitebrowser --repo-id benchmark/sqlitebrowser --out ../artifacts/visual/polyglot-modules-sqlite-r1 --json`.
+  Unconfigured include search paths remain unresolved (1203 diagnostics), never
+  guessed by basename. Build/source links remain useful, not full C++ binding.
+- Actual browser audit: scripts/viewer_audit.mjs with Chrome executable, output
+  ../artifacts/visual/polyglot-modules-audit-r1 and four benchmark */first outputs
+  plus polyglot-modules-sqlite-r1. Five cases/three LODs completed. Inspected PB
+  overview, bat src/printer.rs->src/config.rs exact route/source inspector, and
+  Svelte CPU showcase. Synthetic follows new real routes, zero static rebuilds;
+  absent overview animations are not falsely claimed as traffic coverage.
+- Spec audit PASS: extensible UCG entities/claims, unchanged UCG/City schemas and
+  stable source IDs. These are static lexical capabilities, not native compiler
+  symbol solving. Generic buildings remain intentional pending next signature/
+  facility slice. Generated artifacts/caches are not staged; commit and normal
+  feature-branch push follow. ADR-055/catalog work is a separate in-progress unit.
+
+## Checkpoint 2026-10-20 — import-bound framework signatures
+- Implemented: catalog0.5.0 (158 rules/122 technology labels); 142 new imported-use
+  profiles and nine explicit source syntax profiles. Additive catalog0.2 only;
+  previous releases and UCG0.1/City0.2 schemas unchanged (ADR-055). Documented exact
+  support tiers in ANALYZER_SUPPORT.md; no claim of 18 complete compilers.
+- Evidence: aliases, source lines and imported provider proofs; unused imports,
+  local lookalikes, reassignment, comments and JSX text cannot manufacture a
+  facility. Namespace candidate matching downgraded to INFERRED. Plain Java
+  records/main and Python AST main/dataclass have no Spring requirement.
+- Fixtures/revisions: same FastAPI9db981c/Svelte df79670/PocketBase6f370ea/
+  SQLiteBrowser ae32df1 and GamjaOJ (local clone). Commands: `python -m metropogits
+  build --repo ../visual_test_proj/{fastapi-realworld-example-app,realworld} ...`;
+  `python -m metropogits analyze --repo ../visual_test_proj/{pocketbase,sqlitebrowser,GamjaOJ} ...`.
+  Outputs ../artifacts/visual/polyglot-signatures-r1; SQLite r2 rerun.
+- Results: FastAPI14/60 role-bearing files (9API,2model,2persistence,1CLI,1test;
+  roles can overlap); Svelte23/42 UI files; PocketBase198/664 role-bearing files.
+  Qt lexical namespace candidate explosion initially skipped127 files: filter
+  facts to exact catalog identities and deduplicate before evidence emission;
+  SQLite rerun skipped only libs/json/json.hpp on the bounded subset. Unresolved
+  include paths remain explicit. .h classification/implicit Qt usage still weak.
+- Artifacts inspected: actual FastAPI WebGL overview and Svelte CPU showcase at
+  ../artifacts/visual/polyglot-signatures-audit-r1, produced with viewer_audit.mjs.
+  Both real pipelines completed three LODs, source/route inspector and Synthetic;
+  zero static rebuilds. Svelte has no complete overview animated routes. Role
+  metadata works, but current geometry still falls back for new roles: next
+  facility unit must fix this before the overall user request is complete.
+- Tests: real-source profile, schema/version, unused/shadow/local-module and JSX
+  negatives pass. Full suite748 PASS (one existing Windows symlink skip),68 Node
+  PASS; Ruff, compileall and git diff --check PASS. Existing
+  path fixture expectations now retain additional real JSX UI evidence; unknown
+  fallback test uses unsupported Zig instead of now-supported Rust main syntax.
+- Spec alignment PASS: static only; bounded adapters; honest confidence and
+  unknowns; no target builds/dependency installs/runtime API. Generated outputs
+  are outside Git. Atomic commit/normal feature-branch push after verification.
+- Formatting follow-up: staged new JSON exposed extra blank EOF lines not
+  covered by the earlier unstaged diff check. Removed those blank lines in the
+  new release only; catalog validation and diff check pass. Separate formatting
+  commit, no semantic change, no rewriting prior catalogs or Git history.
+
+## Checkpoint 2026-10-21 — eleven source-role facility silhouettes
+- Implemented: 11 new families /20 total explicit forms, shared JSON geometry
+  for CPU/WebGL/Canvas and World rotation. Added source-role inspector labels,
+  preview roof outlines, architectural roof accents and packaged asset data.
+  API inbound hubs differ from outbound ports without changing API envelopes.
+  Gate/test persistent compound models remain unchanged.
+- Fixtures: real static polyglot-facilities source fixture exercises all11 models
+  plus a generic package file. Full builds: FastAPI60 files, Svelte42, PB664,
+  bat142, SQLiteBrowser506, OJ681, GJ1324. Previous checkpoint revisions retained.
+  New model archives/UI/CLI are visible in GJ (264/120/4) without fake files.
+- Commands: `python -m unittest discover -s tests`751 PASS, one existing Windows
+  symlink skip; `node --test tests/*.test.mjs`70 PASS; Ruff/compileall/diff PASS.
+  The structural-showcase test now explicitly recognizes the fixture Go main,
+  while its Rust helper and unsupported Elixir still remain generic.
+- Generated ordinary outputs ../artifacts/visual/polyglot-facilities-r1; current
+  atlas/repeat r2.13 files repeated byte-exact. World atlas repeated17 files
+  byte-exact; atlas/FastAPI/Svelte world.json unchanged across asset-only updates.
+  API geometry switch independently preserves every prior building envelope.
+- World commands: scripts/procedural_world.py with neighborhoods/adaptive/varied
+  outline+planning, porous street policy, hierarchy, campus fabric, watershed
+  terrain, architectural materials. World r2 for small three; World r1 for PB,
+  bat, SQLiteBrowser and OJ. These seven cases have zero building/road overlaps,
+  zero owner escapes, all buildings accessible and original trip edges retained.
+- Actual browser audits: polyglot-facilities-world-audit-r2 (four cases including
+  ordinary atlas), polyglot-facilities-large-audit-r1 (PB/bat/SQLite/OJ). Three
+  LODs, exact routes/source inspection and Synthetic with zero static rebuilds.
+  Inspected Svelte World overview, FastAPI CPU World showcase, atlas exact
+  api.py->models.py route and new multi-part silhouettes. Neutral walls/roof
+  accents avoid role-colored factory blocks. Forms remain stylized low-poly,
+  not bespoke detailed models per technology.
+- An initial audit correctly rejected stale viewer assets; regenerated World
+  packages instead of bypassing asset trust checks. Ordinary r1 predates final
+  inspector labels; current r2 and World large cases use current assets.
+- Open correction: GJ canonical build succeeds, but its new dense World fixture
+  fails closed at a real User/AuthServiceClient relation. Diagnostic graph shows
+  one source (User/global/config/AuthProperties.java) on a disconnected three-
+  segment island, while1323 buildings share the main component. No invalid World
+  output is published. Investigate retained shortcut endpoints during campus
+  replacement before final push/checkpoint. This is not a parser completeness
+  claim or permission to fabricate a dependency/terrain crossing.
+- Spec audit PASS for source/scene/facility contracts and static-first boundary;
+  experimental GJ World correction explicitly remains open. Commit completed
+  facility unit locally, then verify correction before accumulated normal push.
+
+## Checkpoint 2026-10-21 — preserve campus external street connectivity
+- Implemented: before replacing local lanes with optional campus circulation,
+  compare actual pre/post physical graph components at existing external road
+  endpoints. Reject a campus proposal that severs a previously connected pair;
+  retain the original local plan and disclose
+  RETAINED_EXTERNAL_CONNECTIVITY_FALLBACK. No invented detour, dependency, bridge
+  or terrain crossing; no weakening of the route/overlap validators.
+- Root cause/evidence: the previously retained permeability shortcut was assumed
+  to be a valid backbone anchor after its connecting neighborhood lanes were
+  replaced. It became a three-segment island with one real source building.
+  Two focused tests cover severed shortcut junctions, a genuine connecting
+  replacement, original disjoint components and input immutability.
+- Full tests753 PASS (one existing Windows symlink skip),70 Node PASS;28 campus
+  integration tests, Ruff/compileall/diff checks PASS. Relevant specifications
+  reread: technical evidence/confidence and graph boundaries; functional
+  FR-018/019/020 and role/aggregate-evidence acceptance; product recognition
+  tiers and no implicit external infrastructure. Alignment PASS.
+- Exact GJ rebuild command: `python scripts/procedural_world.py
+  ../artifacts/visual/polyglot-facilities-r1/gj --out
+  ../artifacts/visual/polyglot-facilities-world-r2/gj --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus --campus-style fabric --terrain
+  watershed-landscape --building-style architectural`.
+- GJ result:1324 buildings,4209 exact source-pair trips/6157 represented edges,
+  zero building overlaps, road overlaps or owner escapes; all1324 accessible.
+  One rejected optional campus proposal, two campus neighborhoods still planned.
+ 115 addresses differ from the failed proposal, all within Backend/User; other
+  districts' source centers unchanged. Ordinary GJ graph/city also regenerated
+  byte-identically. Not a claim that changed semantic inputs never move a block.
+- PB/OJ World rerun with the same flags:664/681 buildings,1491/1457 trips,
+  zero overlaps/escapes and all accessible; both world.json byte-identical to
+  pre-guard successful outputs. Bat/SQLite have no selected campus replacement.
+  Small World/ordinary atlas determinism checks from prior checkpoint retained.
+- Final corpus revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766;
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  FastAPI9db981ca40aea36e5aa326a770278d8fe20c0b21;
+  Svelte df796708040f5200ec572b28ab7f88ecee5794dd;
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522;
+  bat f748c1a467ae161682849949a7d036ab8362f9ba;
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b.
+  Local canonical UCG revision remains null by CLI design; fixture HEADs are
+  recorded here rather than falsely rewriting source revision metadata.
+- Browser command: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/polyglot-facilities-gj-audit-r1
+  ../artifacts/visual/polyglot-facilities-world-r2/gj
+  ../artifacts/visual/polyglot-facilities-r2/gj`. Actual overview/district/detail,
+  exact source routes, synthetic and source links completed, zero static rebuilds.
+  Inspected GJ World overview and PB overview/OJ CPU showcase from large audit.
+  Actual forced --disable-webgl Chrome screenshot also inspected: ordinary atlas
+  Canvas fallback displays the shared multi-part facility models correctly.
+- Review entry: ../artifacts/visual/polyglot-reviewed-r1/index.html links seven
+  actual repositories, the source facility atlas, canonical/World graphs,
+  previews and independent validations. Generated artifacts remain outside Git.
+- Remaining limits: not full native compiler binding; dynamic/re-export/implicit
+  context remains conservative. SQLite .h/Qt enrichment weak (4/506 specialized
+  file buildings), Python host syntax skip and Svelte extended compiler config
+  remain explicitly PARTIAL. More complete parsers/technology coverage and
+  detailed model artistry are future tasks, not falsely marked complete.
+- Delivery: completed facility568bae5 plus this atomic connectivity correction
+  committed with existing human identity; normal push to feat/polyglot-analysis
+  after final staged metadata/diff review. No main/protection/history changes.
+
+## Checkpoint 2026-10-21 — source-purpose precincts and building massing
+- Implemented: optional campus-plan/0.7 programmed precincts, with real role
+  evidence, role/affinity-selected anchors and program-sensitive nonradial
+  commons. No role-exclusive sorting or fake source functions. Purposeful
+  architecture is export-only: varied bounded service/verification/interface/
+  archive/workshop masses from existing roles and observed local topology.
+- Tests: full757 run PASS (one existing Windows skip),70 Node PASS; four new
+  program/geometry tests plus existing campus integrations. Final within-family
+  variation and captions rechecked with new suite/Ruff/Node/diff PASS. Tests
+  preserve unknowns, provenance, every source, bounded rotated geometry,
+  canonical World/graph byte identity across building styles and deterministic
+  package output. Old styles retain meaning; additive experimental style only.
+- Real fixture: tests/fixtures/repositories/purpose-campus,31 actual Python
+  sources,24 tests plus API/model/data/store/security and neutral service code.
+  No target imports or dependency installation. Build command `python -m
+  metropogits build --repo tests/fixtures/repositories/purpose-campus --repo-id
+  fixture/purpose-campus --out ../artifacts/visual/purpose-precinct-r3/source --json`.
+- World command (before/after): scripts/procedural_world.py that source directory
+  --zoning neighborhoods --pattern-scale adaptive --planning varied --outline
+  varied --street-policy porous --street-hierarchy --campus --seed purpose-4;
+  before uses fabric/architectural, after programmed/purposeful. Final artifacts
+  ../artifacts/visual/purpose-precinct-r4/{before,after}. Both31 accessible,
+ 77 trips/128 represented edges and zero building/road overlaps/owner escapes.
+- Visual/evidence audit: actual CPU showcase and WebGL district inspected from
+  purpose-precinct-audit-r4 (viewer_audit.mjs, installed Chrome). New verification
+  commons label, halls/benches/pavilions, real mixed source members and original
+  route inspection visible. Three LODs/Synthetic passed, zero static rebuilds.
+  First source-sensitive court failed external-junction preservation: do not
+  bypass it. A connected complete fabric fallback retains an explicit program
+  fallback; it is not claimed as a newly fitted purpose-specific court.
+- Larger pipeline runs: GJ1324/4209 trips and OJ681/1457 trips through the new
+  program path, zero overlaps/escapes, all accessible. Outputs purpose-precinct-r1
+  predate final massing variety/caption polish; final combined mountain review
+  will regenerate packaging rather than claim these as the final pictures.
+- Spec alignment PASS: tech role/evidence/scene boundaries, functional FR-020,
+  product mixed L1/L4 and no invented runtime services. ADR-056 documents the
+  approved user scope; UCG/City/IDs unchanged. Remaining: stylized low-poly forms,
+  not all semantic purposes known; mountainous landscape is next, not completed.
+- Delivery: atomic feature commit and normal feat/polyglot-analysis push after
+  explicit staging and identity review. Generated images stay outside Git.
+
+## Checkpoint 2026-10-21 — optional true mountain ranges and combined purpose review
+- Implemented: opt-in terrain/0.7 mountain-landscape, with independently seeded
+  zero-to-two fitted mountain reserves, unequal multi-summit triangular ridges,
+  shoulders and rock slopes. Height55–160 visual world units above local ground,
+  not geographic metres. Mountain-free seeds/small domains are valid. Terrain
+  still precedes whole parcels/streets; existing watershed water topology,
+  lakes, grade/crossing/conditional tunnel and resource checks remain active.
+  CPU/WebGL fit includes the tall mesh only in the new mode. Old modes preserved.
+- Integration fix: Planning0.5 also accepts programmed campus0.7; the new
+  full-pipeline schema test exposed the missing enum/style cases after the first
+  purpose unit. Corrected the schema, not the validator/tests. Existing version
+  height limits remain35 (older modes15); only terrain0.7 accepts tall ranges.
+- Prior purpose unit committed/pushed14104d6 to feat/polyglot-analysis. Final
+  combined outputs use its program/anchor/massing implementation, not the early
+  screenshots. No invented source facilities, runtime traffic or research claims.
+- Commands: `python -m unittest discover -s tests` ran761 tests, OK with one
+  existing Windows symlink skip; `node --test tests/*.test.mjs`70 PASS;
+  `python -m ruff check .` and `git diff --check` PASS. Four new mountain tests
+  cover seed counts0/1/2, multipeak mesh projected coverage without overlapping
+  cones, deterministic regeneration, tamper rejection, schema/version bounds,
+  whole-pipeline source identity/access and nearby source growth hints.
+- Real source fixture from previous checkpoint:31 maintained purpose-campus
+  Python files -> UCG -> City -> World. Build/revision retained in prior entry.
+  Final mountain small output mountain-city-r1/fixture:31 accessible,77 original
+  trips/128 represented edges; no mountain forced onto the small domain.
+- Real-corpus commands: `python scripts/procedural_world.py <input> --out <out>
+  --zoning neighborhoods --pattern-scale adaptive --planning varied --outline
+  varied --street-policy porous --street-hierarchy --campus --campus-style
+  programmed --terrain mountain-landscape --building-style purposeful --seed
+  <seed>`. Input polyglot-facilities-r2/gj, polyglot-facilities-r1/{oj,sqlitebrowser};
+  outputs ../artifacts/visual/mountain-city-r1/{gj,oj,sqlitebrowser}.
+  GJ/SQLite seed mountain-3, OJ seed mountain-2. The worldSeed values are
+  3ef81acb0da5c85d and b7f67b0b4da09353 respectively.
+- Fixture revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766;
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b.
+  These are pinned existing static source builds; no target dependencies,
+  build scripts or source programs were executed. Canonical input revision
+  metadata remains unchanged, not rewritten to claim a new analysis revision.
+- Results: GJ1324 buildings/4209 trips/6157 represented edges, two mountain
+  ranges55/86.4582 high with two actual local summits each; OJ681/1457/2589,
+  no mountain; SQLite506/622/622, two55-high ranges. All accessible; each has
+  zero building overlaps, road overlaps and owner escapes. World0.1 and
+  Planning0.5 schema validation PASS on all four final cases including small.
+- Determinism/stability: GJ repeated from the identical canonical input/flags
+  into mountain-city-repeat-r1/gj: all17 packaged artifact SHA256 hashes match.
+  Second run generate88.61s/validate18.78s/package26.44s; these are local wall
+  timings, not a speedup claim. Existing terrain0.6 GJ watershed reconstructed
+  exactly from its saved envelope/seed, equal to polyglot-facilities-world-r2/gj.
+  The focused growth test adds one unknown Rust source and retains original
+  terrain and every previous occupied frame. Changing modes/seeds may relocate
+  the city intentionally; this is not a claim of stable geography across modes.
+- Browser commands: `node scripts/viewer_audit.mjs
+  "C:/Program Files/Google/Chrome/Application/chrome.exe" <audit-out> <inputs>`.
+  mountain-city-audit-r2 uses final GJ/OJ; mountain-city-audit-r3 uses SQLite.
+  Overview/district/detail, routes, source links, camera/selection and Synthetic
+  completed with zero static geometry rebuilds during Synthetic. These measure
+  software WebGL JS submission, not hardware GPU FPS. Small before/after audit
+  purpose-precinct-audit-r4 remains the earlier actually rendered comparison.
+- Artifacts inspected: final GJ default/district WebGL and SQLite default;
+  GJ actual AuthServiceImpl purpose inspector (1 incoming/23 outgoing local
+  file neighbours, multi-target court), OJ verification-campus top/close views,
+  CPU previews/showcases, schema output and seed cases. Actual source controls
+  exercised via artifacts/visual/capture_purpose_precincts.mjs; reports/captures
+  purpose-campus-inspector-r2/{gj,oj}. GJ programs derive DATA mixed precincts;
+  OJ derives VALIDATION precincts. Some feasible output uses complete connected
+  fabric fallback; not claimed as a newly fitted dedicated purpose court.
+- Review: ../artifacts/visual/purpose-mountains-reviewed-r1/index.html, actual
+  gallery screenshot review.png and verified local artifact links. All images
+  are real render outputs; generated assets/helpers remain outside Git.
+- Visual findings: ridges now dominate nearby building silhouettes and have
+  multiple unequal peaks, not tiny isolated hill props. Purposeful buildings
+  introduce courts, halls, wings and stepped masses; actual role accents retain
+  neutral walls. Low coverage SQLite remains an attractive mostly-generic city.
+  Close views can be occluded by a real foreground mountain; pan/orbit/high-pitch
+  inspection works. Still stylized low-poly geometry, not detailed architecture,
+  geological erosion or real hydrological simulation.
+- Spec alignment PASS: technical static evidence/provenance, City/UCG identity
+  and fallback rules; functional role/source inspection, retained aggregation
+  and graceful unknown handling; product deterministic local-first/no runtime
+  AI. ADR-056 records the approved additive scope. No protection, author
+  attribution, remote settings or default security changes.
+- Delivery: terrain feature committed separately from the purpose unit; normal
+  push to existing feat/polyglot-analysis after staged diff/identity review.
+  No merge/main operation requested in this turn. Existing local fixture build
+  caches left untouched. Next: stronger purpose-specific site variants where
+  they fit safely; broad silhouette/readability gains before tiny roof polish.
+
+## Checkpoint 2026-10-21 — outward mountain faces and city-proportionate relief
+- User report: mountains look Everest-like and their interior is visible.
+  Root cause reproduced on saved GJ: all80 mountain triangles face downward,
+  so normal WebGL backface culling removes the outer surface. Do not disable
+  depth/culling or hide the defect with materials. Export now orients saved
+  mountain surfaces upward without changing their canonical payloads.
+- New mountain generation uses terrain0.8 behind the existing option, with
+  height bounded by horizontal breadth and68 visual units. Saved0.7 remains
+  independently reconstructible/validatable. GJ heights55/86.4582 become
+ 21.4312/35.0684; all1324 parcel records,4667 physical streets and4209 exact
+  source-pair routes remain identical. No source claims/IDs changed.
+- Commands: `python -m unittest discover -s tests`:762 tests, OK with one existing
+  Windows symlink skip. Node70 PASS, Ruff/diff PASS. New mesh assertions check
+  every exported mountain normal, preserved original buffers, unchanged old/new
+  reserves/water, bounded heights, tamper rejection and versioned schemas.
+- Real GJ input polyglot-facilities-r2/gj at source revision
+  3d9b53f9dac9af1187ac9754cb3066b27e43b766. Command `python
+  scripts/procedural_world.py <input> --out ../artifacts/visual/mountain-surface-r1/gj
+  --zoning neighborhoods --pattern-scale adaptive --planning varied --outline
+  varied --street-policy porous --street-hierarchy --campus --campus-style
+  programmed --terrain mountain-landscape --building-style purposeful --seed
+  mountain-3`. All1324 accessible; zero building/road overlaps and owner escapes.
+  Full saved0.7 World independently validates with original source graph/city.
+- Browser: `node scripts/viewer_audit.mjs <installed-Chrome>
+  ../artifacts/visual/mountain-surface-audit-r1 <new-GJ>`. Actual default/detail
+  WebGL inspected: opaque, lit external slopes and lower broad ridges; three
+  LODs/selection/source routes/Synthetic pass, zero static rebuilds in Synthetic.
+  Software rendering submission is not a hardware FPS claim. No raster textures
+  or fake geography added. Camera collision physics is not claimed by this fix.
+- Spec alignment PASS: technical render/evidence separation, functional CPU/
+  static viewer and source identity, product determinism/static-only. ADR-057
+  records feedback and compatibility. Campus-scale landmarks are the next unit,
+  not claimed done by the mountain repair. Existing fixture caches preserved.
+- Delivery: atomic terrain correction, normal feat/polyglot-analysis push after
+  explicit staged diff and human-identity review; no main/protection changes.
+
+## Checkpoint 2026-10-21 — certified campus-scale landmark complexes
+- Implemented: optional --campus-landmarks export. A campus has at most4 large
+  complexes,16 actual members each,56-unit span/36-unit height. Full clear
+  parcel envelopes support broad halls/podiums/anchors instead of tiny file-size
+  variants. Actual roles choose validation/data/application/interface/tooling/
+  compute/neutral forms. Persistent at every LOD; explicit expansion/filtering
+  preserves exact source membership. CPU/Canvas/WebGL share compiled models.
+- Evidence: direct static edges OR shared local source targets, never inferred
+  peer dependencies or external-package popularity. Exact sourceEdgeIds and
+  sharedTargetIds disclosed. Module/zone/court/nature/public-street clearance
+  retained. Original constituent entrance spurs may end inside their complex.
+  Interstitial trees cleared; all canonical World/City/UCG/Planning bytes and
+  source trips remain unchanged. Candidate/index/clearance/co-reference work
+  bounds fail to original individual-source presentation, not missing facts.
+- Verification: full767 Python tests OK (one existing Windows symlink skip),
+ 71 Node PASS, Ruff/diff PASS. Five new Python tests cover connected16-source
+  geometry, shared target proof without fake peer edges, protected/unrelated
+  obstacles, module separation, deterministic source-preserving package output
+  and resource fallback; new Node test covers mixed-role persistent facilities.
+  Final fast generic skip and co-reference work guard reverified with focused
+  suites (5 landmark/4 compound tests) after full pass; no output change.
+- Fresh maintained source pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/purpose-campus --repo-id fixture/purpose-campus
+  --out ../artifacts/visual/campus-landmarks-fixture-cold-r1/source --json`;
+  procedural_world.py that input with --out <same-root>/world --zoning
+  neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style programmed
+  --campus-landmarks --building-style purposeful --seed purpose-4. All17 package
+  files byte-identical to reviewed fixture output;31 accessible/77 exact trips.
+  No target execution/dependencies/builds. Fixture sources are maintained in Git.
+- Real corpus: GJ1324/4209 trips, OJ681/1457, PB664/1491, SQLite506/622;
+  all accessible, zero canonical building/road overlaps/owner escapes. New
+  complexes GJ5 (2+3 across two campuses), OJ1, PB3, SQLite0; small fixture1.
+  Four World/Planning schema pairs plus fixture PASS; independent complex
+  clearance checks PASS for unrelated lots, public/pedestrian streets, nature,
+  courts, bounds and other complexes. Canonical source JSON unchanged by option.
+- Inputs: mountain-surface-r1/gj, mountain-city-r1/oj, purpose-precinct-r4/after
+  recompiled with artifacts/visual/compile_landmark_worlds.py; PB/SQLite rebuilt
+  using procedural_world.py with same adaptive flags, --terrain mountain-landscape
+  --seed mountain-3 and --campus-landmarks. Outputs campus-landmarks-r1/<case>/after.
+  GJ/OJ/SQLite source revisions as preceding checkpoints; PB revision
+  6f370ea741f33adf889eef02e3c1b884a47aa522. Pinned existing corpus analysis, not
+  falsely claimed as fresh language parsing of four unrelated repositories.
+- Browser: viewer_audit.mjs installed Chrome -> campus-landmarks-audit-r1(GJ/OJ)
+  and campus-landmarks-corpus-audit-r1(PB/SQLite/fixture). Three LODs, camera,
+  source/route inspection and Synthetic PASS; zero static rebuilds in Synthetic.
+  Actual pointer clicks exercised every new GJ/OJ/fixture landmark. Same absolute
+  camera100/pitch1.05 before/after capture uses capture_purpose_precincts.mjs
+  --landmarks --baseline <before>; reports campus-landmarks-comparison-r1.
+- Visual inspected: exact OJ pair small buildings -> broad verification hall,
+  GJ data/verification complex context and fixture selected source inspector;
+  mountain opaque exterior/relief, CPU showcases and unknown SQLite overview.
+  Review ../artifacts/visual/campus-landmarks-reviewed-r1/index.html and review.png;
+  local links verified. All artifacts/helpers remain outside Git.
+- Limits: real corpus selected complexes currently contain two source files,
+  while the unit geometry case covers16. Not every campus has a feasible related
+  aggregate; do not force a monument across roads or unsupported sources. Still
+  low-poly architecture, not a texture overhaul or completed campus art direction.
+  Full-campus pre-reserved anchor plots remain a possible next substantial step.
+- Spec alignment PASS: technical source identity/evidence and rendering split;
+  functional honest roles, inspectable aggregates and unknown fallback; product
+  deterministic static-only/local-first. ADR-057 and FACILITY_ARCHETYPES explain
+  additive export option. No canonical public schema/ID or protection changes.
+- Delivery: separate landmark feature commit and normal feat/polyglot-analysis
+  push after staged diff/metadata review. Mountain repair5857f4f already pushed.
+  Existing fixture build caches left untouched.
+
+## Checkpoint 2026-10-21 — Rich materials and cached daylight
+
+- Implemented: shader-local facade bays, masonry/metal/glass surface families,
+  roof coping/seams, asphalt/paving/grass/rock/still-water detail, warm sunlight,
+  sky fill and optional cached2048-square packed-depth sun shadows. Rounded
+  decorative crowns stay within existing tree reserves; no new sites. Keyboard
+  Rich materials toggle restores flat shading without moving the camera.
+- Contract: ADR-058 and RENDER_MATERIALS.md. No source role, confidence, identity,
+  routing, canonical schema or source-building geography changes. No new library,
+  remote asset or runtime AI. CPU SVG/Canvas retain geometry-based appearance,
+  explicitly not shader-detail parity. Surface patterns are not source facts.
+- Fixtures/revisions: maintained purpose-campus at7f587e5 (31files/77trips);
+  pinned GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766
+  (1324files/4209trips/6157represented edges) and
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b
+  (506files/622trips, low semantic coverage). Reused verified corpus analysis;
+  do not claim fresh parsing of those two external repositories.
+- Fresh maintained pipeline: `python -m metropogits build --repo
+  tests/fixtures/repositories/purpose-campus --repo-id fixture/purpose-campus
+  --out ../artifacts/visual/material-lighting-cold-r1/source --json`;
+  `python scripts/procedural_world.py` that source with --out
+  ../artifacts/visual/material-lighting-cold-r2/world --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus --campus-style programmed --campus-landmarks
+  --building-style purposeful --seed purpose-4. Full17-file package identical to
+  reviewed fixture. No target source/dependency/build execution.
+- Corpus packages: `python ../artifacts/visual/compile_landmark_worlds.py`
+  ../artifacts/visual/campus-landmarks-r1/<gj|sqlitebrowser|fixture>/after
+  ../artifacts/visual/material-lighting-r3/<case> --landmarks. World/City/UCG/
+  Planning and preview/showcase bytes exactly unchanged for all three cases;
+  source positions churn0. Full World validation and independent compound
+  clearance pass: every source accessible, building/road overlap/owner escape0.
+- Browser commands: `node scripts/viewer_audit.mjs`
+  "C:/Program Files/Google/Chrome/Application/chrome.exe"
+  ../artifacts/visual/material-lighting-final-audit-r3
+  ../artifacts/visual/material-lighting-r3/gj
+  ../artifacts/visual/material-lighting-r3/sqlitebrowser
+  ../artifacts/visual/material-lighting-r3/fixture.
+  Three LODs, exact route/source inspection, expansion, camera/navigation and
+  Synthetic pass. Actual GL errors0,2048 sun map cached, Synthetic static rebuilds0.
+  Updated audit counters for15-float vertices and fail on actual GL errors.
+- Matched captures: local capture_materials.mjs -> material-lighting-comparison-r5;
+  same absolute camera for rich/flat architecture/river/mountain/overview scenes.
+  Complete viewer-data SHA256 unchanged across controls. Local fallback audit
+  material-lighting-fallback-final-r1 forces no derivatives, unsupported shadow
+  framebuffer and unavailable fragment highp: WebGL still draws, GL errors0;
+  forced no-WebGL uses actual Canvas fallback. No audit-trust bypass.
+- Artifacts visually inspected: GJ matched architecture, mountain and full-city
+  frames; SQLite unknown-role overview; small-campus close-up rich/flat; actual
+  CPU showcase; Canvas fallback; comparison gallery screenshot. Review page:
+  ../artifacts/visual/material-lighting-reviewed-r1/index.html. All local links
+  and generated screenshots/helpers remain outside version control.
+- Correction applied/reverified: rich lighting exposed a black strip on clipped
+  river faces with collinear initial vertices (zero normal). Recover a valid
+  winding-preserving normal and guard zero vectors in shader; added regression,
+  regenerated packages and recaptured identical GJ camera: strip gone. Did not
+  move water or disable depth/culling to conceal it.
+- Tests: full Python767 OK (one existing Windows symlink skip); final Node76 PASS,
+  Ruff/compileall/diff PASS. Five new Node tests cover rotated facade metres,
+  sun bounds, collinear water normals, deterministic bounded outward foliage,
+  optional capability/cache guards. No failing tests weakened.
+- Cost/limits: vertices9->15 floats; additional foliage geometry and initial
+  shadow draw. JS submission p95 GJ orbit2.4-3.9ms, Synthetic2.5-2.8ms;
+  SQLite orbit0.7-1.2ms, Synthetic2.4-3.3ms; small fixture Synthetic2.1-17ms
+  (one district outlier). SwiftShader, not hardware GPU completion/FPS. Initial
+  GJ draw submission1814.6ms in final run; earlier flat baseline1262.1ms,
+  single runs under different load, no universal performance claim. Large-map
+  shadows can be coarse; surfaces remain stylized, not full PBR/AAA assets.
+- Spec alignment PASS: technical rendering split/identity/evidence, functional
+  source inspector/unknown fallback, product deterministic local/static-first.
+  Next visual priorities are art direction/architectural detail, not speculative
+  parser or routing refactors. Existing fixture build caches left untouched.
+- Delivery: one atomic renderer/material milestone commit on
+  feat/polyglot-analysis, normal upstream push after staged diff and human
+  identity review; actual command result recorded in session handoff.
+
+## Checkpoint 2026-10-21 — Evidence-gated procedural architecture
+
+- Implemented: additive --building-style catalog, architecture/0.1.85 named
+  proposal recipes,25 shared massing grammars and six primitives (box, chamfer,
+  gable, sawtooth, drum, dome), plus a shared verification complex composition.
+  These are not85 bespoke models or85 new analyzer capabilities. Specific roles
+  without source proof stay dormant. Private profiles retain source-role evidence,
+  actual local neighbours, independent seed streams and rendered height.
+- Evidence policy: DIRECT/RESOLVED role claims with real evidence IDs. TEST is
+  not simulation/benchmarking; AUTH is not token storage. Kafka/RabbitMQ require
+  messaging role plus local usage, never only a manifest. Verified UI usage may
+  add glazing. Generic inputs remain neutral. No new public archetype enum or
+  schema/identity change, no runtime service/AI or target-code execution.
+- Geometry: offline polygon meshes, material hints and rotated local shapes feed
+  CPU SVG, Canvas and WebGL. Certified compounds restyled without changing their
+  members, source/shared-target proof, persistent LOD or exact source paths.
+ 18-part/240-face per-source limits; original footprint/height/door and terrain
+  preserved. Triangle batching and cached sun lighting retained, not hardware
+  instancing. Existing styles and default remain compatible.
+- Visual correction: first renders exposed cathedral-like roofs on thin legacy
+  parcels. Apply physical roof-span and drum/dome aspect caps, low-form parcel
+  height budgets and a continuous archive hall instead of needle-like ribs.
+  Recompiled four corpora and recaptured matched views. Original height remains
+  a capacity envelope; the inspector separately reports actual rendered height.
+- Fixtures/revisions: GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJ b163acd2b5fe41edfc1e7fc7d367362851241896,
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteBrowser ae32df153a64d250de7c77a5057deeff4092a39b.
+  Pinned verified source analysis reused, not falsely claimed as fresh parsing.
+  New maintained architecture-unknown contains three unsupported Elixir files;
+  maintained purpose-campus supplies real31-source/77-trip cold analysis.
+- Fresh commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/architecture-unknown --repo-id
+  fixture/architecture-unknown --out ../artifacts/visual/architecture-unknown-r1/source
+  --json`; procedural_world.py that source -> architecture-unknown-r2/world
+  --building-style catalog --seed architecture-unknown.3 neutral sources,
+  zero relationships; no fabricated Synthetic activity.
+- Fresh purpose pipeline: build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out ../artifacts/visual/architecture-catalog-cold-r1/source
+  --json; procedural_world.py that source with --out <same-root>/world --zoning
+  neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style programmed
+  --campus-landmarks --building-style catalog --seed purpose-4. Independent
+  package repeat via compile_catalog_worlds.py --repeat -> architecture-catalog-repeat-r1/world:
+  all17 package artifacts byte-identical.
+- Corpus command: `python ../artifacts/visual/compile_catalog_worlds.py` existing
+  material-lighting-r3/{gj,sqlitebrowser} or campus-landmarks-r1/{oj,pocketbase}/after
+  -> ../artifacts/visual/architecture-catalog-r3/<name>/after; --before produces
+  purposeful baseline with the same current viewer assets. Four World/City/UCG/
+  Planning pairs byte-identical; all16 schema validations PASS. Source positions,
+  streets and routes unchanged; compiled part/mesh bounds checked inside original
+  file envelopes. All accessible, canonical building/road overlaps/owner escapes0.
+- Actual output: GJ1324files/4209trips,22 selected recipes; OJ681/1457,18;
+  PB664/1491,9; SQLite506/622,6. Real output contains the source-supported subset,
+  not every proposed semantic facility. Bounds are positive tested for all85
+  recipes/multiple rotations, even where no real-source positive exists yet.
+- Browser: viewer_audit.mjs installed Chrome -> architecture-catalog-final-audit-r3,
+  inputs architecture-catalog-r3/{gj,oj,pocketbase,sqlitebrowser}/after and
+  architecture-unknown-r2/world. Three LODs, camera, source/route controls,
+  compound expansion, demand and Synthetic PASS. GL errors0; static Synthetic
+  geometry builds0. Capabilities audit on real cold fixture forces missing
+  derivatives/highp/shadow framebuffer: WebGL still draws; no-WebGL uses Canvas.
+- Matched comparison: local capture_architecture.mjs ->
+  architecture-catalog-comparison-r2, four cases, identical absolute cameras,
+  overview/detail plus GJ frontend, real grayscale captures. Actual pointer
+  inspections verify source recipe/role rows in GJ/OJ/PB. SQLite focus has no
+  pickable evidenced target; it is not falsely reported as inspected there.
+  Atlas85 prototypes/25 grammars is explicitly not a fabricated source city.
+- Inspected actual GJ/OJ close-ups before/after correction, GJ frontend,
+  grayscale recipe atlas, unknown WebGL, Canvas fallback and CPU GJ showcase.
+  Review architecture-catalog-reviewed-r1/index.html and its actual review.png;
+  all local links verified. Generated helpers/artifacts remain outside Git.
+- Regression: Python775 OK (one existing Windows symlink skip), Node76 PASS,
+  Ruff/compileall/diff PASS. Eight new Python tests cover catalog bounds/yaw,
+  winding/dome caps, physical proportions, semantic/technology negatives,
+  resource failure, unknown input, deterministic source-preserving packages,
+  unchanged routes/compounds and unrelated graph additions. No tests weakened.
+- Benchmark: sequential same-runner PocketBase before/after using viewer_audit
+  -> architecture-catalog-benchmark-r1, same viewport/camera/LOD. Detail triangles
+ 136298->158020; Synthetic median2.2->2.1ms, p95 2.5->2.7ms; static builds0 both.
+  This is JS submission under SwiftShader, not GPU FPS. Initial submission
+ 1005.4/746.5ms reflects run/JIT order, not a universal speedup. Earlier concurrent
+  run had a143.8ms PB outlier; final full run and isolated pair did not reproduce
+  it. No sweeping performance claim; geometry/storage cost genuinely increases.
+- Spec alignment PASS: technical data/evidence/rendering split; functional source
+  inspection/unknown fallback/determinism; product local/static/no execution.
+  ADR-059 and PROCEDURAL_ARCHITECTURE.md document opt-in/private compatibility.
+  Deferred: universal semantic detection, unique bespoke85 models, new metrics,
+  streamed/instanced binary scenes, precision GPU picking and photoreal assets.
+- Delivery: one coherent renderer/catalog feature commit with tests/docs/fixtures,
+  normal feat/polyglot-analysis push after staged diff and human metadata review.
+  Existing user fixture build caches are untouched; actual delivery in handoff.
+
+## Checkpoint 2026-10-21 — Catalog frontage and stable facade rendering
+- Implemented: architecture/0.2 adds bounded glazed entrances, metal canopies,
+  optional side posts and loading-shutter metaphors to existing source buildings
+  and certified complexes. Original access points are not replaced. Missing
+  safe frontage room omits decoration; gateway centres remain open.18-part
+  budget retained. Massing seeds stay pinned to architecture/0.1, not rerolled
+  by this presentation revision. Private inspector explicitly says decorative.
+- Fixed during real visual review: interpolated integer seeds caused speckled
+  window lighting; round before hashing. Fan triangles incorrectly restarted
+  rectangular UVs on each gable triangle; use one upright planar metric frame
+  per polygon and emit each fan triangle once. Real same-data captures show
+  clean windows and horizontal gable rows, not merely a passing shader compile.
+- Fixtures: GJ-Cloud3d9b53f9, GamjaOJb163acd2, PocketBase6f370ea7,
+  SQLiteBrowserae32df15; maintained purpose-campus and architecture-unknown
+  fixtures from7b1a432. No target dependencies/build/application code executed.
+- Fresh E2E commands: `python -m metropogits build --repo
+  tests/fixtures/repositories/purpose-campus --repo-id fixture/purpose-campus
+  --out ../artifacts/visual/architecture-frontage-cold-r1/source --json`;
+  `python scripts/procedural_world.py <source> --out <same-root>/world --zoning
+  neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style programmed
+  --campus-landmarks --building-style catalog --seed purpose-4`.31sources,
+ 77trips/128edges, all accessible, geometry errors0. Final repeated packaging
+  -> architecture-frontage-cold-r3/world: all package bytes deterministic.
+- Corpus: local compile_frontage_worlds.py existing architecture-catalog-r3
+  worlds -> architecture-frontage-r1, with full validate_world/bounds checks;
+  r2 repeats geometry with updated shader assets, reusing hash-verified source
+  validation. Final r3 refresh_architecture_assets.py uses the actual installed
+  bundle and regenerates manifest hashes; World/City/UCG/Planning, compiled
+  architecture and CPU SVG bytes remain unchanged from r2. This last refresh
+  is renderer-only, not a claim to have reanalyzed those repositories.
+- Integrity: validate_architecture_frontage.py validates all four UCG/City
+  pairs, compares original canonical bytes, source entrances/yaw/envelopes,
+  every old massing part, exact routes and compound membership. PASS; report
+  architecture-frontage-reviewed-r1/integrity.json. GJ1324/4209trips,
+  OJ681/1457, PB664/1491, SQLite506/622 unchanged. Unknown3files/0relations
+  retain neutral roles and no fabricated Synthetic activity.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/architecture-frontage-audit-r3` with final four r3 worlds,
+  unknown-r3 and cold-r3. Six cases/three LODs, actual camera/source/route/
+  compound/Synthetic controls PASS; no GL errors, static Synthetic builds0.
+  capture_materials.mjs -> architecture-frontage-capabilities-r2: missing
+  derivatives, fragment highp, shadow framebuffer and Canvas fallback PASS.
+- Matched capture: capture_architecture.mjs -> comparison-r4, same absolute
+  cameras, overview/close/frontage/loading and grayscale where available.
+  Source pointer inspectors verified GJ/OJ/PB; SQLite focus has no evidenced
+  pickable target and is not falsely reported as inspected. Earlier r1/r2
+  attempts were superseded after visual fixes; final QA uses current r3 assets.
+- Inspected: actual GJ frontage/loading and OJ verification complex, unsupported
+  Elixir gable after UV correction, CPU GJ showcase, Canvas fallback, gallery
+  review.png. architecture-frontage-reviewed-r1/index.html links all exist.
+  Overview composition/source geography preserved; entrance detail is a close
+  view improvement, not a major new skyline/layout claim. No photoreal claim.
+- Cost: final matched frontage cameras show GJ296788->323588 triangles,
+  OJ191052->205532, PB150658->164038, SQLite104992->115172. Draw calls unchanged
+ 3/2/3/1 respectively; decorative boxes have real geometry/upload cost.
+  Final GJ Synthetic p95 CPU3.2–4.6ms, PB2.6–3.1ms; OJ9.6ms district outlier
+  under concurrent software rendering. These are JS submission/SwiftShader
+  measurements, not GPU completion/FPS or universal performance guarantees.
+- Regression: Python777 executed, one existing Windows symlink skip, remaining
+  pass; final Node78 PASS; Ruff/compileall/diff PASS. Added rotated frontage/
+  dimensions/gateway-clearance, stable seed and shared palette assertions plus
+  gable UV/normals/roof-frame tests. No source contracts or tests weakened.
+- Spec alignment PASS: technical evidence/render split; functional AC-001/002/
+ 003/006/011; product local/static/no invented facts. ADR-059 still governs
+  export-only compatibility. Docs PROCEDURAL_ARCHITECTURE/RENDER_MATERIALS updated.
+- Remaining: conservative envelope picking, nonphotoreal materials, legacy
+  Canvas flat-world lift nuance, and universal semantic recognition are not
+  solved here. No extra scope or changes to terrain/roads/source classification.
+- Delivery: one coherent frontage/facade renderer work unit, explicit staging,
+  human Git identity review and normal feat/polyglot-analysis push; exact
+  commit/push outcome in handoff. Existing user build caches remain untouched.
+
+## Checkpoint 2026-10-21 — Architectural scale: experimental facility reservations
+- Implemented: opt-in `--campus-style estate` (campus-plan/0.8). Determine
+  bounded connected groups from real static edges/disclosed shared LOCAL file
+  targets; reserve variable multi-address sites before file subdivision. Shared
+  pedestrian spines/commons, outer source access, typed facility assignments,
+  up to four existing certified complexes per precinct. No catalog names added.
+  Source addresses retain their original dimensions; general program-sized
+  individual footprints and automatic district land expansion are NOT delivered.
+- Audit: the116-file restriction belongs to the old courtyard pilot; newer
+  whole-neighborhood planners already support12–256 sources. Preserve them.
+  ARCHITECTURAL_SCALE_PLAN and ADR-060 record the actual contract and priorities.
+- Positive fixture: fresh analysis of maintained purpose-campus31 sources;
+  seven site reservations yield four visible complexes (8/8/8/4 members) plus
+  three individuals.77 original trips/128 represented edges;31/31 accessible,
+  building/road overlap and owner escapes0. Actual WebGL inspectors expose all
+  original members; explicit expansion works, automatic zoom does not explode
+  complexes. CPU preview was inspected. This is a controlled positive, NOT proof
+  of acceptance on the four large repositories.
+- Corpus revisions: GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766;
+  GamjaOJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b.
+  Inputs: architecture-frontage-r3/{case}/after pinned City/UCG. No target
+  dependencies, build scripts or application code executed.
+- Large-corpus acceptance NOT MET: GJ/OJ/PB dedicated sites did not reliably fit
+  final connectivity/capacity conditions; SQLite has no new accepted estate.
+  Preserve the complete programmed World instead of passing partial/regressed
+  layouts. Fallback includes requested/actual style and failure reason. Only
+  optional fit/connectivity failures are caught; invalid source/schema errors
+  still fail. All four final actual styles are programmed, accepted estate0.
+- Rejected experiments: forced macro land growth moved unrelated geography;
+  removed that behavior, record unmet site pressure only. Early visually larger
+  GJ prototypes are superseded, not final successes. OJ mountain-3 also exposed
+  a pre-existing hybrid-region validation failure; keep pinned mountain-2
+  geography instead of weakening validation. Remaining fit/performance work is
+  explicit; stop proposal micro-tuning and address land/program contracts next.
+- Real commands (local helpers are outside Git):
+  `python -m metropogits build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out ../artifacts/visual/campus-estates-cold-r1/source --json`;
+  `python scripts/procedural_world.py <source> --out ../artifacts/visual/campus-estates-cold-r2/world
+  --zoning neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style estate
+  --campus-landmarks --building-style catalog --seed purpose-4`.
+  Equivalent unknown-language run -> campus-estates-unknown-r2/world: three
+  neutral Elixir files, no invented roles, dependencies or Synthetic activity.
+- Corpus cold experiments: `python ../artifacts/visual/build_campus_estates.py
+  <pinned-input> <new-output> --only-after --terrain mountain-landscape --seed
+  mountain-3` (OJ mountain-2). Final GJ run additionally uses a compatible
+  `--previous-world` hint. GJ cold attempt generation252.7s vs baseline93.2s;
+  OJ156.6 vs20.0; PB93.0 vs58.7; SQLite67.7 vs32.4. Sequential local timings,
+  not a robust benchmark; current final fallback can add another baseline pass.
+  This overhead blocks default promotion; no speedup/FPS claim.
+- Final exports: campus-estates-final-r1/{case}/{before,after}. GJ final after
+  is a real hinted generation; SQLite a cold result. OJ/PB final after replays
+  hash-verified attempted/baseline worlds through the product fallback guard,
+  then full validate_world and package_world. These two are explicitly marked
+  cached replay, NOT additional fresh cold generations. Before packages retain
+  hash-verified canonical data with actual current bundled assets.
+- Evidence: original City/UCG bytes identical in every corpus before/after;
+  GJ1324/4209 trips, OJ681/1457, PB664/1491, SQLite506/622, original endpoint and
+  edge IDs retained. New positive campus deliberately moves its addresses and
+  reconstructs certified exact trip geometry; old route coordinates are not
+  claimed identical. All final outputs have zero geometry errors/all accessible.
+- Catalog audit: actual source recipe types/grammars/neutral sources:
+  GJ22/14/518; OJ18/14/297; PB9/8/466; SQLite6/5/503. Full distribution in
+  campus-scale-reviewed-r1/integrity.json. Neutral is honest unknown coverage,
+  not an excuse to fabricate facilities. Four fallback cities are not a new
+  silhouette success; broad grayscale family differentiation remains incomplete.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/campus-estates-final-audit-r1 <four final exports>
+  <cold-r2/world> <unknown-r2/world>`: six cases/three LODs, controls, members,
+  source/route evidence, Synthetic checks PASS, GL errors0. Synthetic static
+  builds0 where applicable; unknown traffic correctly unavailable. SwiftShader
+  CPU submission metrics are not GPU completion or FPS.
+- Matched captures: capture_architecture.mjs with METRO_ARCH_INPUT set to
+  campus-estates-final-r1 -> campus-estates-comparison-r1; overview/close/street
+  and grayscale cameras, source inspectors GJ/OJ/PB. SQLite has no evidenced
+  pickable target at that framing and is not claimed inspected. Small positive:
+  capture_purpose_precincts.mjs -> campus-estates-fixture-reviewed-r1, actual
+  before/context/inspector images. Inspected positive WebGL/CPU, retained GJ
+  overview and unknown detail. Review campus-scale-reviewed-r1/index.html.
+- Regression: Python781 executed, one existing Windows symlink skip; remaining
+  PASS. Final targeted4 estate tests PASS after adding no-fit guard assertions;
+  Node78 PASS; Ruff/compileall/diff PASS. New tests cover conserved connected
+  groups, unrelated singleton request stability, narrow-site fallback, source
+  analysis-to-export, repeated world/packages, schemas, forged reservations and
+  invalid-evidence propagation. Repeated positive package17 matching files;
+  general nearby-edit geography stability for estate is NOT established.
+- Spec alignment PASS for this opt-in capability: immutable City/UCG facts,
+  source/physical split, explicit derivation/fallback, local static/no execution.
+  Full attachment acceptance remains INCOMPLETE. Do not call this a completed
+  variable-parcel/campus overhaul. Next priority: physical-envelope/land-capacity
+  contract followed by a real positive large-corpus result and bounded CPU cost.
+- Delivery: planning record8589504 plus one tested experimental planning unit;
+  explicit staging/human identity review, normal feat/polyglot-analysis push.
+  Actual hashes/push outcome in handoff. User build caches remain untouched.
+
+## Checkpoint 2026-10-22 — Reserve campus program land before arterial subdivision
+- Implemented: ADR-061 opt-in `precinct`/campus-plan0.9. Derive facility/common/
+  circulation demand, reserve a sufficiently large existing sector, divert
+  internal structural arterials onto a shared perimeter, preserve all outside
+  endpoints and protect nature. Typed0.8 facility reservations remain the
+  constituent layer. Independent adaptive reconstruction checks exact geometry,
+  program and road identity; no weaker collision/evidence/source-size gates.
+- Root cause: local probes on pinned PocketBase showed ample area but many
+  pre-existing structural spans splitting candidate land. Global expansion was
+  not necessary for the positive results. A new explicit compatible previous
+  World migration keeps existing geography while rebuilding local circulation.
+  Exterior components are connected before source lots; unreserved parents keep
+  their working programmed campus rather than silently losing it.
+- Fixtures/revisions: GJ3d9b53f9, OJb163acd2, PocketBase6f370ea7,
+  SQLiteBrowserae32df15, maintained purpose-campus and architecture-unknown
+  from1bc7183. Large inputs reuse pinned architecture-frontage-r3 City/UCG;
+  source analysis was not rerun on those clones. No target dependencies/build/
+  application code executed. Fresh fixture analysis was run this session.
+- Commands: `python -m metropogits build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out ../artifacts/visual/campus-reservation-cold-r1/source --json`;
+  same for architecture-unknown -> campus-reservation-unknown-r1/source.
+  Local build_campus_estates.py invokes actual generate_world/validate_world/
+  package_world with `--style precinct --terrain mountain-landscape --seed
+  mountain-3` (OJ mountain-2) and explicit `--previous-world` pinned before World
+  -> campus-reservation-r4/{gj,oj,pocketbase,sqlitebrowser}/after. All are real
+  generation/export, NOT the previous checkpoint's cached fallback replay.
+- Large positives: GJ one reserved sector,29 files represented by4 large
+  complexes; PB one sector,32 files/4 complexes; OJ two sectors,28 files/6
+  complexes. Existing programmed campuses in other parents retained. SQLite
+  cannot fit a safe new precinct and retains programmed morphology; do not
+  fabricate specialized facilities to force universal coverage.
+- Locality: exact original UCG/City bytes, trip IDs/endpoints/edge membership,
+  natural terrain, city envelope and ALL district/sector polygons unchanged in
+  r4 matched runs. Outside reserved sectors, exact address/yaw/access preserved:
+  GJ1212/1212, OJ585/585, PB586/586, SQLite506/506. Replanned source addresses
+  inside reservations deliberately change; their physical trips are rebuilt.
+  All1324/681/664/506 sources accessible;4209/1457/1491/622 trips retained;
+  building/road overlaps and owner escapes0. JSON schemas/manifest hashes checked.
+- Determinism: fresh31-source fixture ->4 complexes/28 files,77 trips/128 edges;
+  repeated generation tested,17 package files byte-identical in repeat-r1.
+  Unknown Elixir3 files remain neutral with0 relations/traffic. Growth check
+  check_precinct_growth.py adds one unrelated Python file to a generated copy
+  of purpose-campus:31->32 sources, unchanged boundaries and28/31 old addresses
+  retained. Three individual fallback files relocate; explicitly not perfect
+  per-file stability. All28 original complex members remain fixed.
+- Cold versus migration: a genuine cold GJ run (r2) accepts2 complexes/12 files,
+  but different capacity repairs change macro geography. Cold PB remains a
+  fallback. Do not call those same-site comparisons or claim universal cold fit.
+  Final hinted generation seconds GJ28.0/PB17.2/OJ13.3/SQLite30.8, validation
+  15.0/10.7/9.6/12.2, export26.6/14.8/16.8/9.5. Concurrent local runs; not a
+  controlled speed comparison against older cold timings. No general speedup.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/campus-reservation-audit-r1 <four r4 after exports>
+  <cold-r1/purpose/after> <unknown-r1/unknown/after>`: six cases/three LODs,
+  camera/filters/source/roads/expansion/Synthetic PASS,30 GL state samples0.
+  Synthetic static rebuilds0; unknown correctly has no traffic. PB overview
+  Synthetic p95 CPU8.3ms under concurrent SwiftShader; other PB LODs3.6/3.9ms.
+  These are JS submission, not GPU completion/FPS or hardware performance.
+- Visuals: capture_architecture.mjs with METRO_ARCH_INPUT=campus-reservation-r4
+  -> campus-reservation-comparison-r1, same absolute overview/close/campus/street
+  cameras and grayscale. GJ/OJ/PB source inspectors verified; SQLite has no
+  evidenced pickable target at that frame, not falsely marked inspected.
+  capture_purpose_precincts.mjs -> campus-reservation-members-r1: six GJ campus
+  complexes, actual members/evidence/explicit expansion. Inspected GJ before/
+  after campus/close, PB/OJ campus, GJ member inspector and actual CPU showcase.
+  Internal through-roads no longer slice the shared campus; larger horizontal/
+  courtyard facilities are legible. Remaining small rows and repeated recipes
+  still exist; not a completed universal architectural-diversity redesign.
+- Artifacts: campus-reservation-reviewed-r1/index.html, integrity.json, growth.json;
+  local gallery links checked. Artifacts/helpers intentionally outside Git.
+- Regression: Python784 executed, one existing Windows symlink skip, remaining
+  PASS; Node78 PASS; Ruff/compileall/diff PASS. New tests cover program capacity,
+  outside endpoints, protected terrain rejection, deterministic reconstruction,
+  forged reservation rejection, compatible migration and old campus retention.
+  Existing estate/default algorithms and source contracts remain compatible.
+- Spec alignment PASS: technical evidence/physical split; functional AC-001/002/
+ 003/006/011/014; product local/static/unknown/no execution. Next: individual
+  program-sized physical envelopes, varied campus compositions and cold-mode
+  fit/performance. This opt-in reservation slice is verified, not default-promoted.
+- Delivery: one coherent planning work unit with explicit staging and human
+  metadata review; normal feat/polyglot-analysis push. Actual commit/push outcome
+  in handoff. Existing user fixture build caches remain untouched.
+
+## Checkpoint 2026-10-22 — First-run campus bootstrap without a previous World
+- Implemented: ADR-062 adds explicit `--campus-bootstrap` for precinct mode.
+  Compute one deterministic programmed geography/capacity prepass, stop before
+  atomic streets/dependency routing/tunnels/surface rendering, then use its
+  private transient PlanningFrame in the existing migration path. No cached
+  World input, new public schema, source identity change or default-mode change.
+  Final ordinary reconstruction/evidence/terrain/capacity/access gates retained.
+- Fix applied/reverified: the fallback wrapper initially assumed every result
+  was a dictionary; explicitly pass the private PlanningFrame through it.
+  Failed r1 attempts produced no successful package and are superseded by r2.
+  Reject bootstrap with a previous World, a wrong campus style or nonboolean
+  API option. Invalid CLI invocation produced the expected error and no output.
+- Fixtures: pinned GJ3d9b53f9, OJb163acd2, PocketBase6f370ea7,
+  SQLiteBrowserae32df15 City/UCG from architecture-frontage-r3. Large repository
+  analysis was reused, NOT rerun. Fresh purpose-campus/architecture-unknown
+  analysis from1aba449 fixture sources. No target code/dependencies/build hooks
+  executed; no external AI/service/runtime dependency introduced.
+- Commands: `python -m metropogits build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out ../artifacts/visual/campus-bootstrap-fixture-r1/source --json`;
+  `python scripts/procedural_world.py <source> --out <new-world> --zoning
+  neighborhoods --pattern-scale adaptive --planning varied --outline varied
+  --street-policy porous --street-hierarchy --campus --campus-style precinct
+  --campus-bootstrap --campus-landmarks --building-style catalog --seed purpose-4`.
+  Same real product CLI for unknown fixture -> campus-bootstrap-unknown-r1.
+  Repeat product generation -> fixture-r1/repeat. Large local helper invokes
+  actual generator/validate_world/package_world with `--style precinct
+  --bootstrap --terrain mountain-landscape --seed mountain-3` (OJ mountain-2),
+  NO `--previous-world` -> campus-bootstrap-r2/{case}/after.
+- Actual cold positives: GJ29 files/4 new precinct complexes; PB32/4; OJ28/6
+  across two sectors. Existing other campuses retained. SQLite still cannot
+  fit a safe new precinct and honestly retains programmed morphology. Do not
+  force fictitious facilities or advertise universal source/seed coverage.
+- Integrity: all four new outputs have EXACT envelope/district/parcel/terrain/
+  zoning/street/routing/network/coverage/topology equality to the prior visually
+  verified hinted r4 result, despite no external World input. UCG/City bytes
+  unchanged. All1324/681/664/506 sources accessible,4209/1457/1491/622 trips,
+  zero building/road overlaps or owner escapes; schemas/manifest hashes PASS.
+  Every final World discloses campus-bootstrap/0.1, internal-not-cached provenance
+  and zero baseline routing passes. Transient frames are NOT exported or called
+  complete/validated Worlds. Report campus-bootstrap-reviewed-r1/integrity.json.
+- Cost: concurrent local generation seconds GJ105.4/PB68.8/OJ31.1/SQLite62.5;
+  validation16.7/11.6/10.6/13.9; export29.4/15.9/18.5/10.8. The extra planning
+  pass costs CPU; warm hinted timing is not a fair speed baseline. No general
+  speedup/FPS claim. Main delivered change is reproducible first-run fit.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/campus-bootstrap-audit-r1 <GJ/PB r2 after>
+  <fixture-r1/world> <unknown-r1/world>`: four real cases/three LODs,
+  camera/filter/source/road/member/Synthetic interactions PASS, GL errors0,
+  Synthetic static builds0, unknown traffic correctly unavailable. Small fixture
+  overview Synthetic p95 CPU7.3ms under concurrent SwiftShader; its other LODs
+  3.2/2.8ms. CPU submission is not GPU completion/FPS. OJ/SQLite new exports
+  were schema/World/hash checked with exact prior physical-result equality;
+  their full browser audit was not rerun this checkpoint.
+- Visual inspection: actual new GJ close and CPU showcase, PB shared campus,
+  unknown detail; physical landmarks/courts/roads remain intact. New GJ/PB
+  same-camera overview/campus/street captures -> bootstrap-comparison-r1;
+  source-bound recipe inspectors verified. Before images use hash-verified
+  existing programmed packages, not a claim of fresh before generation. This
+  is a first-run capability, not new architectural silhouettes or materials.
+- Regression: Python787 executed, one existing Windows symlink skip, remaining
+  PASS; Node78 PASS; Ruff/compileall/diff PASS. Three new tests prove prepass
+  routing is never invoked, geography matches a full real baseline, bootstrap
+  matches explicit migration, deterministic generation/source immutability,
+  invalid combinations and honest fallback. Full17-file product CLI packages
+  repeat byte-identically. Prior default/hint behavior and golden cases pass.
+- Spec alignment PASS: technical source/physical split and bounded local work;
+  functional AC-001/002/003/006/011/014; product static/no execution/unknown.
+  Next: individual program-sized physical envelopes and silhouette identity;
+  all-seed campus fit and planning cost remain open. Default not promoted.
+- Artifacts: campus-bootstrap-reviewed-r1/index.html/integrity.json, r2 live
+  outputs, comparison-r1 and audit-r1. Gallery local links checked. Helpers and
+  generated artifacts remain outside Git. One coherent feature commit and
+  normal feat/polyglot-analysis push after explicit staging/human identity audit;
+  actual commit/push outcome in handoff. User build caches untouched.
+
+## Checkpoint 2026-10-22 — purpose-specific silhouettes on certified campus land
+
+- Implemented: export-only campus-massing/0.1 differentiates large connected
+  validation halls, model archive wings, storage-access halls, application
+  tower/open wings, interface galleries, compute pavilions and tooling workshops.
+  Existing certified program evidence gates selection. No catalog-name expansion,
+  regrouping, extra source entities, runtime instance claims or planner rewrite.
+  Wide/deep sites adapt the masses; physical proportions cap height; frontage
+  dressing attaches after the transform. All parts remain within certified land.
+- Scope: GJ has6 changed complexes (3 validation,2 application,1 model archive);
+  OJ6 and PocketBase6 validation complexes. PB's unclassified seventh complex
+  remains unchanged. SQLiteBrowser has0 new/changed campuses, honestly. Other
+  supported program shapes are unit-tested, not claimed as corpus discoveries.
+- Sources: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b, reused from the
+  previously verified campus-bootstrap-r2 packages. Large analysis/geography
+  was NOT regenerated. Fresh purpose-campus and unknown-Elixir sources at
+  69d57e4 were analyzed through the real CLI; no target code/builds executed.
+- Commands: `python ../artifacts/visual/compile_frontage_worlds.py
+  ../artifacts/visual/campus-bootstrap-r2/<case>/after
+  ../artifacts/visual/campus-silhouettes-r1/<case>/after --repeat` for all4.
+  This runs independent World validation and real shared-mesh export twice.
+  `python -m metropogits build --repo tests/fixtures/repositories/purpose-campus
+  --repo-id fixture/purpose-campus --out
+  ../artifacts/visual/campus-silhouettes-fixture-r1/source --json`; then
+  `python scripts/procedural_world.py <source> --out <world> --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus --campus-style precinct --campus-bootstrap
+  --campus-landmarks --building-style catalog --seed purpose-4`.
+  Same fresh commands for architecture-unknown with its own repo ID/seed unknown.
+- Integrity: review_campus_silhouettes.py checks every manifest hash, exact
+  canonical World/City/UCG/Planning bytes, individual source meshes/profiles,
+  scene, exact routing, original group IDs/membership/evidence and certified
+  footprint/foundation/yaw equality. Only selected compound presentation parts
+  and their disclosed profiles differ. Source counts1324/681/664/506 and
+  trips4209/1457/1491/622 unchanged; all accessible, overlaps/escapes0.
+  Fresh31-source fixture:4 complexes/28 members plus3 singletons,77 trips;
+  unknown3 sources/0 trips. Repeat full product CLI yields17 byte-identical files.
+- Browser: `node scripts/viewer_audit.mjs <installed Chrome>
+  ../artifacts/visual/campus-silhouettes-audit-r1 <four new packages>
+  <fixture-r1/world> <unknown-r1/world>`:6 cases,3 LODs, actual camera/filter/
+  source/compound-member/expansion/route interactions PASS; GL errors0;
+  Synthetic static rebuilds0, unknown correctly has no fabricated traffic.
+  Concurrent SwiftShader CPU p95 samples are not GPU timings or an FPS claim.
+- Actual visual comparison: capture_architecture.mjs with METRO_ARCH_INPUT set
+  to campus-silhouettes-r1 produced4 matched-camera comparisons, color and
+  grayscale (GJ6 views, OJ5, PB5, SQLite3). Before is the hash-verified original
+  export, not a fresh analysis. capture_purpose_precincts.mjs inspected all6
+  GJ real source-member inspectors with before/context captures. No mockups.
+  Inspected GJ close before/after and data/application context, PB campus in
+  grayscale, GJ CPU showcase, small WebGL detail and unknown CPU preview.
+  Validation roof fingers and lower spine read differently from the old long
+  podium/tower; application and model silhouettes remain distinct without colour.
+  Overview improvements are modest: most small sources are intentionally
+  unchanged. Existing dense overview label collisions remain a correction task.
+- Geometry cost: campus explicit mesh-face counts GJ240->209, OJ480->378,
+  PB480->378 (box primitives are separate, so this is NOT total triangles).
+  Campus parts42->52/44->50/50->56; every compound stays within18 parts/240
+  explicit faces. Viewer-data size change is below9KB per case, not a general
+  package-size optimization. No per-frame geometry/planning work added.
+- Regression: `python -m unittest discover -s tests -v`:792 executed,
+ 1 pre-existing Windows symlink skip, remaining PASS in351.4s. PowerShell's
+  stderr-to-file wrapper recorded NativeCommandError for unittest's stderr
+  progress, despite its final OK result; no test failure traceback. Targeted
+ 5-test rerun explicitly confirmed Python exit0. Node `--test tests/*.test.mjs`:
+ 78PASS. Ruff, compileall and diff checks PASS. Five new tests cover7 distinct
+  massing signatures, missing/unrelated proof, rotated/deep/small/elevated bounds,
+  height/face/part budgets, frontage, real-source provenance and exact route/
+  member/input conservation. Existing goldens/security/stability checks pass.
+- Spec alignment PASS: technical geometry/evidence contracts, functional source
+  inspection/deterministic exports/unknown fallback, product static/local/no AI.
+  ADR-060 source/physical distinction preserved; no public schema/ID change.
+- Artifacts: campus-silhouettes-reviewed-r1/index.html and integrity.json;
+  campus-silhouettes-comparison-r1, members-r1, audit-r1 and live r1 packages.
+  Helpers/artifacts remain outside Git. Next: individual program-sized envelopes
+  and greater within-program architectural variety; do not claim a completed
+  city-wide redesign or photorealism. One coherent renderer/test/docs commit,
+  normal feat/polyglot-analysis push after staging/identity review; actual
+  commit/push result in handoff. Unrelated user build caches untouched.
+
+## Checkpoint 2026-10-22 — static-reference centers and relative building skyline
+
+- Implemented: architecture/0.3 adds reference-skyline/0.1 inside catalog export.
+  Existing local files with six distinct DIRECT/RESOLVED incoming file users,
+  eight nearby eligible lots and two actual nearby neighbours may anchor a
+  relative skyline. Radius48, separation96, max3 per directory owner, max300000
+  spatial checks. No percentile/global graph-community coordinate shuffle.
+  Core setback tower, linked bars/terraces, lower varied context. Existing
+  campus source layers and specialized gates/tests/storage remain unchanged.
+- Meaning: centers describe static reference concentration, not measured traffic,
+  business importance or a claimed Service role. Utility types/exceptions/UI
+  common modules can qualify. Unknowns retain empty role proof/generic family.
+  Mere proximity is explicitly non-relational context. Original doors, source
+  IDs/roles, directory ownership, canonical dimensions and exact trips remain.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b reused from verified
+  campus-silhouettes-r1 packages. Large repository analysis/world generation
+  was NOT rerun. Fresh maintained12-file plain-Python reference-center fixture
+  and3-file unknown-Elixir fixture ran through analysis, City, World and export.
+  The former has one real shared-function core/10 incoming files/10 trips/20
+  represented edges, all12 files remain semantically generic. Unknown has no
+  center/0 trips. No target code, dependency installation or builds executed.
+- Commands: compile_frontage_worlds.py <prior package> <new after> --repeat
+  produced r1 prototype for GJ/OJ/PB with full independent World validation.
+  Final r2 re-exports use --reuse-validation with canonical/validation manifest
+  hashes, retaining that exact World; SQLite r2 runs full validation directly.
+  R1 simple-context massing is superseded: r2 keeps existing context variety.
+  Final outputs: ../artifacts/visual/reference-centers-r2/<case>/after.
+  `python -m metropogits build --repo tests/fixtures/repositories/reference-center
+  --repo-id fixture/reference-center --out
+  ../artifacts/visual/reference-centers-fixture-r1/source --json`; then
+  `python scripts/procedural_world.py <source> --out <world> --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus-landmarks --building-style catalog
+  --seed reference-center`. Same fresh pipeline for architecture-unknown.
+- Integrity: all4 manifest hashes PASS. Canonical World/City/UCG/Planning bytes,
+  original physical capacity/footprints/yaw/foundations, source role/technology
+  evidence, original individual recipe identity/seeds, campus complexes and exact
+  trips are unchanged. GJ1324/OJ681/PB664/SQLite506 sources and4209/1457/1491/622
+  trips retained, all accessible; World overlaps/escapes0. New parts independently
+  checked inside old physical footprints/height capacities. Final centers:
+  GJ10/OJ5/PB5/SQLite4. Participating core/linked/context counts10/75/87,
+ 5/47/37,5/32/80,4/42/80. Changed source meshes170/88/116/126.
+  Four repeated exports match; fresh source->World CLI repeat matches17 files.
+- Browser: viewer_audit.mjs with installed Chrome, four r2 outputs plus fresh
+  small/unknown outputs -> reference-centers-audit-r1. Six cases/three LODs,
+  source/route/member/expansion/filter/navigation controls PASS, GL errors0,
+  Synthetic static rebuilds0; unsupported graph does not animate fake traffic.
+  Software CPU submission timings are not GPU/display FPS or universal speedups.
+- Visual evidence: actual matched cameras, color/grayscale, overview and3 core
+  closeups per large case. Comparison-r2 contains successful GJ/OJ, r3 contains
+  PB/SQLite. Earlier r1 capture cleanup called a nonexistent CDP method; fixed
+  the helper, NOT product tests/asset trust. R2 PB center bbox midpoint was
+  occluded; r3 retries a closer top-down camera for its source-inspector click,
+  retaining identical before/after comparison cameras. All4 center inspectors
+  show static-reference label plus actual original file-neighbour counts.
+  Reviewed GJ before/after close, PB close, fresh small detail and GJ CPU showcase.
+  Relative nearby roof/height contrast is visible in closeups; overview change
+  is modest. This is NOT the requested ultimate large downtown/skyscraper city.
+- Limits/next priority: actual source capacities often remain10 units (GJ UI13).
+  Do not inflate them or weaken validators to claim skyscrapers. Next meaningful
+  step is the independently reconstructed physical-envelope contract for larger
+  individual facilities/highrises, not more micro-tuning these ratios. Existing
+  overview label collisions and conservative envelope picking remain open.
+- Regression: final full unittest797 executed in204.1s,1 existing Windows symlink
+  skip, remaining PASS, explicit Python exit0 via cmd stderr redirection. Node78
+  PASS; Ruff/compileall/diff PASS. Five new tests cover actual pure-Python source,
+  duplicate/weak/manifest negatives, owner/proximity separation, source conservation,
+  order/unrelated-entity stability, footprint/height bounds and spatial work cap.
+- Spec alignment PASS: technical evidence/geometry contracts, functional CPU
+  preview/determinism/source inspection/unknown fallback, product static-local
+  source-faithful geography. No public schema/ID or source-size invariant changed;
+  semantic/purposeful/default noncatalog modes retain their behavior.
+- Artifacts: reference-centers-reviewed-r1/index.html/integrity.json with actual
+  r2/r3 links, live r2 exports, audit-r1 and fresh fixtures. Helpers and generated
+  files remain outside Git. One renderer/fixtures/docs work unit, commit and normal
+  feat/polyglot-analysis push after explicit staging/human identity review; actual
+  result in handoff. Unrelated user build caches preserved.
+
+## Checkpoint 2026-10-22 — remove legacy10 as architectural height ceiling
+
+- Work units: preserve the maintainer's mandatory urban redesign verbatim and
+  its unfinished execution ledger (docs commit6d50820); implement the separately
+  prioritized height prerequisite under ADR-063. Do NOT mark typology/master
+  planning acceptance complete from this height change.
+- Implemented: catalog0.4/physical-height0.1 separates legacy source-scene height
+  from derived architectural capacity. Capacity uses actual smaller horizontal
+  span and architectural form; no minimum with legacy height, no universal
+  replacement constant. Six-unit tower capacity42; twenty-unit tower140 in tests.
+  Original City/World height10 remains only as compatible legacy data. Derived
+  world-view0.2 has architectural height plus sourceHeight; profiles/manifest
+  pin the policy. Independent reconstruction checks form, capacity, every part/
+  mesh vertex, unchanged horizontal geography and source conservation.
+- Also retired: reference-skyline massing/height modulation and SERVICE incoming
+  count recipe bias. The legacy diagnostic module remains testable for archived
+  artifacts, but cannot assign new skyscrapers/HQs. Roles/technology confidence,
+  unknown fallback and exact source relations are not changed.
+- Consumers: common offline meshes feed CPU/WebGL, actual physical dimensions
+  feed framing/LOD/picking/shadows; source inspectors distinguish legacy height
+  from capacity. First real r1 inspection caught the duplicated WebGL inspector
+  still saying original height; corrected BOTH Canvas and WebGL consumers.
+  Final r2 packages refresh only verified bundled assets; compiled physical
+  geometry/data/canonical artifacts/SVG are byte-identical to r1.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b from reference-centers-r2.
+  Large analysis/World layout and its unchanged hash-verified World validation
+  were reused, NOT rerun. New architectural validation runs on every compile.
+  Fresh12-file reference-center and3-file unknown-Elixir source pipelines run
+  again after the final UI fix. No target source/build/dependencies executed.
+- Commands: compile_frontage_worlds.py <verified reference-centers-r2 input>
+  <height-cap-r1 after> --repeat --reuse-validation for all4; final verified
+  refresh_architecture_assets.py -> height-cap-r2/{case}/{before,after}.
+  `python -m metropogits build --repo tests/fixtures/repositories/reference-center
+  --repo-id fixture/reference-center --out ../artifacts/visual/height-cap-fixture-r2/source --json`;
+  `python scripts/procedural_world.py <source> --out <world> --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus-landmarks --building-style catalog
+  --seed reference-center`. Same fresh build/world pipeline for architecture-unknown.
+- Integrity: review_height_cap.py verifies manifest hashes, exact canonical
+  UCG/City/World/Planning bytes, original source role/technology proof, unchanged
+  footprints/frontage/doors/terrain/streets/trips/campus physical meshes. Source
+  counts1324/681/664/506 and trips4209/1457/1491/622 remain unchanged. Original
+  World overlaps/escapes0 and all sources accessible. No old validator weakened.
+  Four compile/package repeats pass; final fresh product CLI repeat matches17 files.
+- Measured compiled individual heights: all4 range2.352–42, not a new global42
+  cap. Sources with legacy height10 now compiled above10: GJ248/632,
+  OJ150/315, PB248/466, SQLite249/502. These counts include retained file layers
+  inside persistent complexes, NOT a claim all are simultaneously visible.
+- Actual browser: viewer_audit.mjs final r2, four large outputs plus fresh small
+  and unknown -> height-cap-audit-r2. Six cases/three LODs, camera/filter/source/
+  route/compound/expansion interactions PASS, GL errors0, Synthetic static
+  rebuilds0; unknown graph has no invented traffic. Additional real selectable
+  generic source in EACH large city shows legacy10/rendered42 and the correct
+  capacity disclosure -> height-cap-inspectors-r2/report.json and screenshots.
+- Visual comparison: same-camera color/grayscale overview/district/entrance
+  captures from actual r1 geometry (6/5/5/3 views) remain valid for physically
+  identical final r2, except the corrected inspector explicitly linked separately.
+  Inspected GJ actual overview and selected tall source; CPU/shared-geometry
+  regression tests pass. Height constraint is visibly gone. Thin source-sized
+  parcels now expose scattered slender towers: this is NOT a composed downtown
+  or the mandatory urban redesign's visual acceptance. Prioritize variable land/
+  master planning; do not mask that structure with texture or recap to10.
+- Regression: full Python801 executed/1 existing Windows symlink skip, remaining
+  PASS in174s, explicit exit0. After final inspector-only fix, targeted height4
+  plus audit-harness1 pass; final Node78PASS, Ruff/compileall/diff PASS. New tests
+  reject forged capacity/form/geometry/nonfinite dimensions and verify original
+  canonical bytes, physical view heights, repeatability, unknown honesty, and
+  independence from file import counts. Legacy tests now explicitly test legacy
+  diagnostics, while asserting current catalog does not use that height effect.
+- Spec alignment PASS with explicit ADR-063 approved height-contract separation.
+  Public canonical schemas/IDs remain unchanged; derived view version increments.
+  Semantic/purposeful/architectural and saved old packages preserve their behavior.
+  No AI/runtime/cloud service or unsafe target execution added. Software browser
+  CPU submission timings are not GPU/display FPS or a universal performance claim.
+- Artifacts: height-cap-reviewed-r1/index.html/integrity.json, live height-cap-r2,
+  geometry comparisons-r1, final inspectors-r2 and audit-r2. Helpers/artifacts
+  remain outside Git. Height feature gets its own atomic commit, then both verified
+  commits push normally to feat/polyglot-analysis after human identity/staging
+  review; actual outcome in handoff. Unrelated user build caches untouched.
+
+## Checkpoint 2026-10-22 — source-first urban character prerequisite
+
+- Implemented: ADR-064, layout-independent CharacterEngine, verified local/
+  boundary/external versus declared dependency counts, normalized centralization,
+  weak components/module distribution, role/technology/capability evidence,
+  derived typology preferences and relative UNALLOCATED spatial demand. Catalog
+  packages add checksum-covered urban-character.json. No new roles or geometry.
+- Fixtures/commands: fresh purpose-campus31-source analysis via `python -m
+  metropogits build --repo tests/fixtures/repositories/purpose-campus --repo-id
+  fixture/purpose-campus --out ../artifacts/visual/urban-character-fixture-r1/source
+  --json`; procedural_world.py on that source with adaptive neighborhoods,
+  varied planning/outline, porous hierarchy, precinct/bootstrap/landmarks,
+  catalog, seed campus-estates-1. Full source-to-World validation:31 buildings,
+  77 trips,128 edges, zero building/road overlaps or owner escapes, all accessible.
+- Large case: compile_frontage_worlds.py height-cap-r2/gj/after ->
+  urban-character-r1/gj --reuse-validation --repeat. Original GJ pinned revision
+  3d9b53f9dac9af1187ac9754cb3066b27e43b766; analysis/World reused, not rerun.
+ 21 profiles,6,214,328 bytes. UCG/City/World/Planning/SVG/viewer-data EXACT bytes
+  identical to prior output. Profile-only prerequisite does not claim visual gains.
+- Tests: urban-character4 and height4 PASS; Ruff PASS. Tests cover actual Spring
+  roles and unknown-Elixir source, exact proofs, duplicate/symbol normalization,
+  ordering, boundary pairs, external usage versus declaration, weak/missing
+  evidence rejection, no fan-in-star -> business district, no input mutation.
+- Actual renderer: viewer_audit.mjs Chrome on fresh purpose fixture ->
+  urban-character-audit-r1, three LODs, source/route/compound/camera/Synthetic
+  checks PASS, GL errors0, Synthetic static builds0. Actual overview inspected;
+  existing complexes and source membership retained. No new appearance asserted.
+- Spec alignment PASS: TECH evidence/static/bounds/CPU, FUNC AC002/006/011/012,
+  product evidence-first/directory ownership. No runtime AI/network/target builds.
+  Existing rendering/semantic modes unchanged. New planners/variable land/district
+  skyline and five typologies remain open; weak components are not communities.
+- Atomic feature commit and normal feature-upstream push at the verified session
+  checkpoint; final handoff records actual hashes/results. User caches untouched.
+
+## Checkpoint 2026-10-22 — continuous district height composition
+
+- Implemented: catalog0.5/ADR-065 distinguishes physical-height0.1 capacity from
+  height-allocation0.1 actual height. District-skyline0.1 composes broad elliptical
+  fields across existing functional neighborhoods; no individual fan-in ranking.
+  Source-first character affects aggregate amplitude only with verified roles.
+  Unknown import stars remain neutral. Skyline-plan.json and BOTH inspectors
+  disclose capacity/allocation/legacy source height and planning limitations.
+- Scope: existing land is intentionally retained, NOT quietly declared a new
+  master plan. No uniform10/30/42 recap. Capacity still scales with span; the
+  20-wide tower140 capacity and larger-than42 allocation are tested. Certified
+  campus compound meshes/members stay exact; explicit file expansion is retained.
+  Independent validation reconstructs the field/allocation and all mesh bounds.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b. Their analysis/World/validation
+  are reused after manifest checksum verification, not claimed freshly generated.
+- Commands: compile_frontage_worlds.py height-cap-r2/<case>/after ->
+  district-skyline-r1/<case>/after --reuse-validation --repeat for all4.
+  refresh_architecture_assets.py makes matched before packages from the prior
+  compiled geometry, preserving its data/SVG. Actual source builds for purpose-
+  campus and architecture-unknown via `python -m metropogits build --repo
+  tests/fixtures/repositories/<fixture> --repo-id fixture/<fixture> --out
+  ../artifacts/visual/district-skyline-<fixture-or-unknown>-r1/source --json`.
+  procedural_world.py on those builds: adaptive neighborhoods, varied planning/
+  outline, porous street hierarchy, catalog/landmarks; purpose-campus adds
+  precinct/bootstrap, seed campus-estates-1, unknown seed unknown. Exact paths
+  are district-skyline-fixture-r1 and district-skyline-unknown-r1. Purpose full
+  generation repeated: all19 emitted files byte-identical;31 sources/77 trips/
+  128 edges, all accessible, zero overlaps/escapes. Unknown3 sources/0 relations,
+  no fabricated traffic. Target sources/build/dependencies never executed.
+- Integrity: review_district_skyline.py -> district-skyline-reviewed-r1/
+  integrity.json checks exact canonical UCG/City/World/Planning bytes, every
+  original XZ footprint/frontage/door/owner, trips/edge coverage, role proof,
+  recipe choice and campus physical models/membership. Source counts1324/681/
+  664/506, trips4209/1457/1491/622 unchanged. Original World collisions/escapes0.
+- Actual individual maximum heights42 ->26.6834/27.8688/26.1694/24.3368; these
+  are measured corpus results, NOT a new upper bound. Sources still taller than
+  10:296/167/223/215. Counts include retained constituent layers inside compounds,
+  not just visible masses. Existing certified campus heights remain unchanged.
+- Browser: viewer_audit.mjs Chrome -> district-skyline-audit-r1 (GJ/purpose/
+  unknown) and r2 (OJ/PB/SQLite). Six cases, three LODs each, GL errors0,
+  exact route/member/picking/filter/camera checks PASS where applicable,
+  Synthetic static rebuilds0; unknown no-edge Synthetic correctly unavailable.
+  capture_architecture.mjs via METRO_ARCH_INPUT=district-skyline-r1 produces
+  actual matched color/grayscale overview/district/frontage views6/5/5/3 in
+  comparison-r1 (GJ) and r2 (others). Its generic-only SQLite classified-role
+  inspector is absent, NOT claimed passed. capture_district_heights.mjs separately
+  selects an actual legacy10 generic source in ALL4: exact source path verified,
+  capacity42 versus allocated/rendered26.68/27.87/25.69/24.34 disclosed.
+- Inspected actual GJ before/after overview, grayscale closeup, OJ/PB overview,
+  GJ CPU showcase, SQLite height inspector and unknown overview. Excess scattered
+  spikes are reduced and campus geometry remains recognizable. Small horizontal
+  parcels, repeated individual silhouettes and some CPU label crowding remain;
+  no claim of five distinctive built downtowns or final architectural acceptance.
+- Performance: non-traced character/height-field CPU seconds respectively
+  GJ0.756/0.109, OJ0.372/0.036, PB0.496/0.031, SQLite0.252/0.018 in this runner.
+  Separate tracemalloc planning peaks29.72/15.00/20.62/10.41MiB; instrumented
+  times in integrity.json are much higher and are NOT used as normal runtime.
+  Extra profile artifacts6.21/3.19/4.80/1.44MB; not embedded in viewer payload.
+  Only compact district summaries/allocations enter viewer data. No universal
+  FPS guarantee: audit records software browser CPU submission, not GPU completion.
+- Regression: full Python808 tests, one existing Windows symlink skip, remaining
+  PASS in250.207s/exit0; Node78 PASS. Final inspector assertion additions re-run
+  height4 PASS. Ruff/compileall/diff PASS. Tests cover continuous transition,
+  no imported-utility business identity, duplicate/order/unrelated-owner stability,
+  source/land conservation, forged allocations and independent bounds rejection.
+- Spec alignment PASS: TECH evidence/static safety/geometry, FUNC AC002/003/006/
+  011/012 and product directory ownership/local-first. Canonical contracts and
+  noncatalog modes unchanged; no AI/cloud/target execution. Distinct master
+  planners and actual variable horizontal land admission remain the next major
+  dependency; do not replace them with more height/form micro-tuning.
+- Prior source-profile work unit9ee61a7 was committed and normally pushed to
+  feat/polyglot-analysis. This coherent height consumer receives a separate
+  verified commit and normal upstream push; final handoff records actual result.
+  Only explicit task paths staged; unrelated user caches remain untouched.
+
+## Checkpoint 2026-10-22 — program-sized urban land and modern structural massing
+
+- Implemented: mandatory redesign §§6–9 vertical slice, ADR-066, opt-in
+  `--building-style urban`. urban-land/0.1 admits complete/equal-area physical
+  requests BEFORE urban-architecture/0.1 compiles broad slabs, podiums, connected
+  wings, setback volumes and eligible larger twins. No new catalog synonyms or
+  per-file import-height ranking. Derived world-view/0.3 explicitly distinguishes
+  physical envelopes from original source-address World; original validators,
+  schemas, IDs and nonurban modes remain unchanged.
+- Protected: exact doors/street points/yaw/source ownership and actual paths,
+  roads AND bevel/junction envelopes, terrain no-build polygons, courts and
+  certified campus complexes. Original source envelope stays inside its admitted
+  body. Growth to the rear changes body centers, not front doors. Unfulfilled
+  requests are DEFERRED_REPLAN, not silently downsized/deleted. Independent
+  reconstruction plus final exclusion validation checks the physical plan.
+  Original World collision/size validation is NOT claimed to validate new land.
+- Rendering: shared compiled physical meshes feed CPU/Canvas/WebGL framing,
+  shadows, picking and foundations. Both inspectors disclose original versus
+  physical dimensions/status and procedural massing. Decorative trees inside
+  new bodies are cleared; protected nature remains unchanged. Source roles,
+  evidence and certified campus geometry/membership/LOD behavior are exact.
+- Fixtures: pinned GJ3d9b53f9dac9af1187ac9754cb3066b27e43b766,
+  OJb163acd2b5fe41edfc1e7fc7d367362851241896,
+  PB6f370ea741f33adf889eef02e3c1b884a47aa522,
+  SQLiteae32df153a64d250de7c77a5057deeff4092a39b. Their analyzed graphs/original
+  Worlds/validation are hash-verified and reused, not claimed freshly analyzed.
+  New land admission, physical clearance and architecture validation rerun.
+- Commands: compile_urban_worlds.py district-skyline-r1/<case>/after ->
+  urban-massing-r1/<case>/after --repeat, final SQLite -> urban-massing-r2.
+  New source analysis via `python -m metropogits build --repo
+  tests/fixtures/repositories/reference-center --repo-id fixture/reference-center
+  --out ../artifacts/visual/urban-massing-fixture-r1/source --json`, and likewise
+  architecture-unknown -> urban-massing-unknown-r1/source. procedural_world.py:
+  neighborhoods/adaptive/varied planning/outline/porous/street hierarchy,
+  campus-landmarks, building-style urban, seed reference-center or unknown.
+  Final Worlds/repeat in urban-massing-fixture-r2 and unknown-r2.12 Python
+  sources/10 trips/20 edges and3 Elixir/0 edges; original World overlaps/escapes0,
+  all accessible. All20 final fresh output files repeat exactly. Target source
+  code, dependencies and builds never executed by these generation commands.
+- Integrity: 3175 original sources conserved. Admitted full requests GJ568,
+  OJ278, PB309, SQLite313 (total1468); deferred550/279/165/193; preserved complex
+  constituents206/124/190/0 (includes campus members beyond visible compounds).
+  Physical dimensions now include8×8,10×8,12×10,16×12,20×9.6 and equal-area
+  frontage alternatives. Canonical UCG/City/World/Planning bytes exact; trips
+  4209/1457/1491/622 and original role evidence unchanged. Max individual rendered
+  heights30.37/28.72/30.04/29.82 are observations, not new global caps.
+- Correction caught/reverified: SQLite initially regenerated12 old/15 new
+  pavement triangles around one junction because reassigned parcel reserves
+  changed the mesher's clearance filter. Pin BOTH CPU/WebGL pavement to original
+  World, independently protect junction hulls. Final ALL4 road meshes EXACT.
+  Final SQLite repeated/re-audited in r2/r3; other cases had identical meshes.
+  CPU footer now correctly names World addresses + urban-land.json physical
+  admission. finalize_urban_cpu.py asserts geometry/data bytes unchanged except
+  that provenance text; final manifests verify hashes AND byte counts.
+- Final artifacts: urban-massing-final-r1/<case>/{before,after}, linked by
+  urban-massing-reviewed-r1/index.html/integrity.json. Actual comparison images
+  r1(GJ), r2(OJ/PB), r3(SQLite), color/grayscale matched views6/5/5/3. Finalized
+  CPU provenance changes no geometry; comparison WebGL data/assets exact.
+  capture_urban_admission.mjs -> urban-admission-focus-r1: actual admitted
+  source selected in ALL4 with exact source path, physical sizes, role gate and
+  modern layout, plus same-camera low-angle grayscale comparison.
+- Actual browser: viewer_audit.mjs Chrome -> urban-massing-audit-r1(GJ),
+  r2(OJ/PB; earlier SQLite superseded), r3(final SQLite), r4(final Python/Elixir).
+  Six final cases, three LODs, GL errors0, route/member/filter/picking/navigation
+  PASS where applicable, Synthetic static rebuilds0, unknown traffic unavailable.
+  Inspected actual GJ overview/gray frontage/low-angle, SQLite admitted-source
+  inspector, GJ CPU showcase. Buildings visibly broaden and silhouettes differ;
+  this is not photorealism or five accepted downtown master plans. Some repeated
+  small retained lots and CPU label crowding remain explicitly open.
+- Stability: fresh13-file growth analysis from copied reference-center+neighbor
+  via real generate_world API/previous hint. All12 original doors, district
+  boundaries and admitted physical envelopes retained;13 accessible/10 trips/
+  20 edges, zero original World overlaps/escapes. Discovered pre-existing CLI
+  `--previous-world` issue: strict JSON returns Decimal coordinates but generator
+  guard accepts only int/float (invalid previous world polygon). Did NOT weaken
+  the guard or claim CLI growth passed; normal JSON/API hints work. Record this
+  for a separate CLI-number normalization fix, outside this architecture unit.
+- Cost: land checks72000/35674/30151/34207, bounded at1M per pass and500k index
+  entries. Package wall times29.39/18.61/51.84/14.42s under concurrent tests and
+  software browsers are NOT a controlled regression comparison. Actual audit
+  stores frame/draw/upload counters; CPU submission is not GPU/display FPS.
+  No performance guarantee or native rewrite claimed.
+- Regression: final full Python813 tests/one existing Windows symlink skip,
+  remaining PASS in201.902s, exit0; Node78 PASS. After CPU provenance-only change,
+  urban architecture5 PASS. Ruff/compileall/diff PASS. New tests cover rotated
+  full-area admission, evidence negatives, natural/road/court/complex exclusions,
+  order/repeat, forged allocations, resource bounds, broad versus twin silhouette
+  constraints, shared physical heights/meshes, old-mode/canonical compatibility
+  and unknown real-source fallback. No test weakened to force a visual pass.
+- Spec alignment PASS: TECH static/evidence/limits/CPU, FUNC AC002/003/006/011/
+  012, product local-first/directory ownership. No runtime AI/cloud/source
+  execution, fabricated dependency, role or source entity. General combined
+  parcels, affected-area capacity replanning and distinct master planners remain
+  unfinished; no full-redesign completion claim. Commit this coherent feature
+  atomically and normally push feat/polyglot-analysis after explicit staging;
+  final handoff records actual result. User build caches remain untouched.
+
+## Checkpoint 2026-10-22 — demand-first physical capacity (ADR-067)
+
+- Implemented: `capacity-replan/0.1` architectural programs enter district and
+  neighborhood demand BEFORE physical streets/variable frontage parcels.
+  Actual widths/depths are allocated atomically with setbacks and protected
+  terrain; failed capacity expands/repartitions the affected district and
+  rebuilds access. Final dependencies route on that physical graph. Exhaustion
+  is a generation error; package export also refuses legacy deferred urban
+  admission. Original City/UCG/source IDs/evidence are not rewritten.
+- Physical scale: GJ source envelopes range36–648 square units (median80),
+  compiled heights2.0757–41.2418 (median9.6967); no universal height clamp.
+  These are procedural architectural dimensions, not measured source metrics.
+- Fixtures / pinned revisions: GJ-Cloud
+  `3d9b53f9dac9af1187ac9754cb3066b27e43b766`; GamjaOJ
+  `b163acd2b5fe41edfc1e7fc7d367362851241896`; PocketBase
+  `6f370ea741f33adf889eef02e3c1b884a47aa522`; SQLiteBrowser
+  `ae32df153a64d250de7c77a5057deeff4092a39b`. Fresh static analysis of all four
+  clones produced byte-equivalent canonical UCG digests to the pinned inputs;
+  measured analysis33.684/21.267/26.012/16.904s respectively. No target source,
+  build script or dependency installer was executed. Maintained reference-center,
+  purpose-campus and unsupported architecture-unknown fixtures are also covered.
+- Commands / artifacts: from the repo, `python
+  ../artifacts/visual/build_capacity.py
+  ../artifacts/visual/urban-massing-final-r1/CASE/after
+  ../artifacts/visual/capacity-core-r1/CASE/after --campus --seed SEED --repeat`;
+  CASE=gj/oj/pocketbase/sqlitebrowser and SEED=mountain-3/mountain-2/mountain-2/
+  mountain-3. This calls real `generate_world -> validate_world -> package_world`,
+  twice, comparing complete artifact bytes. Source City/UCG are preserved.
+  Public equivalent generation uses `python -m scripts.procedural_world BUILD
+  --out NEW --capacity-replan --building-style urban --zoning neighborhoods
+  --pattern-scale adaptive --planning varied --outline varied --street-policy
+  porous --street-hierarchy --campus --campus-style precinct --terrain
+  mountain-landscape --seed SEED` (omit legacy bootstrap).
+- Results: GJ1324/OJ681/PocketBase664/SQLiteBrowser506 allocated, **final
+  DEFERRED_REPLAN0 in every case**. Independent validation reports building
+  overlaps0, road overlaps0, owner escapes0 and all1324/681/664/506 doors
+  structurally accessible. Exact source trips4209/1457/1491/622 and represented
+  graph edges6157/2589/1880/622 retained. Per-district footprint/parcel/total
+  requirement versus allocated land is in each `capacity-report.json`; four
+  complete regenerated packages are byte-deterministic.
+- Timings (generate/validate/package seconds, concurrent local jobs, not an
+  isolated-run speedup claim): GJ82.432/16.622/36.684,
+  OJ78.042/10.567/23.014, PocketBase28.766/6.136/20.939,
+  SQLiteBrowser14.384/6.439/11.976. Caching static rejected/accepted geometric
+  frontage proposals avoids repeated terrain/road searches for identical demand
+  sizes; work/resource bounds remain explicit.
+- Fixes reverified: source-foundation relief uses the existing1.0-unit gate;
+  frontage reserves sibling streets and parent boundary setback; quantized
+  hybrid partitions repair to an exact shared existing-vertex diagonal rather
+  than increasing area/containment tolerances. Final junction seam coalescence
+  pins all source/bridge/tunnel ports and re-routes; explicit linear access ramps
+  omit redundant micro grid cuts rather than accepting artificially steep
+  quantized Y steps. Strict JSON previous hints normalize numeric types after
+  duplicate/nonfinite rejection. Small hinted growth retains the unrelated
+  district in the maintained fixture.
+- Saved-artifact round trip exposed a derived port-ID bug (`str(0.0)` versus
+  canonical JSON `0`). New capacity-only street-plan/0.2 uses canonical numeric
+  coordinates for port/component IDs. `refresh_capacity_core.py` regenerated
+  ONLY street-plan metadata and presentation into `capacity-core-r2`; all other
+  World fields were asserted identical. All four saved Worlds independently
+  validate after JSON reload; repeated packaging after reload is byte-identical.
+  Older street-plan/0.1 output remains unchanged.
+- Actual renderer check: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/capacity-core-audit-r1` with OJ/PocketBase/SQLiteBrowser
+  core-r1 packages, then `capacity-core-audit-r2` with GJ. Inspected actual GJ
+  WebGL overview/CPU showcase, OJ WebGL detail, PocketBase overview and the earlier
+  SQLiteBrowser district capture. Three LODs, source/road inspector, filtering,
+  camera and Synthetic run; no static geometry regeneration during animation.
+  Orbit CPU p95 across LODs: GJ2.7–3.7ms, OJ1.2–2.1ms,
+  PocketBase1.2–1.7ms, SQLiteBrowser1.2–1.4ms. First draw submissions
+  2078.9/1512.2/1299.6/656.2ms. Headless SwiftShader CPU submission metrics,
+  **not measured GPU completion/FPS**. Metadata-only port IDs do not alter these
+  inspected meshes/cameras. Final architecture review must rerun updated assets.
+- Actual compiled geometry diagnostic: `python -m scripts.urban_capacity_audit
+  ../artifacts/visual/capacity-core-r2/gj/after --out
+  ../artifacts/visual/capacity-core-metrics-r2/gj.json`. Independent rendered
+  pavement surfaces36825; positive pavement/building-envelope intersections0.
+  Visible1321 objects yield19 normalized solid occupancy shapes /17 near-repeat
+  clusters (Jaccard>=0.90), largest cluster19.98%. This is measured geometry,
+  not85 catalog labels; finite10x10x16 sampling is not visual approval.
+- Tests: full Python822 passed with one existing Windows symlink skip
+  (`capacity-tests-r2.log`,256.774s); current targeted capacity12, geometry
+  metrics2, legacy urban5 pass. Node78 pass. Another full checkpoint is required
+  after the next correction. `git diff --check` passes. Generated artifacts and
+  unrelated user Maven/Gradle build caches remain outside staging.
+- Visual findings / next actions: capacity is now real and complete, but this
+  is **NOT the full requested redesign acceptance**. Variable spacing reveals
+  the legacy fixed16/22-distance and56-span compound assumptions: GJ3 visible
+  compounds/6 files, OJ1/2, PocketBase1/2, SQLiteBrowser0. Campuses lose their
+  previous large silhouettes and some districts remain over-expanded/underused.
+  Prioritize source-affinity cohort planning, footprint-aware aggregation and
+  substantially different architectural structures; then compare matched-angle
+  grayscale renders and actual geometry repetition across all four repositories.
+- Spec alignment: PASS for the maintainer-approved physical replan extension,
+  TECH§3/4/7, AC-001/002/003/006/008/011/012, directory ownership/static/local
+  safety. No fabricated semantic facility, dependency, external runtime or
+  source omission. Distinct master planners and visual acceptance remain open.
+- Commits / push: commit this coherent capacity capability on
+  `feat/polyglot-analysis` after explicit staging/metadata review; normal push
+  only, never protected-main bypass. The following checkpoint records delivery.
+
+## Checkpoint 2026-10-23 — Whole-site capacity and actual architectural diversity
+
+- Implemented: capacity-replan/0.2 reserves source-affinity sites before land,
+  roads and real-file subdivision. Variable individual envelopes, shared
+  exterior promenades and private logical addresses replace post-hoc packing
+  across a road. Inadequate small-plot local aisles are regenerated for actual
+  site depths; failed neighborhoods gain repair weight without unnecessarily
+  increasing successful neighbors. Actual building foundations and shared path
+  grades are checked separately; relief/grade gates were not weakened.
+- Architectural outcome: footprint-aware certified consolidation, up to four
+  campus landmarks, compositional tower/slab/setback/linked-office/industrial/
+  roof-lit-hall/courtyard/atrium systems. Physical complex heights derive from
+  form/site dimensions, not old30/36-unit glyph ceilings. No global height10
+  clamp. Ordinary source complexes do not impersonate campus landmarks in either
+  inspector. Persistent labels are limited to real campus landmarks/selection,
+  including CPU SVG. Internal source addresses retain exact graph paths, but
+  public pavement is clipped out of the new complex ground-floor solids.
+- Fixtures / pinned revisions (unchanged from the preceding source-analysis
+  check): GJ-Cloud3d9b53f9dac9af1187ac9754cb3066b27e43b766;
+  GamjaOJb163acd2b5fe41edfc1e7fc7d367362851241896;
+  PocketBase6f370ea741f33adf889eef02e3c1b884a47aa522;
+  SQLiteBrowserae32df153a64d250de7c77a5057deeff4092a39b.
+  Maintained reference-center/purpose-campus and unsupported Elixir cases also
+  pass; no source execution or dependency installation.
+- Commands run: `python ../artifacts/visual/build_capacity.py
+  ../artifacts/visual/capacity-core-r2/CASE/after
+  ../artifacts/visual/capacity-architecture-r1/CASE/after --campus --repeat`
+  for all four; OJ adds `--seed mountain-2`, others use mountain-3. Helper calls
+  actual generate_world/validate_world/package_world with capacity_replan,
+  neighborhoods/adaptive/varied planning/varied outline/porous street hierarchy,
+  mountain-landscape and precinct campus. Entire pipeline/package runs twice.
+  Saved JSON revalidation and repeated packaging use
+  `finalize_capacity_architecture.py CASE` -> r2. Trusted viewer-only label
+  refresh -> r3; deterministic CPU-only label refresh with
+  `refresh_capacity_preview.py CASE` -> r4. Assertions preserve every World,
+  City/UCG, compiled WebGL datum and non-preview artifact during the final
+  refresh. Final usable packages: `../artifacts/visual/capacity-architecture-r4`.
+- Reproduction through the committed CLI: `python -m scripts.procedural_world
+  BUILD --out NEW --seed mountain-3 --capacity-replan --building-style urban
+  --terrain mountain-landscape --zoning neighborhoods --pattern-scale adaptive
+  --planning varied --outline varied --street-policy porous --street-hierarchy
+  --campus --campus-style precinct --campus-landmarks`. Use mountain-2 for OJ.
+- Complete placements GJ1324/OJ681/PocketBase664/SQLiteBrowser506. Initial final
+  deferred counts550/279/165/193 -> **0/0/0/0**. No omitted or duplicate source,
+  source/evidence/UCG digest changes, building overlaps, road overlaps, owner
+  escapes or disconnected required doors. Preserved complete trips
+  4209/1457/1491/622, represented graph edges6157/2589/1880/622.
+- Capacity, in World area units, site requirement / total requirement /
+  allocated land: GJ413798.48/1755526.37/1755526.31;
+  OJ218513.20/1367067.82/1367067.78;
+  PocketBase194750.92/946457.01/946457.03;
+  SQLiteBrowser135110.52/604498.80/604498.82. Totals include circulation,
+  public/terrain/growth/repair reserves; sub-unit quantized boundary differences
+  are not silently missing physical parcels. Every actual parcel/solid is
+  independently checked rather than accepting these budget ratios as proof.
+- Independent command: `python -m scripts.urban_capacity_audit
+  ../artifacts/visual/capacity-architecture-r2/CASE/after --out
+  ../artifacts/visual/capacity-architecture-metrics-r1/CASE.json` for all four.
+  Rendered pavement versus source envelopes AND visible complex ground-floor
+  solids: zero positive intersections. Visible complexes/constituent files:
+  GJ218/699, OJ86/283, PocketBase92/281, SQLiteBrowser99/248. All source members
+  remain inspectable and explicit expansion is still available at every LOD.
+- Actual visible geometry: GJ843 models/45 normalized solid shapes, OJ484/39,
+  PocketBase475/27, SQLiteBrowser357/22. Largest Jaccard>=.90 near-repeat clusters
+  19.93%/8.88%/10.74%/15.13%. Measurement samples compiled solids10x10x16,
+  excluding hidden constituents, material/color/yaw/mirror/tiny-detail changes.
+  It is a finite diagnostic, not a perceptual quality score/catalog count.
+  Visible footprint area min/median/max:
+  GJ36/120/2184.7695, OJ48/140/2107.56,
+  PocketBase64/120/1161.1641, SQLiteBrowser64/120/801.9657.
+  Actual rendered height min/median/max:
+  GJ4.3188/11.3807/80.8128, OJ5.402/13.2527/80.8128,
+  PocketBase5.4151/12.7232/40.6203, SQLiteBrowser5.7203/11.4672/35.6008.
+  These are World units, not measured meters/floors/runtime scale.
+  Role-unclassified source counts518/297/466/503 are explicitly retained as
+  neutral; composites are not incorrectly counted as unclassified source files.
+- Generation/validation/package seconds (concurrent jobs, not isolated speedup
+  claims): GJ87.274/14.537/55.335; OJ137.948/14.320/30.066;
+  PocketBase71.573/9.107/28.332; SQLiteBrowser46.846/6.839/18.752.
+  Whole-site planning costs more, particularly OJ; no unsupported claim of
+  generation performance improvement is made.
+- Actual browser check: `node scripts/viewer_audit.mjs CHROME
+  ../artifacts/visual/capacity-architecture-audit-r2` with all four r3 packages.
+  Three LODs, source/compound inspection and expansion, route provenance,
+  filtering, camera, Synthetic and CPU previews pass. Static Synthetic rebuilds
+  zero. Software-renderer run has an observed PocketBase CPU p95 outlier120.1ms;
+  raw data retained, not filtered away. These are submission costs, not GPU FPS.
+- Separate sequential local GPU command: `node
+  ../artifacts/visual/measure_capacity_hardware.mjs
+  ../artifacts/visual/capacity-architecture-hardware-r2`. Actual reported backend
+  NVIDIA RTX3080/D3D11, Chrome152,1280x800, Detail/all routes/Synthetic,60 measured
+  frames per city. Observed animation submission cadence164.94–165.03Hz, CPU p95
+  GJ1.7/OJ2.1/PocketBase1.9/SQLiteBrowser1.6ms,3 draw calls, triangles
+  613320/419608/364150/252168, static rebuilds0. First draw submission
+  2026.2/1323.6/1284.4/994.8ms. Explicit-GC retained JS heap approximately
+  429.7/270.1/203.5/129.1MiB; raw transient heaps also retained in report.
+  This is NOT a GPU timer/presentation-fence measurement or whole process/GPU
+  memory measurement. Dense-scene memory remains a material optimization target.
+- Artifacts inspected: actual matched grayscale overview/district/street,
+  campus/industrial where present in `capacity-architecture-comparison-r2`;
+  GJ overview/district, OJ campus, PocketBase street and SQLiteBrowser overview;
+  corrected real CPU SVG raster in `capacity-architecture-hardware-r2`.
+  `capture_capacity_architecture.mjs` uses identical yaw/pitch and identical
+  district/street distance with source-ID-matched targets after geography moves.
+  Overviews fit separately; they are not falsely claimed equal-scale.
+  Review entry: `../artifacts/visual/capacity-architecture-reviewed-r1/index.html`.
+- Visual findings: distinct large office/podium/setback/linked and low-hall/
+  courtyard forms are visible without color. Campus landmarks no longer vanish
+  because fixed16/22-distance thresholds cannot cross old roads. General-source
+  complex labels initially obscured whole cities; this was corrected in WebGL,
+  both inspectors and actual README SVG, without hiding source geometry.
+  Some long straight local rows and large reserve areas remain; this milestone
+  is not acceptance of every later downtown/campus master-planner typology.
+- Spec alignment: PASS under maintainer-approved ADR-067; UCG/City/source IDs,
+  provenance, static/local safety, deterministic output and unknown-role
+  fallback preserved. Only explicitly versioned physical geography is replanned.
+  Capacity0.1 saved Worlds remain reconstructable; no weakened old size checks.
+- Tests: full `python -m unittest discover -s tests -v`:830 tests,1 existing
+  Windows symlink skip,no failures (`capacity-architecture-tests-r3.log`,386.346s,
+  concurrent browser work). Latest CPU-label change additionally rechecked all12
+  capacity tests. `node --test tests/*.test.mjs`:79 pass. New tests cover whole
+  compound site exclusion/access at multiple yaws, no invented unrelated source
+  grouping, actual compiled purpose-shape variation, source/site forgery,
+  complex/pavement clipping and truthful uncluttered label policy. Final
+  `git diff --check` passes; user Gradle/Maven caches remain unstaged.
+- Commits / push: prior capacity capability2e743e3 was normally pushed to
+  `origin/feat/polyglot-analysis`, verified against ls-remote. This whole-site
+  correction is tested and prepared for its separate atomic commit and normal
+  feature-branch push; the delivery record follows after actual Git success.
+
+### Delivery 2026-10-23
+
+- Whole-site correction committed as
+  `c1b08f5da03e00c5db4f83e11c2d567db0ec1b42` and normal `git push` succeeded to
+  `origin/feat/polyglot-analysis` (`2e743e3..c1b08f5`). Human author/committer and
+  final message reviewed; no agent attribution, force push, protected-main
+  bypass, remote-setting change or generated-artifact publication.
+- Final review links target capacity-architecture-r4. Its CPU SVG previews were
+  deterministically recompiled after the label correction; every World, graph,
+  source City and compiled WebGL byte remains identical to the validated r3
+  package. Actual final CPU previews were opened/rasterized by the separate
+  NVIDIA/D3D11 browser run. Unrelated Gradle/Maven fixture caches were preserved
+  and not staged. This documentation-only delivery record follows the verified
+  feature commit; no additional implementation change is claimed.
+
+## Checkpoint 2026-10-23 — PR3 integration lint correction
+- Implemented: remove one unused local `nearest` import from program_local_sites;
+  no capacity, geometry, evidence or runtime behavior changes.
+- Fixture(s): maintained capacity fixtures, including actual programmed campus
+  generation, unsupported language fallback and saved-package round trips.
+- Commands run: `python -m ruff check metropogits scripts tests` (ruff0.14.2),
+  `python -m compileall -q metropogits scripts tests`,
+  `python -m unittest discover -s tests -p test_capacity_replan.py -v`.
+- Results: lint/compilation pass;12 capacity tests pass. Existing four-repository
+  artifacts/visual findings remain applicable because only an unused import was
+  removed; no new visual rendering or full-suite run is claimed here.
+- Remote evidence: PR3 targets main from feat/polyglot-analysis. First CI run
+  39806084666 passed action-smoke, but quality failed on F401 at capacity.py178;
+  this exact failure is corrected without suppressing lint or tests.
+- Spec alignment: PASS; contracts and all safety/evidence defaults unchanged.
+- Open risks: GitHub rejected the requested approval with422, `Can not approve
+  your own pull request`; authenticated account and PR author are both hdg5639.
+  Independent approval is still required; no review/protection bypass or merge.
+- Commits / push: prepare this verified lint correction as its own atomic commit
+  on the existing PR branch, then normal push to trigger fresh required CI.

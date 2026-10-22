@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:javafx.application.Application"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "java:javafx.application.Application"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

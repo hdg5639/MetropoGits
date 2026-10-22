@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "python:celery.shared_task"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:celery"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

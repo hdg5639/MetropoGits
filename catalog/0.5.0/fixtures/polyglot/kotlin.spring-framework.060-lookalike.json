@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "kotlin:org.springframework.stereotype.Repository"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

@@ -29,6 +29,14 @@ test('both renderers restore semantic tint for filters, selection and explicit m
   assert.match(webgl,/nextCacheKey = .*showRoleColors/);
 });
 
+test('entrance cladding is shared and gives way to semantic selection', () => {
+  const decorated={...policy,detailColors:{12:['#354e59','#566771']}};
+  const building={entityId:'source',archetype:'SERVICE_OFFICE'};
+  const part={y:0,height:2,materialKind:12};
+  assert.deepEqual(materialPart(decorated,building,part,10),{wall:'#354e59',roof:'#566771'});
+  assert.deepEqual(materialPart(decorated,building,part,10,true),{wall:'#60a5fa',roof:'#60a5fa'});
+});
+
 test('persistent role-compound parts share neutral walls and only the highest roof accent', () => {
   const facility={entityId:'aggregate:actual-members',aggregateRole:'TEST',archetype:'LIBRARY',
     x:0,z:0,width:20,depth:20,height:15,tier:'campus'};

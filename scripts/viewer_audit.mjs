@@ -57,7 +57,7 @@ export function instrument(source) {
       staticBuilds: auditStaticBuilds - auditBeforeBuilds, uploadBytes: auditUploadBytes - auditBeforeUploads,
       drawCalls: auditDrawCalls - auditBeforeDrawCalls,
       uploadPosition: auditUploadPosition,
-      triangles: geometry.triangles.length / 27, lines: geometry.lines.length / 18});
+      triangles: geometry.triangles.length / (vertexFloats * 3), lines: geometry.lines.length / (vertexFloats * 2)});
     if (auditFrames.length > 1024) auditFrames.shift();`);
   result = replaceOnce(result, 'const nextDetailLevel = lodPolicy.levelForZoom(zoomRatio, filtered);',
     'const nextDetailLevel = auditLod || lodPolicy.levelForZoom(zoomRatio, filtered);');
@@ -147,6 +147,10 @@ export function instrument(source) {
     snapshot() {
       const debug = gl.getExtension('WEBGL_debug_renderer_info');
       return {
+        materials: {enabled:detailedMaterials, derivatives, highPrecision:fragmentHighp,
+          shadowSize:sunShadow?.size || 0,
+          shadowCached:Boolean(sunShadow?.values && sunShadow.values===uploadedGeometry.get(triangleBuffer))},
+        webglError: gl.getError(),
         renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
         firstDrawSubmittedMs: auditFirstDraw, sequence: auditSequence,
         camera: Object.fromEntries(Object.keys(initialCamera).map(key => [key, state[key]])),
@@ -217,7 +221,11 @@ export class Cdp {
   }
 }
 
-const snapshot = (cdp) => cdp.evaluate('__METRO_AUDIT__.snapshot()');
+const snapshot = async (cdp) => {
+  const result=await cdp.evaluate('__METRO_AUDIT__.snapshot()');
+  if(result.webglError)throw new Error(`WebGL error during actual draw: ${result.webglError}`);
+  return result;
+};
 async function nextDraw(cdp, sequence) {
   const deadline = Date.now() + 30000;
   while (Date.now() < deadline) {

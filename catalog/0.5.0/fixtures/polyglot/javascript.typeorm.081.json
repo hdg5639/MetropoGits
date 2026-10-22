@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "javascript:typeorm.Entity"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:typeorm"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

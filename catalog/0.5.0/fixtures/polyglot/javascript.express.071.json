@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:express.default"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:express"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

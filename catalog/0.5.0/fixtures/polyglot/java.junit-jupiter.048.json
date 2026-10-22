@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "java:org.junit.jupiter.api.Test"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "java:org.junit.jupiter.api.Test"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

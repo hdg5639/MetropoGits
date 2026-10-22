@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "csharp:Microsoft.AspNetCore.Mvc"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "csharp:Microsoft.AspNetCore.Mvc.ControllerBase"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

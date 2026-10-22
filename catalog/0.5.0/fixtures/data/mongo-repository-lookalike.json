@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "com.example.mongodb.MongoRepository"
+    },
+    {
+      "kind": "MANIFEST",
+      "value": "org.springframework.data:spring-data-mongodb"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

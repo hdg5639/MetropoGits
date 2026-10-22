@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:svelte/store.writable"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:svelte/store"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

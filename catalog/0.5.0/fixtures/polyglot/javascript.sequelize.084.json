@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:sequelize.Sequelize"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:sequelize"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

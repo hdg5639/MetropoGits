@@ -45,6 +45,10 @@ class MaterialTests(unittest.TestCase):
                     for top in (10, 20):
                         for strong in (False, True):
                             cases.append([dict(entityId=identity, archetype=role), dict(y=2, height=8, shade=shade), top, strong])
+        for kind in (12, 13, 14):
+            for strong in (False, True):
+                cases.append([dict(entityId="entrance", archetype="SERVICE_OFFICE"),
+                              dict(y=0, height=2, materialKind=kind), 10, strong])
         module = (Path(__file__).parents[1] / "metropogits/viewer_assets/viewer-filters.js").as_uri()
         code = f"import {json.dumps(module)};let input='';for await(const c of process.stdin)input+=c;const d=JSON.parse(input);console.log(JSON.stringify(d.cases.map(c=>METROPOGITS_FILTERS.materialPart(d.policy,...c))));"
         result = subprocess.run([shutil.which("node"), "--input-type=module", "-e", code],

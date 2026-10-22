@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "rust:axum.Router.new"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "rust:axum.Router"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

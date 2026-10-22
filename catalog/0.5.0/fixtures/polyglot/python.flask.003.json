@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:flask.Flask"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:flask"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

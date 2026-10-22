@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:amqplib.connect"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:amqplib"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

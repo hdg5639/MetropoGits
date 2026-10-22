@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "ruby:active_record"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

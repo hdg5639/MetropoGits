@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "java:java.sql.DriverManager.getConnection"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "java:java.sql.DriverManager"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

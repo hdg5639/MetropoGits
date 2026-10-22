@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "javascript:@angular/core.Component"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:@angular/core"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

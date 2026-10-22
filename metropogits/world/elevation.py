@@ -131,7 +131,7 @@ def surface(terrain):
     return _surface(tuple(sorted(e.items())),tuple(tuple(p) for p in terrain["channel"]["centerline"]),
                     tuple(tuple(tuple(p) for p in path) for path in terrain["channel"].get("tributaries",[])),
                     tuple(tuple(tuple(p) for p in f['polygon']) for f in terrain['features'] if f['kind']=='LAKE')
-                    if terrain.get('version') in ('terrain/0.5','terrain/0.6') else ())
+                    if terrain.get('version') in ('terrain/0.5','terrain/0.6','terrain/0.7','terrain/0.8') else ())
 
 
 @lru_cache(maxsize=8)
@@ -176,6 +176,11 @@ def annotate(streets, parcels, terrain):
                 a,b = road["start"],road["end"]
                 ya,yb = [entrances.get(tuple(p),s.height(p)+.08) for p in (a,b)]
                 profile = [[*p[:2],q(ya+(yb-ya)*math.dist(a,p[:2])/math.dist(a,b))] for p in profile]
+                if road.get('linearRamp'):
+                    # This access was already authored as one linear ramp.
+                    # Redundant terrain-grid cuts quantize its Y independently
+                    # and can fabricate a steep submillimeter stair-step.
+                    profile = [profile[0], profile[-1]]
             road["heights"] = [profile[0][2],profile[-1][2]]
         road["heightProfile"] = profile
         count += len(profile)

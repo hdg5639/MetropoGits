@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:unittest"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "python:unittest.TestCase"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

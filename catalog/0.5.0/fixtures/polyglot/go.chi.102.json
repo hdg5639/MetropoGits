@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "go:github.com/go-chi/chi/v5.NewRouter"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "go:github.com/go-chi/chi/v5"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

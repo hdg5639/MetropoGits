@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "rust:sqlx.PgPool.connect"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "rust:sqlx.PgPool"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

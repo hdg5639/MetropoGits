@@ -19,8 +19,14 @@ from typing import Any
 from metropogits import __version__
 from metropogits.catalog import CATALOG_VERSION
 from metropogits.module_paths import ModulePaths, parse_module_paths
+from metropogits.manifests import (
+    manifest_format as extra_manifest_format,
+    parse_manifest,
+)
 from metropogits.generated_outputs import (
-    JVM_MANIFESTS, MAX_DECLARATION_BYTES, declares_local_bin_output,
+    JVM_MANIFESTS,
+    MAX_DECLARATION_BYTES,
+    declares_local_bin_output,
 )
 from scripts.canonical_json import (
     CanonicalJsonError,
@@ -137,9 +143,7 @@ GRADLE_DEPENDENCY_CALL = re.compile(
     (?=\s*(?:[;}]|$))""",
     re.VERBOSE,
 )
-SPRING_PROPERTIES_NAME = re.compile(
-    r"^application(?:-[A-Za-z0-9_.-]+)?\.properties$"
-)
+SPRING_PROPERTIES_NAME = re.compile(r"^application(?:-[A-Za-z0-9_.-]+)?\.properties$")
 SAFE_CONFIG_SIGNATURES = {
     "spring.datasource.driver-class-name": frozenset({"org.postgresql.Driver"}),
 }
@@ -152,15 +156,15 @@ def _is_xml_ts(prefix: bytes) -> bool:
     comments, type assertions and TSX files must not become XML by substring.
     """
     text = prefix.removeprefix(codecs.BOM_UTF8).lstrip()
-    while text.startswith(b'<!--'):
-        end = text.find(b'-->')
+    while text.startswith(b"<!--"):
+        end = text.find(b"-->")
         if end < 0:
             return False
-        text = text[end+3:].lstrip()
+        text = text[end + 3 :].lstrip()
     return bool(
-        re.match(rb'<\?xml\s[^?]*\?>', text)
-        or re.match(rb'<!DOCTYPE\s+TS(?:\s|>)', text)
-        or re.match(rb'<TS\s+version\s*=\s*[\"\'][0-9]+\.[0-9]+[\"\']', text)
+        re.match(rb"<\?xml\s[^?]*\?>", text)
+        or re.match(rb"<!DOCTYPE\s+TS(?:\s|>)", text)
+        or re.match(rb"<TS\s+version\s*=\s*[\"\'][0-9]+\.[0-9]+[\"\']", text)
     )
 
 
@@ -210,6 +214,7 @@ class ScannedManifest:
     format: str
     ecosystem: str
     dependencies: tuple[DeclaredDependency, ...]
+    namespace: str | None = None
 
 
 @dataclass(frozen=True)
@@ -251,9 +256,7 @@ def _is_reparse_point(file_stat: os.stat_result) -> bool:
     return bool(marker and attributes & marker)
 
 
-def _read_prefix_safely(
-    path: Path, expected: os.stat_result, byte_limit: int
-) -> bytes:
+def _read_prefix_safely(path: Path, expected: os.stat_result, byte_limit: int) -> bytes:
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
     flags |= getattr(os, "O_NOFOLLOW", 0)
     descriptor = os.open(path, flags)
@@ -262,7 +265,10 @@ def _read_prefix_safely(
         if not stat.S_ISREG(opened.st_mode):
             raise ScannerError("entry is not a regular file")
         expected_identity = (expected.st_dev, expected.st_ino)
-        if all(expected_identity) and (opened.st_dev, opened.st_ino) != expected_identity:
+        if (
+            all(expected_identity)
+            and (opened.st_dev, opened.st_ino) != expected_identity
+        ):
             raise ScannerError("entry changed while it was being opened")
         if (
             opened.st_size != expected.st_size
@@ -357,7 +363,7 @@ def _gradle_code_line(
                 structure.append(" ")
                 index += 1
             continue
-        if triplet in {"'''", '\"\"\"'}:
+        if triplet in {"'''", '"""'}:
             code.extend((" ", " ", " "))
             structure.extend((" ", " ", " "))
             multiline_quote = triplet
@@ -434,9 +440,7 @@ def _parse_gradle_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
                 if position < match.start()
             ]
             if any(current_depth >= item for item in active_depths):
-                dependencies.add(
-                    f"{match.group('group')}:{match.group('artifact')}"
-                )
+                dependencies.add(f"{match.group('group')}:{match.group('artifact')}")
         dependency_depths.extend(item for _, item in started_depths)
         depth += structure.count("{") - structure.count("}")
         dependency_depths = [
@@ -448,7 +452,7 @@ def _parse_gradle_manifest(content: bytes) -> tuple[DeclaredDependency, ...]:
 
 
 def _npm_dependencies_from_sections(
-    document: dict[str, Any]
+    document: dict[str, Any],
 ) -> tuple[DeclaredDependency, ...]:
     dependencies: set[str] = set()
     for section_name in NPM_DEPENDENCY_SECTIONS:
@@ -522,9 +526,7 @@ def _parse_spring_properties(content: bytes) -> tuple[ConfigurationFact, ...]:
     return tuple(sorted(recognized.values(), key=lambda item: (item.key, item.value)))
 
 
-def _manifest_evidence(
-    manifest: ScannedManifest, coordinate: str
-) -> dict[str, Any]:
+def _manifest_evidence(manifest: ScannedManifest, coordinate: str) -> dict[str, Any]:
     rule_id = f"{manifest.format}.dependency"
     identity = [manifest.path, "MANIFEST", coordinate, rule_id]
     digest = hashlib.sha256(canonical_json_bytes(identity)).hexdigest()
@@ -640,11 +642,17 @@ def scan_repository(
         jvm_module = False
         if any(entry.name == "bin" for entry in entries):
             for candidate in entries:
-                if candidate.name not in JVM_MANIFESTS or is_explicitly_excluded(candidate.path):
+                if candidate.name not in JVM_MANIFESTS or is_explicitly_excluded(
+                    candidate.path
+                ):
                     continue
                 try:
                     candidate_stat = candidate.stat(follow_symlinks=False)
-                    if stat.S_ISREG(candidate_stat.st_mode) and not candidate.is_symlink() and not _is_reparse_point(candidate_stat):
+                    if (
+                        stat.S_ISREG(candidate_stat.st_mode)
+                        and not candidate.is_symlink()
+                        and not _is_reparse_point(candidate_stat)
+                    ):
                         jvm_module = True
                         break
                 except OSError:
@@ -703,11 +711,14 @@ def scan_repository(
 
             if stat.S_ISDIR(entry_stat.st_mode):
                 if entry.name == "bin" and local_bin_output:
-                    diagnostics.append(_diagnostic(
-                        "GENERATED_OUTPUT_EXCLUDED", "INFO",
-                        "Module-local bin output excluded by .gitignore beside a JVM manifest",
-                        relative_path,
-                    ))
+                    diagnostics.append(
+                        _diagnostic(
+                            "GENERATED_OUTPUT_EXCLUDED",
+                            "INFO",
+                            "Module-local bin output excluded by .gitignore beside a JVM manifest",
+                            relative_path,
+                        )
+                    )
                     continue
                 if entry.name.lower() in DEFAULT_EXCLUDED_DIRECTORIES:
                     excluded["ignored directories"] += 1
@@ -734,22 +745,44 @@ def scan_repository(
                 continue
 
             if entry.name == ".gitignore" and jvm_module:
-                if entry_stat.st_size > min(limits.max_file_bytes, MAX_DECLARATION_BYTES):
-                    diagnostics.append(_diagnostic("OUTPUT_DECLARATION_UNREADABLE", "WARNING",
-                                                   "Output declaration exceeds size limit; bin preserved", relative_path))
+                if entry_stat.st_size > min(
+                    limits.max_file_bytes, MAX_DECLARATION_BYTES
+                ):
+                    diagnostics.append(
+                        _diagnostic(
+                            "OUTPUT_DECLARATION_UNREADABLE",
+                            "WARNING",
+                            "Output declaration exceeds size limit; bin preserved",
+                            relative_path,
+                        )
+                    )
                     continue
                 if total_bytes + entry_stat.st_size > limits.max_total_bytes:
-                    diagnostics.append(_diagnostic("TOTAL_SIZE_LIMIT_REACHED", "WARNING",
-                                                   "Scan stopped before exceeding total byte limit", relative_path))
+                    diagnostics.append(
+                        _diagnostic(
+                            "TOTAL_SIZE_LIMIT_REACHED",
+                            "WARNING",
+                            "Scan stopped before exceeding total byte limit",
+                            relative_path,
+                        )
+                    )
                     halted = True
                     break
                 try:
-                    content = _read_prefix_safely(Path(entry.path), entry_stat, MAX_DECLARATION_BYTES + 1)
+                    content = _read_prefix_safely(
+                        Path(entry.path), entry_stat, MAX_DECLARATION_BYTES + 1
+                    )
                     total_bytes += len(content)
                     local_bin_output = declares_local_bin_output(content)
                 except (OSError, UnicodeError, ScannerError, ValueError):
-                    diagnostics.append(_diagnostic("OUTPUT_DECLARATION_UNREADABLE", "WARNING",
-                                                   "Output declaration could not be read safely; bin preserved", relative_path))
+                    diagnostics.append(
+                        _diagnostic(
+                            "OUTPUT_DECLARATION_UNREADABLE",
+                            "WARNING",
+                            "Output declaration could not be read safely; bin preserved",
+                            relative_path,
+                        )
+                    )
                 continue
 
             manifest_format = {
@@ -758,7 +791,7 @@ def scan_repository(
                 "package.json": "npm",
                 "package-lock.json": "npm-lock",
                 "pom.xml": "maven",
-            }.get(entry.name)
+            }.get(entry.name) or extra_manifest_format(entry.name)
             if manifest_format is not None:
                 if entry_stat.st_size > limits.max_file_bytes:
                     diagnostics.append(
@@ -784,20 +817,36 @@ def scan_repository(
                     content = _read_prefix_safely(
                         Path(entry.path), entry_stat, limits.max_file_bytes + 1
                     )
-                    dependencies = (
-                        _parse_maven_manifest(content)
-                        if manifest_format == "maven"
-                        else (
-                            _parse_gradle_manifest(content)
-                            if manifest_format == "gradle"
+                    ecosystem = "npm" if manifest_format.startswith("npm") else "maven"
+                    namespace = None
+                    if manifest_format not in {"maven", "gradle", "npm", "npm-lock"}:
+                        ecosystem, names, namespace = parse_manifest(
+                            manifest_format, content
+                        )
+                        dependencies = tuple(DeclaredDependency(name) for name in names)
+                    else:
+                        dependencies = (
+                            _parse_maven_manifest(content)
+                            if manifest_format == "maven"
                             else (
-                                _parse_npm_manifest(content)
-                                if manifest_format == "npm"
-                                else _parse_npm_lockfile(content)
+                                _parse_gradle_manifest(content)
+                                if manifest_format == "gradle"
+                                else (
+                                    _parse_npm_manifest(content)
+                                    if manifest_format == "npm"
+                                    else _parse_npm_lockfile(content)
+                                )
                             )
                         )
-                    )
-                except (OSError, UnicodeError, ScannerError):
+                except (
+                    OSError,
+                    UnicodeError,
+                    ValueError,
+                    TypeError,
+                    AttributeError,
+                    ElementTree.ParseError,
+                    RecursionError,
+                ):
                     diagnostics.append(
                         _diagnostic(
                             "MANIFEST_PARSE_FAILED",
@@ -811,8 +860,9 @@ def scan_repository(
                     ScannedManifest(
                         relative_path,
                         manifest_format,
-                        "npm" if manifest_format.startswith("npm") else "maven",
+                        ecosystem,
                         dependencies,
+                        namespace,
                     )
                 )
                 total_bytes += entry_stat.st_size
@@ -848,13 +898,20 @@ def scan_repository(
                         module_paths[-1] = parse_module_paths(relative_path, content)
                         continue
                     facts = _parse_spring_properties(content)
-                except (OSError, UnicodeError, ScannerError, ValueError, RecursionError):
+                except (
+                    OSError,
+                    UnicodeError,
+                    ScannerError,
+                    ValueError,
+                    RecursionError,
+                ):
                     diagnostics.append(
                         _diagnostic(
                             "CONFIG_PARSE_FAILED",
                             "WARNING",
                             "Module paths config unsupported or invalid (strict JSON, no extends)"
-                            if is_module_config else "Spring properties could not be parsed safely",
+                            if is_module_config
+                            else "Spring properties could not be parsed safely",
                             relative_path,
                         )
                     )
@@ -936,12 +993,16 @@ def scan_repository(
                 )
                 continue
 
-            if extension == '.ts' and _is_xml_ts(prefix):
-                language = 'xml'
-                diagnostics.append(_diagnostic(
-                    'SOURCE_FORMAT_DISAMBIGUATED', 'INFO',
-                    'XML .ts document retained structurally; not TypeScript source', relative_path,
-                ))
+            if extension == ".ts" and _is_xml_ts(prefix):
+                language = "xml"
+                diagnostics.append(
+                    _diagnostic(
+                        "SOURCE_FORMAT_DISAMBIGUATED",
+                        "INFO",
+                        "XML .ts document retained structurally; not TypeScript source",
+                        relative_path,
+                    )
+                )
             files.append(ScannedFile(relative_path, language, entry_stat.st_size))
             total_bytes += entry_stat.st_size
 
@@ -1028,8 +1089,6 @@ def build_structural_ucg(
     external_package_ids: dict[tuple[str, str], str] = {}
     evidence: list[dict[str, Any]] = []
     for manifest in scan.manifests:
-        if manifest.ecosystem not in {"maven", "npm"}:
-            continue
         module_id = make_entity_id(repository_id, "MODULE", manifest.path)
         module_ids[manifest.path] = module_id
         entities.append(
@@ -1042,15 +1101,11 @@ def build_structural_ucg(
         for dependency in manifest.dependencies:
             if manifest.ecosystem == "maven":
                 group_id, artifact_id = dependency.coordinate.split(":", 1)
-                package_path = (
-                    "maven/" + group_id.replace(".", "/") + "/" + artifact_id
-                )
+                package_path = "maven/" + group_id.replace(".", "/") + "/" + artifact_id
             else:
-                package_path = f"npm/{dependency.coordinate}"
+                package_path = f"{manifest.ecosystem}/{dependency.coordinate}"
             package_key = (manifest.ecosystem, dependency.coordinate)
-            package_id = make_entity_id(
-                repository_id, "EXTERNAL_PACKAGE", package_path
-            )
+            package_id = make_entity_id(repository_id, "EXTERNAL_PACKAGE", package_path)
             if package_key not in external_package_ids:
                 external_package_ids[package_key] = package_id
                 entities.append(
@@ -1064,8 +1119,7 @@ def build_structural_ucg(
             evidence.append(manifest_evidence)
     for configuration in scan.configurations:
         evidence.extend(
-            configuration_evidence(configuration, fact)
-            for fact in configuration.facts
+            configuration_evidence(configuration, fact) for fact in configuration.facts
         )
 
     edges: list[dict[str, Any]] = []
@@ -1169,7 +1223,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-entries", type=int, default=ScanLimits.max_entries)
     parser.add_argument("--max-files", type=int, default=ScanLimits.max_files)
     parser.add_argument("--max-file-bytes", type=int, default=ScanLimits.max_file_bytes)
-    parser.add_argument("--max-total-bytes", type=int, default=ScanLimits.max_total_bytes)
+    parser.add_argument(
+        "--max-total-bytes", type=int, default=ScanLimits.max_total_bytes
+    )
     parser.add_argument("--max-depth", type=int, default=ScanLimits.max_depth)
     return parser
 

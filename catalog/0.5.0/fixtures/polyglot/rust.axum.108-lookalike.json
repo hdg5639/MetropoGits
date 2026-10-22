@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "rust:axum.Router"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

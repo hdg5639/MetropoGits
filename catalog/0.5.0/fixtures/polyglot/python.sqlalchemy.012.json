@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:sqlalchemy.create_engine"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:sqlalchemy"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

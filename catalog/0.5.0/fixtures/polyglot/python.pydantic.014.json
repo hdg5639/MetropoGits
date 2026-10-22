@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:pydantic"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "python:pydantic.BaseModel"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

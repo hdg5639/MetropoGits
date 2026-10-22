@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:requests.Session"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:requests"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

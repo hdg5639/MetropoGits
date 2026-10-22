@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "go:github.com/gin-gonic/gin.New"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "go:github.com/gin-gonic/gin"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

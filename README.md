@@ -61,6 +61,17 @@ with a diagnostic instead of being guessed.
 Unsupported source languages still produce generic buildings without guessed
 semantics.
 
+Python now has a bounded stdlib-AST adapter, and static module adapters cover
+Go, Rust, C/C++, C#, Kotlin, Scala, PHP, Ruby, Swift, Dart and Lua; Vue/Svelte
+script blocks feed the JS/TS adapter. Catalog 0.5.0 adds import-bound framework
+usage profiles across these ecosystems. These are tested subsets, not complete
+compilers or runtime discovery: see the [support matrix](docs/ANALYZER_SUPPORT.md).
+Eleven additional source-role facilities distinguish API hubs, UI pavilions,
+command terminals, model archives, data/compute labs, security checkpoints,
+worker workshops, object stores, search libraries and state hubs. Shapes are
+visual metaphors for evidenced source roles, never invented deployed services.
+Existing gate/test aggregate landmarks remain available at every LOD.
+
 Open `dist/showcase.svg` for the README composition: a fitted 3/4 isometric
 city with traceable visual blocks and up to 24 evidence routes. The generated
 snippet uses this image. `dist/preview.svg` retains the detailed top-down view.
@@ -142,6 +153,30 @@ a complete safe plan, not a truncated set of files. Previous campus styles remai
 available for reproduction; the older organic fan was rejected as visually
 repetitive. See [ADR-051](docs/adr/ADR-051.md); this is not a finished simulation
 of a university, service vehicles or real runtime traffic.
+
+For source-purpose precincts, use `--campus-style programmed` and
+`--building-style purposeful`. Evidenced roles and actual file relationships
+shape validation/data/interface/application commons, real activity anchors and
+varied building masses. Unknown code remains unclassified; derived forms and
+source members are inspectable. Infeasible forms retain connected complete
+fabric rather than dropping files. See [facility programs](docs/FACILITY_ARCHETYPES.md#source-purpose-precincts-and-massing-adr-056).
+
+Add `--campus-landmarks` to express nearby related source groups as a few larger
+hall/podium/anchor complexes. These persistent visual aggregates expose exact
+members, original edges and shared local targets; they are not new source
+entities or invented peer dependencies. Streets/courts/nature remain protected,
+and canonical World/City/UCG coordinates stay unchanged. See
+[campus landmarks](docs/FACILITY_ARCHETYPES.md#campus-scale-landmarks-adr-057).
+
+`--terrain mountain-landscape` adds optional multi-summit mountain reserves to
+the watershed experiment. Seed and available space can produce zero, one or two
+ranges, plus independently seeded lakes/foothills. Terrain0.8 bounds relief by
+ridge breadth (at most68 world units) rather than the old0.7 alpine height range;
+old saved terrain remains reconstructible. Outward-facing rock slopes and
+continuous shoulders avoid the old backface-culling interior artifact. These are visual
+units, not geographic metres. Nature precedes streets/parcels; certified crossings
+and conditional tunnels retain their existing checks. Old terrain modes and
+default results remain available unchanged. See [ADR-056](docs/adr/ADR-056.md).
 
 Rotated World exports also restore evidence-backed page/API/gate/test compounds
 when full clearance permits. They retain their exact source members at every

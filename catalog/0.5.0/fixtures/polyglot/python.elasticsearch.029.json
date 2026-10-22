@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:elasticsearch.Elasticsearch"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:elasticsearch"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

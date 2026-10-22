@@ -235,6 +235,7 @@ def complete_landscape(
     preset,
     *,
     max_features=MAX_FEATURES,
+    mountains=False,
 ):
     """Shared landform/ground finish; old seeds and output ordering stay intact."""
     scale = math.sqrt(area(envelope))
@@ -249,7 +250,12 @@ def complete_landscape(
         "HILL": 1
         + int(draw(derive(local, "hill-count")) * (min(6, 1 + int(scale / 200)))),
     }
-    for kind in ("LAKE", "HILL"):
+    if mountains:
+        counts["HILL"] = int(draw(derive(local, "foothill-count")) * 3)
+        counts["MOUNTAIN"] = (
+            0 if scale < 110 else int(draw(derive(local, "mountain-count")) * 3)
+        )
+    for kind in ("LAKE", "HILL", "MOUNTAIN") if mountains else ("LAKE", "HILL"):
         placed = 0
         for i in range(160):
             if placed >= counts[kind]:
@@ -258,7 +264,18 @@ def complete_landscape(
             center = point([x0 + (x1 - x0) * draw(fs), z0 + (z1 - z0) * draw(fs, 1)])
             major = min(65, max(6, scale * (0.025 + 0.045 * draw(fs, 2))))
             minor = major * (0.35 + 0.5 * draw(fs, 3))
-            feature = _landform(center, major, minor, draw(fs, 4) * math.tau, fs, kind)
+            if kind == "MOUNTAIN":
+                from .mountains import mountain_landform
+
+                major = min(160, max(36, scale * (0.075 + 0.06 * draw(fs, 2))))
+                minor = major * (0.34 + 0.22 * draw(fs, 3))
+                feature = mountain_landform(
+                    center, major, minor, draw(fs, 4) * math.tau, fs
+                )
+            else:
+                feature = _landform(
+                    center, major, minor, draw(fs, 4) * math.tau, fs, kind
+                )
             if (
                 not all(inside(p, envelope, 1) for p in feature["roadPolygon"])
                 or any(
@@ -304,7 +321,8 @@ def complete_landscape(
                 for s in parts
                 for p in (
                     [s]
-                    if version == "terrain/0.6" and not overlap(s, other)
+                    if version in ("terrain/0.6", "terrain/0.7")
+                    and not overlap(s, other)
                     else subtract(s, other)
                 )
             ]

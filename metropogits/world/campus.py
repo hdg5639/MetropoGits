@@ -521,20 +521,81 @@ def _mixed_pocket(plan, layout, zone, pairs, roads, diagnostics=None):
     return choices, kept, plots, site
 
 
+def retains_external_connections(original, replacement, roads):
+    """Optional campus replacement must not sever existing shortcut junctions.
+
+    Check actual geometric graph components, not the assumption that every
+    declared external road is already a connected backbone anchor. Never add a
+    fictional road to rescue a campus; retain the original local plan instead.
+    """
+    from .infrastructure import atomic_streets
+
+    anchors = {tuple(p) for r in roads for p in (r['start'], r['end'])}
+
+    def components(lanes):
+        adjacency = defaultdict(set)
+        for road in atomic_streets(roads + lanes):
+            a, b = tuple(road['start']), tuple(road['end'])
+            adjacency[a].add(b)
+            adjacency[b].add(a)
+        labels = {}
+        for start in sorted(adjacency):
+            if start in labels:
+                continue
+            label = start
+            queue = [start]
+            while queue:
+                at = queue.pop()
+                if at in labels:
+                    continue
+                labels[at] = label
+                queue.extend(sorted(adjacency[at] - labels.keys()))
+        return labels
+
+    before, after = components(original), components(replacement)
+    retained = {}
+    for at in sorted(anchors):
+        if at not in before:
+            continue
+        if at not in after:
+            return False
+        old = before[at]
+        if old in retained and retained[old] != after[at]:
+            return False
+        retained[old] = after[at]
+    return True
+
+
 def apply_campuses(
-    plans, selections, zones, polygons, seed, roads, terrain, pairs, style="quad"
+    plans, selections, zones, polygons, seed, roads, terrain, pairs, style="quad", *, grouping_pairs=None, reserved_zone=None
 ):
     """At most one actual campus per parent; retained plans stay byte-identical."""
-    decisions = {z["id"]: eligibility(z, pairs, seed) for z in zones}
+    if style == 'precinct' and reserved_zone is None:
+        # A new optional precinct must not erase working campuses elsewhere.
+        decisions, sites = apply_campuses(
+            plans, selections, zones, polygons, seed, roads, terrain, pairs, 'programmed')
+        for site in sites.values():
+            site.update(architecturalSites=[], facilityAssignments={},
+                        facilitySiteVersion='campus-plan/0.8',
+                        estateFallback='NO_SAFE_RESERVATION_PROGRAMMED_RETAINED')
+        return decisions, sites
+    decision_pairs = grouping_pairs if style in ('estate','precinct') and grouping_pairs is not None else pairs
+    decisions = {z["id"]: eligibility(z, decision_pairs, seed) for z in zones}
+    if style in ('estate','precinct'):
+        for decision in decisions.values():
+            decision['eligibilityBasis'] = 'STATIC_SOURCE_AFFINITY_NOT_RUNTIME_TRAFFIC'
     sites = {}
     for z in sorted(zones, key=lambda z: (decisions[z["id"]]["draw"], z["id"])):
         decision = decisions[z["id"]]
         if not decision["eligible"] or decision["draw"] >= decision["probability"]:
             continue
+        if style == 'precinct' and z['id'] != reserved_zone:
+            decision['reason'] = 'NO_SAFE_PRECINCT_RESERVATION' if reserved_zone is None else 'RESERVED_OTHER_NEIGHBORHOOD'
+            continue
         if sites:
             decision["reason"] = "PARENT_DIVERSITY_LIMIT"
             continue
-        if style in ("neighborhood","landscape","organic","fabric"):
+        if style in ("neighborhood","landscape","organic","fabric","programmed","estate","precinct"):
             from .campus_neighborhood import neighborhood_layout
             if style=='landscape':
                 from .campus_landscape import landscape_layout as neighborhood_layout
@@ -542,11 +603,17 @@ def apply_campuses(
                 from .campus_organic import organic_layout as neighborhood_layout
             if style=='fabric':
                 from .campus_fabric import fabric_layout as neighborhood_layout
+            if style=='programmed':
+                from .campus_programmed import programmed_layout as neighborhood_layout
+            if style in ('estate','precinct'):
+                from .campus_estates import estate_layout as neighborhood_layout
 
             fit = {}
             try:
                 layout = neighborhood_layout(z, polygons[z['id']], selections[z['id']]['axis'],
-                                             derive(seed,z['id'],VERSION),roads,terrain,pairs,fit)
+                                             derive(seed,z['id'],VERSION),roads,terrain,
+                                             grouping_pairs if style in ('estate','precinct') and grouping_pairs is not None else pairs,fit,
+                                             **(dict(observed_pairs=pairs, **({'connect_perimeter': True} if style == 'precinct' else {})) if style in ('estate','precinct') else {}))
             except ValueError as error:
                 if not str(error).startswith('campus neighborhood ') or 'limit' not in str(error):
                     raise
@@ -557,6 +624,23 @@ def apply_campuses(
                 decision['reason'] = 'FULL_NEIGHBORHOOD_FIT_FALLBACK'
                 continue
             plots, walks, site = layout
+            if style in ('estate','precinct') and site.get('estateFallback'):
+                original = eligibility(z, pairs, seed)
+                if not original['eligible'] or original['draw'] >= original['probability']:
+                    decision['reason'] = 'NEW_SITE_FIT_UNAVAILABLE_ORIGINAL_GRAMMAR_RETAINED'
+                    continue
+            if style == 'programmed' and not retains_external_connections(plans[z['id']][1], walks, roads):
+                from .campus_fabric import fabric_layout
+                from .campus_programmed import annotate_program
+                safe_layout = fabric_layout(z, polygons[z['id']], selections[z['id']]['axis'],
+                                            derive(seed,z['id'],VERSION),roads,terrain,pairs,fit)
+                annotate_program(z, safe_layout)
+                if safe_layout is not None:
+                    plots, walks, site = safe_layout
+                    fit['programFallback'] = 'CONNECTED_FABRIC_RETAINED'
+            if not retains_external_connections(plans[z['id']][1], walks, roads):
+                decision['reason'] = 'RETAINED_EXTERNAL_CONNECTIVITY_FALLBACK'
+                continue
             plans[z['id']] = (plots,walks,site['axis'],None)
             sites[z['id']] = site
             decision.update(status='SELECTED',reason='WHOLE_NEIGHBORHOOD_PLANNED')
@@ -607,6 +691,9 @@ def apply_campuses(
                 decision["reason"] = "RETAINED_CAPACITY_OR_CONNECTIVITY_FALLBACK"
             continue
         original, lanes, plots, site = mixed
+        if not retains_external_connections(plans[z['id']][1], lanes + site['walkways'], roads):
+            decision['reason'] = 'RETAINED_EXTERNAL_CONNECTIVITY_FALLBACK'
+            continue
         plans[z["id"]] = (
             original + plots,
             lanes + site["walkways"],
@@ -649,13 +736,21 @@ def collect_plan(blocks, style="quad"):
     if style == 'fabric':
         from .campus_fabric import VERSION as FABRIC_VERSION
         result.update(version=FABRIC_VERSION,style=style)
+    if style == 'programmed':
+        from .campus_programmed import VERSION as PROGRAM_VERSION
+        result.update(version=PROGRAM_VERSION,style=style)
+    if style == 'estate':
+        from .campus_estates import VERSION as ESTATE_VERSION
+        result.update(version=ESTATE_VERSION,style=style)
+    if style == 'precinct':
+        result.update(version='campus-plan/0.9', style=style)
     return result
 
 
 def validate_campuses(world):
     """Reconstruction is checked upstream; independently check occupied courts."""
     style = world["campusPlan"].get("style", "quad")
-    if style not in ("quad", "varied", "neighborhood", "landscape", "organic", "fabric") or world["campusPlan"] != collect_plan(
+    if style not in ("quad", "varied", "neighborhood", "landscape", "organic", "fabric", "programmed", "estate", "precinct") or world["campusPlan"] != collect_plan(
         world["zoning"]["blocks"], style
     ):
         raise ValueError("campus plan differs from verified block records")
@@ -679,7 +774,7 @@ def validate_campuses(world):
     for site in sites:
         if not set(site["anchorEntityIds"]).issubset(site["memberEntityIds"]):
             raise ValueError("campus anchor is not an original member")
-        if style in ('neighborhood','landscape','organic','fabric'):
+        if style in ('neighborhood','landscape','organic','fabric','programmed','estate','precinct'):
             zone=next(z for z in world['zoning']['zones'] if z['id']==site['zoneId'])
             if site['memberEntityIds']!=sorted(zone['memberEntityIds']) or site['retainedMemberEntityIds']:
                 raise ValueError('campus precinct must include the entire source neighborhood')

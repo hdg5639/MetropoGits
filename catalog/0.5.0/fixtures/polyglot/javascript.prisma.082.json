@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:@prisma/client.PrismaClient"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:@prisma/client"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

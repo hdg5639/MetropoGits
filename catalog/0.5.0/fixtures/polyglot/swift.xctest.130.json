@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "swift:XCTest"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "swift:XCTest.XCTestCase"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

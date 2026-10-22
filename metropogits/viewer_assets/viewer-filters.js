@@ -3,6 +3,17 @@
 
   const confidenceOrder = ["UNKNOWN", "DECLARED", "HEURISTIC", "DIRECT", "RESOLVED"];
 
+  function compoundPresentation(facility, isSelected = false) {
+    const sourceComplex = Boolean(facility.role?.startsWith('SOURCE_COMPLEX:'));
+    return {
+      persistentLabel: isSelected || Boolean(facility.campusProgram && !sourceComplex),
+      eyebrow: sourceComplex ? 'SOURCE COMPLEX · VISUAL AGGREGATE'
+        : facility.campusProgram ? 'CAMPUS LANDMARK · VISUAL AGGREGATE'
+        : facility.role ? 'ROLE LANDMARK · VISUAL AGGREGATE' : 'CITY BLOCK · VISUAL AGGREGATE',
+      purposeLabel: sourceComplex ? 'Derived source purpose' : 'Derived campus purpose',
+    };
+  }
+
   function sorted(values, preferredOrder = []) {
     const order = new Map(preferredOrder.map((value, index) => [value, index]));
     return [...values].sort((left, right) => {
@@ -1359,6 +1370,7 @@
       hash = Math.imul(hash, 16777619);
     }
     let [wall, roof] = policy.palettes[(hash >>> 0) % policy.palettes.length];
+    if(policy.detailColors?.[part.materialKind]) [wall,roof]=policy.detailColors[part.materialKind];
     const role = policy.roleColors[building.archetype] || policy.roleColors.GENERIC_BUILDING;
     const blend = (a, b, t) => "#" + [1, 3, 5].map(i =>
       Math.round(parseInt(a.slice(i,i+2),16)*(1-t) + parseInt(b.slice(i,i+2),16)*t)
@@ -1370,6 +1382,7 @@
   }
 
   globalThis.METROPOGITS_FILTERS = Object.freeze({
+    compoundPresentation,
     materialPart,
     physicalStreetColor,
     physicalMarkingVisible,

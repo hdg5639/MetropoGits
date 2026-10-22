@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "php:Illuminate.Routing.Controller"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "php:Illuminate.Routing.Controller"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

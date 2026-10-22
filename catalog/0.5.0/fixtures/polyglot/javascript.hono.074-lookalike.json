@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "javascript:hono"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "go:testing"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

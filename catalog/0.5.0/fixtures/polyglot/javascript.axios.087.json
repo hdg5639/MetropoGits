@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:axios.get"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:axios"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

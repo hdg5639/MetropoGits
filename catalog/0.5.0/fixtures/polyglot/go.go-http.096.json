@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "go:net/http.NewServeMux"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "go:net/http"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

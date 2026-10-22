@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:jakarta.servlet.http.HttpServlet"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "java:jakarta.servlet.http.HttpServlet"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

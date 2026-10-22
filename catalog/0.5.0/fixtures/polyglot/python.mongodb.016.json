@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:pymongo.MongoClient"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:pymongo"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

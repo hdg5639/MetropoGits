@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "AST",
+      "value": "vue:component"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

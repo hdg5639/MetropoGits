@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:koa.default"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:koa"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

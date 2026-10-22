@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "javascript:@nestjs/common.Injectable"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:@nestjs/common"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

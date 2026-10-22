@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:redis.Redis"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:redis"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

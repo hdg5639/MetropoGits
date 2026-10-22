@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "php:PHPUnit.Framework.TestCase"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

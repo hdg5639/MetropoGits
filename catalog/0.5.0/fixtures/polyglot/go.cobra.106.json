@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "AST",
+      "value": "go:github.com/spf13/cobra.Command"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "go:github.com/spf13/cobra"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "go:github.com/gofiber/fiber/v2.New"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "go:github.com/gofiber/fiber/v2"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

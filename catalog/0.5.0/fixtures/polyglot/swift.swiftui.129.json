@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "swift:SwiftUI"
+    },
+    {
+      "kind": "INHERITANCE",
+      "value": "swift:SwiftUI.View"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

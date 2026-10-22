@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:sqlalchemy.ext.asyncio.create_async_engine"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:sqlalchemy"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

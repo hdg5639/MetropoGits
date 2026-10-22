@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "javascript:express.Router"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "javascript:express"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

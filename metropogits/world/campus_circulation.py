@@ -125,7 +125,7 @@ def verified_omissions(world, reserved):
     notes = [n for n in world["diagnostics"] if n.get("version") == VERSION]
     if not notes:
         return []
-    if len(notes) != 1 or world.get("campusPlan", {}).get("style") not in ("neighborhood","landscape","organic","fabric"):
+    if len(notes) != 1 or world.get("campusPlan", {}).get("style") not in ("neighborhood","landscape","organic","fabric","programmed","estate","precinct"):
         raise ValueError("invalid campus circulation policy record")
     note = notes[0]
     sites = [b["campusSite"] for b in world["zoning"]["blocks"] if "campusSite" in b]

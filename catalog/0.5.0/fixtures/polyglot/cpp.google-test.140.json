@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "cpp:gtest/gtest.h.TEST"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "cpp:gtest/gtest.h"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "swift:Vapor.Application"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "swift:Vapor"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

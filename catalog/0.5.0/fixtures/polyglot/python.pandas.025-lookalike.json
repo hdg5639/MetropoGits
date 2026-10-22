@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:pandas"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

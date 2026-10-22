@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "ANNOTATION",
+      "value": "csharp:Microsoft.AspNetCore.Authorization.Authorize"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "csharp:Microsoft.AspNetCore.Authorization"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

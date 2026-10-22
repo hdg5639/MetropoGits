@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "swift:SwiftUI"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

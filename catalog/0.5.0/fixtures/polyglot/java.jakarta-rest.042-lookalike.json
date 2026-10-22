@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "java:jakarta.ws.rs.Path"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

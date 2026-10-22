@@ -319,6 +319,13 @@ def natural_faces(world):
     for feature in t["features"]:
         faces=[]
         for face in lifted_faces(feature["faces"],t):
+            if feature.get('landform') == 'MOUNTAIN_RANGE':
+                # Old0.7 saved meshes had downward winding; preserve canonical
+                # data while exporting a closed-looking outward surface.
+                a,b,c=face['points'][:3]
+                ny=(b[2]-a[2])*(c[0]-a[0])-(b[0]-a[0])*(c[2]-a[2])
+                if ny<0:
+                    face=dict(face,points=list(reversed(face['points'])))
             p=face["points"]
             for a,b in zip(world["envelope"],world["envelope"][1:]+world["envelope"][:1]):
                 p=clip_face(p,[b[1]-a[1],0,a[0]-b[0]],dot(a,[b[1]-a[1],a[0]-b[0]]))

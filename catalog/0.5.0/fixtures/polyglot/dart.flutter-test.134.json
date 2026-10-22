@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "dart:package:flutter_test/flutter_test.dart.testWidgets"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "dart:package:flutter_test/flutter_test.dart"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

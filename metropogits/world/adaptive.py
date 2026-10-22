@@ -290,11 +290,19 @@ def plan_adaptive(
     campus=False,
     campus_pairs=None,
     campus_style="quad",
+    campus_groups=None,
+    capacity_programs=None,
 ):
     parent = clusters[0]["parentId"]
-    parent_candidates, parent_roads, main, pattern = adaptive_field(
-        polygon, seed, base, parent, stitch=True, morphology=True
-    )
+    if capacity_programs is not None:
+        from .capacity import program_field, planning_scale, VERSION as CAPACITY_VERSION, LEGACY_VERSION
+        capacity_version = CAPACITY_VERSION if any('cohortId' in p for p in capacity_programs.values()) else LEGACY_VERSION
+        scale = planning_scale(members)
+        parent_candidates, parent_roads, main, pattern = program_field(polygon, seed, base, parent, scale, version=capacity_version)
+    else:
+        parent_candidates, parent_roads, main, pattern = adaptive_field(
+            polygon, seed, base, parent, stitch=True, morphology=True
+        )
     by_id = {b["entityId"]: b for b in members}
     profiles = pattern_profiles(clusters, base)
     demands = [
@@ -306,6 +314,16 @@ def plan_adaptive(
         )
         for z in clusters
     ]
+    if capacity_programs is not None and campus and campus_style == 'precinct':
+        from .campus import eligibility
+        from .campus_reservation import program_demand
+        eligible = [(eligibility(z, campus_groups or campus_pairs or {}, seed), z) for z in clusters
+                    if 12 <= len(z['memberEntityIds']) <= 256]
+        chosen = next((z for decision, z in sorted(eligible, key=lambda v: (v[0]['draw'], v[1]['id']))
+                       if decision['eligible'] and decision['draw'] < decision['probability']), None)
+        if chosen:
+            required = program_demand(chosen, campus_groups or campus_pairs or {})['total'] * 2
+            demands = [(key, max(value, required) if key == chosen['id'] else value) for key, value in demands]
     old = {z["id"]: z for z in previous_zones}
     reuse = set(old) == {z["id"] for z in clusters}
     notes = []
@@ -340,26 +358,38 @@ def plan_adaptive(
             ]
             continue
         selections = profile_plan(clusters, polygons, pattern, skeleton(parent_roads))
+        reserved_main, reserved_pattern = main, pattern
+        if campus and campus_style == 'precinct':
+            from .campus_reservation import reserve_precinct
+            reserved_main, reserved_pattern = reserve_precinct(
+                clusters, polygons, seed, main, pattern, terrain,
+                campus_groups if campus_groups is not None else campus_pairs or {},
+            )
+        from .capacity import program_local_sites
         plans = {
-            z["id"]: local_sites(
+            z["id"]: (program_local_sites if capacity_programs is not None else local_sites)(
                 polygons[z["id"]],
                 derive(seed, z["id"], VERSION),
                 selections[z["id"]],
                 parent_candidates,
                 parent_roads,
-                main,
+                reserved_main,
+                **(dict(scale=scale, members=[by_id[k] for k in z['memberEntityIds']]) if capacity_programs is not None else {}),
             )
             for z in clusters
         }
+        if capacity_programs is not None:
+            from .capacity import program_regions
+            plans = {z['id']: program_regions(plans[z['id']], selections[z['id']], reserved_pattern, polygons[z['id']]) for z in clusters}
         plans, boundary, ports = reserve_complete_plan(
-            plans, polygons, main, polygon, pattern, clusters, pairs
+            plans, polygons, reserved_main, polygon, reserved_pattern, clusters, pairs
         )
-        actual_main, actual_pattern = main, pattern
+        actual_main, actual_pattern = reserved_main, reserved_pattern
         if terrain:
             from .terrain import terrain_plan
 
             plans, actual_main, boundary, ports, actual_pattern = terrain_plan(
-                plans, main, boundary, ports, pattern, polygon, terrain
+                plans, reserved_main, boundary, ports, reserved_pattern, polygon, terrain
             )
         unreserved_plans = plans
         if porous:
@@ -369,6 +399,27 @@ def plan_adaptive(
                 plans, actual_main, boundary, polygon, actual_pattern,
                 {z["id"]: len(z["memberEntityIds"]) for z in clusters}, terrain,
             )
+        if capacity_programs is not None:
+            from .capacity import fit_programs, capacity_campuses, update_campus_addresses
+            campus_decisions, campus_sites = {}, {}
+            if campus:
+                campus_decisions, campus_sites = capacity_campuses(
+                    plans, selections, clusters, polygons, seed, actual_main + boundary, terrain,
+                    campus_pairs if campus_pairs is not None else pairs, campus_style, campus_groups,
+                    actual_pattern.get('campusReservation', {}).get('zoneId'), version=capacity_version)
+            complete_roads = actual_main + boundary + [r for plan in plans.values() for r in plan[1]]
+            for z in clusters:
+                key = z['id']
+                site = campus_sites.get(key)
+                choices = {s['id']: s for s in plans[key][0]}
+                preferred = {identity: choices[slot]['center'] for identity, slot in
+                             (site or {}).get('facilityAssignments', {}).items() if slot in choices}
+                plans[key] = fit_programs(
+                    [dict(by_id[k], blockProfile='CAMPUS' if site else selections[key]['profile']) for k in z['memberEntityIds']],
+                    polygons[key], plans[key], complete_roads, terrain, derive(seed, key, VERSION),
+                    courts=(site or {}).get('courts', []), preferences=preferred)
+                if site and len(plans[key][0]) == len(z['memberEntityIds']):
+                    update_campus_addresses(site, plans[key][0])
         failed = [
             z["id"]
             for z in clusters
@@ -396,17 +447,19 @@ def plan_adaptive(
             reuse = False
         else:
             counts = {z["id"]: len(z["memberEntityIds"]) for z in clusters}
+            physical_cohorts = capacity_programs is not None and any('cohortId' in p for p in capacity_programs.values())
             demands = [
                 (
                     key,
                     value
-                    * max(
+                    * ((max(1.35, min(2, (counts[key] + 2) / max(1, len(plans[key][0])))) if key in failed else 1)
+                       if physical_cohorts else max(
                         0.75,
                         min(
                             1.7,
                             math.sqrt((counts[key] + 2) / max(1, len(plans[key][0]))),
                         ),
-                    ),
+                    )),
                 )
                 for key, value in demands
             ]
@@ -414,13 +467,15 @@ def plan_adaptive(
         return None, [], [], notes, False, [], [], pattern
     # First finish the original capacity repairs. An optional pocket must not
     # rescue an earlier allocation attempt and change unrelated zone boundaries.
-    campus_decisions, campus_sites = {}, {}
-    if campus:
+    if capacity_programs is None or not campus:
+        campus_decisions, campus_sites = {}, {}
+    if campus and capacity_programs is None:
         from .campus import apply_campuses
 
         campus_decisions, campus_sites = apply_campuses(
             plans, selections, clusters, polygons, seed, actual_main + boundary, terrain,
-            campus_pairs if campus_pairs is not None else pairs, campus_style)
+            campus_pairs if campus_pairs is not None else pairs, campus_style, grouping_pairs=campus_groups,
+            reserved_zone=actual_pattern.get('campusReservation', {}).get('zoneId'))
     main = actual_main + boundary
     pattern = actual_pattern
     if campus_sites:
@@ -457,8 +512,9 @@ def plan_adaptive(
             )
         if key in campus_sites:
             campus_ids = set(campus_sites[key]['memberEntityIds'])
-            if campus_style in ('neighborhood','landscape','organic','fabric'):
+            if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate','precinct'):
                 preferred = dict(preferred or {})
+                preferred.update(campus_sites[key].get('facilityAssignments', {}))
                 preferred.update(campus_sites[key]['anchorSlots'])
             placed = []
             for is_campus in (False,True):
@@ -476,9 +532,12 @@ def plan_adaptive(
         else:
             placed = populate(
                 population, choices, parent, paths, local_seed, preferred)
-            assignment, affinity = optimize_addresses(
-                placed, local_pairs, {}, local_seed, preferred or ())
-            placed = populate(population, choices, parent, paths, local_seed, assignment)
+            if capacity_programs is None:
+                assignment, affinity = optimize_addresses(
+                    placed, local_pairs, {}, local_seed, preferred or ())
+                placed = populate(population, choices, parent, paths, local_seed, assignment)
+            else:
+                affinity = dict(algorithm='capacity-program-frontage/0.1', preservedSourcePrograms=True)
         block_id = "world:block:" + derive(key, VERSION)
         for p in placed:
             p.update(zoneId=key, blockId=block_id)
@@ -504,7 +563,7 @@ def plan_adaptive(
         if campus:
             block['campusDecision'] = campus_decisions[key]
         if key in campus_sites:
-            block.update(urbanGrammar='CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric') else 'MIXED_CAMPUS',campusSite=campus_sites[key])
+            block.update(urbanGrammar='CAMPUS' if campus_style in ('neighborhood','landscape','organic','fabric','programmed','estate','precinct') else 'MIXED_CAMPUS',campusSite=campus_sites[key])
         if regions:
             block["planningRegions"] = regions
         elif selections[key]["mode"] == "INHERITED" and base == "HYBRID":

@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "dart:package:dio/dio.dart.Dio"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "dart:package:dio/dio.dart"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

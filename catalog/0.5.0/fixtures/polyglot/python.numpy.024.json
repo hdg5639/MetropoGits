@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "python:numpy.array"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "python:numpy"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

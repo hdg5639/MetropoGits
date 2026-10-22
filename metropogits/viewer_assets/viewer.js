@@ -170,6 +170,8 @@
     PORT: ["#38bdf8", "#0369a1", "#0c4a6e"],
     SERVICE_OFFICE: ["#60a5fa", "#1d4ed8", "#1e3a8a"],
     STRUCTURED_WAREHOUSE: ["#34d399", "#047857", "#064e3b"],
+    ...Object.fromEntries(Object.entries(data.facilityModels || {}).map(([name,model]) => [name,
+      [1,.65,.42].map(scale => '#' + [1,3,5].map(i => Math.round(parseInt(model.color.slice(i,i+2),16)*scale).toString(16).padStart(2,'0')).join(''))])),
   };
   const networkColors = {
     DEPENDENCY_ROAD: "#a8b5c8",
@@ -769,6 +771,11 @@
     return outline;
   }
 
+  // Ordinary Canvas fallback uses the same facility parts as WebGL/CPU.
+  // Cache once, not on animation frames; World already supplies rotated parts.
+  const facilityGeometry = new Map(scene.buildings.filter(b => data.facilityModels?.[b.archetype])
+    .map(b => [b.entityId, {parts: globalThis.METROPOGITS_BUILDING_FORMS.partsFor(b).map(p => ({...p,
+      footprint:[[p.x,p.z],[p.x+p.width,p.z],[p.x+p.width,p.z+p.depth],[p.x,p.z+p.depth]]}))}]));
   let showRoleColors = false;
   function materialPalette(building, part, top, isSelected = false) {
     const material = filterEngine.materialPart(data.buildingMaterials, building, part, top,
@@ -780,7 +787,7 @@
   }
 
   function drawBuilding(building, visualKind = 'building', forceSelected = false, physical = null) {
-    const oriented=physical || orientedBuildings[building.entityId];
+    const oriented=physical || orientedBuildings[building.entityId] || facilityGeometry.get(building.entityId);
     if(oriented) {
       const isSelected=forceSelected || selected(visualKind,building.entityId);
       const topHeight = Math.max(...oriented.parts.map(p => p.y + p.height));
@@ -791,7 +798,15 @@
       }
       for(const part of oriented.parts) {
         const palette=materialPalette(building, part, topHeight, isSelected);
-        const lift=data.surface ? .2 : 0;
+        const lift=data.surface || part.meshFaces ? .2 : 0;
+        if(part.meshFaces) {
+          for(const face of part.meshFaces) {
+            const depth=face.points.reduce((sum,[x,y,z])=>{const r=rotatePoint(x,z);return sum+r.x+r.z+y;},0)/face.points.length;
+            faces.push({points:face.points.map(([x,y,z])=>project(x,z,y+lift)),depth,
+              color:palette[face.surface==='roof'?0:1],roof:face.surface==='roof'});
+          }
+          continue;
+        }
         const bottom=part.footprint.map(([x,z])=>project(x,z,part.y+lift));
         const top=part.footprint.map(([x,z])=>project(x,z,part.y+part.height+lift));
         const depth=part.footprint.map(([x,z])=>{const r=rotatePoint(x,z);return r.x+r.z;});
@@ -1197,7 +1212,7 @@
   function showAggregate(aggregateId) {
     const facility = aggregateFacilities.get(aggregateId);
     inspector.replaceChildren();
-    inspector.append(element("p", facility.role ? "ROLE LANDMARK · VISUAL AGGREGATE" : "CITY BLOCK · VISUAL AGGREGATE", "eyebrow"));
+    inspector.append(element("p", filterEngine.compoundPresentation(facility).eyebrow, "eyebrow"));
     inspector.append(element("h2", facility.title || districtLabel(districts.get(facility.districtId))));
     inspector.append(element(
       "p",
@@ -1210,6 +1225,12 @@
     detailRow(details, "Owning district", districtLabel(districts.get(facility.districtId)));
     detailRow(details, "Districts", facility.memberDistrictIds?.length || 0);
     detailRow(details, "Representation", "Deterministic visual block aggregate");
+    if (facility.campusProgram) {
+      detailRow(details, filterEngine.compoundPresentation(facility).purposeLabel, facility.campusProgram.label);
+      detailRow(details, "Original source edges", facility.sourceEdgeIds.length);
+      detailRow(details, "Shared local targets", facility.sharedTargetIds.length);
+      inspector.append(element('p','Grouped by original edges or shared local targets. Shared targets do not create a dependency between constituent files. Unknown roles remain unknown.','campus-landmark-disclosure'));
+    }
     inspector.append(details);
     if (facility.role) facilityControls(inspector, facility);
     if (facility.role) factSection(inspector, "GROUPING EVIDENCE", facility.evidenceIds.map(evidenceLabel));
@@ -1240,6 +1261,29 @@
     inspector.append(element("h2", entity.path || entityId));
     const details = element("dl", undefined, "detail-list");
     detailRow(details, "Archetype", building.archetype);
+    if (data.buildingPrograms?.[entityId]) {
+      const program = data.buildingPrograms[entityId];
+      detailRow(details, "Source-purpose form", program.label + " (derived, not a runtime claim)");
+      if(program.archetypeId) {
+        detailRow(details,'Architecture recipe',program.archetypeId+' · '+program.version);
+        detailRow(details,'Source role gate',program.verifiedRole || 'Unknown — neutral architecture');
+        if(program.frontageDetail)detailRow(details,'Entrance treatment',program.frontageDetail.style+' · decorative; original access retained');
+        if(program.massingLayout)detailRow(details,'Modern massing',program.massingLayout+' · procedural composition, not an additional source role');
+        if(program.landAllocation) {
+          const land=program.landAllocation;
+          detailRow(details,land.replanned?'Physical capacity planning':'Physical land admission',land.status+' · '+land.version);
+          detailRow(details,land.replanned?'Source glyph / physical site':'Address / physical envelope',land.sourceEnvelope.width+' × '+land.sourceEnvelope.depth+' → '+land.allocatedEnvelope.width+' × '+land.allocatedEnvelope.depth+(land.replanned?' · districts, streets and access replanned; source identity retained':' · original door and source ownership retained'));
+        }
+        detailRow(details,'Rendered architectural height',program.renderedHeight+(program.heightPolicy?' · inside derived architectural capacity':' · inside the original height envelope'));
+        if(program.heightPolicy) {
+          detailRow(details,'Legacy source-scene height',program.sourceHeight+' · not an architectural maximum');
+          detailRow(details,'Architectural height capacity',program.heightPolicy.capacity+' · '+program.heightPolicy.version+' · form/footprint, not import count');
+          if(program.heightAllocation) detailRow(details,'District height allocation',program.heightAllocation.allocatedHeight+' · '+program.heightAllocation.version+' · continuous district field, not file importance');
+        }
+      }
+      detailRow(details, "Observed file neighbours", `${program.incomingFiles} incoming / ${program.outgoingFiles} outgoing · ${program.declarations} declarations`);
+    }
+    if (data.facilityModels?.[building.archetype]) detailRow(details, "Facility", data.facilityModels[building.archetype].label + " (source-role metaphor, not a runtime deployment)");
     if (data.buildingMaterials) detailRow(details, "Appearance", "Procedural wall tones; roof accents indicate the existing role. Not source material evidence.");
     detailRow(details, "Language", entity.language || "Unknown");
     detailRow(details, "Height", building.height);
@@ -1321,6 +1365,11 @@
     detailRow(details, "Files (including subdistricts)", `${visibleChildCount}/${districtBuildings.length} match filters`);
     detailRow(details, "Parent", district.parentId ? districtLabel(districts.get(district.parentId)) : "City root");
     detailRow(details, "Size", `${district.width} × ${district.depth}`);
+    const heightPlan = data.urbanHeightPlan?.districts[districtId] || data.urbanHeightPlan?.districts[data.semanticZoning?.[districtId]?.parentId];
+    if(heightPlan) {
+      detailRow(details, 'Urban planning preference', heightPlan.preferredTypology+' · derived advice, not a constructed master plan');
+      detailRow(details, 'Height composition', heightPlan.centers.length+' continuous field centers · '+data.urbanHeightPlan.version+' · aesthetic, not source facilities');
+    }
     inspector.append(details);
     showZoningDetails(districtId, offset);
     inspector.append(
@@ -1360,12 +1409,16 @@
       factSection(inspector,'LOCAL BLOCK PLANS',blocks.map(b=>`${b.planningProfile} · ${b.memberEntityIds.length} files · ${b.id}`));
       for (const block of blocks.filter(b=>b.campusSite)) {
         const site=block.campusSite;
+        if (site.sourceProgram) factSection(inspector,'SOURCE-PURPOSE PRECINCT',[
+          site.sourceProgram.label + ' · derived from actual member roles',
+          ...Object.entries(site.sourceProgram.roleCounts).map(([role,count])=>`${role}: ${count} source files`),
+          ...site.sourceProgram.evidenceIds.slice(0,8).map(evidenceLabel)]);
         inspector.append(element('p',site.scope==='NEIGHBORHOOD'
           ? `CAMPUS NEIGHBORHOOD · ${site.variant} · All ${site.memberEntityIds.length} source files in ${site.activityCenters.length} connected activity groups. Local vehicle rows replaced by shared courts and pedestrian frontage. Existing major through roads remain. Walking access is physical planning, not a research or runtime-communication claim.`
           : `MIXED CAMPUS · ${site.variant} · ${site.memberEntityIds.length} of ${block.memberEntityIds.length} source files around ${site.courts.length} reserved courts. Remaining files retain the local street grammar. Walking access is physical planning, not a research or runtime-communication claim.`, 'campus-summary'));
         for (const [i,group] of (site.activityCenters || []).entries()) {
           const count=site.memberEntityIds.filter(k=>group.slotIds.includes(orientedBuildings[k]?.slotId)).length;
-          const button=focusButton(...group.center,`Activity group ${i+1} · ${count} original files`);
+          const button=focusButton(...group.center,`${group.programRoles?.join(' + ') || 'Activity group '+(i+1)} · ${count} original files`);
           button.classList.add('campus-group');button.dataset.anchorEntityId=group.anchorEntityId;inspector.append(button);
         }
         factSection(inspector,'CAMPUS BASIS',[block.campusDecision.reason,`${block.campusDecision.supportingEntityIds.length} evidence-supported test files · ${block.campusDecision.internalPairCount} original internal file pairs`]);

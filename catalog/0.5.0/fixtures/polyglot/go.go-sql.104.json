@@ -1,0 +1,13 @@
+{
+  "facts": [
+    {
+      "kind": "CALL",
+      "value": "go:database/sql.Open"
+    },
+    {
+      "kind": "IMPORT",
+      "value": "go:database/sql"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}

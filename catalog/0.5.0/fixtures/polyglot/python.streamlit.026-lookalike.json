@@ -1,0 +1,9 @@
+{
+  "facts": [
+    {
+      "kind": "IMPORT",
+      "value": "python:streamlit"
+    }
+  ],
+  "schemaVersion": "catalog-fixture/0.1"
+}
