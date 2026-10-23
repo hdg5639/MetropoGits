@@ -267,7 +267,7 @@
   const cameraPolicy = Object.freeze({
     fieldOfView: Math.PI / 4,
     horizontalMargin: 0.94,
-    pitch: 0.62,
+    pitch: 0.52,
     verticalMargin: 0.92,
     yaw: -0.68,
   });
