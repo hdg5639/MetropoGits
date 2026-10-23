@@ -10,13 +10,14 @@ from collections import Counter
 
 from .geometry import point, q
 from .seed import derive
+from .contemporary_forms import CONTEMPORARY_SHAPES, contemporary_faces
 from .source_programs import file_topology
 
 VERSION = "architecture/0.5"
 # Presentation revisions must not reshuffle existing source silhouettes.
 MASSING_SEED_VERSION = "architecture/0.1"
 MAX_PARTS = 18
-MAX_FACES = 240
+MAX_FACES = 480
 
 
 def part(x, y, z, w, h, d, shape="BOX", material=1):
@@ -538,6 +539,8 @@ def unit_faces(shape, roof_pitch=0.64):
                 [[x, roof_pitch if y == 0.64 else y, z] for x, y, z in vertices]
             ]
         ]
+    if shape in CONTEMPORARY_SHAPES:
+        return contemporary_faces(shape)
     if shape != "BOX":
         raise ValueError("unknown architectural primitive")
     return []
@@ -788,7 +791,15 @@ def catalog_world(world, graph, *, massing="catalog"):
         layout = None
         if massing == "modern":
             from .modern_massing import modern_grammar
-            specs, layout = modern_grammar(recipe["grammar"], source, seed)
+            district = height_plan["districts"].get(source.get("districtId"), {})
+            district = dict(district, **district.get("zones", {}).get(source.get("zoneId"), {}))
+            character = dict(
+                typology=district.get("preferredTypology"),
+                intensity=height_plan["allocations"].get(identity, {}).get("fieldIntensity", 0.5),
+                campus=district.get("campusPotential", 0),
+                industrial=district.get("industrialPotential", 0),
+                interface=district.get("interfacePotential", 0))
+            specs, layout = modern_grammar(recipe["grammar"], source, seed, character)
         # Independent roof/material stream; no geometry changes when UI filters.
         facade_seed = derive(seed, "facade")
         roof_seed = derive(seed, "roof")

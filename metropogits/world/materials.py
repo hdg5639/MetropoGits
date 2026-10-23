@@ -6,15 +6,15 @@ from metropogits.facilities import FACILITY_COLORS
 VERSION = "building-materials/0.1"
 # Architectural tones, not claims about real source-code construction materials.
 PALETTES = [
-    ["#b9b6aa", "#717a7d"],  # limestone / slate
-    ["#a6b5bb", "#586d7b"],  # cool concrete / metal
-    ["#c2ae93", "#7a6c60"],  # sandstone / warm roof
-    ["#ad9e94", "#665f60"],  # muted masonry
-    ["#c2c6c3", "#667879"],  # light concrete
-    ["#95a5ae", "#52616e"],  # blue-grey cladding
+    ["#d8dcdc", "#59656c"],  # white ceramic / graphite roof
+    ["#8fa7b3", "#3f5666"],  # blue-grey glass cladding
+    ["#cdbfa8", "#6a625a"],  # champagne stone
+    ["#6f7f89", "#38464f"],  # graphite metal panel
+    ["#e3e6e4", "#7b878c"],  # pale concrete
+    ["#7e9aa6", "#34505f"],  # teal curtain wall
 ]
 # Presentation-only entrance glazing, roller shutter and canopy cladding.
-DETAIL_COLORS = {12: ["#354e59", "#566771"], 13: ["#56616a", "#728087"],
+DETAIL_COLORS = {2: ["#6a93aa", "#c4d0d6"], 12: ["#354e59", "#566771"], 13: ["#56616a", "#728087"],
                  14: ["#77838a", "#9ba5a9"]}
 ROLE_COLORS = dict(
     GENERIC_BUILDING="#a2adbb", SERVICE_OFFICE="#60a5fa", GATE="#f472b6",
@@ -55,6 +55,6 @@ def part_material(building, part, top, full_tint=False):
         wall = roof = role
     elif building["archetype"] in ROLE_COLORS and building["archetype"] != "GENERIC_BUILDING":
         if part["y"] + part["height"] >= top - 1e-6:
-            roof = blend(roof, role, .78)
+            roof = blend(roof, role, .42)
     shade = part.get("shade", 0)
     return dict(wall=blend(wall, "#ffffff", shade), roof=blend(roof, "#ffffff", shade))

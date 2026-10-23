@@ -35,7 +35,10 @@ def _sections(part, y):
                     t = (y - a[1]) / (b[1] - a[1])
                     cuts.append([a[i] + t * (b[i] - a[i]) for i in (0, 2)])
         if len(cuts) >= 3:
-            sections.append(hull(cuts))
+            section = hull(cuts)
+            # inside() expects the same winding as rectangular footprints.
+            area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(section, section[1:] + section[:1]))
+            sections.append(section[::-1] if area < 0 else section)
     return sections
 
 

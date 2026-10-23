@@ -8,8 +8,8 @@ VERSION = "physical-height/0.1"
 # Envelope aspect ratios, NOT file metrics, incoming counts or importance.
 # Large footprints can support larger volumes; there is no universal10-unit cap.
 RATIOS = dict(
-    tower=7,
-    twin=6,
+    tower=9,
+    twin=8,
     mast=6,
     terrace=4.5,
     bar=3.5,

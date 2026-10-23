@@ -19,9 +19,9 @@ from test_reference_skyline import fixture
 class ArchitecturalHeightTests(unittest.TestCase):
     def test_ten_is_not_a_ceiling_or_replaced_with_another_universal_ceiling(self):
         source = dict(width=6, depth=6, height=10)
-        self.assertEqual(height_capacity(source, "tower"), 42)
+        self.assertEqual(height_capacity(source, "tower"), 54)
         self.assertEqual(
-            height_capacity(dict(source, width=20, depth=20), "tower"), 140
+            height_capacity(dict(source, width=20, depth=20), "tower"), 180
         )
         for form in RATIOS:
             self.assertEqual(

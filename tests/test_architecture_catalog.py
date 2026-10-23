@@ -54,7 +54,7 @@ class ArchitectureCatalogTests(unittest.TestCase):
                             self.assertTrue(0 <= y <= 17.0002, identity)
 
     def test_all_primitives_face_outwards_including_dome_poles_and_roof_caps(self):
-        for shape in ("DRUM", "CHAMFER", "DOME", "GABLE", "SAWTOOTH"):
+        for shape in ("DRUM", "CHAMFER", "DOME", "GABLE", "SAWTOOTH", "ROUNDED", "TAPER", "TWIST", "LEAN", "SPIRE", "WEDGE"):
             center = [0.5, 0 if shape == "DOME" else 0.3, 0.5]
             for points, surface in unit_faces(shape):
                 n = face_normal(points)

@@ -5,12 +5,16 @@ from .seed import derive
 VERSION = "urban-architecture/0.2"
 
 
-def modern_grammar(form, envelope, seed):
+def modern_grammar(form, envelope, seed, character=None):
     from .architecture_catalog import part as b, grammar
 
     composition = int(derive(seed, VERSION, "composition"), 16) % 8
     variant = composition % 4
     width, depth = envelope["width"], envelope["depth"]
+    from .contemporary_massing import contemporary_grammar
+    contemporary = contemporary_grammar(form, envelope, int(derive(seed, VERSION, "contemporary"), 16), character)
+    if contemporary:
+        return contemporary
     if form in ('warehouse', 'sawtooth', 'shed', 'hall'):
         if variant == 0:
             return [b(.04, 0, .06, .92, .45, .72, material=4),
