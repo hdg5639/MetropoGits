@@ -1227,11 +1227,81 @@
       + "background:rgba(8,12,22,.86);color:#9fe8b0;font:11px/1.4 ui-monospace,Consolas,monospace;"
       + "border:1px solid #2b3a55;border-radius:6px;pointer-events:none;white-space:pre";
     document.body.append(panel);
-    return { panel, intervals: [], renderMs: [], lastStart: 0, builds: [], lastBuild: null };
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Run perf test (12 s)";
+    button.style.cssText = "position:fixed;right:8px;bottom:150px;z-index:51;padding:6px 10px;cursor:pointer;"
+      + "background:#16315a;color:#e8f1ff;border:1px solid #4d7bc0;border-radius:6px;font:12px sans-serif";
+    document.body.append(button);
+    return { panel, button, intervals: [], renderMs: [], lastStart: 0, builds: [], lastBuild: null,
+      testing: false, testGaps: [] };
   })();
+  // One-click scripted check: orbit, then zoom across LOD levels, then report a verdict.
+  function runPerfTest() {
+    if (!perf || perf.testing) return;
+    const saved = { yaw: state.yaw, pitch: state.pitch, distance: state.distance,
+      x: state.targetX, y: state.targetY, z: state.targetZ };
+    perf.testing = true;
+    perf.phase = "orbit";
+    perf.testGaps = [];
+    const buildsBefore = perf.builds.length;
+    perf.button.disabled = true;
+    perf.button.textContent = "Testing... don't touch the page";
+    const base = state.distance;
+    const finish = () => {
+      perf.testing = false;
+      perf.phase = null;
+      state.yaw = saved.yaw; state.pitch = saved.pitch; state.distance = saved.distance;
+      state.targetX = saved.x; state.targetY = saved.y; state.targetZ = saved.z;
+      scheduleRender();
+      const gaps = perf.testGaps;
+      const avg = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
+      const hitches = gaps.filter((g) => g > 50).length;
+      const worst = gaps.length ? Math.max(...gaps) : 0;
+      const rebuilds = perf.builds.slice(buildsBefore);
+      const slowest = rebuilds.length ? Math.max(...rebuilds) : 0;
+      const fps = avg ? 1000 / avg : 0;
+      const verdict = fps >= 50 && hitches <= 5 ? "GOOD (smooth)"
+        : fps >= 30 ? "OK (some stutter)" : "SLOW (visible stutter)";
+      perf.button.disabled = false;
+      perf.button.textContent = `${verdict} | ${fps.toFixed(0)} fps, ${hitches} hitches >50ms, worst ${worst.toFixed(0)} ms, `
+        + `${rebuilds.length} rebuilds (slowest ${slowest.toFixed(0)} ms) | click to rerun`;
+    };
+    const started = performance.now();
+    const orbitMs = 4000;
+    const orbit = () => {
+      if (performance.now() - started < orbitMs) {
+        state.yaw += 0.015;
+        scheduleRender();
+        requestAnimationFrame(orbit);
+        return;
+      }
+      const factors = [0.35, 0.35, 1 / 0.35, 1 / 0.35, 0.35, 0.35, 1 / 0.35, 1 / 0.35];
+      let step = 0;
+      const zoom = () => {
+        if (step >= factors.length) { finish(); return; }
+        state.distance = Math.max(8, state.distance * factors[step]);
+        step += 1;
+        scheduleRender();
+        setTimeout(zoom, 700);
+      };
+      state.distance = base;
+      perf.phase = "zoom";
+      zoom();
+    };
+    requestAnimationFrame(orbit);
+  }
+  perf?.button.addEventListener("click", runPerfTest);
   function perfFrame(start, end) {
     if (!perf) return;
     if (perf.lastStart && start - perf.lastStart < 250) perf.intervals.push(start - perf.lastStart);
+    // While orbiting, the gap between renders is the frame time. After a zoom step the page
+    // idles until the next step, so the cost of that render itself is the stall.
+    if (perf.testing && perf.phase === "orbit" && perf.lastStart && start - perf.lastStart < 2000) {
+      perf.testGaps.push(start - perf.lastStart);
+    } else if (perf.testing && perf.phase === "zoom") {
+      perf.testGaps.push(end - start);
+    }
     perf.lastStart = start;
     perf.renderMs.push(end - start);
     for (const list of [perf.intervals, perf.renderMs]) if (list.length > 90) list.shift();
