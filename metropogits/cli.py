@@ -353,6 +353,21 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--height", type=int, default=675)
     build.add_argument("--previous-scene", type=Path)
 
+    city = commands.add_parser(
+        "city", help="build a procedural city (terrain, districts, contemporary architecture)"
+    )
+    _add_json_option(city, suppress_default=True)
+    _add_scan_options(city)
+    city.add_argument("--out", type=Path, required=True)
+    city.add_argument("--theme", default="minimal")
+    city.add_argument("--seed", help="override the deterministic world seed")
+    city.add_argument(
+        "--terrain",
+        choices=("watershed-landscape", "mountain-landscape", "varied-landscape",
+                 "river-landscape", "river-corridor", "flat"),
+        default="watershed-landscape",
+    )
+
     history = commands.add_parser(
         "history", help="build a timeline from ordered build directories"
     )
@@ -440,6 +455,16 @@ def _run(args: argparse.Namespace) -> CommandResult:
         preview = renderer(scene, graph, args.width, args.height)
         _write_bytes(args.out, preview)
         return CommandResult(f"Wrote SVG preview: {args.out}", str(args.out))
+
+    if args.command == "city":
+        from metropogits.world_city import build_world_city, summary_line
+
+        result = build_world_city(
+            args.repo, args.out, repository_id=args.repo_id, theme=args.theme,
+            revision=args.revision, source_url=args.source_url,
+            limits=_limits_from_args(args), seed=args.seed, terrain=args.terrain,
+        )
+        return CommandResult(summary_line(result), str(args.out))
 
     if args.command == "build":
         previous_scene = (

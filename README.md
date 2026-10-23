@@ -8,6 +8,25 @@ release remains deliberately deferred under `release/readiness.json`. See
 remaining Pages promotion condition and the separate visual-completion work.
 The repository is public; the official Pages demo is not enabled yet.
 
+## Procedural city quick start
+
+For the full experience (seeded Voronoi districts, rivers, hills, parks and
+contemporary architecture chosen by each district's analyzed character), run one
+command. It performs the structural analysis, then the procedural world pipeline
+with the recommended urban preset:
+
+```powershell
+python -m pip install -e .
+metropogits city --repo . --out city --seed my-seed
+```
+
+Open `city/index.html` for the 3D explorer; `city/showcase.svg` is the README
+image. The same inputs and seed always reproduce the same city. Very small
+repositories that cannot host a certified river crossing fall back to flat
+terrain automatically. Generation takes seconds for small repositories and
+roughly a minute or two for ~1,000 files. Source code is never executed. The
+structural preview below remains the fast, minimal output.
+
 ## Structural preview quick start
 
 Install the local CLI and build a deterministic structural city:
