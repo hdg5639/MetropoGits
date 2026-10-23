@@ -45,16 +45,21 @@ def build_world_city(repo, output, *, repository_id=None, theme="minimal", revis
         build_repository(repo, structure, repository_id, theme, revision, source_url, limits=limits)
         read = lambda name: loads_strict_json((structure / name).read_text(encoding="utf8"))
         scene, graph = read("city.json"), read("graph.ucg.json")
-    attempts = [terrain] + (["flat"] if terrain != "flat" else [])
+    from metropogits.world.seed import derive
+
+    # Same preset first. Without an explicit seed, a rare unlucky layout (relief
+    # leaving no street corridor) is retried with deterministic derived seeds,
+    # then flat terrain for repositories too small for certified crossings.
+    seeds = [seed] if seed else [None] + [derive("city-retry", str(i)) for i in range(2)]
+    attempts = [(terrain, s) for s in seeds] + ([("flat", seeds[0])] if terrain != "flat" else [])
     world, used = None, None
-    for preset in attempts:
+    for index, (preset, trial_seed) in enumerate(attempts):
         try:
-            world = generate_world(scene, graph, seed=seed, terrain=preset, **RECOMMENDED)
+            world = generate_world(scene, graph, seed=trial_seed, terrain=preset, **RECOMMENDED)
             used = preset
             break
         except ValueError:
-            # Very small repositories cannot host certified water crossings.
-            if preset == attempts[-1]:
+            if index == len(attempts) - 1:
                 raise
     validation = validate_world(world, scene, graph)
     artifacts = package_world(world, scene, graph, validation, building_style="urban")

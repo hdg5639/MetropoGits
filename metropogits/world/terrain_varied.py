@@ -293,7 +293,8 @@ def complete_landscape(
             if (
                 not all(inside(p, envelope, 1) for p in feature["roadPolygon"])
                 or any(
-                    overlap(feature["roadPolygon"], expanded(f["roadPolygon"], 5))
+                    # Organic relief keeps a street-width corridor to every neighbour.
+                    overlap(feature["roadPolygon"], expanded(f["roadPolygon"], 10 if organic else 5))
                     for f in features
                 )
                 or any(

@@ -23,8 +23,8 @@ def organic_counts(local, scale):
         return max(low, min(high, int(expected * spread + extra)))
 
     return {
-        "LAKE": count("organic-lakes", scale / 300, 0, 4),
-        "HILL": count("organic-hills", scale / 150, 1, 7),
+        "LAKE": count("organic-lakes", scale / 420, 0, 3),
+        "HILL": count("organic-hills", scale / 210, 1, 6),
     }
 
 
@@ -86,26 +86,72 @@ def organic_lake(center, major, minor, yaw, seed):
                 noBuildPolygon=no_build, roadPolygon=road, height=0.09, faces=_rounded(faces))
 
 
+HILL_TYPES = (
+    # name, weight, (profile power, profile exponent), relative height
+    ("RIDGE", 0.24, (1.6, 1.1), 0.85),
+    ("MASSIF", 0.26, (1.7, 1.2), 1.1),
+    ("DOME", 0.22, (2.4, 0.9), 0.62),
+    ("MESA", 0.14, (2.2, 0.8), 0.8),
+    ("CONE", 0.14, (1.5, 1.5), 1.0),
+)
+
+
+def _hill_type(seed):
+    pick, total = draw(seed, 6), 0.0
+    for entry in HILL_TYPES:
+        total += entry[1]
+        if pick < total:
+            return entry
+    return HILL_TYPES[-1]
+
+
 def organic_hill(center, major, minor, yaw, seed):
+    kind, _, (power, exponent), relative = _hill_type(seed)
+    if kind == "RIDGE":
+        minor = min(minor, major * (0.26 + 0.16 * draw(seed, 7)))
+    elif kind in ("CONE", "DOME"):
+        minor = max(minor, major * (0.7 + 0.25 * draw(seed, 7)))
     count, rings = 15, (1.0, 0.72, 0.44, 0.2)
-    outline = _outline(center, major, minor, yaw, seed, count=count, roughness=0.5)
+    outline = _outline(center, major, minor, yaw, seed, count=count, roughness=0.5 if kind != "DOME" else 0.28)
     polygon, no_build, road = _reserves(outline, 2, 6.5)
-    height = q(min(56, max(8, major * (0.42 + 0.3 * draw(seed, 3)))))
-    summit_count = 1 + (draw(seed, 4) > 0.55) + (draw(seed, 5) > 0.85)
-    summits = []
-    for s in range(summit_count):
-        angle = draw(seed, 160 + s) * math.tau
-        reach = major * (0.05 if s == 0 else 0.22 + 0.16 * draw(seed, 170 + s))
-        summits.append((center[0] + math.cos(angle) * reach, center[1] + math.sin(angle) * reach,
-                        1 if s == 0 else 0.62 + 0.28 * draw(seed, 180 + s),
-                        major * (0.5 + 0.3 * draw(seed, 190 + s))))
+    height = q(min(56, max(8, major * (0.42 + 0.3 * draw(seed, 3)) * relative)))
+    u, v = [math.cos(yaw), math.sin(yaw)], [-math.sin(yaw), math.cos(yaw)]
+    summits = []  # x, z, amplitude, radius
+    if kind == "RIDGE":
+        peaks = 2 + int(draw(seed, 4) * 3)
+        for s in range(peaks):
+            t = (s + 0.5) / peaks * 1.5 - 0.75 + (draw(seed, 160 + s) - 0.5) * 0.12
+            across = (draw(seed, 165 + s) - 0.5) * minor * 0.3
+            summits.append((center[0] + u[0] * major * t + v[0] * across,
+                            center[1] + u[1] * major * t + v[1] * across,
+                            0.62 + 0.38 * draw(seed, 180 + s), major * (0.28 + 0.1 * draw(seed, 190 + s))))
+    elif kind == "MASSIF":
+        for s in range(3 + int(draw(seed, 4) * 3)):
+            angle, reach = draw(seed, 160 + s) * math.tau, major * (0.05 + 0.4 * draw(seed, 170 + s))
+            summits.append((center[0] + math.cos(angle) * reach, center[1] + math.sin(angle) * reach,
+                            0.55 + 0.45 * draw(seed, 180 + s), major * (0.26 + 0.14 * draw(seed, 190 + s))))
+    else:
+        offset = major * 0.12 * (draw(seed, 160) - 0.5)
+        summits.append((center[0] + u[0] * offset, center[1] + u[1] * offset, 1.0,
+                        major * (0.55 if kind == "DOME" else 0.42)))
+    phase = [draw(seed, 600 + n) * math.tau for n in range(4)]
+    plateau = 0.72 if kind == "MESA" else None
+    skew = (draw(seed, 8) - 0.5) * 0.5  # steeper on one flank
 
     def elevation(x, z, rho):
         if rho >= 1:
             return 0.005
-        crest = max(a * math.exp(-(math.hypot(x - sx, z - sz) / r) ** 2) for sx, sz, a, r in summits)
-        noise = 0.93 + 0.14 * draw(seed, 300 + int(abs(x * 3.1 + z * 1.7)) % 400)
-        return q(max(0.005, height * (1 - rho ** 1.8) ** 1.3 * (0.42 + 0.58 * crest) * noise))
+        open_air = 1.0
+        for sx, sz, a, r in summits:
+            open_air *= 1 - a * math.exp(-(math.hypot(x - sx, z - sz) / r) ** 2)
+        crest = 1 - open_air  # union of peaks keeps saddles between summits
+        relief = (0.7 * math.sin(0.31 * x + phase[0]) * math.sin(0.27 * z + phase[1])
+                  + 0.3 * math.sin(0.83 * x + 0.6 * z + phase[2]))
+        flank = 1 + skew * ((x - center[0]) * u[0] + (z - center[1]) * u[1]) / max(1e-6, major)
+        value = height * (1 - rho ** power) ** exponent * (0.3 + 0.7 * crest) * (1 + 0.13 * relief) * flank
+        if plateau:
+            value = min(value, height * plateau)
+        return q(max(0.005, min(height * 1.05, value)))
 
     grid = []
     for rho in rings:
@@ -115,7 +161,7 @@ def organic_hill(center, major, minor, yaw, seed):
             row.append([q(x), elevation(x, z, rho), q(z)])
         grid.append(row)
     peak = max(summits, key=lambda s: s[2])
-    top = [q(peak[0]), q(max(max(v[1] for v in row) for row in grid) * 1.04), q(peak[1])]
+    top = [q(peak[0]), q(max(max(v[1] for v in row) for row in grid) * (1.0 if plateau else 1.04)), q(peak[1])]
     faces = []
 
     stops = ((0.0, (0x4a, 0x68, 0x44)), (0.3, (0x58, 0x77, 0x4c)), (0.55, (0x6c, 0x80, 0x5e)),
@@ -157,7 +203,7 @@ def organic_hill(center, major, minor, yaw, seed):
                            height=q(3.6 + draw(seed, 1100 + n) * 2.4)))
     return dict(id="world:nature:" + derive(seed), kind="HILL", center=point(center), polygon=polygon,
                 noBuildPolygon=no_build, roadPolygon=road, height=height, faces=faces, trees=forest,
-                landform="RIDGE" if summit_count > 1 and major / minor > 1.8 else "HILLS")
+                landform="RIDGE" if kind == "RIDGE" else "HILLS", hillType=kind)
 
 
 def _rounded(faces):
