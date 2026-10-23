@@ -145,7 +145,7 @@ def plan_zones(
         )
     else:
         polygons, allocation = power_partition(
-            polygon, demands, derive(seed, "zone-sites")
+            polygon, demands, derive(seed, "zone-sites"), voronoi=not old
         )
     diagnostics = []
     for attempt in range(3):

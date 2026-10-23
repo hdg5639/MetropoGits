@@ -42,10 +42,10 @@ def demand(buildings, profile="GRID"):
         if any('cohortId' in b for b in buildings):
             from .compound_sites import units
             parcel = sum((u['width'] + 2) * (u['depth'] + 2) for u in units(buildings))
-            access = parcel * .35
+            access = parcel * .3
         else:
-            access = parcel * 1.1
-    reserve = (parcel + access) * 0.25
+            access = parcel * .8
+    reserve = (parcel + access) * (0.12 if any(b.get("_capacityProgram") for b in buildings) else 0.25)
     boundary = 64 * math.sqrt(len(buildings)) + 400
     return dict(
         parcelArea=parcel,

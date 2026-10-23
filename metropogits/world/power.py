@@ -6,6 +6,7 @@ from .geometry import area, centroid, clip, dot, partition, point, shared_bounda
 
 VERSION = "clipped-power/0.1"
 MAX_CELLS = 7
+MAX_DISTRICT_CELLS = 16
 MAX_ITERATIONS = 32
 AREA_TOLERANCE = 0.015
 
@@ -41,7 +42,7 @@ def _cells(polygon, sites, weights):
     return result
 
 
-def power_partition(polygon, demands, seed):
+def power_partition(polygon, demands, seed, *, sites=None, max_cells=MAX_CELLS, voronoi=False):
     """Newton area balancing with backtracking; explicit shared-cut fallback."""
     if (
         not 3 <= len(polygon) <= 512
@@ -62,7 +63,7 @@ def power_partition(polygon, demands, seed):
         raise ValueError("power partition requires bounded CCW convex land")
     demands = sorted(demands)
     if (
-        not 1 <= len(demands) <= MAX_CELLS
+        not 1 <= len(demands) <= max_cells
         or len({key for key, _ in demands}) != len(demands)
         or any(not math.isfinite(value) or value <= 0 for _, value in demands)
     ):
@@ -72,7 +73,18 @@ def power_partition(polygon, demands, seed):
         return baseline, dict(
             algorithm="unsplit/0.1", iterations=0, maxRelativeAreaError=0
         )
-    sites = [centroid(baseline[key]) for key, _ in demands]
+    if sites is None:
+        # Seeded blue-noise Voronoi sites per planning area; bisection centroids
+        # remain the deterministic fallback when the land cannot host them.
+        from .seed import draw
+        # Only for a cold plan: growth hints must keep the previous bisection frames stable.
+        scattered = voronoi_sites(polygon, len(demands), seed) if voronoi and len(demands) > 1 else None
+        if scattered:
+            order = sorted(range(len(scattered)), key=lambda i: draw(seed, 20_000 + i))
+            sites = [scattered[i] for i in order]
+        else:
+            sites = [centroid(baseline[key]) for key, _ in demands]
+    sites = list(sites)
     weights = [0.0] * len(sites)
     total = sum(value for _, value in demands)
     targets = [area(polygon) * value / total for _, value in demands]
@@ -137,3 +149,51 @@ def power_partition(polygon, demands, seed):
         maxRelativeAreaError=error(list(baseline.values())),
         fallbackReason=reason,
     )
+
+
+def voronoi_sites(polygon, count, seed):
+    """Deterministic blue-noise sites: seeded scatter relaxed by Lloyd iterations."""
+    from .geometry import bounds, inside
+    from .seed import draw
+
+    x0, z0, x1, z1 = bounds(polygon)
+    sites, counter = [], 0
+    while len(sites) < count and counter < 4000:
+        candidate = [x0 + (x1 - x0) * draw(seed, counter), z0 + (z1 - z0) * draw(seed, counter + 1)]
+        counter += 2
+        if inside(candidate, polygon, 0.02 * math.sqrt(area(polygon))):
+            sites.append(candidate)
+    if len(sites) < count:
+        return None
+    for _ in range(5):
+        cells = _cells(polygon, sites, [0.0] * count)
+        if any(len(c) < 3 for c in cells):
+            return None
+        sites = [centroid(c) for c in cells]
+    return sites
+
+
+def voronoi_districts(polygon, demands, seed):
+    """Seeded weighted-Voronoi districts with exact-enough capacity areas.
+
+    Returns (polygons, allocation) or None when the land or balancing does not
+    support it; callers then keep the proven capacity-bisection geography.
+    """
+    from .seed import draw
+
+    demands = sorted(demands)
+    if not 2 <= len(demands) <= MAX_DISTRICT_CELLS:
+        return None
+    sites = voronoi_sites(polygon, len(demands), seed)
+    if sites is None:
+        return None
+    order = sorted(range(len(sites)), key=lambda i: draw(seed, 10_000 + i))
+    sites = [sites[i] for i in order]
+    try:
+        polygons, allocation = power_partition(
+            polygon, demands, seed, sites=sites, max_cells=MAX_DISTRICT_CELLS)
+    except ValueError:
+        return None
+    if allocation["algorithm"] != VERSION:
+        return None
+    return polygons, dict(allocation, algorithm="weighted-voronoi/0.1")

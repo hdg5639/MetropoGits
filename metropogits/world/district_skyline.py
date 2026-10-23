@@ -57,7 +57,7 @@ def district_skyline(world, graph):
         # Pure structural fallback cannot become a CBD from a utility's fan-in.
         # With verified programs, aggregate district potential can influence
         # amplitude, never an individual entity's incoming reference count.
-        amplitude = q(0.42 + coverage * (0.42 * planning["verticalPotential"] + 0.1))
+        amplitude = q(0.62 + 0.38 * min(1, coverage * planning["verticalPotential"] * 4))
         for p in sources:
             influence = 0
             for c in centers:
@@ -69,10 +69,20 @@ def district_skyline(world, graph):
                 version=ALLOCATION_VERSION, districtId=identity,
                 fieldIntensity=q(amplitude * influence),
                 basis="CONTINUOUS_DISTRICT_FIELD_NOT_FILE_REFERENCE_COUNT", derived=True)
+        zone_characters = {}
+        for region, members in sorted(regions.items()):
+            if region == identity:
+                continue
+            zone = engine.profile(region, [p["entityId"] for p in members], kind="zone")["planning"]
+            zone_characters[region] = dict(
+                preferredTypology=zone["preferredTypology"], campusPotential=zone["campusPotential"],
+                industrialPotential=zone["industrialPotential"], interfacePotential=zone["interfacePotential"])
         districts[identity] = dict(
+            zones=zone_characters,
             characterVersion=CHARACTER_VERSION,
             sourceCount=len(sources), preferredTypology=planning["preferredTypology"],
             verticalPotential=planning["verticalPotential"], semanticCoverage=q(coverage),
+            campusPotential=planning["campusPotential"], industrialPotential=planning["industrialPotential"],
             amplitude=amplitude, centers=centers,
             spatialDemand=profile["spatialDemand"])
     return dict(version=VERSION, presentationOnly=True, districts=districts,
@@ -88,7 +98,8 @@ def allocated_height(capacity, form, allocation):
     if not math.isfinite(intensity) or not 0 <= intensity <= 1:
         raise ValueError("invalid district height field")
     if form in ("tower", "twin", "mast"):
-        fraction = 0.28 + 0.72 * intensity
+        # Convex curve: quiet fringes, a few dramatic peaks at district cores.
+        fraction = 0.24 + 0.76 * intensity ** 1.6
     elif form in ("bar", "terrace"):
         fraction = 0.5 + 0.5 * intensity
     elif form in ("court", "atrium", "gate", "pods", "archive"):

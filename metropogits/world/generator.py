@@ -8,6 +8,7 @@ from scripts.validate_city import validate_document
 from metropogits.street_diagonals import hull
 from . import VERSION
 from .geometry import area, centroid, inside, partition, point, shared_boundaries
+from .power import voronoi_districts
 from .infrastructure import atomic_streets, route_world
 from .seams import stitch_unused_streets
 from .junctions import (
@@ -471,11 +472,18 @@ def generate_world(
                 # Natural reserves precede district polygons, roads and source addresses.
                 terrain_data = (generate_terrain(envelope, resolved_seed, terrain) if terrain in (RIVER_PRESET, VALLEY_PRESET, *landscape_presets)
                                 else generate_terrain(envelope, resolved_seed))
-            polygons = partition(
-                envelope,
-                [(k, budgets[k]["total"]) for k in grouped],
-                derive(resolved_seed, "district-topology"),
-            )
+            polygons = None
+            if attempt < 3:
+                voronoi = voronoi_districts(
+                    envelope, [(k, budgets[k]["total"]) for k in grouped],
+                    derive(resolved_seed, "district-voronoi"))
+                polygons = voronoi[0] if voronoi else None
+            if polygons is None:
+                polygons = partition(
+                    envelope,
+                    [(k, budgets[k]["total"]) for k in grouped],
+                    derive(resolved_seed, "district-topology"),
+                )
         polygons, envelope = shared_boundaries(polygons, envelope)
         envelope = list(
             reversed(hull([p for polygon in polygons.values() for p in polygon]))

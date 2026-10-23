@@ -118,13 +118,14 @@ class CharacterEngine:
         service = programs["APPLICATION"] / max(1, count)
         testing = programs["VALIDATION"] / max(1, count)
         compute = programs["COMPUTE"] / max(1, count)
+        interface = programs["INTERFACE"] / max(1, count)
         data = programs["DATA"] / max(1, count)
         cohesion = len(local) / max(1, len(local) + len(boundary))
         centralization = (count * max(incoming.values(), default=0) - len(local)) / max(1, (count - 1) ** 2)
         # Every score below is aesthetic planning inference, not code quality,
         # observed traffic, actual floor area or a per-file height multiplier.
         density = 0.2 + 0.45 * connectivity + 0.2 * service + 0.15 * cohesion
-        vertical = density * (0.25 + 0.75 * service)
+        vertical = density * (0.4 + 0.6 * max(service, 0.7 * interface))
         campus = min(1, testing + compute + 0.25 * service)
         role_total = sum(roles.values()) + count - classified
         diversity = -sum((n / role_total) * math.log2(n / role_total)
@@ -133,10 +134,12 @@ class CharacterEngine:
         preferred, rationale = "CONVENTIONAL_MIXED_USE", ["NEUTRAL_STRUCTURAL_FALLBACK"]
         if service >= 0.25 and testing + compute >= 0.15:
             preferred, rationale = "TECHNOLOGY_BUSINESS", ["VERIFIED_APPLICATION_AND_SUPPORT_ROLES"]
-        elif service >= 0.45 and density >= 0.65:
-            preferred, rationale = "METROPOLITAN_CORE", ["DENSE_VERIFIED_APPLICATION_FABRIC"]
         elif service >= 0.3 and density >= 0.5:
+            preferred, rationale = "METROPOLITAN_CORE", ["DENSE_VERIFIED_APPLICATION_FABRIC"]
+        elif service >= 0.2 and density >= 0.4:
             preferred, rationale = "DENSE_BUSINESS", ["CONNECTED_VERIFIED_APPLICATION_FABRIC"]
+        elif interface >= 0.4:
+            preferred, rationale = "COMMERCIAL_CULTURAL", ["VERIFIED_INTERFACE_FACING_SOURCE_ROLES"]
         elif effective_modules >= 3 and centralization < 0.35 and within_module / max(1, len(local)) >= 0.55 and local:
             preferred, rationale = "POLYCENTRIC", ["DISTRIBUTED_COHESIVE_SOURCE_MODULES"]
         # Relative program-equivalent units; a later land allocator must convert
@@ -162,7 +165,7 @@ class CharacterEngine:
                 centralization=q(centralization), connectivity=q(connectivity), cohesion=q(cohesion),
                 functionalDiversityBits=q(diversity), densityDemand=q(density),
                 verticalPotential=q(vertical), campusPotential=q(campus),
-                industrialPotential=q(data), preferredTypology=preferred, rationale=rationale,
+                industrialPotential=q(data), interfacePotential=q(interface), preferredTypology=preferred, rationale=rationale,
                 effectiveModuleCount=q(effective_modules),
                 centerCountHint=max(1, min(4, round(effective_modules))) if preferred == "POLYCENTRIC" else int(count > 0)),
             spatialDemand=dict(
