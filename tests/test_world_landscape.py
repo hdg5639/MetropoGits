@@ -51,6 +51,11 @@ class LandscapeTests(unittest.TestCase):
             self.assertNotIn("entityId", p)
             self.assertNotIn("edgeIds", p)
         for t in result["trees"]:
+            if t.get("kind") == "STREET_TREE":
+                self.assertFalse(any(overlap(
+                    [[t["center"][0] + t["radius"] * c, t["center"][1] + t["radius"] * s]
+                     for c, s in ((1, 0), (0, 1), (-1, 0), (0, -1))], o) for o in obstacles))
+                continue
             for face in t["faces"]:
                 self.assertTrue(all(inside([x, z], patches[t["patchId"]]["polygon"])
                                     and 0 <= y <= t["height"] for x, y, z in face["points"]))

@@ -1212,6 +1212,13 @@
         const p=patch.polygon;
         for(let i=1;i<p.length-1;i++)
           quad(triangles,[p[0],p[i+1],p[i],p[i]].map(([x,z])=>[x,.01,z]),[0,1,0],color(patch.color),7);
+        if(patch.park) {
+          // Decorative park furniture; both windings so any polygon orientation draws.
+          const flat=(poly,y,rgb,kind)=>{for(let i=1;i<poly.length-1;i++)for(const order of [[0,i,i+1],[0,i+1,i]])
+            quad(triangles,[poly[order[0]],poly[order[1]],poly[order[2]],poly[order[2]]].map(([x,z])=>[x,y,z]),[0,1,0],rgb,kind);};
+          for(const path of patch.park.paths || [])flat(path,.03,color('#cdc6b0'),10);
+          if(patch.park.pond)flat(patch.park.pond,.05,color('#3f8796'),9);
+        }
       }
       for(const tree of data.landscape.trees) {
         // Bounded decorative upgrade, inside the old tree reserve. No new tree sites.
