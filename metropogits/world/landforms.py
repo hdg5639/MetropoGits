@@ -28,8 +28,11 @@ def organic_counts(local, scale):
     }
 
 
-def organic_size(seed, scale):
+def organic_size(seed, scale, kind="LAKE"):
     """Heavy-tailed sizes: many modest features, occasionally a large one."""
+    if kind == "HILL":
+        major = min(95, max(9, scale * (0.028 + 0.08 * draw(seed, 2) ** 1.6)))
+        return major, major * (0.42 + 0.48 * draw(seed, 3))
     major = min(70, max(7, scale * (0.02 + 0.06 * draw(seed, 2) ** 1.6)))
     return major, major * (0.4 + 0.5 * draw(seed, 3))
 
@@ -87,7 +90,7 @@ def organic_hill(center, major, minor, yaw, seed):
     count, rings = 15, (1.0, 0.72, 0.44, 0.2)
     outline = _outline(center, major, minor, yaw, seed, count=count, roughness=0.5)
     polygon, no_build, road = _reserves(outline, 2, 6.5)
-    height = q(min(38, max(7, major * (0.32 + 0.26 * draw(seed, 3)))))
+    height = q(min(56, max(8, major * (0.42 + 0.3 * draw(seed, 3)))))
     summit_count = 1 + (draw(seed, 4) > 0.55) + (draw(seed, 5) > 0.85)
     summits = []
     for s in range(summit_count):
@@ -138,8 +141,22 @@ def organic_hill(center, major, minor, yaw, seed):
     for i in range(count):
         j = (i + 1) % count
         faces.append(dict(points=_up([grid[-1][i], top, grid[-1][j]]), color=shade(height, i, 9)))
+    forest = []
+    attempts = int(min(48, math.pi * major * minor * 0.012) * 4)
+    for n in range(attempts):
+        if len(forest) >= min(48, int(math.pi * major * minor * 0.012)):
+            break
+        rho = 0.35 + 0.55 * draw(seed, 500 + n)
+        edge = outline[int(draw(seed, 700 + n) * count) % count]
+        x, z = center[0] + (edge[0] - center[0]) * rho, center[1] + (edge[1] - center[1]) * rho
+        y = elevation(x, z, rho)
+        radius = 1.0 + draw(seed, 900 + n) * 0.6
+        if y / height > 0.6 or y < 0.25 or any(math.dist((x, z), t["center"]) < 2.4 * radius + 0.6 for t in forest):
+            continue
+        forest.append(dict(center=point([x, z]), y=q(y * 0.97), radius=q(radius),
+                           height=q(3.6 + draw(seed, 1100 + n) * 2.4)))
     return dict(id="world:nature:" + derive(seed), kind="HILL", center=point(center), polygon=polygon,
-                noBuildPolygon=no_build, roadPolygon=road, height=height, faces=faces,
+                noBuildPolygon=no_build, roadPolygon=road, height=height, faces=faces, trees=forest,
                 landform="RIDGE" if summit_count > 1 and major / minor > 1.8 else "HILLS")
 
 

@@ -50,6 +50,15 @@ def _landscape(world, value):
         for p in value["patches"]:
             p["faces"]=[dict(points=[[q[0],s.height(q)+.02,q[1]] for q in reversed(poly)],color=p["color"])
                         for poly in s.pieces(p["polygon"])]
+            if p.get("park"):
+                # Park furniture follows the same graded ground as its lawn.
+                def lifted(polygon, offset, color):
+                    return [dict(points=[[q[0],s.height(q)+offset,q[1]] for q in reversed(piece)],color=color)
+                            for piece in s.pieces(polygon)]
+                park=dict(p["park"])
+                park["pathFaces"]=[f for path in park["paths"] for f in lifted(path,.04,"#cdc6b0")]
+                park["pondFaces"]=lifted(park["pond"],.07,"#3f8796") if park["pond"] else []
+                p["park"]=park
         for tree in value["trees"]:
             tree["faces"]=lifted_faces(tree["faces"],world["terrain"],rigid=True)
     return value
@@ -436,7 +445,13 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         '<title id="title">Procedural source city — flat world</title>',
         f'<desc id="desc">{len(world["parcels"])} source files, {len(world["districts"])} structural districts. Streets are visual infrastructure; semantic trips retain exact edge IDs.</desc>',
+        '<defs><linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a1226"/>'
+        '<stop offset=".6" stop-color="#17233f"/><stop offset="1" stop-color="#5b3f45"/></linearGradient>'
+        '<radialGradient id="glow" cx=".5" cy=".55" r=".6"><stop offset="0" stop-color="#ffb070" stop-opacity=".28"/>'
+        '<stop offset="1" stop-color="#ffb070" stop-opacity="0"/></radialGradient></defs>',
         '<rect width="100%" height="100%" fill="#101923"/>',
+        '<rect width="100%" height="100%" fill="url(#dusk)"/>',
+        '<rect width="100%" height="100%" fill="url(#glow)"/>',
         f'<text x="28" y="30" fill="#e2edf5" font-family="sans-serif" font-size="20">{escape(world["repositoryNamespace"])}</text>',
         f'<text x="28" y="51" fill="#8da9b8" font-family="sans-serif" font-size="11">{len(world["parcels"])} files · {len(world["districts"])} districts · seed {world["seed"]}</text>',
     ]
@@ -464,6 +479,9 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
             if graded:
                 for face in patch["faces"]:
                     lines.append(polygon([project([x,z],y) for x,y,z in face["points"]],face["color"]))
+                park = patch.get("park") or {}
+                for face in [*park.get("pathFaces", []), *park.get("pondFaces", [])]:
+                    lines.append(polygon([project([x,z],y) for x,y,z in face["points"]],face["color"],'data-decorative="park"'))
                 continue
             lines.append(polygon([project(p, .01) for p in patch["polygon"]],
                                  patch["color"], 'data-decorative="green-pocket"'))

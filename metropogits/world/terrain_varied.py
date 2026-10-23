@@ -270,7 +270,7 @@ def complete_landscape(
             minor = major * (0.35 + 0.5 * draw(fs, 3))
             if organic:
                 from .landforms import organic_size
-                major, minor = organic_size(fs, scale)
+                major, minor = organic_size(fs, scale, kind)
             if len(features) >= max_features - 4:
                 break
             if kind == "MOUNTAIN":

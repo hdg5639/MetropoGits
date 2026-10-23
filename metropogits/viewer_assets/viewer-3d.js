@@ -1203,8 +1203,22 @@
       for(let i=1;i<p.length-1;i++)quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,color(face.color),10);
     }
     if(data.landscape && !structureOverlay) {
+      // Decorative park furniture; both windings so any polygon orientation draws.
+      const drawPark=(patch)=>{
+        const park=patch.park;
+        if(!park)return;
+        const flat=(poly,y,rgb,kind)=>{for(let i=1;i<poly.length-1;i++)for(const order of [[0,i,i+1],[0,i+1,i]])
+          quad(triangles,[poly[order[0]],poly[order[1]],poly[order[2]],poly[order[2]]].map(([x,z])=>[x,y,z]),[0,1,0],rgb,kind);};
+        const lifted=(faces,rgb,kind)=>{for(const f of faces)for(let i=1;i<f.points.length-1;i++)for(const order of [[0,i,i+1],[0,i+1,i]])
+          quad(triangles,[f.points[order[0]],f.points[order[1]],f.points[order[2]],f.points[order[2]]],[0,1,0],rgb,kind);};
+        if(park.pathFaces)lifted(park.pathFaces,color('#cdc6b0'),10);
+        else for(const path of park.paths || [])flat(path,.03,color('#cdc6b0'),10);
+        if(park.pondFaces)lifted(park.pondFaces,color('#3f8796'),9);
+        else if(park.pond)flat(park.pond,.05,color('#3f8796'),9);
+      };
       for(const patch of data.landscape.patches) {
         if(patch.faces) {
+          drawPark(patch);
           for(const f of patch.faces)for(let i=1;i<f.points.length-1;i++)
             quad(triangles,[f.points[0],f.points[i],f.points[i+1],f.points[i+1]],[0,1,0],color(f.color),7);
           continue;
@@ -1212,13 +1226,7 @@
         const p=patch.polygon;
         for(let i=1;i<p.length-1;i++)
           quad(triangles,[p[0],p[i+1],p[i],p[i]].map(([x,z])=>[x,.01,z]),[0,1,0],color(patch.color),7);
-        if(patch.park) {
-          // Decorative park furniture; both windings so any polygon orientation draws.
-          const flat=(poly,y,rgb,kind)=>{for(let i=1;i<poly.length-1;i++)for(const order of [[0,i,i+1],[0,i+1,i]])
-            quad(triangles,[poly[order[0]],poly[order[1]],poly[order[2]],poly[order[2]]].map(([x,z])=>[x,y,z]),[0,1,0],rgb,kind);};
-          for(const path of patch.park.paths || [])flat(path,.03,color('#cdc6b0'),10);
-          if(patch.park.pond)flat(patch.park.pond,.05,color('#3f8796'),9);
-        }
+        drawPark(patch);
       }
       for(const tree of data.landscape.trees) {
         // Bounded decorative upgrade, inside the old tree reserve. No new tree sites.
@@ -1250,7 +1258,20 @@
       }
       return (point)=>normalize(sum.get(key(point))||[0,1,0]);
     };
+    // Seeded conifers on lower hill slopes: two stacked cones on a short trunk.
+    const conifer=(tree)=>{
+      const [cx,cz]=tree.center,y=tree.y,r=tree.radius,h=tree.height;
+      box(triangles,cx-.1,y,cz-.1,.2,h*.25,.2,color('#5b4a38'));
+      for(const [base,top,radius] of [[.16,.68,r],[.42,1,r*.7]])for(let i=0;i<6;i++) {
+        const a0=i*Math.PI/3,a1=(i+1)*Math.PI/3;
+        let tri=[[cx+Math.cos(a0)*radius,y+h*base,cz+Math.sin(a0)*radius],[cx,y+h*top,cz],[cx+Math.cos(a1)*radius,y+h*base,cz+Math.sin(a1)*radius]];
+        const n=polygonNormal(tri),mid=[(tri[0][0]+tri[2][0])/2-cx,0,(tri[0][2]+tri[2][2])/2-cz];
+        if(n[0]*mid[0]+n[2]*mid[2]<0)tri=[tri[0],tri[2],tri[1]];
+        quad(triangles,[tri[0],tri[1],tri[2],tri[2]],[0,0,0],color(i%2?'#3c5b3e':'#456846'),11);
+      }
+    };
     for(const feature of [...(data.terrain?.features || []), ...(data.infrastructure ? [data.infrastructure] : [])]) {
+    if(feature.kind==='HILL'&&feature.trees)for(const tree of feature.trees)conifer(tree);
     const hillNormal=feature.kind==='HILL'&&feature.faces.length?smoothHillNormals(feature):null;
     for(const face of feature.faces) {
       const p=face.points;
