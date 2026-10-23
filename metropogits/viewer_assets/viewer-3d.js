@@ -356,18 +356,20 @@
       -(right+left)/(right-left),-(top+bottom)/(top-bottom),-(far+near)/(far-near),1];
     return multiply(projection,view);
   }
-  function canopyMesh(tree) {
+  function canopyMesh(tree, coarse=false) {
     const base=Math.min(...tree.faces.flatMap(f=>f.points.map(p=>p[1])));
     const seed=stableVariant(tree.id,997),radius=tree.radius*.78,height=tree.height*.32;
     const center=[tree.center[0],base+tree.height*.64,tree.center[1]];
+    // Large forests use a 12-quad crown instead of 32 to bound vertex load.
+    const rings=coarse?2:4,sides=coarse?6:8;
     function point(ring,side) {
-      const theta=ring*Math.PI/4,phi=side*Math.PI/4;
+      const theta=ring*Math.PI/rings,phi=side*Math.PI*2/sides;
       const r=radius*(.96+.04*Math.sin(phi*3+seed));
       return [center[0]+r*Math.sin(theta)*Math.cos(phi),
         center[1]+height*Math.cos(theta),center[2]+r*Math.sin(theta)*Math.sin(phi)];
     }
     const faces=[];
-    for(let ring=0;ring<4;ring++)for(let side=0;side<8;side++) {
+    for(let ring=0;ring<rings;ring++)for(let side=0;side<sides;side++) {
       const points=[point(ring,side),point(ring,side+1),point(ring+1,side+1),point(ring+1,side)];
       const normals=points.map(p=>normalize([(p[0]-center[0])/radius**2,
         (p[1]-center[1])/height**2,(p[2]-center[2])/radius**2]));
@@ -716,7 +718,7 @@
         if(kind>.5 && kind<4.5)albedo=mix(vec3(dot(albedo,vec3(.3,.59,.11))),albedo,.84);
         float direct=max(dot(n,normalize(vec3(-.6,1,.45))),0.0);
         float wrap=max(dot(n,normalize(vec3(-.6,1,.45)))*.5+.5,0.0);
-        float shade=visibility(n);
+        float shade=direct>0.0?visibility(n):1.0; // faces turned from the sun skip the shadow taps
         vec3 skyTop=vec3(.31,.38,.55),bounce=vec3(.25,.21,.19);
         vec3 sky=mix(bounce,skyTop,n.y*.5+.5);
         vec3 light=sky*ambient*(.72+.2*wrap)+vec3(1.0,.80,.58)*direct*shade*.78;
@@ -1053,7 +1055,10 @@
   function quad(target, corners, normal, vertexColor, kind=0,seed=0) {
     const {uv,extent}=faceCoordinates(corners);
     if(Math.hypot(...normal)<1e-8)normal=polygonNormal(corners);
-    for (const index of [0, 1, 2, 0, 2, 3])
+    // Triangles arrive as [a,b,c,c]; the second triangle would be degenerate.
+    const [c2,c3]=[corners[2],corners[3]];
+    const triangle=c2===c3||(c2[0]===c3[0]&&c2[1]===c3[1]&&c2[2]===c3[2]);
+    for (const index of triangle?[0,1,2]:[0,1,2,0,2,3])
       vertex(target,corners[index],normal,vertexColor,[...uv[index],kind,seed],extent);
   }
 
@@ -1166,8 +1171,12 @@
     const seed=stableVariant(building.entityId,997);
     return {kind:part.materialKind ?? (part.height<1.1?4:1+seed%4),seed};
   }
+  const DENSE_PRIMITIVES=new Set(["DOME","DRUM","TWIST","TAPER"]);
   function architecturalMesh(target,part,wall,roof,facade) {
     if(!part.meshFaces)return false;
+    // At city scale a building is a few pixels: dense curved volumes fall back to
+    // their footprint prism in the overview. Detail and district keep full meshes.
+    if(currentDetailLevel==='overview' && part.meshFaces.length>20 && DENSE_PRIMITIVES.has(part.primitive))return false;
     for(const face of part.meshFaces) {
       const p=face.points.map(([x,y,z])=>[x,y+.2,z]),normal=polygonNormal(p);
       const isRoof=face.surface==='roof';
@@ -1229,12 +1238,18 @@
         drawPark(patch);
       }
       for(const tree of data.landscape.trees) {
+        // Street trees are sub-pixel at city scale; skip them in the overview.
+        if(tree.kind==='STREET_TREE' && currentDetailLevel==='overview')continue;
         // Bounded decorative upgrade, inside the old tree reserve. No new tree sites.
         if(data.landscape.trees.length<=4096 && tree.radius>0 && tree.height>0) {
-          const mesh=canopyMesh(tree);
-          box(triangles,tree.center[0]-.12,mesh.base,tree.center[1]-.12,.24,tree.height*.5,.24,color('#665544'));
-          for(const face of mesh.faces)for(const i of [0,1,2,0,2,3])
-            vertex(triangles,face.points[i],face.normals[i],color('#4c7047'),[0,0,11,mesh.seed]);
+          const coarse=data.landscape.trees.length>800,mesh=canopyMesh(tree,coarse);
+          if(!coarse)box(triangles,tree.center[0]-.12,mesh.base,tree.center[1]-.12,.24,tree.height*.5,.24,color('#665544'));
+          const same=(a,b)=>a[0]===b[0]&&a[1]===b[1]&&a[2]===b[2];
+          for(const face of mesh.faces) {
+            // Pole quads collapse to triangles; skip the zero-area half.
+            const order=same(face.points[0],face.points[1])?[0,2,3]:same(face.points[2],face.points[3])?[0,1,2]:[0,1,2,0,2,3];
+            for(const i of order)vertex(triangles,face.points[i],face.normals[i],color('#4c7047'),[0,0,11,mesh.seed]);
+          }
           continue;
         }
         for(const face of tree.faces) {
@@ -1271,7 +1286,7 @@
       }
     };
     for(const feature of [...(data.terrain?.features || []), ...(data.infrastructure ? [data.infrastructure] : [])]) {
-    if(feature.kind==='HILL'&&feature.trees)for(const tree of feature.trees)conifer(tree);
+    if(feature.kind==='HILL'&&feature.trees&&currentDetailLevel!=='overview')for(const tree of feature.trees)conifer(tree);
     const hillNormal=feature.kind==='HILL'&&feature.faces.length?smoothHillNormals(feature):null;
     for(const face of feature.faces) {
       const p=face.points;
@@ -1959,6 +1974,7 @@
   function render(timestamp = 0) {
     framePending = false;
     updateLodVisibility();
+    noteCameraMotion();
     viewProjection = cameraMatrix();
     const geometry = buildGeometry(timestamp);
     updateSunShadow(geometry.triangles);
@@ -2007,13 +2023,38 @@
     }
   }
 
+  // Dynamic resolution: render at reduced scale while the camera moves, then
+  // restore full resolution once it settles. Pixel work dominates on laptops.
+  let renderScale = 1;
+  let restoreTimer = null;
+  let lastCameraKey = null;
+  function applyCanvasSize() {
+    const ratio = Math.min(globalThis.devicePixelRatio || 1, 1.5) * renderScale;
+    canvas.width = Math.max(1, Math.round(viewportWidth * ratio));
+    canvas.height = Math.max(1, Math.round(viewportHeight * ratio));
+  }
+  function noteCameraMotion() {
+    const key = [state.yaw, state.pitch, state.distance, state.targetX, state.targetY, state.targetZ].join("|");
+    if (key === lastCameraKey) return;
+    const first = lastCameraKey === null;
+    lastCameraKey = key;
+    if (first || canvas.width * canvas.height < 500000) return;
+    if (renderScale === 1) {
+      renderScale = 0.7;
+      applyCanvasSize();
+    }
+    clearTimeout(restoreTimer);
+    restoreTimer = setTimeout(() => {
+      renderScale = 1;
+      applyCanvasSize();
+      scheduleRender();
+    }, 220);
+  }
   function resize() {
     const rectangle = canvas.getBoundingClientRect();
-    const ratio = Math.min(globalThis.devicePixelRatio || 1, 2);
     viewportWidth = Math.max(1, rectangle.width);
     viewportHeight = Math.max(1, rectangle.height);
-    canvas.width = Math.round(viewportWidth * ratio);
-    canvas.height = Math.round(viewportHeight * ratio);
+    applyCanvasSize();
     if (!cameraFitted && viewportWidth > 10 && viewportHeight > 10) {
       state.distance = fitInitialDistance();
       initialCamera.distance = state.distance;
