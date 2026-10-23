@@ -291,7 +291,7 @@
   // LOD threshold does not rebuild ~1M vertices (a 250 ms stall) every time.
   function createGeometryCache(capacity = 3) {
     const entries = [];
-    return (key, build) => {
+    const cache = (key, build) => {
       const index = entries.findIndex((entry) => entry.key === key);
       if (index >= 0) {
         const [entry] = entries.splice(index, 1);
@@ -303,6 +303,8 @@
       if (entries.length > capacity) entries.shift();
       return value;
     };
+    cache.has = (key) => entries.some((entry) => entry.key === key);
+    return cache;
   }
   globalThis.METROPOGITS_GEOMETRY_CACHE = createGeometryCache;
 
@@ -1233,7 +1235,7 @@
     button.style.cssText = "position:fixed;right:8px;bottom:150px;z-index:51;padding:6px 10px;cursor:pointer;"
       + "background:#16315a;color:#e8f1ff;border:1px solid #4d7bc0;border-radius:6px;font:12px sans-serif";
     document.body.append(button);
-    return { panel, button, intervals: [], renderMs: [], lastStart: 0, builds: [], lastBuild: null,
+    return { panel, button, intervals: [], renderMs: [], lastStart: 0, builds: [], prewarmed: [], lastBuild: null,
       testing: false, testGaps: [] };
   })();
   // One-click scripted check: orbit, then zoom across LOD levels, then report a verdict.
@@ -1292,6 +1294,43 @@
     requestAnimationFrame(orbit);
   }
   perf?.button.addEventListener("click", runPerfTest);
+  // GPU time of the main pass via timer queries (when the browser exposes them), so the
+  // readout separates shader/fill cost from JavaScript cost. Only active with ?perf.
+  const gpuTimer = (() => {
+    if (!perf) return null;
+    const ext = gl.getExtension("EXT_disjoint_timer_query");
+    return ext ? { ext, pending: [], samples: [], active: null } : null;
+  })();
+  function gpuBegin() {
+    if (!gpuTimer || gpuTimer.active || gpuTimer.pending.length > 6) return;
+    gpuTimer.active = gpuTimer.ext.createQueryEXT();
+    gpuTimer.ext.beginQueryEXT(gpuTimer.ext.TIME_ELAPSED_EXT, gpuTimer.active);
+  }
+  function gpuEnd() {
+    if (!gpuTimer?.active) return;
+    gpuTimer.ext.endQueryEXT(gpuTimer.ext.TIME_ELAPSED_EXT);
+    gpuTimer.pending.push(gpuTimer.active);
+    gpuTimer.active = null;
+  }
+  function gpuCollect() {
+    if (!gpuTimer) return;
+    const { ext, pending, samples } = gpuTimer;
+    while (pending.length && ext.getQueryObjectEXT(pending[0], ext.QUERY_RESULT_AVAILABLE_EXT)) {
+      const query = pending.shift();
+      if (!gl.getParameter(ext.GPU_DISJOINT_EXT)) samples.push(ext.getQueryObjectEXT(query, ext.QUERY_RESULT_EXT) / 1e6);
+      ext.deleteQueryEXT(query);
+    }
+    while (samples.length > 90) samples.shift();
+  }
+  // Keep the stage breakdown of the slowest recent frame so a hitch can be attributed.
+  const STAGE_NAMES = ["lod", "geometry", "shadow", "draw", "hit", "labels"];
+  function perfStages(start, marks) {
+    let previous = start;
+    const stages = marks.map((mark) => { const ms = mark - previous; previous = mark; return ms; });
+    const total = marks.at(-1) - start;
+    perf.frames = (perf.frames || 0) + 1;
+    if (!perf.worst || total > perf.worst.total || perf.frames - perf.worst.frame > 240) perf.worst = { total, stages, frame: perf.frames };
+  }
   function perfFrame(start, end) {
     if (!perf) return;
     if (perf.lastStart && start - perf.lastStart < 250) perf.intervals.push(start - perf.lastStart);
@@ -1312,33 +1351,168 @@
     };
     const interval = perf.intervals.length ? 1000 / (perf.intervals.reduce((a, b) => a + b, 0) / perf.intervals.length) : 0;
     const geometry = perf.lastBuild;
+    gpuCollect();
     perf.panel.textContent = [
       `MetropoGits perf  (LOD ${currentDetailLevel})`,
       `frame gap ms   ${stat(perf.intervals)}`,
       `  ~fps while moving ${interval ? interval.toFixed(0) : "-"}`,
       `render JS ms   ${stat(perf.renderMs)}`,
+      `worst frame ${perf.worst ? perf.worst.total.toFixed(0) + " ms: " + STAGE_NAMES.map((n, i) => n + " " + perf.worst.stages[i].toFixed(0)).join(", ") : "-"}`,
+      `GPU main pass  ${gpuTimer ? stat(gpuTimer.samples) : "timer query unavailable"}`,
       `canvas ${canvas.width}x${canvas.height} (scale ${renderScale})`,
+      `prewarmed ${perf.prewarmed.length} LOD states off the interaction path`,
       `rebuilds ${perf.builds.length}  last ${geometry ? geometry.ms.toFixed(0) + " ms, " + geometry.verts + " verts" : "-"}`,
       `slowest rebuild ${perf.builds.length ? Math.max(...perf.builds).toFixed(0) : "-"} ms`,
     ].join("\n");
   }
+  let prewarming = false;
+  let prewarmTimer = null;
+  let lastMotionAt = 0;
+  const LOD_LEVELS = ["overview", "district", "detail"];
+
+  // Build the LOD states that are not on screen yet while the page is idle, so a later
+  // zoom or LOD change finds its geometry cached instead of stalling the frame.
+  function schedulePrewarm(delay = 700) {
+    if (prewarmTimer !== null) return;
+    prewarmTimer = setTimeout(() => {
+      prewarmTimer = null;
+      if (globalThis.requestIdleCallback) globalThis.requestIdleCallback(prewarmGeometry, { timeout: 2000 });
+      else prewarmGeometry();
+    }, delay);
+  }
+  // The current prewarm target. Building segments are produced in ~6 ms slices (the bulk of a
+  // rebuild), then the cheap final assembly runs once, so no single idle task blocks input.
+  let warmJob = null;
+  function prewarmGeometry() {
+    if (state.dragging || performance.now() - lastMotionAt < 600) { schedulePrewarm(); return; }
+    if (activeFilterCount() > 0) { warmJob = null; return; }
+    if (!warmJob || warmJob.key !== lodKeyFor(warmJob.level) || geometryCache.has(warmJob.key)) {
+      warmJob = null;
+      const level = LOD_LEVELS.find((candidate) => candidate !== currentDetailLevel && !geometryCache.has(lodKeyFor(candidate)));
+      if (!level) return;
+      const visible = lodPolicy.visibility(level, visibleBuildingIds, visibleNetworkIds, state.selected, expandedAggregateIds, showAllNetworks);
+      warmJob = { level, key: lodKeyFor(level), ids: new Set(visible.buildingIds), index: 0 };
+    }
+    const job = warmJob;
+    const deadline = performance.now() + 6;
+    const savedLevel = currentDetailLevel;
+    currentDetailLevel = job.level;
+    try {
+      while (job.index < scene.buildings.length && performance.now() < deadline) {
+        const building = scene.buildings[job.index++];
+        if (!job.ids.has(building.entityId)) continue;
+        const oriented = orientedBuildings[building.entityId];
+        const buildingSelected = selected("building", building.entityId);
+        const key = buildingSegmentKey(building, oriented, buildingSelected, false);
+        if (buildingSegments.has(key)) continue;
+        const scratch = [];
+        produceBuilding(scratch, building, oriented, buildingSelected);
+        if (buildingSegments.size >= SEGMENT_LIMIT) buildingSegments.clear();
+        buildingSegments.set(key, new Float32Array(scratch));
+      }
+    } finally {
+      currentDetailLevel = savedLevel;
+    }
+    if (job.index < scene.buildings.length) { schedulePrewarm(0); return; }
+    const saved = { level: currentDetailLevel, key: lodCacheKey, aggregates: renderedAggregateIds,
+      buildings: renderedBuildingIds, networks: renderedNetworkIds, districts: renderedDistrictIds, frame: accessFrame };
+    prewarming = true;
+    try {
+      applyLodState(job.level, job.key);
+      buildGeometry(0);
+    } finally {
+      currentDetailLevel = saved.level;
+      lodCacheKey = saved.key;
+      renderedAggregateIds = saved.aggregates;
+      renderedBuildingIds = saved.buildings;
+      renderedNetworkIds = saved.networks;
+      renderedDistrictIds = saved.districts;
+      accessFrame = saved.frame;
+      prewarming = false;
+    }
+    warmJob = null;
+    schedulePrewarm(150);
+  }
+
   function buildGeometry(timestamp) {
+    if (!prewarming) schedulePrewarm();
     return geometryCache(lodCacheKey, () => {
       const started = perf ? performance.now() : 0;
       const built = buildUncachedGeometry(timestamp);
       if (perf) {
         const ms = performance.now() - started;
-        perf.builds.push(ms);
-        perf.lastBuild = { ms, verts: built.triangles.length / vertexFloats };
+        (prewarming ? perf.prewarmed : perf.builds).push(ms);
+        if (!prewarming) perf.lastBuild = { ms, verts: built.triangles.length / vertexFloats };
       }
       return built;
     });
   }
 
+  // Triangle runs that do not depend on the camera LOD or selection are built once
+  // and spliced back in draw order, so zooming or clicking rebuilds only what changed.
+  const SEGMENT_LIMIT = Math.max(8000, scene.buildings.length * 3);
+  const staticSegments = new Map();
+  const buildingSegments = new Map();
+  const aggregateSegments = new Map();
+
+  function buildingSegmentKey(building, oriented, buildingSelected, filtered) {
+    return `${building.entityId}|${currentDetailLevel === "overview" ? "o" : oriented?.parts ? "d" : currentDetailLevel}|${buildingSelected ? 1 : 0}|${showRoleColors ? 1 : 0}|${filtered ? 1 : 0}|${structureOverlay ? 1 : 0}`;
+  }
+  function produceBuilding(target, building, oriented, buildingSelected) {
+    const baseColor = color(colors[building.archetype] || colors.GENERIC_BUILDING);
+    const selectedColor = buildingSelected
+      ? lighten(baseColor, 0.62)
+      : baseColor;
+    for(const face of oriented?.foundationFaces || [])
+      quad(target,face.points,normalize(cross(subtract(face.points[1],face.points[0]),subtract(face.points[2],face.points[0]))),color(face.color));
+    const parts = oriented?.parts || buildingParts(building, currentDetailLevel === "district");
+    const top = Math.max(...parts.map(p => p.y + p.height));
+    for (const part of parts) {
+      const fallback = part.shade ? lighten(selectedColor, part.shade) : selectedColor;
+      const [wall, roof] = materialColors(building, part, top, buildingSelected, fallback);
+      const facade=facadeFor(building,part,buildingSelected);
+      if(architecturalMesh(target,part,wall,roof,facade))continue;
+      if (part.footprint) {
+        orientedBox(target,part.footprint,.2+part.y,part.height,wall,roof,facade);
+        continue;
+      }
+      box(
+        target,
+        part.x,
+        0.2 + part.y,
+        part.z,
+        part.width,
+        part.height,
+        part.depth,
+        wall, roof, facade,
+      );
+    }
+  }
+
   function buildUncachedGeometry(timestamp) {
     const triangles = [];
+    const chunks = [];
     const lines = [];
     const accessOverlay = [];
+    const flushTriangles = () => {
+      if (!triangles.length) return;
+      chunks.push(new Float32Array(triangles));
+      triangles.length = 0;
+    };
+    const segment = (cache, key, produce) => {
+      flushTriangles();
+      let chunk = cache.get(key);
+      if (!chunk) {
+        produce();
+        chunk = new Float32Array(triangles);
+        triangles.length = 0;
+        if (cache.size >= SEGMENT_LIMIT) cache.clear();
+        cache.set(key, chunk);
+      }
+      if (chunk.length) chunks.push(chunk);
+    };
+    const filteredColours = activeFilterCount() > 0;
+    segment(staticSegments, `${structureOverlay ? 1 : 0}:${currentDetailLevel === "overview" ? 1 : 0}`, () => {
     if(data.occupiedGround && !structureOverlay && !data.surface) {
       const majorOrder=[...majorDistrictIds].sort();
       for(const pad of data.occupiedGround.pads) {
@@ -1448,6 +1622,7 @@
         quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,rgb,kind);
     }
     }
+    });
     for (const district of framingDistricts) {
       if(data.occupiedGround && !structureOverlay) continue;
       for (const rectangle of districtTerritory(district).rectangles) {
@@ -1664,36 +1839,11 @@
 
     for (const building of scene.buildings) {
       if (!renderedBuildingIds.has(building.entityId)) continue;
-      const baseColor = color(colors[building.archetype] || colors.GENERIC_BUILDING);
-      const selectedColor = selected("building", building.entityId)
-        ? lighten(baseColor, 0.62)
-        : baseColor;
       const oriented=orientedBuildings[building.entityId];
-      for(const face of oriented?.foundationFaces || [])
-        quad(triangles,face.points,normalize(cross(subtract(face.points[1],face.points[0]),subtract(face.points[2],face.points[0]))),color(face.color));
-      const parts = oriented?.parts || buildingParts(building, currentDetailLevel === "district");
-      const top = Math.max(...parts.map(p => p.y + p.height));
-      for (const part of parts) {
-        const fallback = part.shade ? lighten(selectedColor, part.shade) : selectedColor;
-        const [wall, roof] = materialColors(building, part, top, selected("building", building.entityId), fallback);
-        const facade=facadeFor(building,part,selected('building',building.entityId));
-        if(architecturalMesh(triangles,part,wall,roof,facade))continue;
-        if (part.footprint) {
-          orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof,facade);
-          continue;
-        }
-        box(
-          triangles,
-          part.x,
-          0.2 + part.y,
-          part.z,
-          part.width,
-          part.height,
-          part.depth,
-          wall, roof, facade,
-        );
-      }
-      if (selected("building", building.entityId)) {
+      const buildingSelected = selected("building", building.entityId);
+      segment(buildingSegments, buildingSegmentKey(building, oriented, buildingSelected, filteredColours),
+        () => produceBuilding(triangles, building, oriented, buildingSelected));
+      if (buildingSelected) {
         if (oriented) {
           for(let i=0;i<4;i++) {
             const a=oriented.footprint[i],b=oriented.footprint[(i+1)%4];
@@ -1731,17 +1881,20 @@
         && facility.memberEntityIds.includes(state.selected.id)
         ? scene.buildings.find(b => b.entityId === state.selected.id) : null;
       const isSelected = selected("aggregate", facility.id) || Boolean(selectedMember);
+      const aggregateKey = `${aggregateId}|${currentDetailLevel === "overview" ? "o" : "d"}|${isSelected ? 1 : 0}|${showRoleColors ? 1 : 0}|${filteredColours ? 1 : 0}|${structureOverlay ? 1 : 0}`;
       if(facility.physicalModel) {
         const model=facility.physicalModel;
+        const top=Math.max(...model.parts.map(p=>p.y+p.height));
+        segment(aggregateSegments, aggregateKey, () => {
         const proxy={...facility,entityId:facility.id,archetype:facility.archetypeCounts[0].archetype};
         for(const face of model.foundationFaces || [])
           quad(triangles,face.points,normalize(cross(subtract(face.points[1],face.points[0]),subtract(face.points[2],face.points[0]))),color(face.color));
-        const top=Math.max(...model.parts.map(p=>p.y+p.height));
         for(const part of model.parts) {
           const [wall,roof]=materialColors(proxy,part,top,isSelected,color(colors[proxy.archetype]));
           if(architecturalMesh(triangles,part,wall,roof,facadeFor(proxy,part,isSelected)))continue;
           orientedBox(triangles,part.footprint,.2+part.y,part.height,wall,roof,facadeFor(proxy,part,isSelected));
         }
+        });
         for(let i=0;i<4;i++) {
           const a=model.footprint[i],b=model.footprint[(i+1)%4];
           line(lines,[a[0],base+.25,a[1]],[b[0],base+.25,b[1]],color(isSelected?'#f8fafc':'#fbbf24'));
@@ -1753,6 +1906,7 @@
         }
         continue;
       }
+      segment(aggregateSegments, aggregateKey, () => {
       for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         box(
           triangles,
@@ -1787,6 +1941,7 @@
           );
         }
       }
+      });
       const borderColor = color(isSelected ? "#f8fafc" : "#fbbf24");
       for (const plot of filterEngine.aggregateGroundPlots(facility,Boolean(data.occupiedGround && !structureOverlay))) {
         const x0 = plot.x - 0.55;
@@ -1809,7 +1964,13 @@
     }
 
     // Float32 halves resident memory per cached state and uploads without a copy.
-    return { lines, triangles: new Float32Array(triangles), accessOverlay };
+    flushTriangles();
+    let total = 0;
+    for (const chunk of chunks) total += chunk.length;
+    const merged = new Float32Array(total);
+    let offset = 0;
+    for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
+    return { lines, triangles: merged, accessOverlay };
   }
 
   function buildActivityGeometry(timestamp) {
@@ -2120,8 +2281,12 @@
     updateLodVisibility();
     noteCameraMotion();
     viewProjection = cameraMatrix();
+    const stageLod = perf ? performance.now() : 0;
     const geometry = buildGeometry(timestamp);
+    const stageGeometry = perf ? performance.now() : 0;
     updateSunShadow(geometry.triangles);
+    const stageShadow = perf ? performance.now() : 0;
+    gpuBegin();
     gl.viewport(0, 0, canvas.width, canvas.height);
     if(detailedMaterials)gl.clearColor(.075,.105,.13,1);
     else gl.clearColor(0.027, 0.043, 0.075, 1);
@@ -2152,11 +2317,15 @@
     // Selection-only x-ray trace: same ground path, visible behind tall buildings.
     gl.disable(gl.DEPTH_TEST);
     bindAndDraw(accessOverlayBuffer, geometry.accessOverlay, gl.LINES);
+    gpuEnd();
+    const stageDraw = perf ? performance.now() : 0;
     const projectionKey = `${lodCacheKey}:${viewportWidth}:${viewportHeight}:${viewProjection.join(',')}`;
     projectionDirty = projectionKey !== lastProjectionKey;
     hitRegions = buildHitRegions();
+    const stageHit = perf ? performance.now() : 0;
     renderLabels();
     lastProjectionKey = projectionKey;
+    if (perf) perfStages(frameStart, [stageLod, stageGeometry, stageShadow, stageDraw, stageHit, performance.now()]);
     perfFrame(frameStart, perf ? performance.now() : 0);
     if (state.syntheticActivity && renderedNetworkIds.size > 0) scheduleRender();
   }
@@ -2181,6 +2350,7 @@
   function noteCameraMotion() {
     const key = [state.yaw, state.pitch, state.distance, state.targetX, state.targetY, state.targetZ].join("|");
     if (key === lastCameraKey) return;
+    lastMotionAt = performance.now();
     const first = lastCameraKey === null;
     lastCameraKey = key;
     if (first || canvas.width * canvas.height < 500000) return;
@@ -2251,11 +2421,20 @@
     const filtered = activeFilterCount() > 0;
     const zoomRatio = initialCamera.distance / Math.max(0.01, state.distance);
     const nextDetailLevel = lodPolicy.levelForZoom(zoomRatio, filtered);
+    const nextCacheKey = lodKeyFor(nextDetailLevel);
+    if (nextCacheKey === lodCacheKey) return;
+    applyLodState(nextDetailLevel, nextCacheKey);
+    updateLodStatus(filtered);
+  }
+
+  function lodKeyFor(level) {
     const selectionKey = state.selected
       ? `${state.selected.kind}:${state.selected.id}:${state.selected.routeId || ""}`
       : "none";
-    const nextCacheKey = `${nextDetailLevel}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${structureOverlay}:${showRoleColors}:${[...expandedAggregateIds].sort().join('|')}`;
-    if (nextCacheKey === lodCacheKey) return;
+    return `${level}:${visibilityVersion}:${selectionKey}:${showAllNetworks}:${structureOverlay}:${showRoleColors}:${[...expandedAggregateIds].sort().join('|')}`;
+  }
+
+  function applyLodState(nextDetailLevel, nextCacheKey) {
     currentDetailLevel = nextDetailLevel;
     lodCacheKey = nextCacheKey;
     const visible = lodPolicy.visibility(
@@ -2286,6 +2465,9 @@
         .map((district) => district.id),
     );
     if (state.selected?.kind === "district") renderedDistrictIds.add(state.selected.id);
+  }
+
+  function updateLodStatus(filtered) {
     if (detailLevel) {
       const label = filtered
         ? "Filtered detail"

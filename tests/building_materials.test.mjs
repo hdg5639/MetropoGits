@@ -26,7 +26,7 @@ test('both renderers restore semantic tint for filters, selection and explicit m
     assert.match(text,/Not source material evidence/);
   }
   const webgl=await readFile(new URL('../metropogits/viewer_assets/viewer-3d.js',import.meta.url),'utf8');
-  assert.match(webgl,/nextCacheKey = .*showRoleColors/);
+  assert.match(webgl,/function lodKeyFor[\s\S]*\$\{showRoleColors\}/);
 });
 
 test('entrance cladding is shared and gives way to semantic selection', () => {
