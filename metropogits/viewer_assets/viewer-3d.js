@@ -287,15 +287,21 @@
   globalThis.METROPOGITS_NETWORK_STYLES = networkProfiles;
   globalThis.METROPOGITS_CAMERA_POLICY = cameraPolicy;
 
-  function createGeometryCache() {
-    let savedKey;
-    let saved;
+  // Keeps the few most recent visual states so zooming back and forth across an
+  // LOD threshold does not rebuild ~1M vertices (a 250 ms stall) every time.
+  function createGeometryCache(capacity = 3) {
+    const entries = [];
     return (key, build) => {
-      if (!saved || key !== savedKey) {
-        saved = build();
-        savedKey = key;
+      const index = entries.findIndex((entry) => entry.key === key);
+      if (index >= 0) {
+        const [entry] = entries.splice(index, 1);
+        entries.push(entry);
+        return entry.value;
       }
-      return saved;
+      const value = build();
+      entries.push({ key, value });
+      if (entries.length > capacity) entries.shift();
+      return value;
     };
   }
   globalThis.METROPOGITS_GEOMETRY_CACHE = createGeometryCache;
@@ -303,6 +309,8 @@
   // Presentation-only surface coordinates. Metres on each face, not world X/Z:
   // rotated source buildings keep their windows aligned with their own facade.
   const vertexFloats = 15;
+  const ZERO_SURFACE = Object.freeze([0,0,0,0]);
+  const ZERO_EXTENT = Object.freeze([0,0]);
   function faceCoordinates(corners) {
     const width = Math.hypot(...subtract(corners[3], corners[0]));
     const height = Math.hypot(...subtract(corners[1], corners[0]));
@@ -1048,18 +1056,31 @@
     return value.map((channel) => channel + (1 - channel) * amount);
   }
 
-  function vertex(target, position, normal, vertexColor, surface=[0,0,0,0],extent=[0,0]) {
-    target.push(...position, ...normal, ...vertexColor,...surface,...extent);
+  // Hot path: ~1M vertices per rebuild, so no spreads or temporary arrays.
+  function vertex(target, position, normal, vertexColor, surface=ZERO_SURFACE,extent=ZERO_EXTENT) {
+    target.push(position[0],position[1],position[2],normal[0],normal[1],normal[2],
+      vertexColor[0],vertexColor[1],vertexColor[2],surface[0],surface[1],surface[2],surface[3],extent[0],extent[1]);
+  }
+  function vertexUv(target, position, normal, vertexColor, u, v, kind, seed, extentX, extentY) {
+    target.push(position[0],position[1],position[2],normal[0],normal[1],normal[2],
+      vertexColor[0],vertexColor[1],vertexColor[2],u,v,kind,seed,extentX,extentY);
   }
 
   function quad(target, corners, normal, vertexColor, kind=0,seed=0) {
-    const {uv,extent}=faceCoordinates(corners);
-    if(Math.hypot(...normal)<1e-8)normal=polygonNormal(corners);
+    const [c0,c1,c2,c3]=corners;
+    // Same metric frame as faceCoordinates(), without temporary arrays.
+    const width=Math.hypot(c3[0]-c0[0],c3[1]-c0[1],c3[2]-c0[2]);
+    const height=Math.hypot(c1[0]-c0[0],c1[1]-c0[1],c1[2]-c0[2]);
+    if(Math.hypot(normal[0],normal[1],normal[2])<1e-8)normal=polygonNormal(corners);
     // Triangles arrive as [a,b,c,c]; the second triangle would be degenerate.
-    const [c2,c3]=[corners[2],corners[3]];
     const triangle=c2===c3||(c2[0]===c3[0]&&c2[1]===c3[1]&&c2[2]===c3[2]);
-    for (const index of triangle?[0,1,2]:[0,1,2,0,2,3])
-      vertex(target,corners[index],normal,vertexColor,[...uv[index],kind,seed],extent);
+    vertexUv(target,c0,normal,vertexColor,0,0,kind,seed,width,height);
+    vertexUv(target,c1,normal,vertexColor,0,height,kind,seed,width,height);
+    vertexUv(target,c2,normal,vertexColor,width,height,kind,seed,width,height);
+    if(triangle)return;
+    vertexUv(target,c0,normal,vertexColor,0,0,kind,seed,width,height);
+    vertexUv(target,c2,normal,vertexColor,width,height,kind,seed,width,height);
+    vertexUv(target,c3,normal,vertexColor,width,0,kind,seed,width,height);
   }
 
   function box(target, x, y, z, width, height, depth, vertexColor, roofColor = vertexColor, facade=null) {
@@ -1171,6 +1192,7 @@
     const seed=stableVariant(building.entityId,997);
     return {kind:part.materialKind ?? (part.height<1.1?4:1+seed%4),seed};
   }
+  const TRIANGLE_FAN_ORDER=(i)=>[0,i,i+1];
   const DENSE_PRIMITIVES=new Set(["DOME","DRUM","TWIST","TAPER"]);
   function architecturalMesh(target,part,wall,roof,facade) {
     if(!part.meshFaces)return false;
@@ -1182,8 +1204,13 @@
       const isRoof=face.surface==='roof';
       const kind=facade?(isRoof?5:facade.kind):0,seed=facade?.seed || 0;
       const {uv,extent}=polygonCoordinates(p,normal);
-      for(let i=1;i<p.length-1;i++)for(const index of [0,i,i+1])
-        vertex(target,p[index],normal,isRoof?roof:wall,[...uv[index],kind,seed],extent);
+      const tint=isRoof?roof:wall;
+      for(let i=1;i<p.length-1;i++) {
+        for(const index of TRIANGLE_FAN_ORDER(i)) {
+          const [u,v]=uv[index];
+          vertexUv(target,p[index],normal,tint,u,v,kind,seed,extent[0],extent[1]);
+        }
+      }
     }
     return true;
   }
@@ -1666,7 +1693,8 @@
       }
     }
 
-    return { lines, triangles, accessOverlay };
+    // Float32 halves resident memory per cached state and uploads without a copy.
+    return { lines, triangles: new Float32Array(triangles), accessOverlay };
   }
 
   function buildActivityGeometry(timestamp) {
@@ -1701,7 +1729,7 @@
     if (!values.length) return;
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     if (uploadedGeometry.get(buffer) !== values) {
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), usage);
+      gl.bufferData(gl.ARRAY_BUFFER, values instanceof Float32Array ? values : new Float32Array(values), usage);
       uploadedGeometry.set(buffer, values);
     }
     const stride = vertexFloats * Float32Array.BYTES_PER_ELEMENT;
@@ -1730,7 +1758,7 @@
     gl.uniformMatrix4fv(sunShadow.matrix,false,new Float32Array(sunShadow.transform));
     gl.bindBuffer(gl.ARRAY_BUFFER,triangleBuffer);
     if(uploadedGeometry.get(triangleBuffer)!==values) {
-      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(values),gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER,values instanceof Float32Array ? values : new Float32Array(values),gl.STATIC_DRAW);
       uploadedGeometry.set(triangleBuffer,values);
     }
     // Other shader attribute arrays may still point at a shorter activity buffer.
