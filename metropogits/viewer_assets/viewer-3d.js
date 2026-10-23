@@ -1216,8 +1216,53 @@
   }
   const uploadedGeometry = new WeakMap();
 
+  // Optional performance readout: open the viewer with ?perf appended to the URL.
+  const perf = (() => {
+    let enabled = false;
+    try { enabled = /[?&]perf\b/.test(globalThis.location?.search || ""); } catch { enabled = false; }
+    if (!enabled) return null;
+    const panel = document.createElement("pre");
+    panel.setAttribute("aria-hidden", "true");
+    panel.style.cssText = "position:fixed;right:8px;bottom:8px;z-index:50;margin:0;padding:8px 10px;"
+      + "background:rgba(8,12,22,.86);color:#9fe8b0;font:11px/1.4 ui-monospace,Consolas,monospace;"
+      + "border:1px solid #2b3a55;border-radius:6px;pointer-events:none;white-space:pre";
+    document.body.append(panel);
+    return { panel, intervals: [], renderMs: [], lastStart: 0, builds: [], lastBuild: null };
+  })();
+  function perfFrame(start, end) {
+    if (!perf) return;
+    if (perf.lastStart && start - perf.lastStart < 250) perf.intervals.push(start - perf.lastStart);
+    perf.lastStart = start;
+    perf.renderMs.push(end - start);
+    for (const list of [perf.intervals, perf.renderMs]) if (list.length > 90) list.shift();
+    const stat = (list) => {
+      if (!list.length) return "-";
+      const sorted = [...list].sort((a, b) => a - b);
+      return `avg ${(list.reduce((a, b) => a + b, 0) / list.length).toFixed(1)}  p95 ${sorted[Math.floor(sorted.length * .95)].toFixed(1)}  max ${sorted.at(-1).toFixed(1)}`;
+    };
+    const interval = perf.intervals.length ? 1000 / (perf.intervals.reduce((a, b) => a + b, 0) / perf.intervals.length) : 0;
+    const geometry = perf.lastBuild;
+    perf.panel.textContent = [
+      `MetropoGits perf  (LOD ${currentDetailLevel})`,
+      `frame gap ms   ${stat(perf.intervals)}`,
+      `  ~fps while moving ${interval ? interval.toFixed(0) : "-"}`,
+      `render JS ms   ${stat(perf.renderMs)}`,
+      `canvas ${canvas.width}x${canvas.height} (scale ${renderScale})`,
+      `rebuilds ${perf.builds.length}  last ${geometry ? geometry.ms.toFixed(0) + " ms, " + geometry.verts + " verts" : "-"}`,
+      `slowest rebuild ${perf.builds.length ? Math.max(...perf.builds).toFixed(0) : "-"} ms`,
+    ].join("\n");
+  }
   function buildGeometry(timestamp) {
-    return geometryCache(lodCacheKey, () => buildUncachedGeometry(timestamp));
+    return geometryCache(lodCacheKey, () => {
+      const started = perf ? performance.now() : 0;
+      const built = buildUncachedGeometry(timestamp);
+      if (perf) {
+        const ms = performance.now() - started;
+        perf.builds.push(ms);
+        perf.lastBuild = { ms, verts: built.triangles.length / vertexFloats };
+      }
+      return built;
+    });
   }
 
   function buildUncachedGeometry(timestamp) {
@@ -2000,6 +2045,7 @@
   let lastProjectionKey = null;
   let projectionDirty = true;
   function render(timestamp = 0) {
+    const frameStart = perf ? performance.now() : 0;
     framePending = false;
     updateLodVisibility();
     noteCameraMotion();
@@ -2041,6 +2087,7 @@
     hitRegions = buildHitRegions();
     renderLabels();
     lastProjectionKey = projectionKey;
+    perfFrame(frameStart, perf ? performance.now() : 0);
     if (state.syntheticActivity && renderedNetworkIds.size > 0) scheduleRender();
   }
 
