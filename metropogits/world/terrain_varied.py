@@ -291,7 +291,7 @@ def complete_landscape(
                     center, major, minor, draw(fs, 4) * math.tau, fs, kind
                 )
             if (
-                not all(inside(p, envelope, 1) for p in feature["roadPolygon"])
+                not all(inside(p, envelope, 14 if organic else 1) for p in feature["roadPolygon"])
                 or any(
                     # Organic relief keeps a street-width corridor to every neighbour.
                     overlap(feature["roadPolygon"], expanded(f["roadPolygon"], 10 if organic else 5))
