@@ -115,13 +115,19 @@ def organic_hill(center, major, minor, yaw, seed):
     top = [q(peak[0]), q(max(max(v[1] for v in row) for row in grid) * 1.04), q(peak[1])]
     faces = []
 
+    stops = ((0.0, (0x4a, 0x68, 0x44)), (0.3, (0x58, 0x77, 0x4c)), (0.55, (0x6c, 0x80, 0x5e)),
+             (0.78, (0x86, 0x88, 0x78)), (1.0, (0xa4, 0xa4, 0x9a)))
+
     def shade(y, i, k):
-        t = y / height
-        palette = (("#58704f", "#5f7a56", "#55704e") if t < 0.22 else
-                   ("#6a8260", "#738868", "#678058") if t < 0.5 else
-                   ("#7f8b73", "#8a8f7e", "#778670") if t < 0.76 else
-                   ("#9a9b92", "#a9aaa2", "#8f9189"))
-        return palette[(i + k + int(draw(seed, 400 + i * 7 + k) * 3)) % 3]
+        # Continuous height ramp (forest to rock) with a faint per-face tint.
+        t = max(0.0, min(1.0, y / height))
+        for (t0, c0), (t1, c1) in zip(stops, stops[1:]):
+            if t <= t1:
+                f = (t - t0) / (t1 - t0)
+                rgb = [c0[j] + (c1[j] - c0[j]) * f for j in range(3)]
+                break
+        tint = 0.97 + 0.06 * draw(seed, 400 + i * 7 + k)
+        return "#" + "".join("%02x" % max(0, min(255, round(v * tint))) for v in rgb)
 
     for k in range(len(rings) - 1):
         for i in range(count):

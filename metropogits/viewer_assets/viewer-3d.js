@@ -1237,14 +1237,38 @@
         }
       }
     }
-    for(const feature of [...(data.terrain?.features || []), ...(data.infrastructure ? [data.infrastructure] : [])])for(const face of feature.faces) {
+    // Hills share vertex normals so relief reads as rolling ground, not stacked facets.
+    const smoothHillNormals=(feature)=>{
+      const sum=new Map(),key=(p)=>p.map(v=>Math.round(v*50)).join(',');
+      for(const face of feature.faces) {
+        const p=face.points,n=cross(subtract(p[1],p[0]),subtract(p[2],p[0]));
+        const up=n[1]>=0?1:-1;
+        for(const point of p) {
+          const k=key(point),a=sum.get(k)||[0,0,0];
+          sum.set(k,[a[0]+n[0]*up,a[1]+n[1]*up,a[2]+n[2]*up]);
+        }
+      }
+      return (point)=>normalize(sum.get(key(point))||[0,1,0]);
+    };
+    for(const feature of [...(data.terrain?.features || []), ...(data.infrastructure ? [data.infrastructure] : [])]) {
+    const hillNormal=feature.kind==='HILL'&&feature.faces.length?smoothHillNormals(feature):null;
+    for(const face of feature.faces) {
       const p=face.points;
+      if(hillNormal) {
+        const rgb=color(face.color);
+        for(let i=1;i<p.length-1;i++) {
+          const corners=[p[0],p[i],p[i+1],p[i+1]],{uv,extent}=faceCoordinates(corners);
+          for(const index of [0,1,2])vertex(triangles,corners[index],hillNormal(corners[index]),rgb,[...uv[index],8,0],extent);
+        }
+        continue;
+      }
       const normal=normalize(cross(subtract(p[1],p[0]),subtract(p[2],p[0])));
       const rgb=color(face.color);
       const kind=['RIVER','LAKE','WATER'].includes(feature.kind) && rgb[2]>rgb[0]*1.15?9:
         ['HILL','MOUNTAIN'].includes(feature.kind)?8:0;
       for(let i=1;i<p.length-1;i++)
         quad(triangles,[p[0],p[i],p[i+1],p[i+1]],normal,rgb,kind);
+    }
     }
     for (const district of framingDistricts) {
       if(data.occupiedGround && !structureOverlay) continue;
