@@ -646,7 +646,7 @@ def frontage_details(specs, envelope, family):
         p
         for p in specs
         if p["y"] == 0
-        and p["primitive"] in ("BOX", "GABLE", "SAWTOOTH", "CHAMFER")
+        and p["primitive"] in ("BOX", "GABLE", "SAWTOOTH", "CHAMFER", "ROUNDED", "TAPER", "TWIST", "LEAN", "WEDGE")
         and p["width"] * width >= 0.35
         and p["height"] * height >= 0.25
     ]
@@ -662,7 +662,8 @@ def frontage_details(specs, envelope, family):
             p["x"],
         ),
     )
-    wall_width = host["width"] * (0.55 if host["primitive"] == "CHAMFER" else 1)
+    # Curved plans are only flat near their centre, so keep the door narrow there.
+    wall_width = host["width"] * (0.4 if host["primitive"] in ("ROUNDED", "TAPER", "TWIST") else 0.55 if host["primitive"] == "CHAMFER" else 1)
     middle = host["x"] + host["width"] / 2
     face = host["z"] + host["depth"]
     room = (1 - face) * depth
