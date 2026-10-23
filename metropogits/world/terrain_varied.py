@@ -236,6 +236,7 @@ def complete_landscape(
     *,
     max_features=MAX_FEATURES,
     mountains=False,
+    organic=False,
 ):
     """Shared landform/ground finish; old seeds and output ordering stay intact."""
     scale = math.sqrt(area(envelope))
@@ -250,6 +251,9 @@ def complete_landscape(
         "HILL": 1
         + int(draw(derive(local, "hill-count")) * (min(6, 1 + int(scale / 200)))),
     }
+    if organic:
+        from .landforms import organic_counts
+        counts = organic_counts(local, scale)
     if mountains:
         counts["HILL"] = int(draw(derive(local, "foothill-count")) * 3)
         counts["MOUNTAIN"] = (
@@ -264,12 +268,22 @@ def complete_landscape(
             center = point([x0 + (x1 - x0) * draw(fs), z0 + (z1 - z0) * draw(fs, 1)])
             major = min(65, max(6, scale * (0.025 + 0.045 * draw(fs, 2))))
             minor = major * (0.35 + 0.5 * draw(fs, 3))
+            if organic:
+                from .landforms import organic_size
+                major, minor = organic_size(fs, scale)
+            if len(features) >= max_features - 4:
+                break
             if kind == "MOUNTAIN":
                 from .mountains import mountain_landform
 
                 major = min(160, max(36, scale * (0.075 + 0.06 * draw(fs, 2))))
                 minor = major * (0.34 + 0.22 * draw(fs, 3))
                 feature = mountain_landform(
+                    center, major, minor, draw(fs, 4) * math.tau, fs
+                )
+            elif organic:
+                from .landforms import organic_hill, organic_lake
+                feature = (organic_lake if kind == "LAKE" else organic_hill)(
                     center, major, minor, draw(fs, 4) * math.tau, fs
                 )
             else:

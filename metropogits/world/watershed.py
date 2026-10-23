@@ -249,4 +249,5 @@ def generate_watershed_terrain(envelope, seed):
         VERSION,
         PRESET,
         max_features=MAX_FEATURES,
+        organic=True,
     )
