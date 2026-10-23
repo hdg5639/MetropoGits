@@ -1377,7 +1377,7 @@
         .toString(16).padStart(2,"0")).join("");
     if (fullTint) wall = roof = role;
     else if (building.archetype !== "GENERIC_BUILDING" && policy.roleColors[building.archetype]
-      && part.y + part.height >= top - 1e-6) roof = blend(roof, role, .78);
+      && part.y + part.height >= top - 1e-6) roof = blend(roof, role, .42);
     return {wall:blend(wall,"#ffffff",part.shade || 0), roof:blend(roof,"#ffffff",part.shade || 0)};
   }
 

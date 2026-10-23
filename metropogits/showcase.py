@@ -222,8 +222,16 @@ def render_showcase(scene, graph, width=1200, height=675, routing=None):
         "Relationship routes retain canonical endpoints. Open the viewer for source inspection.</desc>",
         "<defs>",
         f'<clipPath id="content-clip"><rect x="0" y="70" width="{width}" height="{height - 122}"/></clipPath>',
+        '<linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0" stop-color="#070d24"/><stop offset=".55" stop-color="#1a2547"/>'
+        '<stop offset="1" stop-color="#7a4a46"/></linearGradient>',
+        '<radialGradient id="city-glow" cx=".5" cy=".62" r=".55">'
+        '<stop offset="0" stop-color="#ffb070" stop-opacity=".34"/>'
+        '<stop offset="1" stop-color="#ffb070" stop-opacity="0"/></radialGradient>',
         "</defs>",
         f'<rect width="{width}" height="{height}" fill="{palette["background"]}"/>',
+        f'<rect width="{width}" height="{height}" fill="url(#dusk)" opacity=".85"/>',
+        f'<rect width="{width}" height="{height}" fill="url(#city-glow)"/>',
         '<g id="city" clip-path="url(#content-clip)">',
     ]
     polygons_for_occupancy = []

@@ -24,6 +24,29 @@
     ];
   }
 
+  function invert(m) {
+    const inv = new Array(16);
+    inv[0] = m[5]*m[10]*m[15]-m[5]*m[11]*m[14]-m[9]*m[6]*m[15]+m[9]*m[7]*m[14]+m[13]*m[6]*m[11]-m[13]*m[7]*m[10];
+    inv[4] = -m[4]*m[10]*m[15]+m[4]*m[11]*m[14]+m[8]*m[6]*m[15]-m[8]*m[7]*m[14]-m[12]*m[6]*m[11]+m[12]*m[7]*m[10];
+    inv[8] = m[4]*m[9]*m[15]-m[4]*m[11]*m[13]-m[8]*m[5]*m[15]+m[8]*m[7]*m[13]+m[12]*m[5]*m[11]-m[12]*m[7]*m[9];
+    inv[12] = -m[4]*m[9]*m[14]+m[4]*m[10]*m[13]+m[8]*m[5]*m[14]-m[8]*m[6]*m[13]-m[12]*m[5]*m[10]+m[12]*m[6]*m[9];
+    inv[1] = -m[1]*m[10]*m[15]+m[1]*m[11]*m[14]+m[9]*m[2]*m[15]-m[9]*m[3]*m[14]-m[13]*m[2]*m[11]+m[13]*m[3]*m[10];
+    inv[5] = m[0]*m[10]*m[15]-m[0]*m[11]*m[14]-m[8]*m[2]*m[15]+m[8]*m[3]*m[14]+m[12]*m[2]*m[11]-m[12]*m[3]*m[10];
+    inv[9] = -m[0]*m[9]*m[15]+m[0]*m[11]*m[13]+m[8]*m[1]*m[15]-m[8]*m[3]*m[13]-m[12]*m[1]*m[11]+m[12]*m[3]*m[9];
+    inv[13] = m[0]*m[9]*m[14]-m[0]*m[10]*m[13]-m[8]*m[1]*m[14]+m[8]*m[2]*m[13]+m[12]*m[1]*m[10]-m[12]*m[2]*m[9];
+    inv[2] = m[1]*m[6]*m[15]-m[1]*m[7]*m[14]-m[5]*m[2]*m[15]+m[5]*m[3]*m[14]+m[13]*m[2]*m[7]-m[13]*m[3]*m[6];
+    inv[6] = -m[0]*m[6]*m[15]+m[0]*m[7]*m[14]+m[4]*m[2]*m[15]-m[4]*m[3]*m[14]-m[12]*m[2]*m[7]+m[12]*m[3]*m[6];
+    inv[10] = m[0]*m[5]*m[15]-m[0]*m[7]*m[13]-m[4]*m[1]*m[15]+m[4]*m[3]*m[13]+m[12]*m[1]*m[7]-m[12]*m[3]*m[5];
+    inv[14] = -m[0]*m[5]*m[14]+m[0]*m[6]*m[13]+m[4]*m[1]*m[14]-m[4]*m[2]*m[13]-m[12]*m[1]*m[6]+m[12]*m[2]*m[5];
+    inv[3] = -m[1]*m[6]*m[11]+m[1]*m[7]*m[10]+m[5]*m[2]*m[11]-m[5]*m[3]*m[10]-m[9]*m[2]*m[7]+m[9]*m[3]*m[6];
+    inv[7] = m[0]*m[6]*m[11]-m[0]*m[7]*m[10]-m[4]*m[2]*m[11]+m[4]*m[3]*m[10]+m[8]*m[2]*m[7]-m[8]*m[3]*m[6];
+    inv[11] = -m[0]*m[5]*m[11]+m[0]*m[7]*m[9]+m[4]*m[1]*m[11]-m[4]*m[3]*m[9]-m[8]*m[1]*m[7]+m[8]*m[3]*m[5];
+    inv[15] = m[0]*m[5]*m[10]-m[0]*m[6]*m[9]-m[4]*m[1]*m[10]+m[4]*m[2]*m[9]+m[8]*m[1]*m[6]-m[8]*m[2]*m[5];
+    const det = m[0]*inv[0]+m[1]*inv[4]+m[2]*inv[8]+m[3]*inv[12];
+    if (!det) return null;
+    return inv.map((value) => value / det);
+  }
+
   function subtract(left, right) {
     return [left[0] - right[0], left[1] - right[1], left[2] - right[2]];
   }
@@ -454,6 +477,79 @@
     return linked;
   }
 
+  // Blue-hour atmosphere shared by the backdrop pass and window reflections.
+  const SKY_GLSL = `
+    vec3 skyColor(vec3 d) {
+      float t = clamp(d.y, 0.0, 1.0);
+      vec3 horizon = vec3(.74, .50, .42), mid = vec3(.20, .28, .50), zenith = vec3(.035, .06, .17);
+      vec3 col = mix(horizon, mid, pow(t, .42));
+      col = mix(col, zenith, smoothstep(.18, 1.0, t));
+      float s = max(dot(d, normalize(vec3(-.6, 1.0, .45))), 0.0);
+      col += vec3(1.0, .72, .46) * (pow(s, 6.0) * .22 + pow(s, 220.0) * .9);
+      return col;
+    }`;
+  let skyProgram = null;
+  try { skyProgram = linkProgram(`attribute vec2 a_clip;varying vec2 v_clip;
+    void main(){v_clip=a_clip;gl_Position=vec4(a_clip,.9999,1.0);}`, `
+    precision ${fragmentHighp ? 'highp' : 'mediump'} float;
+    varying vec2 v_clip;
+    uniform mat4 u_inverse;
+    uniform vec3 u_eye;
+    uniform vec3 u_target;
+    uniform float u_scale;
+    uniform float u_ground;
+    ${SKY_GLSL}
+    float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+      return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.0),f.x),f.y);}
+    void main(){
+      vec4 a=u_inverse*vec4(v_clip,-1.0,1.0),b=u_inverse*vec4(v_clip,1.0,1.0);
+      vec3 dir=normalize(b.xyz/b.w-a.xyz/a.w);
+      vec3 sky=skyColor(dir);
+      if(dir.y>=-.002){gl_FragColor=vec4(sky,1.0);return;}
+      float t=(u_ground-u_eye.y)/dir.y;
+      vec3 hit=u_eye+dir*t;
+      float field=noise(hit.xz/(u_scale*.35))*.6+noise(hit.xz/(u_scale*.06))*.4;
+      vec3 earth=mix(vec3(.030,.045,.055),vec3(.070,.090,.085),field);
+      float glow=exp(-length(hit.xz-u_target.xz)/(u_scale*1.15));
+      earth=mix(earth,vec3(.20,.16,.15),glow*.22);
+      float fog=1.0-exp(-max(t/u_scale-2.2,0.0)*.45);
+      vec3 horizon=skyColor(vec3(dir.x,0.0,dir.z));
+      gl_FragColor=vec4(mix(earth,horizon,clamp(fog,0.0,1.0)),1.0);
+    }`); } catch { skyProgram = null; }
+  const skyLocations = !skyProgram ? {} : {
+    clip: gl.getAttribLocation(skyProgram, 'a_clip'),
+    inverse: gl.getUniformLocation(skyProgram, 'u_inverse'),
+    eye: gl.getUniformLocation(skyProgram, 'u_eye'),
+    target: gl.getUniformLocation(skyProgram, 'u_target'),
+    scale: gl.getUniformLocation(skyProgram, 'u_scale'),
+    ground: gl.getUniformLocation(skyProgram, 'u_ground'),
+  };
+  const skyBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, skyBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+
+  function drawBackdrop(eye) {
+    if (!skyProgram) return;
+    const inverse = invert(viewProjection);
+    if (!inverse) return;
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.CULL_FACE);
+    gl.useProgram(skyProgram);
+    gl.uniformMatrix4fv(skyLocations.inverse, false, new Float32Array(inverse));
+    gl.uniform3fv(skyLocations.eye, new Float32Array(eye));
+    gl.uniform3fv(skyLocations.target, new Float32Array([state.targetX, state.targetY, state.targetZ]));
+    gl.uniform1f(skyLocations.scale, Math.max(1, state.distance));
+    gl.uniform1f(skyLocations.ground, -1.5);
+    gl.bindBuffer(gl.ARRAY_BUFFER, skyBuffer);
+    gl.enableVertexAttribArray(skyLocations.clip);
+    gl.vertexAttribPointer(skyLocations.clip, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.disableVertexAttribArray(skyLocations.clip);
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+  }
+
   function createProgram() {
     const vertex = compileShader(gl.VERTEX_SHADER, `
       attribute vec3 a_position;
@@ -493,6 +589,8 @@
       uniform float u_shadows;
       uniform float u_texel;
       uniform sampler2D u_shadow_map;
+      uniform float u_scale;
+      ${SKY_GLSL}
       float hash(vec2 p) { return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
       float noise(vec2 p) {
         vec2 i=floor(p),f=fract(p); f=f*f*(3.0-2.0*f);
@@ -541,9 +639,11 @@
           float window=mask.x*mask.y*margin*fidelity;
           if(kind>3.5)window*=step(.63,hash(tile+seed));
           vec3 glass=mix(vec3(.12,.22,.27),vec3(.42,.59,.65),hash(tile+seed)*.65+.20);
-          glass=mix(glass,vec3(.57,.69,.71),pow(1.0-max(dot(view,n),0.0),3.0)*.5);
-          float lit=step(.86,hash(tile+seed*2.3));
-          glass=mix(glass,vec3(.91,.72,.42),lit*.6);
+          float fres=pow(1.0-max(dot(view,n),0.0),3.0);
+          vec3 refl=reflect(-view,n);
+          glass=mix(glass,skyColor(vec3(refl.x,abs(refl.y)*.7+.04,refl.z))*.9,.22+fres*.55);
+          float lit=step(.80,hash(tile+seed*2.3));
+          glass=mix(glass,vec3(1.0,.76,.42),lit*.75);
           albedo=mix(albedo,glass,window);
           // Fine joints fade with projected size instead of sparkling at overview.
           float joint=1.0-smoothstep(.012,.04,min(cell.x,cell.y));
@@ -555,8 +655,9 @@
           }
           if(kind>3.5)albedo*=1.0-(sin(uv.x*26.0)*.045+.045)*fidelity*(1.0-window);
           specular=window*.4;
-          emission=window*lit*.06;
-          ambient=.76+.24*smoothstep(0.0,2.2,uv.y);
+          emission=window*lit*.85;
+          ambient=.62+.38*smoothstep(0.0,3.2,uv.y);
+          albedo*=.92+.12*smoothstep(0.0,40.0,v_world.y);
         } else if(kind>4.5 && kind<5.5) {
           vec2 tile=fract(uv*.65);
           float rim=1.0-smoothstep(.08,.24,min(min(uv.x,v_extent.x-uv.x),min(uv.y,v_extent.y-uv.y)));
@@ -605,16 +706,31 @@
         } else if(kind>13.5 && kind<14.5) {
           albedo*=.91+grain;
           specular=.18;
+        } else if(kind<.5 && n.y>.6) {
+          // Plain ground and plazas: broad tonal drift and weathering break up flat slabs.
+          float drift=noise(v_world.xz*.045)*.5+noise(v_world.xz*.22)*.3+noise(v_world.xz*1.7)*.2;
+          albedo*=.80+drift*.42;
+          albedo=mix(albedo,vec3(.26,.28,.27),.32);
         }
+        // Building tints keep their role hue but lose the flat neon saturation.
+        if(kind>.5 && kind<4.5)albedo=mix(vec3(dot(albedo,vec3(.3,.59,.11))),albedo,.84);
         float direct=max(dot(n,normalize(vec3(-.6,1,.45))),0.0);
+        float wrap=max(dot(n,normalize(vec3(-.6,1,.45)))*.5+.5,0.0);
         float shade=visibility(n);
-        vec3 sky=mix(vec3(.27,.31,.34),vec3(.55,.62,.65),n.y*.5+.5);
-        vec3 light=sky*ambient+vec3(1.0,.91,.76)*direct*shade*.65;
+        vec3 skyTop=vec3(.31,.38,.55),bounce=vec3(.25,.21,.19);
+        vec3 sky=mix(bounce,skyTop,n.y*.5+.5);
+        vec3 light=sky*ambient*(.72+.2*wrap)+vec3(1.0,.80,.58)*direct*shade*.78;
         vec3 halfVector=normalize(normalize(vec3(-.6,1,.45))+view);
         float highlight=pow(max(dot(n,halfVector),0.0),48.0)*specular*shade;
-        vec3 result=albedo*light+vec3(1.0,.94,.82)*highlight+albedo*emission;
-        float haze=1.0-exp(-length(u_eye-v_world)*.00012);
-        result=mix(result,vec3(.55,.64,.68),min(haze,.16));
+        float rim=pow(1.0-max(dot(n,view),0.0),3.0)*smoothstep(.0,.5,n.y+.35);
+        vec3 result=albedo*light+vec3(1.0,.88,.7)*highlight+albedo*emission
+          +vec3(.55,.52,.62)*rim*.07*(kind>.5&&kind<4.5?1.0:0.0);
+        float dist=length(u_eye-v_world)/max(u_scale,1.0);
+        float haze=min(1.0-exp(-max(dist-1.15,0.0)*.5),.42);
+        result=mix(result,mix(skyColor(normalize(vec3(-view.x,0.02,-view.z))),vec3(.24,.31,.46),.55),haze);
+        // Soft filmic shoulder keeps sunlit roofs from clipping into flat colour.
+        result*=.86;
+        result=result*(2.51*result+.03)/(result*(2.43*result+.59)+.14);
         gl_FragColor=vec4(clamp(result,0.0,1.0),1.0);
       }
     `);
@@ -835,6 +951,7 @@
   const sunLocation=gl.getUniformLocation(program,'u_sun_matrix');
   const eyeLocation=gl.getUniformLocation(program,'u_eye');
   const detailedLocation=gl.getUniformLocation(program,'u_detailed');
+  const scaleLocation=gl.getUniformLocation(program,'u_scale');
   const shadowLocation=gl.getUniformLocation(program,'u_shadows');
   const texelLocation=gl.getUniformLocation(program,'u_texel');
   const samplerLocation=gl.getUniformLocation(program,'u_shadow_map');
@@ -1797,15 +1914,18 @@
     if(detailedMaterials)gl.clearColor(.075,.105,.13,1);
     else gl.clearColor(0.027, 0.043, 0.075, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    const horizontal=Math.cos(state.pitch)*state.distance;
+    const eyePosition=[state.targetX+Math.sin(state.yaw)*horizontal,
+      state.targetY+Math.sin(state.pitch)*state.distance,state.targetZ+Math.cos(state.yaw)*horizontal];
+    if(detailedMaterials)drawBackdrop(eyePosition);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
     gl.useProgram(program);
     gl.uniformMatrix4fv(matrixLocation, false, new Float32Array(viewProjection));
-    const horizontal=Math.cos(state.pitch)*state.distance;
-    gl.uniform3fv(eyeLocation,new Float32Array([state.targetX+Math.sin(state.yaw)*horizontal,
-      state.targetY+Math.sin(state.pitch)*state.distance,state.targetZ+Math.cos(state.yaw)*horizontal]));
+    gl.uniform3fv(eyeLocation,new Float32Array(eyePosition));
     gl.uniform1f(detailedLocation,detailedMaterials?1:0);
+    gl.uniform1f(scaleLocation,Math.max(1,state.distance));
     gl.uniform1f(shadowLocation,detailedMaterials && sunShadow?.values===geometry.triangles?1:0);
     gl.uniform1f(texelLocation,1/(sunShadow?.size || 1));
     gl.uniformMatrix4fv(sunLocation,false,new Float32Array(sunShadow?.transform || viewProjection));
