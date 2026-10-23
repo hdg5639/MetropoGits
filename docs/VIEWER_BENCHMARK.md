@@ -200,3 +200,50 @@ derived geometry and provenance. Actual GJ/OJ Detail and GJ Overview captures
 were inspected, plus the GJ showcase and small/unknown fixtures. Unrelated land
 is no longer striped as roads. Endpoint anchors remain aggregate-level, and
 duplicate labels/Overview archetype placement remain separate open issues.
+
+## Interaction hitches and geometry segment cache (2026-10-23)
+
+`scripts/viewer_perf.mjs` drives a generated viewer in an isolated Chrome profile
+with the real GPU (ANGLE/D3D11) and with occlusion/background throttling disabled:
+
+```powershell
+node scripts/viewer_perf.mjs "C:/Program Files/Google/Chrome/Application/chrome.exe" <city-dir> --runs 2 --out report.json
+node scripts/viewer_perf.mjs <chrome.exe> <city-dir> --profile   # CPU self-time during load + idle prewarm
+```
+
+It replays wheel zoom across every LOD, a drag orbit and three building selections,
+recording the gap between animation frames per step, then reads the viewer's `?perf`
+panel. Use a quiet machine: a concurrent build or test run invalidates the numbers
+(the extension-driven Chrome tab used earlier is throttled when another window covers
+it, so its timings are not trustworthy). Frame gaps are wall-clock on the measuring
+machine (RTX 3080, 165 Hz, ~6.1 ms per frame); compare before/after runs on one machine.
+
+Findings on the old code: steady state is already cheap (render JS ~0.1 ms, GPU main
+pass 0.2-0.7 ms from `EXT_disjoint_timer_query`), so the visible jank was **synchronous
+geometry rebuilds** (200-450 ms) on every LOD change and every selection, because the
+selection and LOD are part of the geometry cache key and the whole city was rebuilt.
+
+Change: terrain/landscape, each building and each aggregate are now cached as Float32Array
+segments keyed by what actually affects them (LOD class, selection, role-colour mode,
+filters, structure overlay) and spliced in draw order; remaining LOD states are built while
+the page is idle (building segments in ~6 ms slices). Geometry is byte-identical: the
+FNV hash of every built triangle buffer and a line hash from the old code were all found
+in the new code's builds for PocketBase, GJ-Cloud and lazygit.
+
+Worst frame gap per step, ms (old → new; 2 runs for PocketBase/lazygit, 1-2 for GJ-Cloud):
+
+| Step | PocketBase | GJ-Cloud | lazygit |
+| --- | ---: | ---: | ---: |
+| zoom in across LODs | 310 → 46-55 | 280-327 → 45-51 | 448-465 → 59-67 |
+| first selection | 266-334 → 78-94 | 314-347 → 67-71 | 8 → 8 |
+| zoom out | 266-348 → 23-27 | 267-360 → 24-26 | 40 → 40-42 |
+| selection after zoom-out | 221 → 7 | 180-201 → 47-63 | 384-433 → 95-102 |
+
+Not fixed, stated plainly: the idle prewarm itself still produces one 150-230 ms main-thread
+stall 1-4 s after load (static terrain, streets, aggregates and the final merge are not
+sliced). For lazygit the old code had no idle stall (max 8 ms), so that case trades an
+interaction hitch for an idle one. Startup (navigation to first readout) is 1.0-2.0 s;
+`createProgram` shader compile/link (~165 ms) is the largest single start-up item.
+Candidates: slice static/aggregate production, `KHR_parallel_shader_compile`, a worker.
+Heap/memory of the segment caches was not measured. No screenshots were taken because
+the rendered bytes are unchanged; this is not a visual verification.

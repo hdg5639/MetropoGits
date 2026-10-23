@@ -10104,3 +10104,30 @@
   Independent approval is still required; no review/protection bypass or merge.
 - Commits / push: prepare this verified lint correction as its own atomic commit
   on the existing PR branch, then normal push to trigger fresh required CI.
+
+## Checkpoint 2026-10-23 — viewer rebuild hitches (segment cache, idle prewarm, perf harness)
+- Implemented: viewer geometry segment cache (static world, per building, per aggregate),
+  idle LOD prewarm with time-sliced building production, `?perf` GPU timer-query row and
+  worst-frame stage breakdown, `scripts/viewer_perf.mjs` interaction harness. Rendering
+  output is unchanged by design; no scene, UCG, schema or evidence change.
+- Fixture(s) / revision(s): locally built PocketBase 6f370ea7, GJ-Cloud 3d9b53f,
+  lazygit 4e1eebe2 (`metropogits city --seed review`), engine parent 4e7d197.
+- Commands run: `node scripts/viewer_perf.mjs <chrome> <city> --runs N`, `--profile`;
+  hash comparison of every built geometry buffer, old (git HEAD) vs new viewer, via an
+  instrumented copy; `node --test tests/*.mjs`, `python -m unittest discover -s tests`,
+  `python -m ruff check metropogits scripts tests`.
+- Observed: old code stalled 180-465 ms on LOD change and selection; new code 23-102 ms
+  (table in docs/VIEWER_BENCHMARK.md). GPU main pass 0.2-0.7 ms, so GPU is not the bottleneck.
+  Remaining: one 150-230 ms idle prewarm stall after load; lazygit gained an idle stall it
+  did not have before (old max 8 ms).
+- Artifacts inspected: harness JSON/console output and `?perf` panels. Not visually
+  verified: no new screenshots; geometry hashes are identical so pixels are expected equal.
+- Spec alignment: PASS (static, local, deterministic, no AI/service, no source executed).
+- Tests / determinism: Node 79 pass; Python 832 run, OK, 1 skip. Ruff reports 2 pre-existing
+  E731 in `world/contemporary_forms.py:75` and `world_city.py:46`, unchanged by this work
+  (identical with the change stashed). Updated one source-pattern test whose cache-key
+  expression moved into `lodKeyFor`.
+- Measurement caveat: an early run was invalid because a city build ran concurrently, and
+  the extension-driven tab stalls when occluded; final numbers come from the isolated harness.
+- Open risks / next: slice the remaining prewarm work or move it to a worker;
+  parallel shader compile; measure segment-cache memory on larger repositories.
