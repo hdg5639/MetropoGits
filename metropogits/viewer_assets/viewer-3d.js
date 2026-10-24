@@ -522,10 +522,10 @@
       float t=(u_ground-u_eye.y)/dir.y;
       vec3 hit=u_eye+dir*t;
       float field=noise(hit.xz/(u_scale*.35))*.6+noise(hit.xz/(u_scale*.06))*.4;
-      vec3 earth=mix(vec3(.030,.045,.055),vec3(.070,.090,.085),field);
+      vec3 earth=mix(vec3(.060,.085,.115),vec3(.150,.190,.215),field);
       float glow=exp(-length(hit.xz-u_target.xz)/(u_scale*1.15));
-      earth=mix(earth,vec3(.20,.16,.15),glow*.22);
-      float fog=1.0-exp(-max(t/u_scale-2.2,0.0)*.45);
+      earth=mix(earth,vec3(.34,.24,.20),glow*.34);
+      float fog=1.0-exp(-max(t/u_scale-1.3,0.0)*.55);
       vec3 horizon=skyColor(vec3(dir.x,0.0,dir.z));
       gl_FragColor=vec4(mix(earth,horizon,clamp(fog,0.0,1.0)),1.0);
     }`); } catch { skyProgram = null; }
@@ -653,7 +653,9 @@
           vec3 glass=mix(vec3(.12,.22,.27),vec3(.42,.59,.65),hash(tile+seed)*.65+.20);
           float fres=pow(1.0-max(dot(view,n),0.0),3.0);
           vec3 refl=reflect(-view,n);
-          glass=mix(glass,skyColor(vec3(refl.x,abs(refl.y)*.7+.04,refl.z))*.9,.22+fres*.55);
+          // Glazing takes a darker cast of the wall tone so each quarter keeps its own colour.
+          glass=mix(glass,albedo*vec3(.52,.58,.68)+vec3(.02,.03,.05),.72);
+          glass=mix(glass,skyColor(vec3(refl.x,abs(refl.y)*.7+.04,refl.z))*.9,.16+fres*.5);
           float lit=step(.80,hash(tile+seed*2.3));
           glass=mix(glass,vec3(1.0,.76,.42),lit*.75);
           albedo=mix(albedo,glass,window);
@@ -714,7 +716,7 @@
           float rib=.5+.5*sin(uv.y*31.4);
           albedo*=.79+rib*.16;
           float frame=1.0-smoothstep(.025,.10,min(uv.x,v_extent.x-uv.x));
-          albedo=mix(albedo,vec3(.27,.30,.32),frame*.65);
+          albedo=mix(albedo,albedo*.55+vec3(.10,.11,.12),frame*.5);
         } else if(kind>13.5 && kind<14.5) {
           albedo*=.91+grain;
           specular=.18;
@@ -722,14 +724,14 @@
           // Plain ground and plazas: broad tonal drift and weathering break up flat slabs.
           float drift=noise(v_world.xz*.045)*.5+noise(v_world.xz*.22)*.3+noise(v_world.xz*1.7)*.2;
           albedo*=.80+drift*.42;
-          albedo=mix(albedo,vec3(.26,.28,.27),.32);
+          albedo=mix(albedo,vec3(.26,.28,.27),.1);
         }
         // Building tints keep their role hue but lose the flat neon saturation.
-        if(kind>.5 && kind<4.5)albedo=mix(vec3(dot(albedo,vec3(.3,.59,.11))),albedo,.84);
+        if(kind>.5 && kind<4.5)albedo=mix(vec3(dot(albedo,vec3(.3,.59,.11))),albedo,1.0);
         float direct=max(dot(n,normalize(vec3(-.6,1,.45))),0.0);
         float wrap=max(dot(n,normalize(vec3(-.6,1,.45)))*.5+.5,0.0);
         float shade=direct>0.0?visibility(n):1.0; // faces turned from the sun skip the shadow taps
-        vec3 skyTop=vec3(.31,.38,.55),bounce=vec3(.25,.21,.19);
+        vec3 skyTop=vec3(.36,.41,.54),bounce=vec3(.31,.24,.19);
         vec3 sky=mix(bounce,skyTop,n.y*.5+.5);
         vec3 light=sky*ambient*(.72+.2*wrap)+vec3(1.0,.80,.58)*direct*shade*.78;
         vec3 halfVector=normalize(normalize(vec3(-.6,1,.45))+view);
@@ -738,7 +740,7 @@
         vec3 result=albedo*light+vec3(1.0,.88,.7)*highlight+albedo*emission
           +vec3(.55,.52,.62)*rim*.07*(kind>.5&&kind<4.5?1.0:0.0);
         float dist=length(u_eye-v_world)/max(u_scale,1.0);
-        float haze=min(1.0-exp(-max(dist-1.15,0.0)*.5),.42);
+        float haze=min(1.0-exp(-max(dist-1.15,0.0)*.5),.26);
         result=mix(result,mix(skyColor(normalize(vec3(-view.x,0.02,-view.z))),vec3(.24,.31,.46),.55),haze);
         // Soft filmic shoulder keeps sunlit roofs from clipping into flat colour.
         result*=.86;
