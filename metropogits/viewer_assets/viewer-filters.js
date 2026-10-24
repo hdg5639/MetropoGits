@@ -1364,12 +1364,20 @@
 
   function materialPart(policy, building, part, top, fullTint = false) {
     if (policy?.version !== "building-materials/0.1") return null;
-    let hash = 2166136261;
-    for (const character of String(building.entityId)) {
-      hash ^= character.codePointAt(0);
-      hash = Math.imul(hash, 16777619);
-    }
-    let [wall, roof] = policy.palettes[(hash >>> 0) % policy.palettes.length];
+    const fnv = (value) => {
+      let hash = 2166136261;
+      for (const character of String(value)) {
+        hash ^= character.codePointAt(0);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    };
+    // Optional quarter styles: a neighbourhood picks a region, its buildings pick inside it.
+    const quarter = building.zoneId || building.districtId;
+    const region = quarter && policy.regions?.length ? policy.regions[fnv(quarter) % policy.regions.length] : null;
+    let [wall, roof] = region
+      ? policy.palettes[region[fnv(building.entityId) % region.length]]
+      : policy.palettes[fnv(building.entityId) % policy.palettes.length];
     if(policy.detailColors?.[part.materialKind]) [wall,roof]=policy.detailColors[part.materialKind];
     const role = policy.roleColors[building.archetype] || policy.roleColors.GENERIC_BUILDING;
     const blend = (a, b, t) => "#" + [1, 3, 5].map(i =>

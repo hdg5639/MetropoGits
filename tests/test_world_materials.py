@@ -11,7 +11,7 @@ from pathlib import Path
 
 from metropogits.world.export import package_world, render_svg, view_data
 from metropogits.world.generator import generate_world
-from metropogits.world.materials import PALETTES, part_material, policy, stable_index
+from metropogits.world.materials import PALETTES, REGIONS, palette_for, part_material, policy, stable_index
 from metropogits.world.validation import validate_world
 from test_world_campus import fixture
 
@@ -35,6 +35,39 @@ class MaterialTests(unittest.TestCase):
                 self.assertEqual(full["roof"], full["wall"])
             self.assertEqual(before, part_material(dict(generic, archetype="UNKNOWN_TECH"), part, 10))
         self.assertGreater(len({stable_index(str(i), len(PALETTES)) for i in range(40)}), 4)
+
+    def test_quarter_regions_vary_by_neighbourhood_and_keep_the_legacy_fallback(self):
+        self.assertTrue(all(0 <= index < len(PALETTES) for region in REGIONS for index in region))
+        part = dict(y=0, height=10)
+        # No neighbourhood id: the original whole-palette choice is unchanged.
+        plain = dict(entityId="file/a", archetype="GENERIC_BUILDING")
+        self.assertEqual(palette_for(plain), PALETTES[stable_index("file/a", len(PALETTES))])
+        quarters = {}
+        for quarter in (f"zone/{i}" for i in range(60)):
+            walls = {palette_for(dict(entityId=f"{quarter}/f{n}", zoneId=quarter))[0] for n in range(30)}
+            region = REGIONS[stable_index(quarter, len(REGIONS))]
+            self.assertTrue(walls <= {PALETTES[i][0] for i in region})
+            quarters[quarter] = region
+        # Different quarters pick different styles, so a city is not one uniform mix.
+        self.assertGreaterEqual(len({tuple(r) for r in quarters.values()}), len(REGIONS) - 1)
+        # zoneId wins over the source districtId, matching the viewer's district field.
+        both = dict(entityId="x", zoneId="zone/1", districtId="src/other")
+        self.assertEqual(palette_for(both), palette_for(dict(entityId="x", districtId="zone/1")))
+        # Roles still never choose the wall.
+        for role in policy()["roleColors"]:
+            self.assertEqual(part_material(dict(both, archetype=role), part, 10)["wall"],
+                             part_material(dict(both, archetype="GENERIC_BUILDING"), part, 10)["wall"])
+
+    @unittest.skipUnless(shutil.which("node"), "Node is required for renderer parity")
+    def test_viewer_matches_python_for_quarter_regions(self):
+        cases = [[dict(entityId=f"{q}/{n}", archetype="SERVICE_OFFICE", **{key: q}), dict(y=0, height=8), 8, False]
+                 for q in ("zone/a", "한글/구역", "src/main") for n in range(6) for key in ("zoneId", "districtId")]
+        module = (Path(__file__).parents[1] / "metropogits/viewer_assets/viewer-filters.js").as_uri()
+        code = f"import {json.dumps(module)};let input='';for await(const c of process.stdin)input+=c;const d=JSON.parse(input);console.log(JSON.stringify(d.cases.map(c=>METROPOGITS_FILTERS.materialPart(d.policy,...c))));"
+        result = subprocess.run([shutil.which("node"), "--input-type=module", "-e", code],
+                                input=json.dumps(dict(policy=policy(), cases=cases)), text=True,
+                                capture_output=True, check=True)
+        self.assertEqual(json.loads(result.stdout), [part_material(*c) for c in cases])
 
     @unittest.skipUnless(shutil.which("node"), "Node is required for renderer parity")
     def test_python_and_viewer_match_unicode_shading_top_accents_and_full_tint(self):
