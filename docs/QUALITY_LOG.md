@@ -10131,3 +10131,56 @@
   the extension-driven tab stalls when occluded; final numbers come from the isolated harness.
 - Open risks / next: slice the remaining prewarm work or move it to a worker;
   parallel shader compile; measure segment-cache memory on larger repositories.
+
+## Checkpoint 2026-10-25 — Fresh ten-repository viewing gallery
+- Implemented: regenerate all ten local corpus repositories through the current
+  official `metropogits city` CLI, not renderer-only reuse. Product revision
+  `83f408c3a32212b3cce58b1729ec6ed580cf7889`; product source is unchanged.
+  Gallery, reports, commands, logs and generated bundles remain outside Git at
+  `../artifacts/visual/corpus-refresh-20261025-r1/index.html`.
+- Fixtures / revisions / represented sources: GJ-Cloud3d9b53f9dac9/1324;
+  GamjaOJb163acd2b5fe/681; PocketBase6f370ea741f3/664;
+  SQLiteBrowserae32df153a64/506; batf748c1a467ae/142;
+  Ratatui0297560d8d77/244; Lazygit4e1eebe27879/1302;
+  Svelte RealWorlddf796708040f/42; FastAPI RealWorld9db981ca40ae/60;
+  hanul-hwpx7432c67e91f4/36. All ten tracked source worktrees clean; full SHA,
+  source URL, exact command and scan namespace are in the local report/command
+  JSON. No fetch, target dependency installation or source execution.
+- Commands run: local `refresh_corpus_20261025.py` invokes
+  `python -m metropogits city --json --repo ROOT --repo-id review/CASE
+  --revision SHA --source-url URL --seed review --out NEW/CASE/city`, two
+  workers, default watershed terrain/recommended urban preset. Each saved
+  World independently revalidated; every manifest artifact hash verified.
+  All5001 eligible sources remain represented,10146 exact source-backed trips,
+  zero final deferred placements, building/road overlaps, ownership escapes or
+  disconnected required source doors in saved-World validation.
+- Artifacts inspected: `capture_corpus_20261025.mjs` opens the actual unchanged
+  product viewer on RTX3080/D3D11,1600x1000, for every case. Ten successful
+  displayed-source censuses, zero GL/runtime exceptions, district jump/zoom and
+  inspector interaction; each real CPU showcase opens successfully. Forty PNGs
+  (overview/district/detail/CPU preview) and browser-report.json accompany the
+  gallery. Inspected GJ overview, OJ detail, Svelte overview, Ratatui CPU preview
+  and hanul detail. These are real renders, not design mockups.
+- Visual findings: latest contemporary forms, dusk environment, natural features
+  and cached renderer are present; readable interactive output across sparse,
+  medium and dense repositories. Long silhouettes/large reserve areas remain
+  visible, not claimed fixed. Gallery links/perf-panel links and forty image
+  paths checked. No product styling/layout changes were made for the captures.
+- Tests / determinism: both `test_world_city.py` tests pass (including no source
+  side effects and no overwrite of nonempty outputs). Full Svelte CLI repeated
+  with identical options/input; all20 package files byte-identical, recorded in
+  realworld/determinism.json. No new full-suite or isolated FPS benchmark is
+  claimed for this output-only refresh; builds/captures ran concurrently.
+- Generation plus independent validation seconds: GJ272.76,OJ222.55,
+  PocketBase215.67,SQLiteBrowser93.87,bat27.91,Ratatui70.28,Lazygit233.81,
+  Svelte6.48,FastAPI11.57,hanul4.73. Parallel observations, not performance SLAs.
+- Spec alignment: PASS, TECH1/3/8/9 and AC001/002/008/011/012. Existing outputs
+  preserved, source roles remain evidence-gated, no runtime AI/cloud or target
+  execution. No public schema, identity policy, engine or branch setting change.
+- Open risks: FastAPI's recommended CLI selected its existing Flat fallback;
+  disclosed in the gallery/report rather than implying successful watershed
+  generation. The original ValueError is not exposed by this CLI result, so no
+  unsupported causal diagnosis is made. Other nine retain watershed terrain.
+- Commits / push: documentation-only checkpoint on feat/polyglot-analysis;
+  verified local output and diff before normal push. Generated metadata/captures
+  are not published; unrelated Gradle/Maven fixture caches remain untouched.
