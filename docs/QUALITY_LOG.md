@@ -10184,3 +10184,28 @@
 - Commits / push: documentation-only checkpoint on feat/polyglot-analysis;
   verified local output and diff before normal push. Generated metadata/captures
   are not published; unrelated Gradle/Maven fixture caches remain untouched.
+
+## Checkpoint 2026-10-25 — colour: quarter palettes, ground restyle, warmer light and backdrop
+- Implemented: 11 new wall palettes and six quarter styles chosen per planning neighbourhood
+  (`world/materials.py`, `viewer-filters.js`, additive `regions` field, parity tests);
+  packaging-time ground restyle (`GROUND`, `GROUND_RESTYLE`, `styled_surface`); viewer shader
+  changes: glazing tinted by wall tone, weaker blue haze and grey frame/ground mixes, no
+  saturation cut, warmer ambient/bounce, dusk-toned surroundings instead of a black void.
+  World, UCG, scene, geometry bytes and evidence are unchanged.
+- Cause found: only six grey/blue-grey wall palettes chosen by entity-ID hash (same mix
+  everywhere), a blue-biased shader on top, ground colours baked as near-grey, black backdrop.
+- Fixture(s) / revision(s): corpus-refresh-20261025-r1 worlds (gj, lazygit, hanul), repackaged
+  with the new code via a scratch script (no regeneration); engine parent 83f408c.
+- Artifacts inspected (real Chrome WebGL screenshots and the rendered showcase.svg): lazygit,
+  GJ-Cloud and Hanul overview; lazygit zoomed. Ground now differs per district, warm brick,
+  sandstone and navy buildings appear, surroundings read as dusk water. Buildings remain mostly
+  cool at overview scale and the dark purple/indigo ground is still strong; judged better,
+  not finished. Hanul changed little (only four zones).
+- Findings not fixed: the 10-repository corpus repeats one outline because refresh_corpus
+  passes `--seed review` for all; without it the repo ids give four outline families with
+  aspect 1.1-1.8 (computed, not rendered). The README overview still renders very small
+  buildings for 1,300-file cities; not addressed.
+- Tests: Node 79 pass; Python 834 OK (1 skip); ruff 2 pre-existing E731 unchanged.
+- Spec alignment: PASS (static, deterministic, presentation-only, no source executed).
+- Open risks: shader and ground colours are subjective and need the owner's eye; the new
+  indigo ground may read too purple; thumbnails not re-checked at README size.

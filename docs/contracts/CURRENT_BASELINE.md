@@ -1316,6 +1316,14 @@ Private viewer data optionally carries `buildingMaterials` with pinned version
 `building-materials/0.1`, six wall/neutral-roof palettes and the existing archetype
 colour table. FNV-1a over Unicode code points selects the neutral palette using
 only stable entity ID, independently of role, graph degree or source size.
+An optional additive `regions` list (palette index lists, no version change) gives
+each planning neighbourhood a quarter style: FNV-1a of `zoneId` (else `districtId`)
+picks a region and the entity ID picks inside it. Without a neighbourhood ID, or in
+a viewer that ignores `regions`, the original whole-palette choice applies. The
+palette now has 17 entries (the first six unchanged). Python and the viewer share
+the rule and are parity-tested. Presentation only; the packaging layer also swaps
+the older near-grey baked ground colours for a richer list (`GROUND_RESTYLE`)
+without altering the World artifact.
 Materials are procedural colours, not factual construction/technology claims.
 Known archetype accents are blended onto existing highest roof faces; generic
 or unrecognized archetypes receive no invented semantic accent. Existing part
