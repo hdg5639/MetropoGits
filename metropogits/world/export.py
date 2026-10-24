@@ -18,11 +18,19 @@ from .materials import ROLE_COLORS as COLORS, part_material, policy as material_
 from .landscape import generate_landscape
 from .rivers import bridge_faces, height_at
 from .street_hierarchy import COLORS as STREET_COLORS, marking_surfaces
-from .elevation import surface as terrain_surface, pavement as graded_pavement, lifted_faces, foundation_faces
+from .elevation import COLORS as BAKED_GROUND, surface as terrain_surface, pavement as graded_pavement, lifted_faces, foundation_faces
 from .street_mesh import street_mesh, VERSION as STREET_MESH_VERSION
 from .compounds import derive_compounds
 
-GROUND = ["#33464b", "#4a4149", "#354b42", "#504835", "#3e4454", "#4e3c42", "#3b4c50"]
+GROUND = ["#35505a", "#5b4350", "#4a5a3c", "#6b5636", "#3f4a72", "#6a4339", "#3d5c58"]
+# The generated World bakes the older, near-grey ground list into its surface faces. The
+# presentation layer swaps it for the richer list without touching the World itself.
+GROUND_RESTYLE = dict(zip(BAKED_GROUND, GROUND))
+
+
+def styled_surface(surface):
+    return dict(surface, faces=[dict(face, color=GROUND_RESTYLE.get(face["color"], face["color"]))
+                                for face in surface["faces"]])
 ZONE_COLORS = {
     "GENERAL_MIXED": "#414b50",
     "SERVICE_QUARTER": "#3c5260",
@@ -317,7 +325,7 @@ def view_data(world, scene, graph, *, landscape=None, building_style="semantic",
             from .river_landscape import natural_faces
             data["terrain"]["features"]=natural_faces(world)
     if "surface" in world:
-        data["surface"]=world["surface"]
+        data["surface"]=styled_surface(world["surface"])
         data["streetDemand"]["segments"]={s["id"]:graded_pavement(s,world["terrain"],pavement_color,.11) for s in routing["segments"]}
         data["streetCurves"]["segments"]={s["id"]:[p[:2] for p in s["heightProfile"]] for s in routing["segments"]}
         data["streetCurves"]["paintSegments"]={s["id"]:[dict(start=a[:2],end=b[:2]) for a,b in zip(s["heightProfile"],s["heightProfile"][1:])] for s in routing["segments"]}
@@ -464,7 +472,7 @@ def render_svg(world, width=1200, height=750, *, landscape=None, building_style=
             )
         )
     if graded:
-        for face in world["surface"]["faces"]:
+        for face in styled_surface(world["surface"])["faces"]:
             lines.append(polygon([project([x,z],y) for x,y,z in face["points"]],face["color"]))
     for z in ([] if landscape or graded else world.get("zoning", {}).get("zones", [])):
         lines.append(
